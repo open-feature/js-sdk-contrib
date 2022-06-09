@@ -4,14 +4,30 @@
   "license": "MIT",
   "scripts": {},
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "@openfeature/nodejs-sdk": "0.0.1-alpha.9",
+    "@opentelemetry/api": "^1.1.0",
+    "tslib": "^2.3.0"
+  },
   "devDependencies": {
     "@nrwl/cli": "14.2.1",
+    "@nrwl/eslint-plugin-nx": "14.2.1",
+    "@nrwl/jest": "14.2.1",
     "@nrwl/js": "14.2.1",
+    "@nrwl/linter": "14.2.1",
     "@nrwl/nx-cloud": "latest",
     "@nrwl/workspace": "14.2.1",
+    "@types/jest": "27.4.1",
+    "@types/node": "16.11.7",
+    "@typescript-eslint/eslint-plugin": "~5.24.0",
+    "@typescript-eslint/parser": "~5.24.0",
+    "eslint": "~8.15.0",
+    "eslint-config-prettier": "8.1.0",
+    "jest": "27.5.1",
     "nx": "14.2.1",
     "prettier": "^2.6.2",
+    "ts-jest": "27.1.4",
+    "ts-node": "~10.8.0",
     "typescript": "~4.7.2"
   }
 }
