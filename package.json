@@ -2,7 +2,9 @@
   "name": "node-sdk-contrib",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "generate-hook": "nx workspace-generator hook"
+  },
   "private": true,
   "dependencies": {
     "@openfeature/nodejs-sdk": "0.0.1-alpha.9",
@@ -11,6 +13,7 @@
   },
   "devDependencies": {
     "@nrwl/cli": "14.2.1",
+    "@nrwl/devkit": "14.2.1",
     "@nrwl/eslint-plugin-nx": "14.2.1",
     "@nrwl/jest": "14.2.1",
     "@nrwl/js": "14.2.1",
