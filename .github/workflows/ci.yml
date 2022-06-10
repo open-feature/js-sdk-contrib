@@ -1,9 +1,9 @@
 name: CI
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
   pull_request:
-    branches: ["main"]
+    branches: ['main']
 
 jobs:
   main:
@@ -16,7 +16,7 @@ jobs:
       - run: npm ci
 
       - run: npx nx workspace-lint
-      - run: npx nx format:check
+      - run: if ! npx nx format:check ; then echo "Format check failed. Please run 'npx nx format:write'."; fi
       - run: npx nx affected --target=lint --parallel=3
       - run: npx nx affected --target=test --parallel=3 --ci --code-coverage
       - run: npx nx affected --target=build --parallel=3
