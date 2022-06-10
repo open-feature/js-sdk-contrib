@@ -15,8 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@openfeature/hook-opentelemetry": [
-        "libs/hooks/opentelemetry/src/index.ts"
+      "@openfeature/hooks-open-telemetry": [
+        "libs/hooks/open-telemetry/src/index.ts"
       ]
     }
   },

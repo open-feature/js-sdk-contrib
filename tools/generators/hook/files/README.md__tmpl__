@@ -10,7 +10,7 @@ $ npm install <%= importPath %>
 
 ## Building
 
-Run `nx build <%= nxProjectName %>` to build the library.
+Run `nx package <%= nxProjectName %>` to build the library.
 
 ## Running unit tests
 

@@ -1,31 +1,15 @@
-## Commands
+# OpenFeature Node Contrib
 
-- `nx g @nrwl/js:lib opentelemetry --directory=hooks --publishable --importPath="@openfeature/hook-opentelemetry"`
+![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)
+![Alpha](https://img.shields.io/badge/alpha-release-red)
 
-## NX Generators
+This repository is intended for OpenFeature contribution which are not included in the [OpenFeature SDK](https://github.com/open-feature/node-sdk).
 
-Create a new generator with `nx generate @nrwl/workspace:workspace-generator hook`
+The project includes:
 
-run generator `
+- Providers (coming soon)
+- [hooks](./libs/hooks)
 
-Naming examples:
+## License
 
-Input: 'Open Telemetry'
-output:
-{
-name: 'Open Telemetry',
-className: 'OpenTelemetry',
-propertyName: 'openTelemetry',
-constantName: 'OPEN_TELEMETRY',
-fileName: 'open-telemetry'
-}
-
-Input: 'OpenTelemetry'
-output:
-{
-name: 'OpenTelemetry',
-className: 'OpenTelemetry',
-propertyName: 'openTelemetry',
-constantName: 'OPENTELEMETRY',
-fileName: 'open-telemetry'
-}
+Apache 2.0 - See [LICENSE][./license] for more information.

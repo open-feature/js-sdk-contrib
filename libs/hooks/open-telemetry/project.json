@@ -1,0 +1,71 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/hooks/open-telemetry/src",
+  "projectType": "library",
+  "targets": {
+    "package": {
+      "executor": "@nrwl/web:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "project": "libs/hooks/open-telemetry/package.json",
+        "outputPath": "dist/libs/hooks/open-telemetry",
+        "entryFile": "libs/hooks/open-telemetry/src/index.ts",
+        "tsConfig": "libs/hooks/open-telemetry/tsconfig.lib.json",
+        "compiler": "babel",
+        "umdName": "OpenTelemetry",
+        "external": ["typescript"],
+        "format": ["cjs", "esm"],
+        "assets": [
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/hooks/open-telemetry",
+            "output": "./"
+          }
+        ]
+      }
+    },
+    "build": {
+      "executor": "@nrwl/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/hooks/open-telemetry",
+        "main": "libs/hooks/open-telemetry/src/index.ts",
+        "tsConfig": "libs/hooks/open-telemetry/tsconfig.lib.json",
+        "assets": ["libs/hooks/open-telemetry/*.md"]
+      }
+    },
+    "publish": {
+      "executor": "@nrwl/workspace:run-commands",
+      "options": {
+        "command": "node tools/scripts/publish.mjs hooks-open-telemetry {args.ver} {args.tag}"
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/hooks/open-telemetry/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/hooks/open-telemetry"],
+      "options": {
+        "jestConfig": "libs/hooks/open-telemetry/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}
