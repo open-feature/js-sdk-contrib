@@ -1,14 +1,14 @@
-# OpenFeature Node Contrib
+# OpenFeature Node Contributions
 
 ![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)
 ![Alpha](https://img.shields.io/badge/alpha-release-red)
 
-This repository is intended for OpenFeature contribution which are not included in the [OpenFeature SDK](https://github.com/open-feature/node-sdk).
+This repository is intended for OpenFeature contributions which are not included in the [OpenFeature SDK](https://github.com/open-feature/node-sdk).
 
 The project includes:
 
 - Providers (coming soon)
-- [hooks](./libs/hooks)
+- [Hooks](./libs/hooks)
 
 ## License
 
