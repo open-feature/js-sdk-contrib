@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "packages": {
+    "@openfeature/provider-rest-client": {
+      "version": "0.0.1",
+      "signature": "454fe586abf9c4e890d83f43b82d582e",
+      "file": true
+    }
+  }
+}

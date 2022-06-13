@@ -1,0 +1,31 @@
+{
+  "name": "@openfeature/provider-rest-client",
+  "version": "0.0.1",
+  "description": "OpenAPI client for @openfeature/provider-rest-client",
+  "author": "OpenAPI-Generator Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GIT_USER_ID/GIT_REPO_ID.git"
+  },
+  "keywords": [
+    "axios",
+    "typescript",
+    "openapi-client",
+    "openapi-generator",
+    "@openfeature/provider-rest-client"
+  ],
+  "license": "Unlicense",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --outDir dist/"
+  },
+  "dependencies": {
+    "@openfeature/provider-rest-client": "file:.yalc/@openfeature/provider-rest-client",
+    "axios": "^0.26.1"
+  },
+  "publishConfig": {
+    "registry": "https://github.com/open-feature/schemas"
+  },
+  "yalcSig": "454fe586abf9c4e890d83f43b82d582e"
+}
