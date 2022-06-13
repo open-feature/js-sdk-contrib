@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "cli": "nx",
+  "$id": "open-feature",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["hook", "provider"],
+      "description": "Library type",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": {
+        "message": "Which type of library would you like to generate?",
+        "type": "list",
+        "items": [
+          {
+            "value": "hook",
+            "label": "Hook"
+          },
+          {
+            "value": "provider",
+            "label": "Provider"
+          }
+        ]
+      }
+    },
+    "name": {
+      "type": "string",
+      "description": "Library name",
+      "$default": {
+        "$source": "argv",
+        "index": 1
+      },
+      "x-prompt": "What name should be used?"
+    }
+  },
+  "required": ["type", "name"]
+}
