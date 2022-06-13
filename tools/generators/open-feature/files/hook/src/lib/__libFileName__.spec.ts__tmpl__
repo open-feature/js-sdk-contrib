@@ -1,7 +1,7 @@
 import { <%= libClassName %> } from './<%= libFileName %>';
 
 describe('<%= libClassName %>', () => {
-  it('should be and instance of OpenTelemetryHook', () => {
+  it('should be and instance of <%= libClassName %>', () => {
     expect(new <%= libClassName %>()).toBeInstanceOf(<%= libClassName %>);
   });
 });

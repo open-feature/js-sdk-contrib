@@ -1,5 +1,3 @@
-export * from './lib/open-telemetry-hook';
-
 import {
   EvaluationContext,
   FlagEvaluationOptions,
@@ -8,14 +6,24 @@ import {
   ResolutionDetails,
 } from '@openfeature/nodejs-sdk';
 
-export class MyProvider implements Provider {
-  metadata: ProviderMetadata;
+export class <%= libClassName %> implements Provider {
   /**
-   * The context transformer can be used to validate and manipulate before flag evaluation. This is optional but can be useful in many situtations.
+   * The provider metadata exposes provider specific information such as the name.
+   * 
+   * @url https://github.com/open-feature/spec/blob/main/specification/provider/providers.md#feature-provider-interface
    */
-  contextTransformer: () => {};
+  metadata: ProviderMetadata = {
+    name: <%= libClassName %>.name
+  };
 
-  constructor() {}
+  /**
+   * The context transformer can be used to validate and manipulate evaluation
+   * context before flag evaluation. This is optional but can be useful in many
+   * situations.
+   * 
+   * @url https://github.com/open-feature/spec/blob/main/specification/provider/providers.md#context-transformation
+   */
+  contextTransformer = () => ({});
 
   resolveBooleanEvaluation(
     flagKey: string,
@@ -25,6 +33,7 @@ export class MyProvider implements Provider {
   ): Promise<ResolutionDetails<boolean>> {
     throw new Error('Method not implemented.');
   }
+
   resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
@@ -33,6 +42,7 @@ export class MyProvider implements Provider {
   ): Promise<ResolutionDetails<string>> {
     throw new Error('Method not implemented.');
   }
+
   resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
@@ -41,6 +51,7 @@ export class MyProvider implements Provider {
   ): Promise<ResolutionDetails<number>> {
     throw new Error('Method not implemented.');
   }
+
   resolveObjectEvaluation<U extends object>(
     flagKey: string,
     defaultValue: U,

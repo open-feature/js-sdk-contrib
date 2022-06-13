@@ -1,8 +1,9 @@
 import {
-  Hook,
-  HookContext,
   EvaluationDetails,
   FlagValue,
+  Hook,
+  HookContext,
+  HookHints,
 } from '@openfeature/nodejs-sdk';
 
 export class <%= libClassName %> implements Hook {

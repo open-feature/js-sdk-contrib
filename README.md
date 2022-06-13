@@ -7,7 +7,7 @@ This repository is intended for OpenFeature contributions which are not included
 
 The project includes:
 
-- Providers (coming soon)
+- [Providers](./libs/providers)
 - [Hooks](./libs/hooks)
 
 ## License

@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "generate-hook": "nx workspace-generator hook",
+    "generate-hook": "nx workspace-generator open-feature hook",
+    "generate-provider": "nx workspace-generator open-feature provider",
     "test": "nx run-many --all --target=test"
   },
   "private": true,
