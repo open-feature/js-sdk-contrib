@@ -2,27 +2,14 @@ import {
   EvaluationContext,
   FlagEvaluationOptions,
   Provider,
-  ProviderMetadata,
   ResolutionDetails,
 } from '@openfeature/nodejs-sdk';
 
 export class <%= libClassName %> implements Provider {
-  /**
-   * The provider metadata exposes provider specific information such as the name.
-   * 
-   * @url https://github.com/open-feature/spec/blob/main/specification/provider/providers.md#feature-provider-interface
-   */
-  metadata: ProviderMetadata = {
+  metadata = {
     name: <%= libClassName %>.name
   };
 
-  /**
-   * The context transformer can be used to validate and manipulate evaluation
-   * context before flag evaluation. This is optional but can be useful in many
-   * situations.
-   * 
-   * @url https://github.com/open-feature/spec/blob/main/specification/provider/providers.md#context-transformation
-   */
   contextTransformer = () => ({});
 
   resolveBooleanEvaluation(
