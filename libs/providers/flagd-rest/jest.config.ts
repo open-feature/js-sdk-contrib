@@ -10,6 +10,7 @@ export default {
   transform: {
     '^.+\\.[tj]s$': 'ts-jest',
   },
+  testEnvironment: 'node',
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../../coverage/libs/providers/flagd-rest',
 };

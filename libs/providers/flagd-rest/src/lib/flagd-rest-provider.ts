@@ -1,5 +1,6 @@
 import {
   EvaluationContext,
+  FlagValueType,
   Provider,
   ResolutionDetails,
 } from '@openfeature/nodejs-sdk';
@@ -8,28 +9,37 @@ import {
   StringFlagResolutionApi,
   NumericFlagResolutionApi,
   ObjectFlagResolutionApi,
+  Configuration,
 } from '@openfeature/provider-rest-client';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 
-// TODO make peer dependency
-import 'axios';
-
-export class FlagdRESTProvider implements Provider<unknown> {
+export class FlagdRESTProvider implements Provider {
   metadata = {
     name: 'Flagd REST',
   };
-
-  contextTransformer = () => ({});
 
   private readonly booleanFlagResolutionApi: BooleanFlagResolutionApi;
   private readonly stringFlagResolutionApi: StringFlagResolutionApi;
   private readonly numberFlagResolutionApi: NumericFlagResolutionApi;
   private readonly objectFlagResolutionApi: ObjectFlagResolutionApi;
 
-  constructor() {
-    this.booleanFlagResolutionApi = new BooleanFlagResolutionApi();
-    this.stringFlagResolutionApi = new StringFlagResolutionApi();
-    this.numberFlagResolutionApi = new NumericFlagResolutionApi();
-    this.objectFlagResolutionApi = new ObjectFlagResolutionApi();
+  constructor(configuration?: Configuration, basePath?: string) {
+    this.booleanFlagResolutionApi = new BooleanFlagResolutionApi(
+      configuration,
+      basePath
+    );
+    this.stringFlagResolutionApi = new StringFlagResolutionApi(
+      configuration,
+      basePath
+    );
+    this.numberFlagResolutionApi = new NumericFlagResolutionApi(
+      configuration,
+      basePath
+    );
+    this.objectFlagResolutionApi = new ObjectFlagResolutionApi(
+      configuration,
+      basePath
+    );
   }
 
   async resolveBooleanEvaluation(
@@ -37,13 +47,31 @@ export class FlagdRESTProvider implements Provider<unknown> {
     defaultValue: boolean,
     transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<boolean>> {
-    return (
-      await this.booleanFlagResolutionApi.resolveBoolean(
-        flagKey,
-        defaultValue,
-        transformedContext
-      )
-    ).data;
+    return this.booleanFlagResolutionApi
+      .resolveBoolean(flagKey, defaultValue, transformedContext)
+      .then((res) => {
+        console.log(res.data);
+        return res.data;
+      })
+      .catch((err) => {
+        console.error(err);
+        if (axios.isAxiosError(err)) {
+          console.log('is axios error');
+          console.log(err.response?.data);
+          if (err.response?.status === 404 && err.response) {
+            console.log('404');
+            return err.response.data;
+          }
+        }
+        return { value: defaultValue };
+      });
+    // return (
+    //   await this.booleanFlagResolutionApi.resolveBoolean(
+    //     flagKey,
+    //     defaultValue,
+    //     transformedContext
+    //   ).catch(this.errorResponseHandler)
+    // ).data;
   }
 
   async resolveStringEvaluation(
@@ -90,4 +118,25 @@ export class FlagdRESTProvider implements Provider<unknown> {
       ).data as any
     );
   }
+
+  private isDetailsPayload(
+    payload: Partial<ResolutionDetails<FlagValueType>>
+  ): boolean {
+    return !!payload.value;
+  }
+
+  // TODO add payload validator
+
+  // private errorHandler<T, U>(err: Error | AxiosError<T>): ResolutionDetails<U> {
+  //   if (axios.isAxiosError(err) && err.isAxiosError) {
+  //     err.response;
+  //   }
+  // }
+
+  // private responseHandler<T, U>(
+  //   response: AxiosResponse<T, unknown>
+  // ): ResolutionDetails<U> {
+  //   if (response) {
+  //   }
+  // }
 }
