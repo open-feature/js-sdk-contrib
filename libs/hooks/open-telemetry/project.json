@@ -70,7 +70,7 @@
       "executor": "nx:run-commands",
       "outputs": [],
       "options": {
-        "command": "npx semantic-release -d --extends ./libs/hooks/open-telemetry/release.config.js",
+        "command": "npx semantic-release --extends ./libs/hooks/open-telemetry/release.config.js",
         "parallel": false
       },
       "dependsOn": [
