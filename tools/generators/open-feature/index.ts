@@ -174,6 +174,10 @@ function updatePackageJson(tree: Tree, projectRoot: string) {
       directory: projectRoot,
     };
 
+    json.publishConfig = {
+      access: 'public',
+    };
+
     return json;
   });
 }

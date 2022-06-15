@@ -6,5 +6,8 @@
     "type": "git",
     "url": "https://github.com/open-feature/node-sdk-contrib.git",
     "directory": "libs/hooks/open-telemetry"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
