@@ -178,6 +178,8 @@ function updatePackageJson(tree: Tree, projectRoot: string) {
       access: 'public',
     };
 
+    json.license = 'Apache-2.0';
+
     return json;
   });
 }
