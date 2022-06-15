@@ -65,6 +65,20 @@
         "jestConfig": "libs/hooks/open-telemetry/jest.config.ts",
         "passWithNoTests": true
       }
+    },
+    "release": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "npx semantic-release -d --extends ./libs/hooks/open-telemetry/release.config.js",
+        "parallel": false
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
     }
   },
   "tags": []

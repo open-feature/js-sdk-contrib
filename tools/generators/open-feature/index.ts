@@ -76,6 +76,7 @@ export default async function (tree: Tree, schema: SchemaOptions) {
   });
 
   updateProject(tree, projectRoot, name);
+  updatePackageJson(tree, projectRoot);
   updateTsConfig(tree, projectRoot);
   await formatFiles(tree);
 
@@ -143,8 +144,35 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
       },
     };
 
+    json.targets['release'] = {
+      executor: 'nx:run-commands',
+      outputs: [],
+      options: {
+        command: `npx semantic-release -d --extends ./${projectRoot}/release.config.js`,
+        parallel: false,
+      },
+      dependsOn: [
+        {
+          projects: 'self',
+          target: 'package',
+        },
+      ],
+    };
+
     json.targets.publish.dependsOn[0].target = 'package';
     delete json.targets.build;
+
+    return json;
+  });
+}
+
+function updatePackageJson(tree: Tree, projectRoot: string) {
+  updateJson(tree, joinPathFragments(projectRoot, 'package.json'), (json) => {
+    json.repository = {
+      type: 'git',
+      url: 'https://github.com/open-feature/node-sdk-contrib.git',
+      directory: projectRoot,
+    };
 
     return json;
   });
