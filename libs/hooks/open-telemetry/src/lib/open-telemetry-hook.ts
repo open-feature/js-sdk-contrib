@@ -19,8 +19,8 @@ export class OpenTelemetryHook implements Hook {
   private spanMap = new WeakMap<HookContext, Span>();
   private tracer: Tracer;
 
-  constructor(name: string, version?: string) {
-    this.tracer = trace.getTracer(name, version);
+  constructor() {
+    this.tracer = trace.getTracer('@openfeature/open-telemetry-hook');
   }
 
   before(hookContext: HookContext) {
