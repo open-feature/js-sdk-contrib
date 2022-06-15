@@ -1,7 +1,7 @@
 {
   "name": "node-sdk-contrib",
   "version": "0.0.0",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "generate-hook": "nx workspace-generator open-feature hook",
     "generate-provider": "nx workspace-generator open-feature provider",
