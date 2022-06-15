@@ -38,7 +38,7 @@ describe('OpenTelemetry Hooks', () => {
   let otelHook: OpenTelemetryHook;
 
   beforeEach(() => {
-    otelHook = new OpenTelemetryHook('test');
+    otelHook = new OpenTelemetryHook();
   });
 
   afterEach(() => {
