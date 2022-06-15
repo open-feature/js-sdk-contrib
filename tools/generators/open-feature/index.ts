@@ -148,7 +148,7 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
       executor: 'nx:run-commands',
       outputs: [],
       options: {
-        command: `npx semantic-release -d --extends ./${projectRoot}/release.config.js`,
+        command: `npx semantic-release --extends ./${projectRoot}/release.config.js`,
         parallel: false,
       },
       dependsOn: [
