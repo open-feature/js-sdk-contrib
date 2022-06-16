@@ -1,0 +1,14 @@
+{
+  "name": "@openfeature/class-validator-hook",
+  "version": "0.0.1",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-feature/node-sdk-contrib.git",
+    "directory": "libs/hooks/class-validator"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "Apache-2.0"
+}

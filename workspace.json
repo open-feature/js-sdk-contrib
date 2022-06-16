@@ -2,6 +2,7 @@
   "$schema": "./node_modules/nx/schemas/workspace-schema.json",
   "version": 2,
   "projects": {
+    "hooks-class-validator": "libs/hooks/class-validator",
     "hooks-open-telemetry": "libs/hooks/open-telemetry"
   }
 }

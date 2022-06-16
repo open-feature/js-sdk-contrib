@@ -15,6 +15,9 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@openfeature/class-validator-hook": [
+        "libs/hooks/class-validator/src/index.ts"
+      ],
       "@openfeature/hooks-open-telemetry": [
         "libs/hooks/open-telemetry/src/index.ts"
       ]
