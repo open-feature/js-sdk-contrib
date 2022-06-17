@@ -8,7 +8,7 @@
 $ npm install @openfeature/flagd-rest-provider
 ```
 
-## Peer dependencies
+### Peer dependencies
 
 ```
 $ npm install @openfeature/nodejs-sdk @openfeature/provider-rest-client
