@@ -1,3 +1,10 @@
+# [1.0.0-alpha.6](https://github.com/open-feature/node-sdk-contrib/compare/open-telemetry-v1.0.0-alpha.5...open-telemetry-v1.0.0-alpha.6) (2022-06-17)
+
+
+### Bug Fixes
+
+* Comment for clarity ([#18](https://github.com/open-feature/node-sdk-contrib/issues/18)) ([cb25a0e](https://github.com/open-feature/node-sdk-contrib/commit/cb25a0e57155a382891821d40b21b046b5e9a81f))
+
 # [1.0.0-alpha.5](https://github.com/open-feature/node-sdk-contrib/compare/open-telemetry-v1.0.0-alpha.4...open-telemetry-v1.0.0-alpha.5) (2022-06-17)
 
 
