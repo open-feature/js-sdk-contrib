@@ -8,7 +8,7 @@
 $ npm install @openfeature/open-telemetry-hook
 ```
 
-Required peer dependencies
+### Required peer dependencies
 
 ```
 $ npm install @openfeature/nodejs-sdk @opentelemetry/api
