@@ -1,3 +1,10 @@
+# [1.0.0-alpha.7](https://github.com/open-feature/node-sdk-contrib/compare/open-telemetry-v1.0.0-alpha.6...open-telemetry-v1.0.0-alpha.7) (2022-06-17)
+
+
+### Features
+
+* Touch otel ([#19](https://github.com/open-feature/node-sdk-contrib/issues/19)) ([d2fe992](https://github.com/open-feature/node-sdk-contrib/commit/d2fe99287152d4a1bb12fcb0d9d7e82fafc087f5))
+
 # [1.0.0-alpha.6](https://github.com/open-feature/node-sdk-contrib/compare/open-telemetry-v1.0.0-alpha.5...open-telemetry-v1.0.0-alpha.6) (2022-06-17)
 
 
