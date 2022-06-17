@@ -1,4 +1,4 @@
-const name = 'Flagd REST';
+const name = 'flagd-rest';
 const srcRoot = 'libs/providers/flagd-rest';
 
 module.exports = {
