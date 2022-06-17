@@ -55,6 +55,20 @@
           }
         ]
       }
+    },
+    "release": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "npx semantic-release --extends ./libs/providers/flagd-rest/release.config.js",
+        "parallel": false
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
     }
   },
   "tags": []
