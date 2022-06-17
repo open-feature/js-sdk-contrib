@@ -6,8 +6,6 @@ import {
 import * as nock from 'nock';
 import { FlagdRESTProvider } from './flagd-rest-provider';
 
-nock.disableNetConnect();
-
 type SuccessfulTest = {
   flagValueType: FlagValueType;
   defaultValue: any;
@@ -119,6 +117,16 @@ describe('FlagdRESTProvider', () => {
 
     return output;
   }
+
+  beforeAll(() => {
+    nock.disableNetConnect();
+  });
+
+  afterAll(() => {
+    nock.enableNetConnect();
+    nock.cleanAll();
+    nock.restore();
+  });
 
   successfulTests.forEach(
     ({ flagValueType, defaultValue, reply, expectedValue }) => {
