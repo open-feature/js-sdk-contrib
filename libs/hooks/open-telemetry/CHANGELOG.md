@@ -1,3 +1,10 @@
+# [1.0.0-alpha.4](https://github.com/open-feature/node-sdk-contrib/compare/open-telemetry-v1.0.0-alpha.3...open-telemetry-v1.0.0-alpha.4) (2022-06-17)
+
+
+### Features
+
+* Flagd http provider ([#15](https://github.com/open-feature/node-sdk-contrib/issues/15)) ([ea6e51c](https://github.com/open-feature/node-sdk-contrib/commit/ea6e51c9975224ab0238430d407af7b9d6d501ec))
+
 # [1.0.0-alpha.3](https://github.com/open-feature/node-sdk-contrib/compare/open-telemetry-v1.0.0-alpha.2...open-telemetry-v1.0.0-alpha.3) (2022-06-15)
 
 
