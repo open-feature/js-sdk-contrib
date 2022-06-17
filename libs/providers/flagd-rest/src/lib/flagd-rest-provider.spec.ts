@@ -81,7 +81,7 @@ describe('FlagdRESTProvider', () => {
   function setupNock(flagValueType: string, code: number, body: any) {
     nock('http://localhost:8080')
       .post(`/flags/${flagName}/resolve/${flagValueType}`)
-      // All QS will match
+      // All query string will match
       .query(() => true)
       .reply(code, body);
   }
