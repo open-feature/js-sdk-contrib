@@ -9,7 +9,7 @@
   },
   "private": true,
   "dependencies": {
-    "@openfeature/nodejs-sdk": "0.0.1-alpha.10",
+    "@openfeature/nodejs-sdk": "^0.0.1-alpha.16",
     "@openfeature/provider-rest-client": "^0.0.1",
     "@opentelemetry/api": "^1.1.0",
     "tslib": "^2.3.0"
