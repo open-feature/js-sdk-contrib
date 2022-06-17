@@ -16,8 +16,8 @@ $ npm install @openfeature/nodejs-sdk @opentelemetry/api
 
 ## Building
 
-Run `nx package hooks-open-telemetry` to build the library.
+Run `npx nx package hooks-open-telemetry` to build the library.
 
 ## Running unit tests
 
-Run `nx test hooks-open-telemetry` to execute the unit tests via [Jest](https://jestjs.io).
+Run `npx nx test hooks-open-telemetry` to execute the unit tests via [Jest](https://jestjs.io).

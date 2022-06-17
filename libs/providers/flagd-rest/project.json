@@ -1,0 +1,75 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/providers/flagd-rest/src",
+  "projectType": "library",
+  "targets": {
+    "publish": {
+      "executor": "@nrwl/workspace:run-commands",
+      "options": {
+        "command": "node tools/scripts/publish.mjs providers-flagd-rest {args.ver} {args.tag}"
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/providers/flagd-rest/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/providers/flagd-rest"],
+      "options": {
+        "jestConfig": "libs/providers/flagd-rest/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "package": {
+      "executor": "@nrwl/web:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "project": "libs/providers/flagd-rest/package.json",
+        "outputPath": "dist/libs/providers/flagd-rest",
+        "entryFile": "libs/providers/flagd-rest/src/index.ts",
+        "tsConfig": "libs/providers/flagd-rest/tsconfig.lib.json",
+        "compiler": "babel",
+        "umdName": "Flagd REST",
+        "external": ["typescript"],
+        "format": ["cjs", "esm"],
+        "assets": [
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/providers/flagd-rest",
+            "output": "./"
+          }
+        ]
+      }
+    },
+    "release": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "npx semantic-release --extends ./libs/providers/flagd-rest/release.config.js",
+        "parallel": false
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
+    }
+  },
+  "tags": []
+}

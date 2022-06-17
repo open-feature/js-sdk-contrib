@@ -1,0 +1,14 @@
+{
+  "name": "@openfeature/flagd-rest-provider",
+  "version": "0.0.1",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-feature/node-sdk-contrib.git",
+    "directory": "libs/providers/flagd-rest"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "Apache-2.0"
+}

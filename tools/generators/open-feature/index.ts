@@ -70,6 +70,7 @@ export default async function (tree: Tree, schema: SchemaOptions) {
         libClassName,
         importPath,
         nxProjectName,
+        projectRoot,
         tmpl: '',
       }
     );

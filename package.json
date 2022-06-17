@@ -9,7 +9,8 @@
   },
   "private": true,
   "dependencies": {
-    "@openfeature/nodejs-sdk": "0.0.1-alpha.10",
+    "@openfeature/nodejs-sdk": "^0.0.1-alpha.16",
+    "@openfeature/provider-rest-client": "^0.0.1",
     "@opentelemetry/api": "^1.1.0",
     "tslib": "^2.3.0"
   },
@@ -30,10 +31,12 @@
     "@types/node": "16.11.7",
     "@typescript-eslint/eslint-plugin": "~5.24.0",
     "@typescript-eslint/parser": "~5.24.0",
+    "axios": "^0.26.1",
     "babel-preset-minify": "^0.5.2",
     "eslint": "~8.15.0",
     "eslint-config-prettier": "8.1.0",
     "jest": "27.5.1",
+    "nock": "^13.2.6",
     "nx": "14.2.1",
     "prettier": "^2.6.2",
     "semantic-release": "^19.0.3",
