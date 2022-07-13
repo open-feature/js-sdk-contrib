@@ -1,9 +1,10 @@
 {
+  "bootstrap-sha": "8ec3eb4db55b7c2d6c2d7edc7c7f3c147b47fd35",
   "packages": {
-    ".": {
+    "libs/hooks/open-telemetry": {
       "releaseType": "node",
-      "draft": false,
-      "prerelease": false,
+      "draft": true,
+      "prerelease": true,
       "bumpMinorPreMajor": false,
       "bumpPatchForMinorPreMajor": false,
       "changelogPath": "CHANGELOG.md",

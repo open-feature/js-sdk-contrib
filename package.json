@@ -5,7 +5,8 @@
   "scripts": {
     "generate-hook": "nx workspace-generator open-feature hook",
     "generate-provider": "nx workspace-generator open-feature provider",
-    "test": "nx run-many --all --target=test"
+    "test": "nx run-many --all --target=test",
+    "build": "npx nx run-many --all --target=build"
   },
   "private": true,
   "dependencies": {
