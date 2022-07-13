@@ -1,9 +1,9 @@
 {
   "packages": {
-    ".": {
+    "libs/hooks/open-telemetry": {
       "releaseType": "node",
-      "draft": false,
-      "prerelease": false,
+      "draft": true,
+      "prerelease": true,
       "bumpMinorPreMajor": false,
       "bumpPatchForMinorPreMajor": false,
       "changelogPath": "CHANGELOG.md",
