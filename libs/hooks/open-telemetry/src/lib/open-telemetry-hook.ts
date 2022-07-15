@@ -20,6 +20,7 @@ export class OpenTelemetryHook implements Hook {
   private tracer: Tracer;
 
   constructor(name: string, version?: string) {
+    console.log('minor');
     this.tracer = trace.getTracer(name, version);
   }
 
