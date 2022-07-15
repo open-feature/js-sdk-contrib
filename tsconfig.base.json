@@ -17,7 +17,8 @@
     "paths": {
       "@openfeature/hooks-open-telemetry": [
         "libs/hooks/open-telemetry/src/index.ts"
-      ]
+      ],
+      "@openfeature/stub-provider": ["libs/providers/stub/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

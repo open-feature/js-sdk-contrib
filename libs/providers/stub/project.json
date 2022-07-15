@@ -1,0 +1,62 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/providers/stub/src",
+  "projectType": "library",
+  "targets": {
+    "publish": {
+      "executor": "@nrwl/workspace:run-commands",
+      "options": {
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/providers/stub"
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/providers/stub/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/providers/stub"],
+      "options": {
+        "jestConfig": "libs/providers/stub/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "package": {
+      "executor": "@nrwl/web:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "project": "libs/providers/stub/package.json",
+        "outputPath": "dist/libs/providers/stub",
+        "entryFile": "libs/providers/stub/src/index.ts",
+        "tsConfig": "libs/providers/stub/tsconfig.lib.json",
+        "compiler": "babel",
+        "umdName": "stub",
+        "external": ["typescript"],
+        "format": ["cjs", "esm"],
+        "assets": [
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/providers/stub",
+            "output": "./"
+          }
+        ]
+      }
+    }
+  },
+  "tags": []
+}

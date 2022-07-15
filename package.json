@@ -1,11 +1,13 @@
 {
   "name": "node-sdk-contrib",
   "version": "0.0.0",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "generate-hook": "nx workspace-generator open-feature hook",
     "generate-provider": "nx workspace-generator open-feature provider",
-    "test": "nx run-many --all --target=test"
+    "test": "nx run-many --all --target=test",
+    "build": "npx nx run-many --all --target=build",
+    "publish": "npx nx run-many --all --target=publish"
   },
   "private": true,
   "dependencies": {
