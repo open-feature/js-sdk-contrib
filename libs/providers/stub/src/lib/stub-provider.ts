@@ -18,6 +18,7 @@ export class StubProvider implements Provider {
     transformedContext: EvaluationContext,
     options: FlagEvaluationOptions
   ): Promise<ResolutionDetails<boolean>> {
+    console.log('fix');
     throw new Error('Method not implemented.');
   }
 
