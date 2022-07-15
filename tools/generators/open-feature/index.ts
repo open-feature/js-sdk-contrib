@@ -77,6 +77,9 @@ export default async function (tree: Tree, schema: SchemaOptions) {
 
   updateProject(tree, projectRoot, name);
   updateTsConfig(tree, projectRoot);
+  updatePackage(tree, projectRoot);
+  updateReleasePleaseConfig(tree, projectRoot);
+  updateReleasePleaseManifest(tree, projectRoot);
   await formatFiles(tree);
 
   return () => {
@@ -143,8 +146,33 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
       },
     };
 
-    json.targets.publish.dependsOn[0].target = 'package';
+    // add publishing
+    json.targets['publish'] = {
+      executor: '@nrwl/workspace:run-commands',
+      options: {
+        command: 'npm run publish-if-not-exists',
+        cwd: `dist/${projectRoot}`,
+      },
+      dependsOn: [
+        {
+          projects: 'self',
+          target: 'package',
+        },
+      ],
+    };
     delete json.targets.build;
+
+    return json;
+  });
+}
+
+function updatePackage(tree: Tree, projectRoot: string) {
+  updateJson(tree, joinPathFragments(projectRoot, 'package.json'), (json) => {
+    json.scripts = {
+      'publish-if-not-exists':
+        "cp $NPM_CONFIG_USERCONFIG .npmrc && if [[ $(npm show $npm_package_name@$npm_package_version version) = $(npm run current-version -s) ]]; then echo 'already published, skipping'; else npm publish --access public; fi",
+      'current-version': 'echo $npm_package_version',
+    };
 
     return json;
   });
@@ -153,6 +181,30 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
 function updateTsConfig(tree: Tree, projectRoot: string) {
   updateJson(tree, joinPathFragments(projectRoot, 'tsconfig.json'), (json) => {
     json.compilerOptions.module = 'ES6';
+
+    return json;
+  });
+}
+
+function updateReleasePleaseConfig(tree: Tree, projectRoot: string) {
+  updateJson(tree, 'release-please-config.json', (json) => {
+    json.packages[projectRoot] = {
+      releaseType: 'node',
+      prerelease: true,
+      bumpMinorPreMajor: true,
+      bumpPatchForMinorPreMajor: false,
+      changelogPath: 'CHANGELOG.md',
+      versioning: 'default',
+    };
+
+    return json;
+  });
+}
+
+// this starts everything at 0.1.0
+function updateReleasePleaseManifest(tree: Tree, projectRoot: string) {
+  updateJson(tree, '.release-please-manifest.json', (json) => {
+    json[projectRoot] = '0.1.0';
 
     return json;
   });
