@@ -1,3 +1,4 @@
 {
-  "libs/hooks/open-telemetry": "1.0.6-alpha"
+  "libs/hooks/open-telemetry": "1.1.0-alpha",
+  "libs/providers/stub": "1.0.0"
 }
