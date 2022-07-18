@@ -1,0 +1,13 @@
+{
+  "name": "@openfeature/go-feature-flag-provider",
+  "version": "0.0.1",
+  "type": "commonjs",
+  "dependencies": {
+
+    "axios": "^0.27.2",
+    "object-hash": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/object-hash": "^2.2.1"
+  }
+}
