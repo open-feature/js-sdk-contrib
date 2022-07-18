@@ -10,6 +10,10 @@ The project includes:
 - [Providers](./libs/providers)
 - [Hooks](./libs/hooks)
 
+## Releases
+
+This repo uses _Release Please_ to release packages. Release Please sets up a running PR that tracks all changes for the library components, and maintains the versions according to [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/), generated when [PRs are merged](https://github.com/amannn/action-semantic-pull-request). When Release Please's running PR is merged, any changed artifacts are published.
+
 ## License
 
 Apache 2.0 - See [LICENSE](./license) for more information.
