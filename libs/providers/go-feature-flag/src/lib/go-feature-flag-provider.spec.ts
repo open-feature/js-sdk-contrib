@@ -3,23 +3,21 @@
  */
 import { GoFeatureFlagProvider } from './go-feature-flag-provider'
 import {ErrorCode, EvaluationContext, FlagNotFoundError, ResolutionDetails, StandardResolutionReasons, TypeMismatchError } from '@openfeature/nodejs-sdk'
-import axios, { AxiosError } from 'axios'
-import { ECONNREFUSED } from 'constants'
+import axios from 'axios'
 import { ProxyNotReady } from './errors/proxyNotReady'
-import MockAdapter from 'axios-mock-adapter';
+import MockAdapter from 'axios-mock-adapter'
 import { UnknownError } from './errors/unknownError'
 import { ProxyTimeout } from './errors/proxyTimeout'
 import { GoFeatureFlagProxyResponse, GoFeatureFlagUser } from './model'
 
 describe('GoFeatureFlagProvider', () => {
   const endpoint = 'http://go-feature-flag-relay-proxy.local:1031/'
-  const defaultAxiosConfig = {headers: {Accept: 'application/json', 'Content-Type': "application/json"}, timeout: 0}
   const axiosMock = new MockAdapter(axios)
   let goff: GoFeatureFlagProvider
 
   afterEach(() => {
-    axiosMock.reset();
-  });
+    axiosMock.reset()
+  })
 
   beforeEach(() => {
     goff = new GoFeatureFlagProvider({endpoint})
@@ -35,7 +33,7 @@ describe('GoFeatureFlagProvider', () => {
       const flagName = 'random-flag'
       const key = 'user-key'
       const dns = `${endpoint}v1/feature/${flagName}/eval`
-      axiosMock.onPost(dns).reply(404);
+      axiosMock.onPost(dns).reply(404)
       await goff.resolveBooleanEvaluation(flagName, false, {key}).catch(err => {
         expect(err).toBeInstanceOf(ProxyNotReady)
         expect(err.message).toEqual(`impossible to call go-feature-flag relay proxy on ${dns}: Error: Request failed with status code 404`)
@@ -83,7 +81,7 @@ describe('GoFeatureFlagProvider', () => {
 
   describe('contextTransformer', () => {
     it('should use the targetingKey as user key', () => {
-      const got = goff.contextTransformer({targetingKey: "user-key"} as EvaluationContext)
+      const got = goff.contextTransformer({targetingKey: 'user-key'} as EvaluationContext)
       const want: GoFeatureFlagUser = {
         key: 'user-key',
         anonymous: false,
@@ -93,7 +91,7 @@ describe('GoFeatureFlagProvider', () => {
     })
 
     it('should specify the anonymous field base on attributes', () => {
-      const got = goff.contextTransformer({targetingKey: "user-key", anonymous: true} as EvaluationContext)
+      const got = goff.contextTransformer({targetingKey: 'user-key', anonymous: true} as EvaluationContext)
       const want: GoFeatureFlagUser = {
         key: 'user-key',
         anonymous: true,
@@ -105,18 +103,18 @@ describe('GoFeatureFlagProvider', () => {
     it('should hash the context as key if no targetingKey provided', () => {
       const got = goff.contextTransformer({
         anonymous: true,
-        firstname: "John",
-        lastname: "Doe",
-        email: "john.doe@gofeatureflag.org"
+        firstname: 'John',
+        lastname: 'Doe',
+        email: 'john.doe@gofeatureflag.org'
       } as EvaluationContext)
 
       const want: GoFeatureFlagUser = {
         key: 'dd3027562879ff6857cc6b8b88ced570546d7c0c',
         anonymous: true,
         custom: {
-          firstname: "John",
-          lastname: "Doe",
-          email: "john.doe@gofeatureflag.org"
+          firstname: 'John',
+          lastname: 'Doe',
+          email: 'john.doe@gofeatureflag.org'
         }
       }
       expect(got).toEqual(want)
@@ -125,18 +123,18 @@ describe('GoFeatureFlagProvider', () => {
       const got = goff.contextTransformer({
         targetingKey: 'user-key',
         anonymous: true,
-        firstname: "John",
-        lastname: "Doe",
-        email: "john.doe@gofeatureflag.org"
+        firstname: 'John',
+        lastname: 'Doe',
+        email: 'john.doe@gofeatureflag.org'
       } as EvaluationContext)
 
       const want: GoFeatureFlagUser = {
         key: 'user-key',
         anonymous: true,
         custom: {
-          firstname: "John",
-          lastname: "Doe",
-          email: "john.doe@gofeatureflag.org"
+          firstname: 'John',
+          lastname: 'Doe',
+          email: 'john.doe@gofeatureflag.org'
         }
       }
       expect(got).toEqual(want)
@@ -178,7 +176,7 @@ describe('GoFeatureFlagProvider', () => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.TARGETING_MATCH,
           value: true,
-          variant: "trueVariation"
+          variant: 'trueVariation'
         } as ResolutionDetails<boolean>)
       })
     })
@@ -200,7 +198,7 @@ describe('GoFeatureFlagProvider', () => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.SPLIT,
           value: true,
-          variant: "trueVariation"
+          variant: 'trueVariation'
         } as ResolutionDetails<boolean>)
       })
     })
@@ -261,7 +259,7 @@ describe('GoFeatureFlagProvider', () => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.TARGETING_MATCH,
           value: 'true value',
-          variant: "trueVariation"
+          variant: 'trueVariation'
         } as ResolutionDetails<string>)
       })
     })
@@ -283,7 +281,7 @@ describe('GoFeatureFlagProvider', () => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.SPLIT,
           value: 'true value',
-          variant: "trueVariation"
+          variant: 'trueVariation'
         } as ResolutionDetails<string>)
       })
     })
@@ -345,7 +343,7 @@ describe('GoFeatureFlagProvider', () => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.TARGETING_MATCH,
           value: 14,
-          variant: "trueVariation"
+          variant: 'trueVariation'
         } as ResolutionDetails<number>)
       })
     })
@@ -367,7 +365,7 @@ describe('GoFeatureFlagProvider', () => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.SPLIT,
           value: 14,
-          variant: "trueVariation"
+          variant: 'trueVariation'
         } as ResolutionDetails<number>)
       })
     })
@@ -428,7 +426,7 @@ describe('GoFeatureFlagProvider', () => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.TARGETING_MATCH,
           value: {key:true},
-          variant: "trueVariation"
+          variant: 'trueVariation'
         } as ResolutionDetails<object>)
       })
     })
@@ -450,7 +448,7 @@ describe('GoFeatureFlagProvider', () => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.SPLIT,
           value: {key:true},
-          variant: "trueVariation"
+          variant: 'trueVariation'
         } as ResolutionDetails<object>)
       })
     })
@@ -494,7 +492,7 @@ describe('GoFeatureFlagProvider', () => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.TARGETING_MATCH,
           value: ['1','2'],
-          variant: "trueVariation"
+          variant: 'trueVariation'
         } as ResolutionDetails<object>)
       })
     })
@@ -516,7 +514,7 @@ describe('GoFeatureFlagProvider', () => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.SPLIT,
           value: ['1','2'],
-          variant: "trueVariation"
+          variant: 'trueVariation'
         } as ResolutionDetails<object>)
       })
     })
@@ -537,9 +535,9 @@ describe('GoFeatureFlagProvider', () => {
       await goff.resolveObjectEvaluation(flagName,  ['key','124'], {key}).then(res => {
         expect(res).toEqual({
           reason: StandardResolutionReasons.DISABLED,
-          value:  ['key','124'],
+          value:  ['key','124']
         } as ResolutionDetails<object>)
       })
     })
   })
-});
+})

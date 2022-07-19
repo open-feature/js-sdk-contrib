@@ -45,7 +45,7 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
     const key = targetingKey || sha1(context) || 'anonymous'
 
     // Handle the special case of the anonymous field
-    let anonymous: boolean = false
+    let anonymous = false
     if(attributes !== undefined && attributes !== null && 'anonymous' in attributes){
       if (typeof attributes['anonymous'] === 'boolean'){
         anonymous = attributes['anonymous']

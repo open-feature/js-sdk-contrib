@@ -3,7 +3,7 @@ import {
   JSONValue,
   ProviderOptions,
   StandardResolutionReasons,
-} from '@openfeature/nodejs-sdk';
+} from '@openfeature/nodejs-sdk'
 
 /**
  * GoFeatureFlagUser is the representation of a user for GO Feature Flag
