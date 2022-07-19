@@ -3,7 +3,6 @@
   "ignorePatterns": ["!**/*"],
   "rules": {
     "@typescript-eslint/no-explicit-any": "off",
-    "semi": [2, "never"],
     "quotes": ["error", "single"]
   },
   "overrides": [
