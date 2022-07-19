@@ -39,6 +39,7 @@
         "entryFile": "libs/providers/go-feature-flag/src/index.ts",
         "tsConfig": "libs/providers/go-feature-flag/tsconfig.lib.json",
         "compiler": "babel",
+        "buildableProjectDepsInPackageJsonType": "dependencies",
         "umdName": "go-feature-flag",
         "external": ["typescript"],
         "format": ["cjs", "esm"],
