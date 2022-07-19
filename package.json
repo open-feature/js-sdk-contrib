@@ -13,6 +13,8 @@
   "dependencies": {
     "@openfeature/nodejs-sdk": "0.0.1-alpha.50",
     "@opentelemetry/api": "^1.1.0",
+    "axios": "^0.27.2",
+    "object-hash": "^3.0.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
@@ -27,8 +29,10 @@
     "@nrwl/workspace": "14.2.1",
     "@types/jest": "27.4.1",
     "@types/node": "16.11.7",
+    "@types/object-hash": "^2.2.1",
     "@typescript-eslint/eslint-plugin": "~5.24.0",
     "@typescript-eslint/parser": "~5.24.0",
+    "axios-mock-adapter": "^1.21.1",
     "babel-preset-minify": "^0.5.2",
     "eslint": "~8.15.0",
     "eslint-config-prettier": "8.1.0",
