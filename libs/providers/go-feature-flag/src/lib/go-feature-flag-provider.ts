@@ -1,12 +1,11 @@
-// TODO:
-// - hash the object if we don't have a targetting key
-// - return a reason from the flag evaluation
 import {
   EvaluationContext,
   Provider,
   ResolutionDetails,
   FlagNotFoundError,
   TypeMismatchError,
+  ErrorCode,
+  StandardResolutionReasons
 } from '@openfeature/nodejs-sdk'
 import axios from 'axios'
 import { ProxyNotReady } from './errors/proxyNotReady'
@@ -44,7 +43,16 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
     // If we don't have a targetingKey we are using a hash of the object to build
     // a consistent key. If for some reason it fails we are using a constant string
     const key = targetingKey || sha1(context) || 'anonymous'
-    const anonymous: boolean = (typeof attributes['anonymous'] === 'boolean')? attributes['anonymous'] : false
+
+    // Handle the special case of the anonymous field
+    let anonymous: boolean = false
+    if(attributes !== undefined && attributes !== null && 'anonymous' in attributes){
+      if (typeof attributes['anonymous'] === 'boolean'){
+        anonymous = attributes['anonymous']
+      }
+      delete attributes['anonymous']
+    }
+
     return {
       key,
       anonymous,
@@ -64,8 +72,10 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
    * @throws {FlagNotFoundError} When the flag does not exists
    */
-  async resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, user: GoFeatureFlagUser): Promise<ResolutionDetails<boolean>> {
-    return await this.resolveEvaluationGoFeatureFlagProxy<boolean>(flagKey,defaultValue,user, 'boolean')
+  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, user: GoFeatureFlagUser): Promise<ResolutionDetails<boolean>> {
+    return (async () => {
+      return await this.resolveEvaluationGoFeatureFlagProxy<boolean>(flagKey, defaultValue, user, 'boolean')
+    })()
   }
 
   /**
@@ -168,7 +178,6 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
         throw new ProxyTimeout(`impossible to retrieve the ${flagKey} on time`, error)
       }
 
-      // Unknown error
       throw new UnknownError(`unknown error while retrieving flag ${flagKey} for user ${user.key}`, error)
     }
 
@@ -179,18 +188,26 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
       )
     }
 
-    // If it has failed in the API we return the defaultValue
-    if(apiResponseData.failed){
+    // Case of the flag is not found
+    if(apiResponseData.errorCode === ErrorCode.FLAG_NOT_FOUND){
       throw new FlagNotFoundError(`Flag ${flagKey} was not found in your configuration`)
     }
-    return {
-      value: apiResponseData.value,
-      variant: apiResponseData.variationType,
 
-
-
-
-      // TODO map the reasons, make it available in the relay-proxy if needed
+    // Case of the flag is disabled
+    if(apiResponseData.reason === StandardResolutionReasons.DISABLED){
+      // we don't set a variant since we are using the default value and we are not able to know
+      // which variant it is.
+      return { value: defaultValue, reason: apiResponseData.reason}
     }
+
+    const sdkResponse: ResolutionDetails<T> = {
+      value:apiResponseData.value,
+      variant: apiResponseData.variationType,
+      reason: apiResponseData.reason.toString()
+    }
+    if (apiResponseData.errorCode) {
+      sdkResponse.errorCode = apiResponseData.errorCode.toString()
+    }
+    return sdkResponse
   }
 }

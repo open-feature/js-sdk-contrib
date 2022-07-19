@@ -1,6 +1,8 @@
 import {
+  ErrorCode,
   JSONValue,
   ProviderOptions,
+  StandardResolutionReasons,
 } from '@openfeature/nodejs-sdk';
 
 /**
@@ -36,6 +38,8 @@ export interface GoFeatureFlagProxyResponse<T> {
   value: T
   variationType: string
   version ?: string
+  reason: StandardResolutionReasons | GOFeatureFlagResolutionReasons
+  errorCode?: ErrorCode | GOFeatureFlagErrorCode
 }
 
 /**
@@ -46,3 +50,9 @@ export interface GoFeatureFlagProviderOptions extends ProviderOptions<GoFeatureF
   endpoint: string;
   timeout?: number; // in millisecond
 }
+
+// GOFeatureFlagResolutionReasons allows to extends resolution reasons
+export declare enum GOFeatureFlagResolutionReasons {}
+
+// GOFeatureFlagErrorCode allows to extends error codes
+export declare enum GOFeatureFlagErrorCode {}
