@@ -38,7 +38,7 @@ describe('OpenTelemetry Hooks', () => {
   let otelHook: OpenTelemetryHook;
 
   beforeEach(() => {
-    otelHook = new OpenTelemetryHook('test');
+    otelHook = new OpenTelemetryHook();
   });
 
   afterEach(() => {
@@ -59,7 +59,7 @@ describe('OpenTelemetry Hooks', () => {
     expect(setSpanMapSpy).toBeCalled();
 
     otelHook.after(hookContext, evaluationDetails);
-    expect(setAttribute).toBeCalledWith('feature_flag.evaluated.value', 'true');
+    expect(setAttribute).toBeCalledWith('feature_flag.evaluated_value', 'true');
 
     otelHook.error(hookContext, testError);
     expect(recordException).toBeCalledWith(testError);
@@ -72,12 +72,11 @@ describe('OpenTelemetry Hooks', () => {
     it('should start a new span', () => {
       expect(otelHook.before(hookContext)).toBeUndefined();
       expect(getTracer).toBeCalled();
-      expect(startSpan).toBeCalledWith('feature flag - boolean');
-      expect(setAttributes).toBeCalledWith({
-        'feature_flag.client.name': 'testClient',
-        'feature_flag.client.version': undefined,
-        'feature_flag.flag_key': 'testFlagKey',
-        'feature_flag.provider.name': 'testProvider',
+      expect(startSpan).toBeCalledWith('testProvider testFlagKey', {
+        attributes: {
+          'feature_flag.flag_key': 'testFlagKey',
+          'feature_flag.provider_name': 'testProvider',
+        },
       });
       expect(otelHook['spanMap'].has(hookContext)).toBeTruthy;
     });
@@ -95,7 +94,7 @@ describe('OpenTelemetry Hooks', () => {
       otelHook.after(hookContext, evaluationDetails);
 
       expect(setAttribute).toBeCalledWith(
-        'feature_flag.evaluated.variant',
+        'feature_flag.evaluated_variant',
         'enabled'
       );
     });
@@ -110,7 +109,7 @@ describe('OpenTelemetry Hooks', () => {
       otelHook.after(hookContext, evaluationDetails);
 
       expect(setAttribute).toBeCalledWith(
-        'feature_flag.evaluated.value',
+        'feature_flag.evaluated_value',
         'true'
       );
     });
