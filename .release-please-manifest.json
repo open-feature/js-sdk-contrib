@@ -1,3 +1,4 @@
 {
-  "libs/hooks/open-telemetry": "1.0.6-alpha"
+  "libs/hooks/open-telemetry": "1.0.6-alpha",
+  "libs/providers/go-feature-flag": "0.0.1"
 }
