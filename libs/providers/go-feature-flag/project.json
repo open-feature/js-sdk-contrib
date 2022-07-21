@@ -6,7 +6,8 @@
     "publish": {
       "executor": "@nrwl/workspace:run-commands",
       "options": {
-        "command": "node tools/scripts/publish.mjs providers-go-feature-flag {args.ver} {args.tag}"
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/providers/go-feature-flag"
       },
       "dependsOn": [
         {
@@ -17,14 +18,20 @@
     },
     "lint": {
       "executor": "@nrwl/linter:eslint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["libs/providers/go-feature-flag/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/providers/go-feature-flag/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["coverage/libs/providers/go-feature-flag"],
+      "outputs": [
+        "coverage/libs/providers/go-feature-flag"
+      ],
       "options": {
         "jestConfig": "libs/providers/go-feature-flag/jest.config.ts",
         "passWithNoTests": true
@@ -32,7 +39,9 @@
     },
     "package": {
       "executor": "@nrwl/web:rollup",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "project": "libs/providers/go-feature-flag/package.json",
         "outputPath": "dist/libs/providers/go-feature-flag",
@@ -41,8 +50,13 @@
         "compiler": "babel",
         "buildableProjectDepsInPackageJsonType": "dependencies",
         "umdName": "go-feature-flag",
-        "external": ["typescript"],
-        "format": ["cjs", "esm"],
+        "external": [
+          "typescript"
+        ],
+        "format": [
+          "cjs",
+          "esm"
+        ],
         "assets": [
           {
             "glob": "LICENSE",
