@@ -1,0 +1,76 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/providers/go-feature-flag/src",
+  "projectType": "library",
+  "targets": {
+    "publish": {
+      "executor": "@nrwl/workspace:run-commands",
+      "options": {
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/providers/go-feature-flag"
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "libs/providers/go-feature-flag/**/*.ts"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": [
+        "coverage/libs/providers/go-feature-flag"
+      ],
+      "options": {
+        "jestConfig": "libs/providers/go-feature-flag/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "package": {
+      "executor": "@nrwl/web:rollup",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "project": "libs/providers/go-feature-flag/package.json",
+        "outputPath": "dist/libs/providers/go-feature-flag",
+        "entryFile": "libs/providers/go-feature-flag/src/index.ts",
+        "tsConfig": "libs/providers/go-feature-flag/tsconfig.lib.json",
+        "compiler": "babel",
+        "buildableProjectDepsInPackageJsonType": "dependencies",
+        "umdName": "go-feature-flag",
+        "external": [
+          "typescript"
+        ],
+        "format": [
+          "cjs",
+          "esm"
+        ],
+        "assets": [
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/providers/go-feature-flag",
+            "output": "./"
+          }
+        ]
+      }
+    }
+  },
+  "tags": []
+}

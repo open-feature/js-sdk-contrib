@@ -8,7 +8,17 @@
       "bumpPatchForMinorPreMajor": false,
       "changelogPath": "CHANGELOG.md",
       "versioning": "default",
-      "extra-files": ["src/lib/open-telemetry-hook.ts"]
+      "extra-files": [
+        "src/lib/open-telemetry-hook.ts"
+      ]
+    },
+    "libs/providers/go-feature-flag": {
+      "releaseType": "node",
+      "prerelease": true,
+      "bumpMinorPreMajor": false,
+      "bumpPatchForMinorPreMajor": false,
+      "changelogPath": "CHANGELOG.md",
+      "versioning": "default"
     }
   }
 }
