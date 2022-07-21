@@ -6,7 +6,7 @@
     "generate-hook": "nx workspace-generator open-feature hook",
     "generate-provider": "nx workspace-generator open-feature provider",
     "test": "nx run-many --all --target=test",
-    "build": "npx nx run-many --all --target=build",
+    "package": "npx nx run-many --all --target=package",
     "publish": "npx nx run-many --all --target=publish"
   },
   "private": true,
