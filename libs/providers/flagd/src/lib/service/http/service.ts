@@ -1,6 +1,12 @@
 import { EvaluationContext, ResolutionDetails } from "@openfeature/nodejs-sdk";
 import axios, { AxiosResponse } from "axios";
 import { IService } from "../IService";
+import {
+  ResolveBooleanResponse,
+  ResolveNumberResponse,
+  ResolveStringResponse,
+  ResolveObjectResponse
+} from '../../../proto/ts/schema/v1/schema'
 
 
 export default class HTTPService implements IService {
@@ -21,7 +27,7 @@ export default class HTTPService implements IService {
       let response: ResolutionDetails<boolean> = {
             value: defaultValue
         }
-        await axios.post(`${this.url}/flags/${flagKey}/resolve/boolean`, {
+        await axios.post<ResolveBooleanResponse>(`${this.url}/flags/${flagKey}/resolve/boolean`, {
             context
         }).then(res => {
             if (res.status != 200) {
@@ -50,7 +56,7 @@ export default class HTTPService implements IService {
       let response: ResolutionDetails<number> = {
             value: defaultValue
         }
-        await axios.post(`${this.url}/flags/${flagKey}/resolve/number`, {
+        await axios.post<ResolveNumberResponse>(`${this.url}/flags/${flagKey}/resolve/number`, {
             context
         }).then(res => {
             if (res.status != 200) {
@@ -79,7 +85,7 @@ export default class HTTPService implements IService {
       let response: ResolutionDetails<string> = {
             value: defaultValue
         }
-        await axios.post(`${this.url}/flags/${flagKey}/resolve/string`, {
+        await axios.post<ResolveStringResponse>(`${this.url}/flags/${flagKey}/resolve/string`, {
             context
         }).then(res => {
             if (res.status != 200) {
@@ -108,7 +114,7 @@ export default class HTTPService implements IService {
       let response: ResolutionDetails<T> = {
             value: defaultValue
         }
-        await axios.post(`${this.url}/flags/${flagKey}/resolve/boolean`, {
+        await axios.post<ResolveObjectResponse>(`${this.url}/flags/${flagKey}/resolve/boolean`, {
             context
         }).then(res => {
             if (res.status != 200) {
@@ -118,7 +124,7 @@ export default class HTTPService implements IService {
             }
             if (CheckResponse(res, "any")) {
                 response.reason = res.data.reason
-                response.value = res.data.value
+                response.value = res.data.value as T
                 response.variant = res.data.variant
             } else {
                 response.reason = "ERROR"
