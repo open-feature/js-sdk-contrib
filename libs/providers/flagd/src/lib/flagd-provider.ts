@@ -1,6 +1,5 @@
 import {
   EvaluationContext,
-  FlagEvaluationOptions,
   Provider,
   ResolutionDetails,
   ProviderOptions
