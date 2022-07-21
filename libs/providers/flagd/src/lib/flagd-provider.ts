@@ -26,8 +26,6 @@ export class FlagdProvider implements Provider {
       this.service = options.service
   }
 
-  contextTransformer = () => ({});
-
   resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,
