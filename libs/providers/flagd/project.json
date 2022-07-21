@@ -16,12 +16,33 @@
         }
       ]
     },
+    "generate": {
+      "executor": "@nrwl/workspace:run-commands",
+      "options": {
+        "commands": [
+          "echo here",
+          "ls",
+          "git submodule update --init --recursive",
+          "cd schemas",
+          "make gen-ts",
+          "rm src/proto -r",
+          "mv proto ./src"
+        ],
+        "cwd": "dist/libs/providers/flagd"
+      }
+    },
     "lint": {
       "executor": "@nrwl/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["libs/providers/flagd/**/*.ts"]
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "generate"
+        }
+      ]
     },
     "test": {
       "executor": "@nrwl/jest:jest",
