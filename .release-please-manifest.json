@@ -1,3 +1,4 @@
 {
-  "libs/hooks/open-telemetry": "1.0.6-alpha"
+  "libs/hooks/open-telemetry": "1.0.6-alpha",
+  "libs/providers/flagd": "0.1.0"
 }

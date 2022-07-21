@@ -2,6 +2,7 @@
   "$schema": "./node_modules/nx/schemas/workspace-schema.json",
   "version": 2,
   "projects": {
-    "hooks-open-telemetry": "libs/hooks/open-telemetry"
+    "hooks-open-telemetry": "libs/hooks/open-telemetry",
+    "providers-flagd": "libs/providers/flagd"
   }
 }
