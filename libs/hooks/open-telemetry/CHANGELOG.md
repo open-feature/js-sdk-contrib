@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3-alpha](https://github.com/open-feature/node-sdk-contrib/compare/open-telemetry-hook-v1.2.2-alpha...open-telemetry-hook-v1.2.3-alpha) (2022-07-21)
+
+
+### Bug Fixes
+
+* change test name ([#75](https://github.com/open-feature/node-sdk-contrib/issues/75)) ([abac20d](https://github.com/open-feature/node-sdk-contrib/commit/abac20d29f54865a18662baacaeb60fb5d8c8175))
+
 ## [1.2.2-alpha](https://github.com/open-feature/node-sdk-contrib/compare/open-telemetry-hook-v1.2.1-alpha...open-telemetry-hook-v1.2.2-alpha) (2022-07-21)
 
 
