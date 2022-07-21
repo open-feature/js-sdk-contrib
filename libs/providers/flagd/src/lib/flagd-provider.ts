@@ -7,7 +7,7 @@ import {
 import {IService} from './service/IService'
 import HTTPService from './service/http/service'
 
-export interface FlagdProviderOpions extends ProviderOptions {
+export interface FlagdProviderOptions extends ProviderOptions {
   service?: IService
 }
 
@@ -18,7 +18,7 @@ export class FlagdProvider implements Provider {
 
   private readonly service: IService
 
-  constructor(options?: FlagdProviderOpions) {
+  constructor(options?: FlagdProviderOptions) {
       if (!options || options.service == undefined) {
         this.service = new HTTPService()
         return
