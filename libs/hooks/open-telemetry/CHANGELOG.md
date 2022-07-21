@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2-alpha](https://github.com/open-feature/node-sdk-contrib/compare/open-telemetry-hook-v1.2.1-alpha...open-telemetry-hook-v1.2.2-alpha) (2022-07-21)
+
+
+### Bug Fixes
+
+* shell scripts in templates ([#73](https://github.com/open-feature/node-sdk-contrib/issues/73)) ([89c8cfe](https://github.com/open-feature/node-sdk-contrib/commit/89c8cfe981348376995f50ca757299077249544e))
+
 ## [1.2.1-alpha](https://github.com/open-feature/node-sdk-contrib/compare/open-telemetry-hook-v1.2.0-alpha...open-telemetry-hook-v1.2.1-alpha) (2022-07-21)
 
 

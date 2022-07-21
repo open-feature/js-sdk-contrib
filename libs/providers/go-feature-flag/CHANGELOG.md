@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/open-feature/node-sdk-contrib/compare/go-feature-flag-provider-v0.1.1...go-feature-flag-provider-v0.1.2) (2022-07-21)
+
+
+### Bug Fixes
+
+* shell scripts in templates ([#73](https://github.com/open-feature/node-sdk-contrib/issues/73)) ([89c8cfe](https://github.com/open-feature/node-sdk-contrib/commit/89c8cfe981348376995f50ca757299077249544e))
+
 ## [0.1.1](https://github.com/open-feature/node-sdk-contrib/compare/go-feature-flag-provider-v0.1.0...go-feature-flag-provider-v0.1.1) (2022-07-21)
 
 
