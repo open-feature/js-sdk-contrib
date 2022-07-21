@@ -113,6 +113,21 @@ describe('OpenTelemetry Hooks', () => {
         'true'
       );
     });
+
+    it('should set the value without extra quotes if value is already string', () => {
+      const evaluationDetails: EvaluationDetails<string> = {
+        flagKey: hookContext.flagKey,
+        value: 'already-string',
+      };
+
+      otelHook.before(hookContext);
+      otelHook.after(hookContext, evaluationDetails);
+
+      expect(setAttribute).toBeCalledWith(
+        'feature_flag.evaluated_value',
+        'already-string'
+      );
+    });
   });
 
   describe('error hook', () => {
