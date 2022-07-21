@@ -20,15 +20,11 @@
       "executor": "@nrwl/workspace:run-commands",
       "options": {
         "commands": [
-          "echo here",
-          "ls",
           "git submodule update --init --recursive",
-          "cd schemas",
-          "make gen-ts",
-          "rm src/proto -r",
-          "mv proto ./src"
+          "cd schemas && make gen-ts",
+          "mv -f proto ./src"
         ],
-        "cwd": "dist/libs/providers/flagd"
+        "cwd": "libs/providers/flagd"
       }
     },
     "lint": {
@@ -50,7 +46,13 @@
       "options": {
         "jestConfig": "libs/providers/flagd/jest.config.ts",
         "passWithNoTests": true
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "generate"
+        }
+      ]
     },
     "package": {
       "executor": "@nrwl/web:rollup",
@@ -76,7 +78,13 @@
             "output": "./"
           }
         ]
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "generate"
+        }
+      ]
     }
   },
   "tags": []
