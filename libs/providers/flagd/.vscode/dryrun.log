@@ -1,6 +1,0 @@
-make: Entering directory `/Users/jamesmilligan/Documents/dynatrace/node-sdk-contrib/libs/providers/flagd'
-git submodule update --init --recursive
-(cd schemas && make gen-ts)
-mv proto ./src
-make: Leaving directory `/Users/jamesmilligan/Documents/dynatrace/node-sdk-contrib/libs/providers/flagd'
- 
