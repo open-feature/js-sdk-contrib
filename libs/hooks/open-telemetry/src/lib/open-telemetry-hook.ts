@@ -20,7 +20,7 @@ export class OpenTelemetryHook implements Hook {
   constructor() {
     this.tracer = trace.getTracer(
       '@openfeature/open-telemetry-hook',
-      '1.1.0-alpha' // x-release-please-version
+      '1.2.0-alpha' // x-release-please-version
     );
   }
 
