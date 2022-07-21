@@ -114,7 +114,7 @@ describe('OpenTelemetry Hooks', () => {
       );
     });
 
-    it('should set the value without extra quotes if value is already string', () => {
+    it('should set the value without extra quotes if value is already a string', () => {
       const evaluationDetails: EvaluationDetails<string> = {
         flagKey: hookContext.flagKey,
         value: 'already-string',
