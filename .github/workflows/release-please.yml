@@ -30,7 +30,7 @@ jobs:
         if: ${{ steps.release.outputs.releases_created }}
         run: |
           npm install
-          npm run build
+          npm run package
 
       # Release Please has already incremented versions and published tags, so we just
       # need to publish all unpublished versions to NPM here
