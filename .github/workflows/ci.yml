@@ -15,6 +15,9 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: '1.18.1'
+      - uses: bufbuild/buf-setup-action@v0.5.0
+        with:
+          version: '1.1.1'
       - uses: nrwl/nx-set-shas@v2
       - run: npm ci
 
