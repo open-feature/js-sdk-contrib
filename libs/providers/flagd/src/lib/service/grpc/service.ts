@@ -37,7 +37,7 @@ export class GRPCService implements IService {
           res.variant = callRes.variant
       }).catch((err: RpcError) => {
           res.reason = "ERROR"
-          res.errorCode = err.code // TO DO => GET CUSTOM FIELDS FROM THIS ERROR
+          res.errorCode = err.code
           res.variant = "default_value"
       })
       return res
@@ -59,7 +59,7 @@ export class GRPCService implements IService {
             res.variant = callRes.variant
         }).catch((err: RpcError) => {
             res.reason = "ERROR"
-            res.errorCode = err.code // TO DO => GET CUSTOM FIELDS FROM THIS ERROR
+            res.errorCode = err.code
             res.variant = "default_value"
         })
         return res
@@ -81,7 +81,7 @@ export class GRPCService implements IService {
             res.variant = callRes.variant
         }).catch((err: RpcError) => {
             res.reason = "ERROR"
-            res.errorCode = err.code // TO DO => GET CUSTOM FIELDS FROM THIS ERROR
+            res.errorCode = err.code
             res.variant = "default_value"
         })
         return res
@@ -103,7 +103,7 @@ export class GRPCService implements IService {
           res.variant = callRes.variant
       }).catch((err: RpcError) => {
           res.reason = "ERROR"
-          res.errorCode = err.code // TO DO => GET CUSTOM FIELDS FROM THIS ERROR
+          res.errorCode = err.code
           res.variant = "default_value"
       })
       return res

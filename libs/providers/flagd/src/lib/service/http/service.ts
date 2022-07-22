@@ -1,4 +1,4 @@
-import { EvaluationContext, ResolutionDetails } from "@openfeature/nodejs-sdk";
+import { ErrorCode, EvaluationContext, ResolutionDetails } from "@openfeature/nodejs-sdk";
 import axios, { AxiosResponse } from "axios";
 import { IService } from "../IService";
 import {
@@ -36,7 +36,7 @@ export default class HTTPService implements IService {
                 response.variant = res.data.variant
             } else {
                 response.reason = "ERROR"
-                response.errorCode = "PARSE_ERROR"
+                response.errorCode = ErrorCode.PARSE_ERROR
             }
         }).catch(err => {
             if (err.response) {
@@ -46,7 +46,7 @@ export default class HTTPService implements IService {
             }
             console.error(err)
             response.reason = "ERROR"
-            response.errorCode = "DEFAULT"
+            response.errorCode = ErrorCode.GENERAL
         })
         return response
     }
@@ -65,7 +65,7 @@ export default class HTTPService implements IService {
                 response.variant = res.data.variant
             } else {
                 response.reason = "ERROR"
-                response.errorCode = "PARSE_ERROR"
+                response.errorCode = ErrorCode.PARSE_ERROR
             }
         }).catch(err => {
             if (err.response) {
@@ -75,7 +75,7 @@ export default class HTTPService implements IService {
             }
             console.error(err)
             response.reason = "ERROR"
-            response.errorCode = "DEFAULT"
+            response.errorCode = ErrorCode.GENERAL
         })
         return response
     }
@@ -94,7 +94,7 @@ export default class HTTPService implements IService {
                 response.variant = res.data.variant
             } else {
                 response.reason = "ERROR"
-                response.errorCode = "PARSE_ERROR"
+                response.errorCode = ErrorCode.PARSE_ERROR
             }
         }).catch(err => {
             if (err.response) {
@@ -104,7 +104,7 @@ export default class HTTPService implements IService {
             }
             console.error(err)
             response.reason = "ERROR"
-            response.errorCode = "DEFAULT"
+            response.errorCode = ErrorCode.GENERAL
         })
         return response
     }
@@ -123,7 +123,7 @@ export default class HTTPService implements IService {
                 response.variant = res.data.variant
             } else {
                 response.reason = "ERROR"
-                response.errorCode = "PARSE_ERROR"
+                response.errorCode = ErrorCode.PARSE_ERROR
             }
         }).catch(err => {
             if (err.response) {
@@ -133,9 +133,9 @@ export default class HTTPService implements IService {
             }
             console.error(err)
             response.reason = "ERROR"
-            response.errorCode = "DEFAULT"
+            response.errorCode = ErrorCode.GENERAL
         })
-        return response //todo custom type check function for this return
+        return response
     }
 }
 
@@ -152,11 +152,11 @@ function CheckResponse(res: AxiosResponse<any>, valueType: string): boolean {
 }
 
 function GetReason(statusCode: number): string {
-    let res = "DEFAULT"
+    let res: string = ErrorCode.GENERAL
     if (statusCode == 404) {
-        res = "FLAG_NOT_FOUND"
+        res = ErrorCode.FLAG_NOT_FOUND
     } else if (statusCode == 400) {
-        res = "TYPE_MISMATCH"
+        res = ErrorCode.TYPE_MISMATCH
     }
     return res
 }

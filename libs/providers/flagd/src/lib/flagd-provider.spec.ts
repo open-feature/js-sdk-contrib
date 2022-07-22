@@ -1,7 +1,7 @@
 import { FlagdProvider } from './flagd-provider';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { OpenFeature, Client } from '@openfeature/nodejs-sdk';
+import { OpenFeature, Client, ErrorCode } from '@openfeature/nodejs-sdk';
 
 
 describe('FlagdProvider', () => {
@@ -104,7 +104,7 @@ describe('FlagdProvider', () => {
         })
         if (res) {
           expect(res.reason).toEqual("ERROR")
-          expect(res.errorCode).toEqual("FLAG_NOT_FOUND")
+          expect(res.errorCode).toEqual(ErrorCode.FLAG_NOT_FOUND)
         } else {
           expect(res).not.toBeNull()
         }
@@ -121,7 +121,7 @@ describe('FlagdProvider', () => {
         })
         if (res) {
           expect(res.reason).toEqual("ERROR")
-          expect(res.errorCode).toEqual("TYPE_MISMATCH")
+          expect(res.errorCode).toEqual(ErrorCode.TYPE_MISMATCH)
         } else {
           expect(res).not.toBeNull()
         }
@@ -136,7 +136,7 @@ describe('FlagdProvider', () => {
         })
         if (res) {
           expect(res.reason).toEqual("ERROR")
-          expect(res.errorCode).toEqual("DEFAULT")
+          expect(res.errorCode).toEqual(ErrorCode.GENERAL)
         } else {
           expect(res).not.toBeNull()
         }
