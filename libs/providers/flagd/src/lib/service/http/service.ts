@@ -114,7 +114,7 @@ export default class HTTPService implements IService {
       let response: ResolutionDetails<T> = {
             value: defaultValue
         }
-        await axios.post<ResolveObjectResponse>(`${this.url}/flags/${flagKey}/resolve/boolean`, {
+        await axios.post<ResolveObjectResponse>(`${this.url}/flags/${flagKey}/resolve/object`, {
             context
         }).then(res => {
             if (res.status != 200) {
@@ -122,7 +122,7 @@ export default class HTTPService implements IService {
                 response.reason = GetReason(res.status)
                 return
             }
-            if (CheckResponse(res, "any")) {
+            if (CheckResponse(res, "object")) {
                 response.reason = res.data.reason
                 response.value = res.data.value as T
                 response.variant = res.data.variant
