@@ -24,70 +24,125 @@ describe('FlagdProvider', () => {
       axiosMock.reset();
     });
 
+    describe('happy path tests', () => {
+      it('get boolean happy path', async () => {
+        const flagKey = "boolFlag"
+        const path = `${host}:${port}/flags/${flagKey}/resolve/boolean`
+        axiosMock.onPost(path).reply(200, {
+          variant: "success",
+          value: true,
+          reason: "STATIC"
+        })
+        const res = await client.getBooleanValue(flagKey, false).catch(err => {
+          expect(err).toBeUndefined()
+        })
+        expect(res).toEqual(true)
+      });
 
-    it('get boolean happy path', async () => {
-      const flagKey = "boolFlag"
-      const path = `${host}:${port}/flags/${flagKey}/resolve/boolean`
-      axiosMock.onPost(path).reply(200, {
-        variant: "success",
-        value: true,
-        reason: "STATIC"
-      })
-      const res = await client.getBooleanValue(flagKey, false).catch(err => {
-        expect(err).toBeUndefined()
-      })
-      expect(res).toEqual(true)
-    });
+      it('get string happy path', async () => {
+        const flagKey = "stringFlag"
+        const path = `${host}:${port}/flags/${flagKey}/resolve/string`
+        axiosMock.onPost(path).reply(200, {
+          variant: "success",
+          value: "value",
+          reason: "STATIC"
+        })
+        const res = await client.getStringValue(flagKey, "not value").catch(err => {
+          expect(err).toBeUndefined()
+        })
+        expect(res).toEqual("value")
+      });
 
-    it('get string happy path', async () => {
-      const flagKey = "stringFlag"
-      const path = `${host}:${port}/flags/${flagKey}/resolve/string`
-      axiosMock.onPost(path).reply(200, {
-        variant: "success",
-        value: "value",
-        reason: "STATIC"
-      })
-      const res = await client.getStringValue(flagKey, "not value").catch(err => {
-        expect(err).toBeUndefined()
-      })
-      expect(res).toEqual("value")
-    });
+      it('get number happy path', async () => {
+        const flagKey = "numberFlag"
+        const path = `${host}:${port}/flags/${flagKey}/resolve/number`
+        axiosMock.onPost(path).reply(200, {
+          variant: "success",
+          value: 2,
+          reason: "STATIC"
+        })
+        const res = await client.getNumberValue(flagKey, 20).catch(err => {
+          expect(err).toBeUndefined()
+        })
+        expect(res).toEqual(2)
+      });
 
-    it('get number happy path', async () => {
-      const flagKey = "numberFlag"
-      const path = `${host}:${port}/flags/${flagKey}/resolve/number`
-      axiosMock.onPost(path).reply(200, {
-        variant: "success",
-        value: 2,
-        reason: "STATIC"
-      })
-      const res = await client.getNumberValue(flagKey, 20).catch(err => {
-        expect(err).toBeUndefined()
-      })
-      expect(res).toEqual(2)
-    });
+      it('get object happy path', async () => {
+        const flagKey = "objectFlag"
+        const path = `${host}:${port}/flags/${flagKey}/resolve/object`
+        interface foodbars {
+          food: string
+        }
+        axiosMock.onPost(path).reply(200, {
+          variant: "success",
+          value: {
+            "food":"bars"
+          },
+          reason: "STATIC"
+        })
+        const res = await client.getObjectValue<foodbars>(flagKey, {
+          "food":"barts"
+        }).catch(err => {
+          expect(err).toBeUndefined()
+        })
+        expect(res).toEqual({
+          "food":"bars"
+        })
+      });
+    })
 
-    it('get object happy path', async () => {
-      const flagKey = "objectFlag"
-      const path = `${host}:${port}/flags/${flagKey}/resolve/object`
-      interface foodbars {
-        food: string
-      }
-      const returned: foodbars = {
-        "food":"bars"
-      }
-      const defaultFB: foodbars = {
-        "food":"barts"
-      }
-      axiosMock.onPost(path).reply(200, {
-        variant: "success",
-        value: returned,
-        reason: "STATIC"
+    describe('common errors', () => {
+
+      it('flag not found', async () => {
+        const flagKey = "notBoolFlag"
+        const path = `${host}:${port}/flags/${flagKey}/resolve/boolean`
+        axiosMock.onPost(path).reply(404, {
+          reason: "ERROR"
+        })
+        const res = await client.getBooleanDetails(flagKey, false).catch(err => {
+          expect(err).toBeUndefined()
+        })
+        if (res) {
+          expect(res.reason).toEqual("ERROR")
+          expect(res.errorCode).toEqual("FLAG_NOT_FOUND")
+        } else {
+          expect(res).not.toBeNull()
+        }
       })
-      const res = await client.getObjectValue<foodbars>(flagKey, defaultFB).catch(err => {
-        expect(err).toBeUndefined()
+
+      it('type mismatch', async () => {
+        const flagKey = "stringFlag"
+        const path = `${host}:${port}/flags/${flagKey}/resolve/boolean`
+        axiosMock.onPost(path).reply(400, {
+          reason: "ERROR"
+        })
+        const res = await client.getBooleanDetails(flagKey, false).catch(err => {
+          expect(err).toBeUndefined()
+        })
+        if (res) {
+          expect(res.reason).toEqual("ERROR")
+          expect(res.errorCode).toEqual("TYPE_MISMATCH")
+        } else {
+          expect(res).not.toBeNull()
+        }
       })
-      expect(res).toEqual(returned)
-    });
+
+      it('default error', async () => {
+        const flagKey = "stringFlag"
+        const path = `${host}:${port}/flags/${flagKey}/resolve/boolean`
+        axiosMock.onPost(path).reply(500)
+        const res = await client.getBooleanDetails(flagKey, false).catch(err => {
+          expect(err).toBeUndefined()
+        })
+        if (res) {
+          expect(res.reason).toEqual("ERROR")
+          expect(res.errorCode).toEqual("DEFAULT")
+        } else {
+          expect(res).not.toBeNull()
+        }
+      })
+
+    })
   })
+
 });

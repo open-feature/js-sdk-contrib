@@ -30,11 +30,6 @@ export default class HTTPService implements IService {
         await axios.post<ResolveBooleanResponse>(`${this.url}/flags/${flagKey}/resolve/boolean`, {
             context
         }).then(res => {
-            if (res.status != 200) {
-                response.reason = "ERROR"
-                response.reason = GetReason(res.status)
-                return
-            }
             if (CheckResponse(res, "boolean")) {
                 response.reason = res.data.reason
                 response.value = res.data.value
@@ -44,6 +39,11 @@ export default class HTTPService implements IService {
                 response.errorCode = "PARSE_ERROR"
             }
         }).catch(err => {
+            if (err.response) {
+              response.reason = "ERROR"
+              response.errorCode = GetReason(err.response.status)
+              return
+            }
             console.error(err)
             response.reason = "ERROR"
             response.errorCode = "DEFAULT"
@@ -59,11 +59,6 @@ export default class HTTPService implements IService {
         await axios.post<ResolveNumberResponse>(`${this.url}/flags/${flagKey}/resolve/number`, {
             context
         }).then(res => {
-            if (res.status != 200) {
-                response.reason = "ERROR"
-                response.reason = GetReason(res.status)
-                return
-            }
             if (CheckResponse(res, "number")) {
                 response.reason = res.data.reason
                 response.value = res.data.value
@@ -73,6 +68,11 @@ export default class HTTPService implements IService {
                 response.errorCode = "PARSE_ERROR"
             }
         }).catch(err => {
+            if (err.response) {
+              response.reason = "ERROR"
+              response.errorCode = GetReason(err.response.status)
+              return
+            }
             console.error(err)
             response.reason = "ERROR"
             response.errorCode = "DEFAULT"
@@ -88,11 +88,6 @@ export default class HTTPService implements IService {
         await axios.post<ResolveStringResponse>(`${this.url}/flags/${flagKey}/resolve/string`, {
             context
         }).then(res => {
-            if (res.status != 200) {
-                response.reason = "ERROR"
-                response.reason = GetReason(res.status)
-                return
-            }
             if (CheckResponse(res, "string")) {
                 response.reason = res.data.reason
                 response.value = res.data.value
@@ -102,6 +97,11 @@ export default class HTTPService implements IService {
                 response.errorCode = "PARSE_ERROR"
             }
         }).catch(err => {
+            if (err.response) {
+              response.reason = "ERROR"
+              response.errorCode = GetReason(err.response.status)
+              return
+            }
             console.error(err)
             response.reason = "ERROR"
             response.errorCode = "DEFAULT"
@@ -117,11 +117,6 @@ export default class HTTPService implements IService {
         await axios.post<ResolveObjectResponse>(`${this.url}/flags/${flagKey}/resolve/object`, {
             context
         }).then(res => {
-            if (res.status != 200) {
-                response.reason = "ERROR"
-                response.reason = GetReason(res.status)
-                return
-            }
             if (CheckResponse(res, "object")) {
                 response.reason = res.data.reason
                 response.value = res.data.value as T
@@ -131,6 +126,11 @@ export default class HTTPService implements IService {
                 response.errorCode = "PARSE_ERROR"
             }
         }).catch(err => {
+            if (err.response) {
+              response.reason = "ERROR"
+              response.errorCode = GetReason(err.response.status)
+              return
+            }
             console.error(err)
             response.reason = "ERROR"
             response.errorCode = "DEFAULT"
@@ -152,7 +152,7 @@ function CheckResponse(res: AxiosResponse<any>, valueType: string): boolean {
 }
 
 function GetReason(statusCode: number): string {
-    let res = "DEFAULT_ERROR"
+    let res = "DEFAULT"
     if (statusCode == 404) {
         res = "FLAG_NOT_FOUND"
     } else if (statusCode == 400) {
