@@ -16,6 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@openfeature/flagd-provider": ["libs/providers/flagd/src/index.ts"],
+      "@openfeature/go-feature-flag-provider": [
         "libs/providers/go-feature-flag/src/index.ts"
       ],
       "@openfeature/hooks-open-telemetry": [
