@@ -1,6 +1,3 @@
-[submodule "libs/providers/flagd/--force"]
-	path = libs/providers/flagd/--force
-	url = https://github.com/open-feature/schemas
 [submodule "libs/providers/flagd/schemas"]
 	path = libs/providers/flagd/schemas
 	url = https://github.com/open-feature/schemas
