@@ -21,10 +21,12 @@
       "options": {
         "commands": [
           "git submodule update --init --recursive",
+          "rm -f -r ./src/proto",
           "cd schemas && make gen-ts",
-          "mv -f proto ./src"
+          "mv -v ./proto ./src"
         ],
-        "cwd": "libs/providers/flagd"
+        "cwd": "libs/providers/flagd",
+        "parallel": false
       }
     },
     "lint": {
