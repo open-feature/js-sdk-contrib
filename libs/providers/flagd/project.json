@@ -22,7 +22,7 @@
         "commands": [
           "git submodule update --init --recursive",
           "rm -f -r ./src/proto",
-          "cd schemas && make gen-ts",
+          "cd schemas && buf generate buf.build/open-feature/flagd --template protobuf/buf.gen.ts.yaml",
           "mv -v ./proto ./src"
         ],
         "cwd": "libs/providers/flagd",
