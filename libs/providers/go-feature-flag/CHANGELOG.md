@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/open-feature/node-sdk-contrib/compare/go-feature-flag-provider-v0.1.2...go-feature-flag-provider-v0.1.3) (2022-07-23)
+
+
+### Bug Fixes
+
+* Peer dependencies error ([#77](https://github.com/open-feature/node-sdk-contrib/issues/77)) ([3e4ab86](https://github.com/open-feature/node-sdk-contrib/commit/3e4ab861c1a8d94be50bf2e2445044d820d9164b))
+
 ## [0.1.2](https://github.com/open-feature/node-sdk-contrib/compare/go-feature-flag-provider-v0.1.1...go-feature-flag-provider-v0.1.2) (2022-07-21)
 
 
