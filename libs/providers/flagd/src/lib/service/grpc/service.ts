@@ -23,30 +23,28 @@ export class GRPCService implements IService {
 
 
     async ResolveBoolean(flagKey: string, defaultValue: boolean, context: EvaluationContext): Promise<ResolutionDetails<boolean>> {
-      // eslint-disable-next-line prefer-const
-      let res: ResolutionDetails<boolean> = {
-          value: defaultValue
-      }
-      const req: ResolveBooleanRequest = {
-          flagKey,
-          context: Struct.fromJsonString(JSON.stringify(context)),
-      }
-      await this.client.resolveBoolean(req, undefined).response.then(callRes => {
-          res.reason = callRes.reason
-          res.value = callRes.value
-          res.variant = callRes.variant
-      }).catch((err: RpcError) => {
-          res.reason = "ERROR"
-          res.errorCode = err.code
-          res.variant = "default_value"
-      })
-      return res
+        const res: ResolutionDetails<boolean> = {
+            value: defaultValue
+        }
+        const req: ResolveBooleanRequest = {
+            flagKey,
+            context: Struct.fromJsonString(JSON.stringify(context)),
+        }
+        await this.client.resolveBoolean(req, undefined).response.then(callRes => {
+            res.reason = callRes.reason
+            res.value = callRes.value
+            res.variant = callRes.variant
+        }).catch((err: RpcError) => {
+            res.reason = "ERROR"
+            res.errorCode = err.code
+            res.variant = "default_value"
+        })
+        return res
     }
 
 
     async ResolveString(flagKey: string, defaultValue: string, context: EvaluationContext): Promise<ResolutionDetails<string>> {
-      // eslint-disable-next-line prefer-const
-      let res: ResolutionDetails<string> = {
+        const res: ResolutionDetails<string> = {
             value: defaultValue
         }
         const req: ResolveStringRequest = {
@@ -67,8 +65,7 @@ export class GRPCService implements IService {
 
 
     async ResolveNumber(flagKey: string, defaultValue: number, context: EvaluationContext): Promise<ResolutionDetails<number>> {
-        // eslint-disable-next-line prefer-const
-        let res: ResolutionDetails<number> = {
+        const res: ResolutionDetails<number> = {
               value: defaultValue
           }
         const req: ResolveNumberRequest = {
@@ -89,23 +86,22 @@ export class GRPCService implements IService {
 
 
     async ResolveObject<T extends object>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>> {
-      // eslint-disable-next-line prefer-const
-      let res: ResolutionDetails<T> = {
+        const res: ResolutionDetails<T> = {
           value: defaultValue
-      }
-      const req: ResolveObjectRequest = {
-          flagKey,
-          context: Struct.fromJsonString(JSON.stringify(context)),
-      }
-      await this.client.resolveObject(req, undefined).response.then(callRes => {
-          res.reason = callRes.reason
-          res.value = callRes.value as T
-          res.variant = callRes.variant
-      }).catch((err: RpcError) => {
-          res.reason = "ERROR"
-          res.errorCode = err.code
-          res.variant = "default_value"
-      })
-      return res
+        }
+        const req: ResolveObjectRequest = {
+            flagKey,
+            context: Struct.fromJsonString(JSON.stringify(context)),
+        }
+        await this.client.resolveObject(req, undefined).response.then(callRes => {
+            res.reason = callRes.reason
+            res.value = callRes.value as T
+            res.variant = callRes.variant
+        }).catch((err: RpcError) => {
+            res.reason = "ERROR"
+            res.errorCode = err.code
+            res.variant = "default_value"
+        })
+        return res
     }
 }
