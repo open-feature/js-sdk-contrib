@@ -2,12 +2,11 @@ import {
   EvaluationContext,
   Provider,
   ResolutionDetails,
-  ProviderOptions
 } from '@openfeature/nodejs-sdk';
 import {IService} from './service/IService'
 import HTTPService from './service/http/service'
 
-export interface FlagdProviderOptions extends ProviderOptions {
+export interface FlagdProviderOptions  {
   service?: IService
 }
 

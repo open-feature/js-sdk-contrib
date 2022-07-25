@@ -1,11 +1,11 @@
 import { FlagdProvider } from './flagd-provider';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { OpenFeature, Client, ErrorCode } from '@openfeature/nodejs-sdk';
+import { OpenFeature, Client, ErrorCode, StandardResolutionReasons } from '@openfeature/nodejs-sdk';
 
 
 describe('FlagdProvider', () => {
-  const host = "localhost"
+  const host = "http://localhost"
   const port = 8080
   it('should be and instance of FlagdProvider', () => {
     expect(new FlagdProvider()).toBeInstanceOf(FlagdProvider);
@@ -136,7 +136,7 @@ describe('FlagdProvider', () => {
         })
         if (res) {
           expect(res.reason).toEqual("ERROR")
-          expect(res.errorCode).toEqual(ErrorCode.GENERAL)
+          expect(res.errorCode).toEqual(StandardResolutionReasons.UNKNOWN)
         } else {
           expect(res).not.toBeNull()
         }

@@ -1,5 +1,5 @@
-import { ErrorCode, EvaluationContext, ResolutionDetails } from "@openfeature/nodejs-sdk";
-import axios, { AxiosResponse } from "axios";
+import { ErrorCode, EvaluationContext, ResolutionDetails, StandardResolutionReasons } from "@openfeature/nodejs-sdk";
+import axios, { AxiosResponse, AxiosError } from "axios";
 import { IService } from "../IService";
 import {
   ResolveBooleanResponse,
@@ -14,7 +14,7 @@ export default class HTTPService implements IService {
 
     constructor(host?: string, port?: number) {
         if (host == undefined) {
-            host = "localhost"
+            host = "http://localhost"
         }
         if (port == undefined) {
             port = 8080
@@ -23,124 +23,132 @@ export default class HTTPService implements IService {
     }
 
     async ResolveBoolean(flagKey: string, defaultValue: boolean, context: EvaluationContext): Promise<ResolutionDetails<boolean>> {
-      // eslint-disable-next-line prefer-const
-      let response: ResolutionDetails<boolean> = {
-            value: defaultValue
+      try {
+        const res = await axios.post<ResolveBooleanResponse>(
+          `${this.url}/flags/${flagKey}/resolve/boolean`,
+          context
+        );
+        if (CheckResponse(res, 'boolean')) {
+          return {
+            value: res.data.value,
+            reason: res.data.reason,
+            variant: res.data.variant,
+          };
         }
-        await axios.post<ResolveBooleanResponse>(`${this.url}/flags/${flagKey}/resolve/boolean`, {
-            context
-        }).then(res => {
-            if (CheckResponse(res, "boolean")) {
-                response.reason = res.data.reason
-                response.value = res.data.value
-                response.variant = res.data.variant
-            } else {
-                response.reason = "ERROR"
-                response.errorCode = ErrorCode.PARSE_ERROR
-            }
-        }).catch(err => {
-            if (err.response) {
-              response.reason = "ERROR"
-              response.errorCode = GetReason(err.response.status)
-              return
-            }
-            console.error(err)
-            response.reason = "ERROR"
-            response.errorCode = ErrorCode.GENERAL
-        })
-        return response
+        return {
+          value: defaultValue,
+          reason: ErrorCode.PARSE_ERROR,
+          variant: "default_value",
+        }
+      } catch (err: unknown) {
+        return {
+          reason: 'ERROR',
+          errorCode: GetErrorCode(err),
+          variant: 'default_value',
+          value: defaultValue,
+        }
+      }
     }
 
     async ResolveNumber(flagKey: string, defaultValue: number, context: EvaluationContext): Promise<ResolutionDetails<number>> {
-      // eslint-disable-next-line prefer-const
-      let response: ResolutionDetails<number> = {
-            value: defaultValue
+      try {
+        const res = await axios.post<ResolveNumberResponse>(
+          `${this.url}/flags/${flagKey}/resolve/number`,
+          context
+        );
+        if (CheckResponse(res, 'number')) {
+          return {
+            value: res.data.value,
+            reason: res.data.reason,
+            variant: res.data.variant,
+          };
         }
-        await axios.post<ResolveNumberResponse>(`${this.url}/flags/${flagKey}/resolve/number`, {
-            context
-        }).then(res => {
-            if (CheckResponse(res, "number")) {
-                response.reason = res.data.reason
-                response.value = res.data.value
-                response.variant = res.data.variant
-            } else {
-                response.reason = "ERROR"
-                response.errorCode = ErrorCode.PARSE_ERROR
-            }
-        }).catch(err => {
-            if (err.response) {
-              response.reason = "ERROR"
-              response.errorCode = GetReason(err.response.status)
-              return
-            }
-            console.error(err)
-            response.reason = "ERROR"
-            response.errorCode = ErrorCode.GENERAL
-        })
-        return response
+        return {
+          value: defaultValue,
+          reason: ErrorCode.PARSE_ERROR,
+          variant: "default_value",
+        }
+      } catch (err: unknown) {
+        return {
+          reason: 'ERROR',
+          errorCode: GetErrorCode(err),
+          variant: 'default_value',
+          value: defaultValue,
+        }
+      }
     }
 
     async ResolveString(flagKey: string, defaultValue: string, context: EvaluationContext): Promise<ResolutionDetails<string>> {
-      // eslint-disable-next-line prefer-const
-      let response: ResolutionDetails<string> = {
-            value: defaultValue
+      try {
+        const res = await axios.post<ResolveStringResponse>(
+          `${this.url}/flags/${flagKey}/resolve/string`,
+          context
+        );
+        if (CheckResponse(res, 'string')) {
+          return {
+            value: res.data.value,
+            reason: res.data.reason,
+            variant: res.data.variant,
+          };
         }
-        await axios.post<ResolveStringResponse>(`${this.url}/flags/${flagKey}/resolve/string`, {
-            context
-        }).then(res => {
-            if (CheckResponse(res, "string")) {
-                response.reason = res.data.reason
-                response.value = res.data.value
-                response.variant = res.data.variant
-            } else {
-                response.reason = "ERROR"
-                response.errorCode = ErrorCode.PARSE_ERROR
-            }
-        }).catch(err => {
-            if (err.response) {
-              response.reason = "ERROR"
-              response.errorCode = GetReason(err.response.status)
-              return
-            }
-            console.error(err)
-            response.reason = "ERROR"
-            response.errorCode = ErrorCode.GENERAL
-        })
-        return response
+        return {
+          value: defaultValue,
+          reason: ErrorCode.PARSE_ERROR,
+          variant: "default_value",
+        }
+      } catch (err: unknown) {
+        return {
+          reason: 'ERROR',
+          errorCode: GetErrorCode(err),
+          variant: 'default_value',
+          value: defaultValue,
+        }
+      }
     }
 
     async ResolveObject<T extends object>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>> {
-      // eslint-disable-next-line prefer-const
-      let response: ResolutionDetails<T> = {
-            value: defaultValue
+      try {
+        const res = await axios.post<ResolveObjectResponse>(
+          `${this.url}/flags/${flagKey}/resolve/object`,
+          context
+        );
+        if (CheckResponse(res, 'object')) {
+          return {
+            value: res.data.value as T,
+            reason: res.data.reason,
+            variant: res.data.variant,
+          };
         }
-        await axios.post<ResolveObjectResponse>(`${this.url}/flags/${flagKey}/resolve/object`, {
-            context
-        }).then(res => {
-            if (CheckResponse(res, "object")) {
-                response.reason = res.data.reason
-                response.value = res.data.value as T
-                response.variant = res.data.variant
-            } else {
-                response.reason = "ERROR"
-                response.errorCode = ErrorCode.PARSE_ERROR
-            }
-        }).catch(err => {
-            if (err.response) {
-              response.reason = "ERROR"
-              response.errorCode = GetReason(err.response.status)
-              return
-            }
-            console.error(err)
-            response.reason = "ERROR"
-            response.errorCode = ErrorCode.GENERAL
-        })
-        return response
+        return {
+          value: defaultValue,
+          reason: ErrorCode.PARSE_ERROR,
+          variant: "default_value",
+        }
+      } catch (err: unknown) {
+        return {
+          reason: 'ERROR',
+          errorCode: GetErrorCode(err),
+          variant: 'default_value',
+          value: defaultValue,
+        }
+      }
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function CheckResponse(res: AxiosResponse<ResolutionDetails<unknown>>, valueType: string): boolean {
+function GetErrorCode(err: unknown): string {
+  const code = (err as Partial<AxiosError>)?.response?.status
+  let res: string = StandardResolutionReasons.UNKNOWN
+  if (code != undefined) {
+    if (code == 404) {
+      res = ErrorCode.FLAG_NOT_FOUND
+    } else if (code == 400) {
+      res = ErrorCode.TYPE_MISMATCH
+    }
+  }
+  return res
+}
+
+function CheckResponse(res: AxiosResponse<ResolutionDetails<unknown>> | AxiosResponse<ResolveObjectResponse>, valueType: string): boolean {
     if ((res.data)
     && (res.data.value && typeof res.data.value === valueType)
     && (res.data.variant && typeof res.data.variant === "string")
@@ -151,12 +159,3 @@ function CheckResponse(res: AxiosResponse<ResolutionDetails<unknown>>, valueType
     return false
 }
 
-function GetReason(statusCode: number): string {
-    let res: string = ErrorCode.GENERAL
-    if (statusCode == 404) {
-        res = ErrorCode.FLAG_NOT_FOUND
-    } else if (statusCode == 400) {
-        res = ErrorCode.TYPE_MISMATCH
-    }
-    return res
-}
