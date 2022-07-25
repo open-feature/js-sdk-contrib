@@ -140,11 +140,11 @@ export default class HTTPService implements IService {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function CheckResponse(res: AxiosResponse<any>, valueType: string): boolean {
+function CheckResponse(res: AxiosResponse<ResolutionDetails<unknown>>, valueType: string): boolean {
     if ((res.data)
-    && (res.data.value && typeof res.data.value == valueType)
-    && (res.data.variant && typeof res.data.variant == "string")
-    && (res.data.reason && typeof res.data.reason == "string")
+    && (res.data.value && typeof res.data.value === valueType)
+    && (res.data.variant && typeof res.data.variant === "string")
+    && (res.data.reason && typeof res.data.reason === "string")
     ) {
         return true
     }
