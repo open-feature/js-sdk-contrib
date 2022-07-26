@@ -3,11 +3,14 @@ import {
   Provider,
   ResolutionDetails,
 } from '@openfeature/nodejs-sdk';
-import {IService} from './service/IService'
-import HTTPService from './service/http/service'
+import {Service} from './service/Service'
+import {HTTPService} from './service/http/service'
+import {GRPCService} from './service/grpc/service'
 
 export interface FlagdProviderOptions  {
-  service?: IService
+  service?: "grpc" | "http";
+  host?: string;
+  port?: number;
 }
 
 export class FlagdProvider implements Provider {
@@ -15,14 +18,31 @@ export class FlagdProvider implements Provider {
     name: FlagdProvider.name,
   };
 
-  private readonly service: IService
+  private readonly service: Service
 
   constructor(options?: FlagdProviderOptions) {
-      if (!options || options.service == undefined) {
-        this.service = new HTTPService()
-        return
-      }
-      this.service = options.service
+    const {
+      service,
+      host,
+      port
+    }: FlagdProviderOptions = {
+      service: "http",
+      host: "localhost",
+      port: 8080,
+      ...options
+    }
+
+    if (service == "http") {
+      this.service = new HTTPService({
+        host,
+        port,
+      })
+    } else {
+      this.service = new GRPCService({
+        host,
+        port
+      })
+    }
   }
 
   resolveBooleanEvaluation(
@@ -30,7 +50,7 @@ export class FlagdProvider implements Provider {
     defaultValue: boolean,
     transformedContext: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
-    return this.service.ResolveBoolean(flagKey, defaultValue, transformedContext)
+    return this.service.resolveBoolean(flagKey, defaultValue, transformedContext)
   }
 
   resolveStringEvaluation(
@@ -38,7 +58,7 @@ export class FlagdProvider implements Provider {
     defaultValue: string,
     transformedContext: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
-    return this.service.ResolveString(flagKey, defaultValue, transformedContext)
+    return this.service.resolveString(flagKey, defaultValue, transformedContext)
 
   }
 
@@ -47,7 +67,7 @@ export class FlagdProvider implements Provider {
     defaultValue: number,
     transformedContext: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
-    return this.service.ResolveNumber(flagKey, defaultValue, transformedContext)
+    return this.service.resolveNumber(flagKey, defaultValue, transformedContext)
 
   }
 
@@ -56,7 +76,6 @@ export class FlagdProvider implements Provider {
     defaultValue: U,
     transformedContext: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
-    return this.service.ResolveObject(flagKey, defaultValue, transformedContext)
-
+    return this.service.resolveObject(flagKey, defaultValue, transformedContext)
   }
 }
