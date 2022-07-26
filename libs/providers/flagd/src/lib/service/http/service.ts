@@ -22,7 +22,7 @@ export class HTTPService implements Service {
   async resolveBoolean(flagKey: string, defaultValue: boolean, context: EvaluationContext): Promise<ResolutionDetails<boolean>> {
     try {
       const res = await axios.post<ResolveBooleanResponse>(
-        `${this.url}/flags/${flagKey}/resolve/boolean`,
+        `${this.url}/flags/${encodeURIComponent(flagKey)}/resolve/boolean`,
         context
       );
       if (checkResponse(res, 'boolean')) {
@@ -49,7 +49,7 @@ export class HTTPService implements Service {
   async resolveNumber(flagKey: string, defaultValue: number, context: EvaluationContext): Promise<ResolutionDetails<number>> {
     try {
       const res = await axios.post<ResolveNumberResponse>(
-        `${this.url}/flags/${flagKey}/resolve/number`,
+        `${this.url}/flags/${encodeURIComponent(flagKey)}/resolve/number`,
         context
       );
       if (checkResponse(res, 'number')) {
@@ -76,7 +76,7 @@ export class HTTPService implements Service {
   async resolveString(flagKey: string, defaultValue: string, context: EvaluationContext): Promise<ResolutionDetails<string>> {
     try {
       const res = await axios.post<ResolveStringResponse>(
-        `${this.url}/flags/${flagKey}/resolve/string`,
+        `${this.url}/flags/${encodeURIComponent(flagKey)}/resolve/string`,
         context
       );
       if (checkResponse(res, 'string')) {
@@ -103,7 +103,7 @@ export class HTTPService implements Service {
   async resolveObject<T extends object>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>> {
     try {
       const res = await axios.post<ResolveObjectResponse>(
-        encodeURI(`${this.url}/flags/${flagKey}/resolve/object`),
+        `${this.url}/flags/${encodeURIComponent(flagKey)}/resolve/object`,
         context
       );
       if (checkResponse(res, 'object')) {
