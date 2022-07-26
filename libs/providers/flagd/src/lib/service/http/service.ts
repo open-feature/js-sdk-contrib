@@ -36,13 +36,11 @@ export class HTTPService implements Service {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.PARSE_ERROR,
-        variant: "default_value",
       }
     } catch (err: unknown) {
       return {
         reason: StandardResolutionReasons.ERROR,
         errorCode: getErrorCode(err),
-        variant: 'default_value',
         value: defaultValue,
       }
     }
@@ -65,13 +63,11 @@ export class HTTPService implements Service {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.PARSE_ERROR,
-        variant: "default_value",
       }
     } catch (err: unknown) {
       return {
         reason: StandardResolutionReasons.ERROR,
         errorCode: getErrorCode(err),
-        variant: 'default_value',
         value: defaultValue,
       }
     }
@@ -94,13 +90,11 @@ export class HTTPService implements Service {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.PARSE_ERROR,
-        variant: "default_value",
       }
     } catch (err: unknown) {
       return {
         reason: StandardResolutionReasons.ERROR,
         errorCode: getErrorCode(err),
-        variant: 'default_value',
         value: defaultValue,
       }
     }
@@ -123,13 +117,11 @@ export class HTTPService implements Service {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.PARSE_ERROR,
-        variant: "default_value",
       }
     } catch (err: unknown) {
       return {
         reason: StandardResolutionReasons.ERROR,
         errorCode: getErrorCode(err),
-        variant: 'default_value',
         value: defaultValue,
       }
     }
@@ -151,9 +143,9 @@ function getErrorCode(err: unknown): string {
 
 function checkResponse(res: AxiosResponse<ResolutionDetails<unknown>> | AxiosResponse<ResolveObjectResponse>, valueType: string): boolean {
     if ((res.data)
-    && (res.data.value && typeof res.data.value === valueType)
-    && (res.data.variant && typeof res.data.variant === "string")
-    && (res.data.reason && typeof res.data.reason === "string")
+    && (typeof res.data.value === valueType)
+    && (typeof res.data.variant === "string")
+    && (typeof res.data.reason === "string")
     ) {
         return true
     }

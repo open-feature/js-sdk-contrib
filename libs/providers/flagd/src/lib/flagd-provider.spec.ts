@@ -142,6 +142,25 @@ describe('FlagdProvider', () => {
         }
       })
 
+      it('checkResponse fails', async () => {
+        const flagKey = "stringFlag"
+        const path = `${host}:${port}/flags/${flagKey}/resolve/boolean`
+        axiosMock.onPost(path).reply(200, {
+          variant: "success",
+          value: "im a string!",
+          reason: StandardResolutionReasons.STATIC
+        })
+        const res = await client.getBooleanDetails(flagKey, false).catch(err => {
+          expect(err).toBeUndefined()
+        })
+        if (res) {
+          expect(res.reason).toEqual(StandardResolutionReasons.ERROR)
+          expect(res.errorCode).toEqual(ErrorCode.PARSE_ERROR)
+        } else {
+          expect(res).not.toBeNull()
+        }
+      })
+
     })
   })
 

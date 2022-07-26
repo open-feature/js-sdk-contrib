@@ -43,7 +43,6 @@ export class GRPCService implements Service {
         return {
           reason: StandardResolutionReasons.ERROR,
           errorCode: (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
-          variant: 'default_value',
           value: defaultValue,
         }
       }
@@ -65,7 +64,6 @@ export class GRPCService implements Service {
         return {
           reason: StandardResolutionReasons.ERROR,
           errorCode: (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
-          variant: 'default_value',
           value: defaultValue,
         }
       }
@@ -87,7 +85,6 @@ export class GRPCService implements Service {
         return {
           reason: StandardResolutionReasons.ERROR,
           errorCode: (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
-          variant: 'default_value',
           value: defaultValue,
         }
       }
@@ -108,7 +105,6 @@ export class GRPCService implements Service {
         return {
           reason: StandardResolutionReasons.ERROR,
           errorCode: (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
-          variant: 'default_value',
           value: defaultValue,
         }
       }
