@@ -103,7 +103,7 @@ export class HTTPService implements Service {
   async resolveObject<T extends object>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>> {
     try {
       const res = await axios.post<ResolveObjectResponse>(
-        `${this.url}/flags/${flagKey}/resolve/object`,
+        encodeURI(`${this.url}/flags/${flagKey}/resolve/object`),
         context
       );
       if (checkResponse(res, 'object')) {
@@ -127,6 +127,7 @@ export class HTTPService implements Service {
     }
   }
 }
+
 
 function getErrorCode(err: unknown): string {
   const code = (err as Partial<AxiosError>)?.response?.status
