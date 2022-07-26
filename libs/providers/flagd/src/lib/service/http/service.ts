@@ -37,12 +37,13 @@ export default class HTTPService implements IService {
         }
         return {
           value: defaultValue,
-          reason: ErrorCode.PARSE_ERROR,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.PARSE_ERROR,
           variant: "default_value",
         }
       } catch (err: unknown) {
         return {
-          reason: 'ERROR',
+          reason: StandardResolutionReasons.ERROR,
           errorCode: GetErrorCode(err),
           variant: 'default_value',
           value: defaultValue,
@@ -65,12 +66,13 @@ export default class HTTPService implements IService {
         }
         return {
           value: defaultValue,
-          reason: ErrorCode.PARSE_ERROR,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.PARSE_ERROR,
           variant: "default_value",
         }
       } catch (err: unknown) {
         return {
-          reason: 'ERROR',
+          reason: StandardResolutionReasons.ERROR,
           errorCode: GetErrorCode(err),
           variant: 'default_value',
           value: defaultValue,
@@ -93,12 +95,13 @@ export default class HTTPService implements IService {
         }
         return {
           value: defaultValue,
-          reason: ErrorCode.PARSE_ERROR,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.PARSE_ERROR,
           variant: "default_value",
         }
       } catch (err: unknown) {
         return {
-          reason: 'ERROR',
+          reason: StandardResolutionReasons.ERROR,
           errorCode: GetErrorCode(err),
           variant: 'default_value',
           value: defaultValue,
@@ -121,12 +124,13 @@ export default class HTTPService implements IService {
         }
         return {
           value: defaultValue,
-          reason: ErrorCode.PARSE_ERROR,
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.PARSE_ERROR,
           variant: "default_value",
         }
       } catch (err: unknown) {
         return {
-          reason: 'ERROR',
+          reason: StandardResolutionReasons.ERROR,
           errorCode: GetErrorCode(err),
           variant: 'default_value',
           value: defaultValue,

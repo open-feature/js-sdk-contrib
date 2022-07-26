@@ -29,7 +29,7 @@ export class GRPCService implements IService {
         };
       } catch (err: unknown) {
         return {
-          reason: 'ERROR',
+          reason: StandardResolutionReasons.ERROR,
           errorCode: (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
           variant: 'default_value',
           value: defaultValue,
@@ -51,7 +51,7 @@ export class GRPCService implements IService {
         };
       } catch (err: unknown) {
         return {
-          reason: 'ERROR',
+          reason: StandardResolutionReasons.ERROR,
           errorCode: (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
           variant: 'default_value',
           value: defaultValue,
@@ -73,7 +73,7 @@ export class GRPCService implements IService {
         };
       } catch (err: unknown) {
         return {
-          reason: 'ERROR',
+          reason: StandardResolutionReasons.ERROR,
           errorCode: (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
           variant: 'default_value',
           value: defaultValue,
@@ -94,7 +94,7 @@ export class GRPCService implements IService {
         };
       } catch (err: unknown) {
         return {
-          reason: 'ERROR',
+          reason: StandardResolutionReasons.ERROR,
           errorCode: (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
           variant: 'default_value',
           value: defaultValue,

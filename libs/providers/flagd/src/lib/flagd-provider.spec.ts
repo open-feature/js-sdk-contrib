@@ -31,7 +31,7 @@ describe('FlagdProvider', () => {
         axiosMock.onPost(path).reply(200, {
           variant: "success",
           value: true,
-          reason: "STATIC"
+          reason: StandardResolutionReasons.STATIC
         })
         const res = await client.getBooleanValue(flagKey, false).catch(err => {
           expect(err).toBeUndefined()
@@ -45,7 +45,7 @@ describe('FlagdProvider', () => {
         axiosMock.onPost(path).reply(200, {
           variant: "success",
           value: "value",
-          reason: "STATIC"
+          reason: StandardResolutionReasons.STATIC
         })
         const res = await client.getStringValue(flagKey, "not value").catch(err => {
           expect(err).toBeUndefined()
@@ -59,7 +59,7 @@ describe('FlagdProvider', () => {
         axiosMock.onPost(path).reply(200, {
           variant: "success",
           value: 2,
-          reason: "STATIC"
+          reason: StandardResolutionReasons.STATIC
         })
         const res = await client.getNumberValue(flagKey, 20).catch(err => {
           expect(err).toBeUndefined()
@@ -78,7 +78,7 @@ describe('FlagdProvider', () => {
           value: {
             "food":"bars"
           },
-          reason: "STATIC"
+          reason: StandardResolutionReasons.STATIC
         })
         const res = await client.getObjectValue<foodbars>(flagKey, {
           "food":"barts"
@@ -97,13 +97,13 @@ describe('FlagdProvider', () => {
         const flagKey = "notBoolFlag"
         const path = `${host}:${port}/flags/${flagKey}/resolve/boolean`
         axiosMock.onPost(path).reply(404, {
-          reason: "ERROR"
+          reason: StandardResolutionReasons.ERROR
         })
         const res = await client.getBooleanDetails(flagKey, false).catch(err => {
           expect(err).toBeUndefined()
         })
         if (res) {
-          expect(res.reason).toEqual("ERROR")
+          expect(res.reason).toEqual(StandardResolutionReasons.ERROR)
           expect(res.errorCode).toEqual(ErrorCode.FLAG_NOT_FOUND)
         } else {
           expect(res).not.toBeNull()
@@ -114,13 +114,13 @@ describe('FlagdProvider', () => {
         const flagKey = "stringFlag"
         const path = `${host}:${port}/flags/${flagKey}/resolve/boolean`
         axiosMock.onPost(path).reply(400, {
-          reason: "ERROR"
+          reason: StandardResolutionReasons.ERROR
         })
         const res = await client.getBooleanDetails(flagKey, false).catch(err => {
           expect(err).toBeUndefined()
         })
         if (res) {
-          expect(res.reason).toEqual("ERROR")
+          expect(res.reason).toEqual(StandardResolutionReasons.ERROR)
           expect(res.errorCode).toEqual(ErrorCode.TYPE_MISMATCH)
         } else {
           expect(res).not.toBeNull()
@@ -135,7 +135,7 @@ describe('FlagdProvider', () => {
           expect(err).toBeUndefined()
         })
         if (res) {
-          expect(res.reason).toEqual("ERROR")
+          expect(res.reason).toEqual(StandardResolutionReasons.ERROR)
           expect(res.errorCode).toEqual(StandardResolutionReasons.UNKNOWN)
         } else {
           expect(res).not.toBeNull()
