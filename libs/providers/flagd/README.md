@@ -1,6 +1,8 @@
 # NodeJS flagd Provider for OpenFeature
 
-![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)
+![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)   
+
+Flagd is a simple command line tool for fetching and presenting feature flags to services. It is designed to conform to OpenFeature schema for flag definitions. This repository and package provides the client side code for interacting with it via the Open-Feature Node SDK.
 
 ## Installation
 
