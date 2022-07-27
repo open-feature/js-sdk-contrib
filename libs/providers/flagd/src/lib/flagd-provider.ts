@@ -11,6 +11,7 @@ export interface FlagdProviderOptions  {
   service?: "grpc" | "http";
   host?: string;
   port?: number;
+  protocol?: "http" | "https"
 }
 
 export class FlagdProvider implements Provider {
@@ -24,11 +25,13 @@ export class FlagdProvider implements Provider {
     const {
       service,
       host,
-      port
+      port,
+      protocol
     }: FlagdProviderOptions = {
       service: "http",
       host: "localhost",
       port: 8080,
+      protocol: 'http',
       ...options
     }
 
@@ -36,6 +39,7 @@ export class FlagdProvider implements Provider {
       this.service = new HTTPService({
         host,
         port,
+        protocol
       })
     } else {
       this.service = new GRPCService({

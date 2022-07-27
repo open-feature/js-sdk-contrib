@@ -11,12 +11,13 @@ import { Service } from "../Service";
 interface HTTPServiceOptions {
   host: string;
   port: number;
+  protocol: string;
 }
 export class HTTPService implements Service {
   private url: string
 
   constructor(options: HTTPServiceOptions) {
-      this.url = `http://${options.host}:${options.port}`
+      this.url = `${options.protocol}://${options.host}:${options.port}`
   }
 
   async resolveBoolean(flagKey: string, defaultValue: boolean, context: EvaluationContext): Promise<ResolutionDetails<boolean>> {
