@@ -32,3 +32,4 @@ The `FlagdProvider` client constructor takes a single optional argument with 3 f
 **service**: "http" | "grpc" *(defaults to http)*   
 **host**: string *(defaults to "localhost")*    
 **port**: number *(defaults to 8080)*    
+**protocol**: "http" | "https" *(defaults to http - only active for http service)*   
