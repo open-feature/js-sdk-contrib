@@ -3,6 +3,7 @@
   "version": 2,
   "projects": {
     "hooks-open-telemetry": "libs/hooks/open-telemetry",
+    "providers-flagd": "libs/providers/flagd",
     "providers-go-feature-flag": "libs/providers/go-feature-flag"
   }
 }

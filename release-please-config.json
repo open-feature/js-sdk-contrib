@@ -19,6 +19,14 @@
       "bumpPatchForMinorPreMajor": false,
       "changelogPath": "CHANGELOG.md",
       "versioning": "default"
+    },
+    "libs/providers/flagd": {
+      "releaseType": "node",
+      "prerelease": true,
+      "bumpMinorPreMajor": true,
+      "bumpPatchForMinorPreMajor": false,
+      "changelogPath": "CHANGELOG.md",
+      "versioning": "default"
     }
   }
 }
