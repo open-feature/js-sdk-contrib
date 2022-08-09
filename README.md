@@ -16,4 +16,4 @@ This repo uses _Release Please_ to release packages. Release Please sets up a ru
 
 ## License
 
-Apache 2.0 - See [LICENSE](./license) for more information.
+Apache 2.0 - See [LICENSE](./LICENSE) for more information.
