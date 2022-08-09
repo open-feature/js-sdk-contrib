@@ -63,6 +63,9 @@ export class HTTPService implements Service {
   ): Promise<ResolutionDetails<number>> {
     try {
       const res = await axios.post<ResolveFloatResponse>(
+        /**
+         * JavaScript numbers are always 64-bit floating point
+         */
         `${this.url}/flags/${encodeURIComponent(flagKey)}/resolve/float`,
         context
       );
