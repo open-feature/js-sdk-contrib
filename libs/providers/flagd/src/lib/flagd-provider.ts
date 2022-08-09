@@ -25,7 +25,7 @@ export class FlagdProvider implements Provider {
     const { service, host, port, protocol }: FlagdProviderOptions = {
       service: 'http',
       host: 'localhost',
-      port: 8080,
+      port: 8013,
       protocol: 'http',
       ...options,
     };

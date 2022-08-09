@@ -10,7 +10,7 @@ import {
 
 describe('FlagdProvider', () => {
   const host = 'http://localhost';
-  const port = 8080;
+  const port = 8013;
   it('should be and instance of FlagdProvider', () => {
     expect(new FlagdProvider()).toBeInstanceOf(FlagdProvider);
   });
