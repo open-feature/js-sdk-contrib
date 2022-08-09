@@ -3,83 +3,92 @@ import {
   Provider,
   ResolutionDetails,
 } from '@openfeature/nodejs-sdk';
-import {Service} from './service/Service'
-import {HTTPService} from './service/http/service'
-import {GRPCService} from './service/grpc/service'
+import { Service } from './service/Service';
+import { HTTPService } from './service/http/service';
+import { GRPCService } from './service/grpc/service';
 
-export interface FlagdProviderOptions  {
-  service?: "grpc" | "http";
+export interface FlagdProviderOptions {
+  service?: 'grpc' | 'http';
   host?: string;
   port?: number;
-  protocol?: "http" | "https"
+  protocol?: 'http' | 'https';
 }
 
 export class FlagdProvider implements Provider {
   metadata = {
-    name: FlagdProvider.name,
+    name: 'flagD Provider',
   };
 
-  private readonly service: Service
+  private readonly service: Service;
 
   constructor(options?: FlagdProviderOptions) {
-    const {
-      service,
-      host,
-      port,
-      protocol
-    }: FlagdProviderOptions = {
-      service: "http",
-      host: "localhost",
+    const { service, host, port, protocol }: FlagdProviderOptions = {
+      service: 'http',
+      host: 'localhost',
       port: 8080,
       protocol: 'http',
-      ...options
-    }
+      ...options,
+    };
 
-    if (service == "http") {
+    if (service === 'http') {
       this.service = new HTTPService({
         host,
         port,
-        protocol
-      })
+        protocol,
+      });
     } else {
       this.service = new GRPCService({
         host,
-        port
-      })
+        port,
+      });
     }
   }
 
   resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,
-    transformedContext: EvaluationContext,
+    transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<boolean>> {
-    return this.service.resolveBoolean(flagKey, defaultValue, transformedContext)
+    return this.service.resolveBoolean(
+      flagKey,
+      defaultValue,
+      transformedContext
+    );
   }
 
   resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
-    transformedContext: EvaluationContext,
+    transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<string>> {
-    return this.service.resolveString(flagKey, defaultValue, transformedContext)
-
+    return this.service.resolveString(
+      flagKey,
+      defaultValue,
+      transformedContext
+    );
   }
 
   resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
-    transformedContext: EvaluationContext,
+    transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<number>> {
-    return this.service.resolveNumber(flagKey, defaultValue, transformedContext)
-
+    return this.service.resolveNumber(
+      flagKey,
+      defaultValue,
+      transformedContext
+    );
   }
 
   resolveObjectEvaluation<U extends object>(
     flagKey: string,
     defaultValue: U,
-    transformedContext: EvaluationContext,
+    transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<U>> {
-    return this.service.resolveObject(flagKey, defaultValue, transformedContext)
+    return this.service.resolveObject(
+      flagKey,
+      defaultValue,
+      transformedContext
+    );
   }
 }

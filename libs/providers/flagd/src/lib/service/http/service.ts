@@ -1,12 +1,17 @@
-import { ErrorCode, EvaluationContext, ResolutionDetails, StandardResolutionReasons } from "@openfeature/nodejs-sdk";
-import axios, { AxiosResponse, AxiosError } from "axios";
+import {
+  ErrorCode,
+  EvaluationContext,
+  ResolutionDetails,
+  StandardResolutionReasons,
+} from '@openfeature/nodejs-sdk';
+import axios, { AxiosResponse, AxiosError } from 'axios';
 import {
   ResolveBooleanResponse,
-  ResolveNumberResponse,
+  ResolveFloatResponse,
   ResolveStringResponse,
-  ResolveObjectResponse
-} from '../../../proto/ts/schema/v1/schema'
-import { Service } from "../Service";
+  ResolveObjectResponse,
+} from '../../../proto/ts/schema/v1/schema';
+import { Service } from '../Service';
 
 interface HTTPServiceOptions {
   host: string;
@@ -14,13 +19,17 @@ interface HTTPServiceOptions {
   protocol: string;
 }
 export class HTTPService implements Service {
-  private url: string
+  private url: string;
 
   constructor(options: HTTPServiceOptions) {
-      this.url = `${options.protocol}://${options.host}:${options.port}`
+    this.url = `${options.protocol}://${options.host}:${options.port}`;
   }
 
-  async resolveBoolean(flagKey: string, defaultValue: boolean, context: EvaluationContext): Promise<ResolutionDetails<boolean>> {
+  async resolveBoolean(
+    flagKey: string,
+    defaultValue: boolean,
+    context: EvaluationContext
+  ): Promise<ResolutionDetails<boolean>> {
     try {
       const res = await axios.post<ResolveBooleanResponse>(
         `${this.url}/flags/${encodeURIComponent(flagKey)}/resolve/boolean`,
@@ -37,20 +46,24 @@ export class HTTPService implements Service {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.PARSE_ERROR,
-      }
+      };
     } catch (err: unknown) {
       return {
         reason: StandardResolutionReasons.ERROR,
         errorCode: getErrorCode(err),
         value: defaultValue,
-      }
+      };
     }
   }
 
-  async resolveNumber(flagKey: string, defaultValue: number, context: EvaluationContext): Promise<ResolutionDetails<number>> {
+  async resolveNumber(
+    flagKey: string,
+    defaultValue: number,
+    context: EvaluationContext
+  ): Promise<ResolutionDetails<number>> {
     try {
-      const res = await axios.post<ResolveNumberResponse>(
-        `${this.url}/flags/${encodeURIComponent(flagKey)}/resolve/number`,
+      const res = await axios.post<ResolveFloatResponse>(
+        `${this.url}/flags/${encodeURIComponent(flagKey)}/resolve/float`,
         context
       );
       if (checkResponse(res, 'number')) {
@@ -64,17 +77,21 @@ export class HTTPService implements Service {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.PARSE_ERROR,
-      }
+      };
     } catch (err: unknown) {
       return {
         reason: StandardResolutionReasons.ERROR,
         errorCode: getErrorCode(err),
         value: defaultValue,
-      }
+      };
     }
   }
 
-  async resolveString(flagKey: string, defaultValue: string, context: EvaluationContext): Promise<ResolutionDetails<string>> {
+  async resolveString(
+    flagKey: string,
+    defaultValue: string,
+    context: EvaluationContext
+  ): Promise<ResolutionDetails<string>> {
     try {
       const res = await axios.post<ResolveStringResponse>(
         `${this.url}/flags/${encodeURIComponent(flagKey)}/resolve/string`,
@@ -91,17 +108,21 @@ export class HTTPService implements Service {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.PARSE_ERROR,
-      }
+      };
     } catch (err: unknown) {
       return {
         reason: StandardResolutionReasons.ERROR,
         errorCode: getErrorCode(err),
         value: defaultValue,
-      }
+      };
     }
   }
 
-  async resolveObject<T extends object>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>> {
+  async resolveObject<T extends object>(
+    flagKey: string,
+    defaultValue: T,
+    context: EvaluationContext
+  ): Promise<ResolutionDetails<T>> {
     try {
       const res = await axios.post<ResolveObjectResponse>(
         `${this.url}/flags/${encodeURIComponent(flagKey)}/resolve/object`,
@@ -118,39 +139,43 @@ export class HTTPService implements Service {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.PARSE_ERROR,
-      }
+      };
     } catch (err: unknown) {
       return {
         reason: StandardResolutionReasons.ERROR,
         errorCode: getErrorCode(err),
         value: defaultValue,
-      }
+      };
     }
   }
 }
-
 
 function getErrorCode(err: unknown): string {
-  const code = (err as Partial<AxiosError>)?.response?.status
-  let res: string = StandardResolutionReasons.UNKNOWN
+  const code = (err as Partial<AxiosError>)?.response?.status;
+  let res: string = StandardResolutionReasons.UNKNOWN;
   if (code != undefined) {
     if (code == 404) {
-      res = ErrorCode.FLAG_NOT_FOUND
+      res = ErrorCode.FLAG_NOT_FOUND;
     } else if (code == 400) {
-      res = ErrorCode.TYPE_MISMATCH
+      res = ErrorCode.TYPE_MISMATCH;
     }
   }
-  return res
+  return res;
 }
 
-function checkResponse(res: AxiosResponse<ResolutionDetails<unknown>> | AxiosResponse<ResolveObjectResponse>, valueType: string): boolean {
-    if ((res.data)
-    && (typeof res.data.value === valueType)
-    && (typeof res.data.variant === "string")
-    && (typeof res.data.reason === "string")
-    ) {
-        return true
-    }
-    return false
+function checkResponse(
+  res:
+    | AxiosResponse<ResolutionDetails<unknown>>
+    | AxiosResponse<ResolveObjectResponse>,
+  valueType: string
+): boolean {
+  if (
+    res.data &&
+    typeof res.data.value === valueType &&
+    typeof res.data.variant === 'string' &&
+    typeof res.data.reason === 'string'
+  ) {
+    return true;
+  }
+  return false;
 }
-
