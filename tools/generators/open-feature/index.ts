@@ -189,11 +189,10 @@ function updateTsConfig(tree: Tree, projectRoot: string) {
 function updateReleasePleaseConfig(tree: Tree, projectRoot: string) {
   updateJson(tree, 'release-please-config.json', (json) => {
     json.packages[projectRoot] = {
-      releaseType: 'node',
+      'release-type': 'node',
       prerelease: true,
-      bumpMinorPreMajor: true,
-      bumpPatchForMinorPreMajor: false,
-      changelogPath: 'CHANGELOG.md',
+      'bump-minor-pre-major': true,
+      'bump-patch-for-minor-pre-major': true,
       versioning: 'default',
     };
 

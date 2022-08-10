@@ -2,30 +2,27 @@
   "bootstrap-sha": "8ec3eb4db55b7c2d6c2d7edc7c7f3c147b47fd35",
   "packages": {
     "libs/hooks/open-telemetry": {
-      "releaseType": "node",
+      "release-type": "node",
       "prerelease": true,
-      "bumpMinorPreMajor": false,
-      "bumpPatchForMinorPreMajor": false,
-      "changelogPath": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
       "versioning": "default",
       "extra-files": [
         "src/lib/open-telemetry-hook.ts"
       ]
     },
     "libs/providers/go-feature-flag": {
-      "releaseType": "node",
+      "release-type": "node",
       "prerelease": true,
-      "bumpMinorPreMajor": false,
-      "bumpPatchForMinorPreMajor": false,
-      "changelogPath": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/flagd": {
-      "releaseType": "node",
+      "release-type": "node",
       "prerelease": true,
-      "bumpMinorPreMajor": true,
-      "bumpPatchForMinorPreMajor": false,
-      "changelogPath": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     }
   }
