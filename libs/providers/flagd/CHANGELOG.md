@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-feature/node-sdk-contrib/compare/flagd-provider-v0.3.0...flagd-provider-v0.4.0) (2022-08-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* set openfeature sdk min version to 0.2.0 (#93)
+
+### Bug Fixes
+
+* set openfeature sdk min version to 0.2.0 ([#93](https://github.com/open-feature/node-sdk-contrib/issues/93)) ([a733102](https://github.com/open-feature/node-sdk-contrib/commit/a733102f523f9289fdce356a342828cc2e020f48))
+
 ## [0.3.0](https://github.com/open-feature/node-sdk-contrib/compare/flagd-provider-v0.2.1...flagd-provider-v0.3.0) (2022-08-09)
 
 

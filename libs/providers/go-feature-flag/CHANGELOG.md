@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/open-feature/node-sdk-contrib/compare/go-feature-flag-provider-v0.1.3...go-feature-flag-provider-v0.2.0) (2022-08-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* set openfeature sdk min version to 0.2.0 (#93)
+
+### Bug Fixes
+
+* set openfeature sdk min version to 0.2.0 ([#93](https://github.com/open-feature/node-sdk-contrib/issues/93)) ([a733102](https://github.com/open-feature/node-sdk-contrib/commit/a733102f523f9289fdce356a342828cc2e020f48))
+
 ## [0.1.3](https://github.com/open-feature/node-sdk-contrib/compare/go-feature-flag-provider-v0.1.2...go-feature-flag-provider-v0.1.3) (2022-07-23)
 
 
