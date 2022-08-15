@@ -1,21 +1,20 @@
 /**
  * @jest-environment node
  */
-import { GoFeatureFlagProvider } from './go-feature-flag-provider';
 import {
   ErrorCode,
-  EvaluationContext,
   FlagNotFoundError,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/nodejs-sdk';
 import axios from 'axios';
-import { ProxyNotReady } from './errors/proxyNotReady';
 import MockAdapter from 'axios-mock-adapter';
-import { UnknownError } from './errors/unknownError';
+import { ProxyNotReady } from './errors/proxyNotReady';
 import { ProxyTimeout } from './errors/proxyTimeout';
-import { GoFeatureFlagProxyResponse, GoFeatureFlagUser } from './model';
+import { UnknownError } from './errors/unknownError';
+import { GoFeatureFlagProvider } from './go-feature-flag-provider';
+import { GoFeatureFlagProxyResponse } from './model';
 
 describe('GoFeatureFlagProvider', () => {
   const endpoint = 'http://go-feature-flag-relay-proxy.local:1031/';
@@ -38,11 +37,11 @@ describe('GoFeatureFlagProvider', () => {
 
     it('should throw an error if proxy not ready', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
       axiosMock.onPost(dns).reply(404);
       await goff
-        .resolveBooleanEvaluation(flagName, false, { key })
+        .resolveBooleanEvaluation(flagName, false, { targetingKey })
         .catch((err) => {
           expect(err).toBeInstanceOf(ProxyNotReady);
           expect(err.message).toEqual(
@@ -53,11 +52,11 @@ describe('GoFeatureFlagProvider', () => {
 
     it('should throw an error if the call timeout', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
       axiosMock.onPost(dns).timeout();
       await goff
-        .resolveBooleanEvaluation(flagName, false, { key })
+        .resolveBooleanEvaluation(flagName, false, { targetingKey })
         .catch((err) => {
           expect(err).toBeInstanceOf(ProxyTimeout);
           expect(err.message).toEqual(
@@ -68,21 +67,21 @@ describe('GoFeatureFlagProvider', () => {
 
     it('should throw an error if we fail in other network errors case', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
       axiosMock.onPost(dns).networkError();
       await goff
-        .resolveBooleanEvaluation(flagName, false, { key })
+        .resolveBooleanEvaluation(flagName, false, { targetingKey })
         .catch((err) => {
           expect(err).toBeInstanceOf(UnknownError);
           expect(err.message).toEqual(
-            `unknown error while retrieving flag ${flagName} for user ${key}: Error: Network Error`
+            `unknown error while retrieving flag ${flagName} for user ${targetingKey}: Error: Network Error`
           );
         });
     });
     it('should throw an error if the flag does not exists', async () => {
       const flagName = 'unknown-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -92,7 +91,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<string>);
 
       await goff
-        .resolveStringEvaluation(flagName, 'sdk-default', { key })
+        .resolveStringEvaluation(flagName, 'sdk-default', { targetingKey })
         .catch((err) => {
           expect(err).toBeInstanceOf(FlagNotFoundError);
           expect(err.message).toEqual(
@@ -102,77 +101,10 @@ describe('GoFeatureFlagProvider', () => {
     });
   });
 
-  describe('contextTransformer', () => {
-    it('should use the targetingKey as user key', () => {
-      const got = goff.contextTransformer({
-        targetingKey: 'user-key',
-      } as EvaluationContext);
-      const want: GoFeatureFlagUser = {
-        key: 'user-key',
-        anonymous: false,
-        custom: {},
-      };
-      expect(got).toEqual(want);
-    });
-
-    it('should specify the anonymous field base on attributes', () => {
-      const got = goff.contextTransformer({
-        targetingKey: 'user-key',
-        anonymous: true,
-      } as EvaluationContext);
-      const want: GoFeatureFlagUser = {
-        key: 'user-key',
-        anonymous: true,
-        custom: {},
-      };
-      expect(got).toEqual(want);
-    });
-
-    it('should hash the context as key if no targetingKey provided', () => {
-      const got = goff.contextTransformer({
-        anonymous: true,
-        firstname: 'John',
-        lastname: 'Doe',
-        email: 'john.doe@gofeatureflag.org',
-      } as EvaluationContext);
-
-      const want: GoFeatureFlagUser = {
-        key: 'dd3027562879ff6857cc6b8b88ced570546d7c0c',
-        anonymous: true,
-        custom: {
-          firstname: 'John',
-          lastname: 'Doe',
-          email: 'john.doe@gofeatureflag.org',
-        },
-      };
-      expect(got).toEqual(want);
-    });
-    it('should fill custom fields if extra field are present', () => {
-      const got = goff.contextTransformer({
-        targetingKey: 'user-key',
-        anonymous: true,
-        firstname: 'John',
-        lastname: 'Doe',
-        email: 'john.doe@gofeatureflag.org',
-      } as EvaluationContext);
-
-      const want: GoFeatureFlagUser = {
-        key: 'user-key',
-        anonymous: true,
-        custom: {
-          firstname: 'John',
-          lastname: 'Doe',
-          email: 'john.doe@gofeatureflag.org',
-        },
-      };
-      expect(got).toEqual(want);
-    });
-  });
-
   describe('resolveBooleanEvaluation', () => {
     it('should throw an error if we expect a boolean and got another type', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -181,7 +113,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<string>);
 
       await goff
-        .resolveBooleanEvaluation(flagName, false, { key })
+        .resolveBooleanEvaluation(flagName, false, { targetingKey })
         .catch((err) => {
           expect(err).toBeInstanceOf(TypeMismatchError);
           expect(err.message).toEqual(
@@ -192,7 +124,7 @@ describe('GoFeatureFlagProvider', () => {
 
     it('should resolve a valid boolean flag with TARGETING_MATCH reason', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -205,7 +137,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<boolean>);
 
       await goff
-        .resolveBooleanEvaluation(flagName, false, { key })
+        .resolveBooleanEvaluation(flagName, false, { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.TARGETING_MATCH,
@@ -216,7 +148,7 @@ describe('GoFeatureFlagProvider', () => {
     });
     it('should resolve a valid boolean flag with SPLIT reason', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -229,7 +161,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<boolean>);
 
       await goff
-        .resolveBooleanEvaluation(flagName, false, { key })
+        .resolveBooleanEvaluation(flagName, false, { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.SPLIT,
@@ -240,7 +172,7 @@ describe('GoFeatureFlagProvider', () => {
     });
     it('should use boolean default value if the flag is disabled', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -253,7 +185,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<boolean>);
 
       await goff
-        .resolveBooleanEvaluation(flagName, false, { key })
+        .resolveBooleanEvaluation(flagName, false, { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.DISABLED,
@@ -266,7 +198,7 @@ describe('GoFeatureFlagProvider', () => {
   describe('resolveStringEvaluation', () => {
     it('should throw an error if we expect a string and got another type', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -275,7 +207,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<boolean>);
 
       await goff
-        .resolveStringEvaluation(flagName, 'false', { key })
+        .resolveStringEvaluation(flagName, 'false', { targetingKey })
         .catch((err) => {
           expect(err).toBeInstanceOf(TypeMismatchError);
           expect(err.message).toEqual(
@@ -285,7 +217,7 @@ describe('GoFeatureFlagProvider', () => {
     });
     it('should resolve a valid string flag with TARGETING_MATCH reason', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -298,7 +230,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<string>);
 
       await goff
-        .resolveStringEvaluation(flagName, 'default', { key })
+        .resolveStringEvaluation(flagName, 'default', { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.TARGETING_MATCH,
@@ -309,7 +241,7 @@ describe('GoFeatureFlagProvider', () => {
     });
     it('should resolve a valid string flag with SPLIT reason', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -322,7 +254,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<string>);
 
       await goff
-        .resolveStringEvaluation(flagName, 'default', { key })
+        .resolveStringEvaluation(flagName, 'default', { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.SPLIT,
@@ -333,7 +265,7 @@ describe('GoFeatureFlagProvider', () => {
     });
     it('should use string default value if the flag is disabled', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -346,7 +278,9 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<string>);
 
       await goff
-        .resolveStringEvaluation(flagName, 'randomDefaultValue', { key })
+        .resolveStringEvaluation(flagName, 'randomDefaultValue', {
+          targetingKey,
+        })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.DISABLED,
@@ -359,7 +293,7 @@ describe('GoFeatureFlagProvider', () => {
   describe('resolveNumberEvaluation', () => {
     it('should throw an error if we expect a number and got another type', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -367,16 +301,18 @@ describe('GoFeatureFlagProvider', () => {
         variationType: 'trueVariation',
       } as GoFeatureFlagProxyResponse<boolean>);
 
-      await goff.resolveNumberEvaluation(flagName, 14, { key }).catch((err) => {
-        expect(err).toBeInstanceOf(TypeMismatchError);
-        expect(err.message).toEqual(
-          `Flag value ${flagName} had unexpected type boolean, expected number.`
-        );
-      });
+      await goff
+        .resolveNumberEvaluation(flagName, 14, { targetingKey })
+        .catch((err) => {
+          expect(err).toBeInstanceOf(TypeMismatchError);
+          expect(err.message).toEqual(
+            `Flag value ${flagName} had unexpected type boolean, expected number.`
+          );
+        });
     });
     it('should resolve a valid number flag with TARGETING_MATCH reason', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -388,17 +324,19 @@ describe('GoFeatureFlagProvider', () => {
         version: '1.0.0',
       } as GoFeatureFlagProxyResponse<number>);
 
-      await goff.resolveNumberEvaluation(flagName, 17, { key }).then((res) => {
-        expect(res).toEqual({
-          reason: StandardResolutionReasons.TARGETING_MATCH,
-          value: 14,
-          variant: 'trueVariation',
-        } as ResolutionDetails<number>);
-      });
+      await goff
+        .resolveNumberEvaluation(flagName, 17, { targetingKey })
+        .then((res) => {
+          expect(res).toEqual({
+            reason: StandardResolutionReasons.TARGETING_MATCH,
+            value: 14,
+            variant: 'trueVariation',
+          } as ResolutionDetails<number>);
+        });
     });
     it('should resolve a valid number flag with SPLIT reason', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -410,17 +348,19 @@ describe('GoFeatureFlagProvider', () => {
         version: '1.0.0',
       } as GoFeatureFlagProxyResponse<number>);
 
-      await goff.resolveNumberEvaluation(flagName, 17, { key }).then((res) => {
-        expect(res).toEqual({
-          reason: StandardResolutionReasons.SPLIT,
-          value: 14,
-          variant: 'trueVariation',
-        } as ResolutionDetails<number>);
-      });
+      await goff
+        .resolveNumberEvaluation(flagName, 17, { targetingKey })
+        .then((res) => {
+          expect(res).toEqual({
+            reason: StandardResolutionReasons.SPLIT,
+            value: 14,
+            variant: 'trueVariation',
+          } as ResolutionDetails<number>);
+        });
     });
     it('should use number default value if the flag is disabled', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -432,19 +372,21 @@ describe('GoFeatureFlagProvider', () => {
         version: '1.0.0',
       } as GoFeatureFlagProxyResponse<number>);
 
-      await goff.resolveNumberEvaluation(flagName, 124, { key }).then((res) => {
-        expect(res).toEqual({
-          reason: StandardResolutionReasons.DISABLED,
-          value: 124,
-        } as ResolutionDetails<number>);
-      });
+      await goff
+        .resolveNumberEvaluation(flagName, 124, { targetingKey })
+        .then((res) => {
+          expect(res).toEqual({
+            reason: StandardResolutionReasons.DISABLED,
+            value: 124,
+          } as ResolutionDetails<number>);
+        });
     });
   });
 
   describe('resolveObjectEvaluation', () => {
     it('should throw an error if we expect a json array and got another type', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -452,16 +394,18 @@ describe('GoFeatureFlagProvider', () => {
         variationType: 'trueVariation',
       } as GoFeatureFlagProxyResponse<boolean>);
 
-      await goff.resolveObjectEvaluation(flagName, {}, { key }).catch((err) => {
-        expect(err).toBeInstanceOf(TypeMismatchError);
-        expect(err.message).toEqual(
-          `Flag value ${flagName} had unexpected type boolean, expected object.`
-        );
-      });
+      await goff
+        .resolveObjectEvaluation(flagName, {}, { targetingKey })
+        .catch((err) => {
+          expect(err).toBeInstanceOf(TypeMismatchError);
+          expect(err.message).toEqual(
+            `Flag value ${flagName} had unexpected type boolean, expected object.`
+          );
+        });
     });
     it('should resolve a valid object flag with TARGETING_MATCH reason', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -474,7 +418,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<object>);
 
       await goff
-        .resolveObjectEvaluation(flagName, { key: 'default' }, { key })
+        .resolveObjectEvaluation(flagName, { key: 'default' }, { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.TARGETING_MATCH,
@@ -485,7 +429,7 @@ describe('GoFeatureFlagProvider', () => {
     });
     it('should resolve a valid object flag with SPLIT reason', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -498,7 +442,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<object>);
 
       await goff
-        .resolveObjectEvaluation(flagName, { key: 'default' }, { key })
+        .resolveObjectEvaluation(flagName, { key: 'default' }, { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.SPLIT,
@@ -509,7 +453,7 @@ describe('GoFeatureFlagProvider', () => {
     });
     it('should use object default value if the flag is disabled', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -522,7 +466,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<object>);
 
       await goff
-        .resolveObjectEvaluation(flagName, { key: 124 }, { key })
+        .resolveObjectEvaluation(flagName, { key: 124 }, { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.DISABLED,
@@ -533,7 +477,7 @@ describe('GoFeatureFlagProvider', () => {
 
     it('should resolve a valid json array flag with TARGETING_MATCH reason', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -546,7 +490,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<object>);
 
       await goff
-        .resolveObjectEvaluation(flagName, { key: 'default' }, { key })
+        .resolveObjectEvaluation(flagName, { key: 'default' }, { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.TARGETING_MATCH,
@@ -557,7 +501,7 @@ describe('GoFeatureFlagProvider', () => {
     });
     it('should resolve a valid json array flag with SPLIT reason', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -570,7 +514,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<object>);
 
       await goff
-        .resolveObjectEvaluation(flagName, { key: 'default' }, { key })
+        .resolveObjectEvaluation(flagName, { key: 'default' }, { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.SPLIT,
@@ -581,7 +525,7 @@ describe('GoFeatureFlagProvider', () => {
     });
     it('should use json array default value if the flag is disabled', async () => {
       const flagName = 'random-flag';
-      const key = 'user-key';
+      const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
 
       axiosMock.onPost(dns).reply(200, {
@@ -594,7 +538,7 @@ describe('GoFeatureFlagProvider', () => {
       } as GoFeatureFlagProxyResponse<object>);
 
       await goff
-        .resolveObjectEvaluation(flagName, ['key', '124'], { key })
+        .resolveObjectEvaluation(flagName, ['key', '124'], { targetingKey })
         .then((res) => {
           expect(res).toEqual({
             reason: StandardResolutionReasons.DISABLED,

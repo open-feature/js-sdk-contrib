@@ -1,9 +1,8 @@
 import {
   ErrorCode,
   JSONValue,
-  ProviderOptions,
   StandardResolutionReasons,
-} from '@openfeature/nodejs-sdk'
+} from '@openfeature/nodejs-sdk';
 
 /**
  * GoFeatureFlagUser is the representation of a user for GO Feature Flag
@@ -21,11 +20,11 @@ export interface GoFeatureFlagUser {
 /**
  * GoFeatureFlagProxyRequest is the request format used to call the GO Feature Flag
  * API in the relay-proxy.
- * The default value is used if something is failling.
+ * The default value is used if something is failing.
  */
 export interface GoFeatureFlagProxyRequest<T> {
-  user: GoFeatureFlagUser
-  defaultValue: T
+  user: GoFeatureFlagUser;
+  defaultValue: T;
 }
 
 /**
@@ -33,20 +32,20 @@ export interface GoFeatureFlagProxyRequest<T> {
  * It contains the information about the flag you are evaluating.
  */
 export interface GoFeatureFlagProxyResponse<T> {
-  failed: boolean
-  trackEvents: boolean
-  value: T
-  variationType: string
-  version ?: string
-  reason: StandardResolutionReasons | GOFeatureFlagResolutionReasons
-  errorCode?: ErrorCode | GOFeatureFlagErrorCode
+  failed: boolean;
+  trackEvents: boolean;
+  value: T;
+  variationType: string;
+  version?: string;
+  reason: StandardResolutionReasons | GOFeatureFlagResolutionReasons;
+  errorCode?: ErrorCode | GOFeatureFlagErrorCode;
 }
 
 /**
  * GoFeatureFlagProviderOptions is the object containing all the provider options
  * when initializing the open-feature provider.
  */
-export interface GoFeatureFlagProviderOptions extends ProviderOptions<GoFeatureFlagUser> {
+export interface GoFeatureFlagProviderOptions {
   endpoint: string;
   timeout?: number; // in millisecond
 }

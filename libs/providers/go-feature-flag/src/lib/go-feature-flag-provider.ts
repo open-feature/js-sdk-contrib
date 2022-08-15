@@ -1,17 +1,17 @@
 import {
+  ErrorCode,
   EvaluationContext,
+  FlagNotFoundError,
   Provider,
   ResolutionDetails,
-  FlagNotFoundError,
-  TypeMismatchError,
-  ErrorCode,
   StandardResolutionReasons,
+  TypeMismatchError,
 } from '@openfeature/nodejs-sdk';
 import axios from 'axios';
+import { transformContext } from './context-transformer';
 import { ProxyNotReady } from './errors/proxyNotReady';
 import { ProxyTimeout } from './errors/proxyTimeout';
 import { UnknownError } from './errors/unknownError';
-import { sha1 } from 'object-hash';
 import {
   GoFeatureFlagProviderOptions,
   GoFeatureFlagProxyRequest,
@@ -20,7 +20,7 @@ import {
 } from './model';
 
 // GoFeatureFlagProvider is the official Open-feature provider for GO Feature Flag.
-export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
+export class GoFeatureFlagProvider implements Provider {
   metadata = {
     name: GoFeatureFlagProvider.name,
   };
@@ -35,40 +35,11 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
     this.endpoint = options.endpoint;
   }
 
-  // contextTransformer is a function that transform the EvaluationContext
-  // to a GoFeatureFlagUser.
-  contextTransformer = (context: EvaluationContext): GoFeatureFlagUser => {
-    const { targetingKey, ...attributes } = context;
-
-    // If we don't have a targetingKey we are using a hash of the object to build
-    // a consistent key. If for some reason it fails we are using a constant string
-    const key = targetingKey || sha1(context) || 'anonymous';
-
-    // Handle the special case of the anonymous field
-    let anonymous = false;
-    if (
-      attributes !== undefined &&
-      attributes !== null &&
-      'anonymous' in attributes
-    ) {
-      if (typeof attributes['anonymous'] === 'boolean') {
-        anonymous = attributes['anonymous'];
-      }
-      delete attributes['anonymous'];
-    }
-
-    return {
-      key,
-      anonymous,
-      custom: attributes,
-    };
-  };
-
   /**
    * resolveBooleanEvaluation is calling the GO Feature Flag relay-proxy API and return a boolean value.
    * @param flagKey - name of your feature flag key.
    * @param defaultValue - default value is used if we are not able to evaluate the flag for this user.
-   * @param user - the user against who we will evaluate the flag.
+   * @param context - the context used for flag evaluation.
    * @return {Promise<ResolutionDetails<boolean>>} An object containing the result of the flag evaluation by GO Feature Flag.
    * @throws {ProxyNotReady} When we are not able to communicate with the relay-proxy
    * @throws {ProxyTimeout} When the HTTP call is timing out
@@ -79,12 +50,12 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
   async resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,
-    user: GoFeatureFlagUser
+    context: EvaluationContext
   ): Promise<ResolutionDetails<boolean>> {
     return this.resolveEvaluationGoFeatureFlagProxy<boolean>(
       flagKey,
       defaultValue,
-      user,
+      transformContext(context),
       'boolean'
     );
   }
@@ -93,7 +64,7 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
    * resolveBooleanEvaluation is calling the GO Feature Flag relay-proxy API and return a boolean value.
    * @param flagKey - name of your feature flag key.
    * @param defaultValue - default value is used if we are not able to evaluate the flag for this user.
-   * @param user - the user against who we will evaluate the flag.
+   * @param context - the context used for flag evaluation.
    * @return {Promise<ResolutionDetails<string>>} An object containing the result of the flag evaluation by GO Feature Flag.
    * @throws {ProxyNotReady} When we are not able to communicate with the relay-proxy
    * @throws {ProxyTimeout} When the HTTP call is timing out
@@ -104,12 +75,12 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
   async resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
-    user: GoFeatureFlagUser
+    context: EvaluationContext
   ): Promise<ResolutionDetails<string>> {
     return this.resolveEvaluationGoFeatureFlagProxy<string>(
       flagKey,
       defaultValue,
-      user,
+      transformContext(context),
       'string'
     );
   }
@@ -118,7 +89,7 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
    * resolveBooleanEvaluation is calling the GO Feature Flag relay-proxy API and return a boolean value.
    * @param flagKey - name of your feature flag key.
    * @param defaultValue - default value is used if we are not able to evaluate the flag for this user.
-   * @param user - the user against who we will evaluate the flag.
+   * @param context - the context used for flag evaluation.
    * @return {Promise<ResolutionDetails<number>>} An object containing the result of the flag evaluation by GO Feature Flag.
    * @throws {ProxyNotReady} When we are not able to communicate with the relay-proxy
    * @throws {ProxyTimeout} When the HTTP call is timing out
@@ -129,12 +100,12 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
   async resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
-    user: GoFeatureFlagUser
+    context: EvaluationContext
   ): Promise<ResolutionDetails<number>> {
     return this.resolveEvaluationGoFeatureFlagProxy<number>(
       flagKey,
       defaultValue,
-      user,
+      transformContext(context),
       'number'
     );
   }
@@ -143,7 +114,7 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
    * resolveBooleanEvaluation is calling the GO Feature Flag relay-proxy API and return a boolean value.
    * @param flagKey - name of your feature flag key.
    * @param defaultValue - default value is used if we are not able to evaluate the flag for this user.
-   * @param user - the user against who we will evaluate the flag.
+   * @param context - the context used for flag evaluation.
    * @return {Promise<ResolutionDetails<U>>} An object containing the result of the flag evaluation by GO Feature Flag.
    * @throws {ProxyNotReady} When we are not able to communicate with the relay-proxy
    * @throws {ProxyTimeout} When the HTTP call is timing out
@@ -154,12 +125,12 @@ export class GoFeatureFlagProvider implements Provider<GoFeatureFlagUser> {
   async resolveObjectEvaluation<U extends object>(
     flagKey: string,
     defaultValue: U,
-    user: GoFeatureFlagUser
+    context: EvaluationContext
   ): Promise<ResolutionDetails<U>> {
     return this.resolveEvaluationGoFeatureFlagProxy<U>(
       flagKey,
       defaultValue,
-      user,
+      transformContext(context),
       'object'
     );
   }
