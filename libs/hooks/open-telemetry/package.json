@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/open-telemetry-hook",
-  "version": "1.2.3-alpha",
+  "version": "1.2.3",
   "type": "commonjs",
   "repository": {
     "type": "git",
@@ -13,6 +13,9 @@
   "scripts": {
     "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
     "current-version": "echo $npm_package_version"
+  },
+  "peerDependencies": {
+    "@openfeature/nodejs-sdk": "^0.2.0"
   },
   "license": "Apache-2.0"
 }
