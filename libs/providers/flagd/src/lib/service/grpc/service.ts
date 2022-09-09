@@ -1,4 +1,5 @@
 import { RpcError } from '@protobuf-ts/runtime-rpc';
+import { JsonValue } from '@protobuf-ts/runtime';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import * as grpc from '@grpc/grpc-js';
 import {
@@ -8,21 +9,24 @@ import {
 } from '@openfeature/nodejs-sdk';
 import { Struct } from '../../../proto/ts/google/protobuf/struct';
 import { ServiceClient } from '../../../proto/ts/schema/v1/schema.client';
-import { Service } from '../Service';
+import { Service } from '../service';
+import { Protocol } from './protocol';
 
 interface GRPCServiceOptions {
   host: string;
   port: number;
+  protocol: Protocol
 }
+
 export class GRPCService implements Service {
   client: ServiceClient;
 
-  constructor(options: GRPCServiceOptions) {
-    const { host, port } = options;
-    this.client = new ServiceClient(
+  constructor(options: GRPCServiceOptions, client?: ServiceClient) {
+    const { host, port, protocol } = options;
+    this.client = client ? client : new ServiceClient(
       new GrpcTransport({
         host: `${host}:${port}`,
-        channelCredentials: grpc.credentials.createInsecure(),
+        channelCredentials: protocol === 'http' ? grpc.credentials.createInsecure() : grpc.credentials.createSsl()
       })
     );
   }
@@ -35,7 +39,7 @@ export class GRPCService implements Service {
     try {
       const { response } = await this.client.resolveBoolean({
         flagKey,
-        context: Struct.fromJsonString(JSON.stringify(context)),
+        context: this.convertContext(context),
       });
       return {
         value: response.value,
@@ -60,7 +64,7 @@ export class GRPCService implements Service {
     try {
       const { response } = await this.client.resolveString({
         flagKey,
-        context: Struct.fromJsonString(JSON.stringify(context)),
+        context: this.convertContext(context),
       });
       return {
         value: response.value,
@@ -85,7 +89,7 @@ export class GRPCService implements Service {
     try {
       const { response } = await this.client.resolveFloat({
         flagKey,
-        context: Struct.fromJsonString(JSON.stringify(context)),
+        context: this.convertContext(context),
       });
       return {
         value: response.value,
@@ -110,10 +114,10 @@ export class GRPCService implements Service {
     try {
       const { response } = await this.client.resolveObject({
         flagKey,
-        context: Struct.fromJsonString(JSON.stringify(context)),
+        context: this.convertContext(context),
       });
       return {
-        value: response.value as T,
+        value: (response.value ? Struct.toJson(response.value) : undefined) as T,
         reason: response.reason,
         variant: response.variant,
       };
@@ -126,4 +130,9 @@ export class GRPCService implements Service {
       };
     }
   }
+
+  private convertContext(context: EvaluationContext): Struct {
+    // JsonValue closely matches EvaluationContext, this is a safe cast.
+    return Struct.fromJson(context as JsonValue);
+  } 
 }

@@ -3,26 +3,26 @@ import {
   Provider,
   ResolutionDetails,
 } from '@openfeature/nodejs-sdk';
-import { Service } from './service/Service';
-import { HTTPService } from './service/http/service';
+import { Service } from './service/service';
 import { GRPCService } from './service/grpc/service';
+import { Protocol } from './service/grpc/protocol';
 
 export interface FlagdProviderOptions {
   service?: 'grpc' | 'http';
   host?: string;
   port?: number;
-  protocol?: 'http' | 'https';
+  protocol?: Protocol;
 }
 
 export class FlagdProvider implements Provider {
   metadata = {
-    name: 'flagD Provider',
+    name: 'flagd Provider',
   };
 
   private readonly service: Service;
 
-  constructor(options?: FlagdProviderOptions) {
-    const { service, host, port, protocol }: FlagdProviderOptions = {
+  constructor(options?: FlagdProviderOptions, service?: GRPCService) {
+    const { host, port, protocol }: FlagdProviderOptions = {
       service: 'http',
       host: 'localhost',
       port: 8013,
@@ -30,18 +30,11 @@ export class FlagdProvider implements Provider {
       ...options,
     };
 
-    if (service === 'http') {
-      this.service = new HTTPService({
-        host,
-        port,
-        protocol,
-      });
-    } else {
-      this.service = new GRPCService({
-        host,
-        port,
-      });
-    }
+    this.service = service ? service : new GRPCService({
+      host,
+      port,
+      protocol,
+    });
   }
 
   resolveBooleanEvaluation(
