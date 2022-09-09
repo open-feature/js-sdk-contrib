@@ -7,9 +7,7 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default",
-      "extra-files": [
-        "src/lib/open-telemetry-hook.ts"
-      ]
+      "extra-files": ["src/lib/open-telemetry-hook.ts"]
     },
     "libs/providers/go-feature-flag": {
       "release-type": "node",
@@ -19,6 +17,13 @@
       "versioning": "default"
     },
     "libs/providers/flagd": {
+      "release-type": "node",
+      "prerelease": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "versioning": "default"
+    },
+    "libs/providers/flagd-web": {
       "release-type": "node",
       "prerelease": true,
       "bump-minor-pre-major": true,

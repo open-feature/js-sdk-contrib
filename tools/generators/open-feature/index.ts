@@ -127,6 +127,7 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
         outputPath: `dist/${projectRoot}`,
         entryFile: `${projectRoot}/src/index.ts`,
         tsConfig: `${projectRoot}/tsconfig.lib.json`,
+        buildableProjectDepsInPackageJsonType: "dependencies",
         compiler: 'babel',
         umdName,
         external: ['typescript'],
@@ -173,6 +174,9 @@ function updatePackage(tree: Tree, projectRoot: string) {
         'cp $NPM_CONFIG_USERCONFIG .npmrc && if [ "$(npm show $npm_package_name@$npm_package_version version)" = "$(npm run current-version -s)" ]; then echo \'already published, skipping\'; else npm publish --access public; fi',
       'current-version': 'echo $npm_package_version',
     };
+    json.peerDependencies = {
+      "@openfeature/js-sdk": "^1.0.0"
+    }
 
     return json;
   });
