@@ -11,8 +11,9 @@
   },
   "private": true,
   "dependencies": {
+    "@bufbuild/connect-web": "^0.2.1",
     "@grpc/grpc-js": "^1.6.7",
-    "@openfeature/nodejs-sdk": "0.0.1-alpha.50",
+    "@openfeature/nodejs-sdk": "0.3.1-experimental-e780c536df96cb10917e71d828718a9f6c85b04f",
     "@opentelemetry/api": "^1.1.0",
     "@protobuf-ts/grpc-transport": "^2.7.0",
     "axios": "^0.27.2",
