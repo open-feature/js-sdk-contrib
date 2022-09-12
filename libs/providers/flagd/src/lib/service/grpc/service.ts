@@ -3,6 +3,7 @@ import { JsonObject } from '@protobuf-ts/runtime';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import * as grpc from '@grpc/grpc-js';
 import {
+  ParseError,
   EvaluationContext,
   ResolutionDetails,
   StandardResolutionReasons,
@@ -116,11 +117,16 @@ export class GRPCService implements Service {
         flagKey,
         context: this.convertContext(context),
       });
-      return {
-        value: (response.value ? Struct.toJson(response.value) : undefined) as T,
-        reason: response.reason,
-        variant: response.variant,
-      };
+      if (response.value !== undefined) {
+        return {
+          value: Struct.toJson(response.value) as T,
+          reason: response.reason,
+          variant: response.variant,
+        };
+      } else {
+        throw new ParseError('Object value undefined or missing.');
+      }
+      
     } catch (err: unknown) {
       return {
         reason: StandardResolutionReasons.ERROR,

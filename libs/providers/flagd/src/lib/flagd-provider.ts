@@ -8,7 +8,6 @@ import { GRPCService } from './service/grpc/service';
 import { Protocol } from './service/grpc/protocol';
 
 export interface FlagdProviderOptions {
-  service?: 'grpc' | 'http';
   host?: string;
   port?: number;
   protocol?: Protocol;
@@ -23,7 +22,6 @@ export class FlagdProvider implements Provider {
 
   constructor(options?: FlagdProviderOptions, service?: GRPCService) {
     const { host, port, protocol }: FlagdProviderOptions = {
-      service: 'http',
       host: 'localhost',
       port: 8013,
       protocol: 'http',

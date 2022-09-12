@@ -1,5 +1,5 @@
 import {
-  Client, OpenFeature
+  Client, OpenFeature, ErrorCode
 } from '@openfeature/nodejs-sdk';
 import type { UnaryCall } from "@protobuf-ts/runtime-rpc";
 import { Struct } from '../proto/ts/google/protobuf/struct';
@@ -229,6 +229,43 @@ describe(FlagdProvider.name, () => {
         expect(errServiceClientMock.resolveObject).toHaveBeenCalled();
         expect(val.value).toEqual({ [DEFAULT_INNER_KEY]: DEFAULT_INNER_VALUE });
         expect(val.reason).toEqual(ERROR_REASON);
+      });
+    });
+  });
+
+  describe('undefined object value', () => {
+    let client: Client;
+
+    // mock ServiceClient to inject
+    const undefinedObjectMock: ServiceClient = {
+      resolveObject: jest.fn((): UnaryCall<ResolveObjectRequest, ResolveObjectResponse> => {
+        return Promise.resolve({
+          request: {} as ResolveObjectRequest,
+          response: {
+            value: undefined,
+            reason: REASON
+          } as ResolveObjectResponse,
+        }) as unknown as UnaryCall<ResolveObjectRequest, ResolveObjectResponse>
+      })
+    } as unknown as ServiceClient;
+  
+    beforeEach(() => {
+      // inject our mock GRPCService and ServiceClient
+      OpenFeature.setProvider(new FlagdProvider(undefined, new GRPCService({ host: '', port: 123, protocol: 'http' }, undefinedObjectMock)));
+      client = OpenFeature.getClient('test');
+    });
+  
+    describe(FlagdProvider.prototype.resolveObjectEvaluation.name, () => {
+
+      const DEFAULT_INNER_KEY = 'some';
+      const DEFAULT_INNER_VALUE = 'key';
+
+      it('should default and throw correct error', async () => {
+        const val = await client.getObjectDetails(OBJECT_KEY, { [DEFAULT_INNER_KEY]: DEFAULT_INNER_VALUE });
+        expect(undefinedObjectMock.resolveObject).toHaveBeenCalled();
+        expect(val.value).toEqual({ [DEFAULT_INNER_KEY]: DEFAULT_INNER_VALUE });
+        expect(val.reason).toEqual(ERROR_REASON);
+        expect(val.errorCode).toEqual(ErrorCode.PARSE_ERROR);
       });
     });
   });
