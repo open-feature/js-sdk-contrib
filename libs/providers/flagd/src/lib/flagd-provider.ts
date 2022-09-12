@@ -42,7 +42,6 @@ export class FlagdProvider implements Provider {
   ): Promise<ResolutionDetails<boolean>> {
     return this.service.resolveBoolean(
       flagKey,
-      defaultValue,
       transformedContext
     );
   }
@@ -54,7 +53,6 @@ export class FlagdProvider implements Provider {
   ): Promise<ResolutionDetails<string>> {
     return this.service.resolveString(
       flagKey,
-      defaultValue,
       transformedContext
     );
   }
@@ -66,7 +64,6 @@ export class FlagdProvider implements Provider {
   ): Promise<ResolutionDetails<number>> {
     return this.service.resolveNumber(
       flagKey,
-      defaultValue,
       transformedContext
     );
   }
@@ -78,7 +75,6 @@ export class FlagdProvider implements Provider {
   ): Promise<ResolutionDetails<U>> {
     return this.service.resolveObject(
       flagKey,
-      defaultValue,
       transformedContext
     );
   }
