@@ -1,5 +1,5 @@
 import { RpcError } from '@protobuf-ts/runtime-rpc';
-import { JsonValue } from '@protobuf-ts/runtime';
+import { JsonObject } from '@protobuf-ts/runtime';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import * as grpc from '@grpc/grpc-js';
 import {
@@ -132,7 +132,7 @@ export class GRPCService implements Service {
   }
 
   private convertContext(context: EvaluationContext): Struct {
-    // JsonValue closely matches EvaluationContext, this is a safe cast.
-    return Struct.fromJson(context as JsonValue);
+    // JsonObject closely matches EvaluationContext, this is a safe cast.
+    return Struct.fromJson(context as JsonObject);
   } 
 }
