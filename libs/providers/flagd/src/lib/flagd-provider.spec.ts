@@ -1,7 +1,9 @@
-import { Client, OpenFeature, ErrorCode } from '@openfeature/nodejs-sdk';
+jest.mock('@protobuf-ts/grpc-transport');
+
+import { Client, ErrorCode, OpenFeature } from '@openfeature/nodejs-sdk';
+import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import type { UnaryCall } from '@protobuf-ts/runtime-rpc';
 import { Struct } from '../proto/ts/google/protobuf/struct';
-import { ServiceClient } from '../proto/ts/schema/v1/schema.client';
 import {
   ResolveBooleanRequest,
   ResolveBooleanResponse,
@@ -14,6 +16,7 @@ import {
   ResolveStringRequest,
   ResolveStringResponse,
 } from '../proto/ts/schema/v1/schema';
+import { ServiceClient } from '../proto/ts/schema/v1/schema.client';
 import { FlagdProvider } from './flagd-provider';
 import { GRPCService } from './service/grpc/service';
 
@@ -46,10 +49,6 @@ const TEST_CONTEXT = { [TEST_CONTEXT_KEY]: TEST_CONTEXT_VALUE };
 const TEST_CONTEXT_CONVERTED = Struct.fromJsonString(
   JSON.stringify(TEST_CONTEXT)
 );
-
-jest.mock('@protobuf-ts/grpc-transport');
-
-import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 
 describe(FlagdProvider.name, () => {
   describe('GRPC Service Options', () => {
