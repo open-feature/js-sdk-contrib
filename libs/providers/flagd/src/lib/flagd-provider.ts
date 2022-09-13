@@ -3,45 +3,36 @@ import {
   Provider,
   ResolutionDetails,
 } from '@openfeature/nodejs-sdk';
-import { Service } from './service/Service';
-import { HTTPService } from './service/http/service';
+import { Service } from './service/service';
 import { GRPCService } from './service/grpc/service';
+import { Protocol } from './service/grpc/protocol';
 
 export interface FlagdProviderOptions {
-  service?: 'grpc' | 'http';
   host?: string;
   port?: number;
-  protocol?: 'http' | 'https';
+  protocol?: Protocol;
 }
 
 export class FlagdProvider implements Provider {
   metadata = {
-    name: 'flagD Provider',
+    name: 'flagd Provider',
   };
 
   private readonly service: Service;
 
-  constructor(options?: FlagdProviderOptions) {
-    const { service, host, port, protocol }: FlagdProviderOptions = {
-      service: 'http',
+  constructor(options?: FlagdProviderOptions, service?: GRPCService) {
+    const { host, port, protocol }: FlagdProviderOptions = {
       host: 'localhost',
       port: 8013,
       protocol: 'http',
       ...options,
     };
 
-    if (service === 'http') {
-      this.service = new HTTPService({
-        host,
-        port,
-        protocol,
-      });
-    } else {
-      this.service = new GRPCService({
-        host,
-        port,
-      });
-    }
+    this.service = service ? service : new GRPCService({
+      host,
+      port,
+      protocol,
+    });
   }
 
   resolveBooleanEvaluation(
@@ -51,7 +42,6 @@ export class FlagdProvider implements Provider {
   ): Promise<ResolutionDetails<boolean>> {
     return this.service.resolveBoolean(
       flagKey,
-      defaultValue,
       transformedContext
     );
   }
@@ -63,7 +53,6 @@ export class FlagdProvider implements Provider {
   ): Promise<ResolutionDetails<string>> {
     return this.service.resolveString(
       flagKey,
-      defaultValue,
       transformedContext
     );
   }
@@ -75,7 +64,6 @@ export class FlagdProvider implements Provider {
   ): Promise<ResolutionDetails<number>> {
     return this.service.resolveNumber(
       flagKey,
-      defaultValue,
       transformedContext
     );
   }
@@ -87,7 +75,6 @@ export class FlagdProvider implements Provider {
   ): Promise<ResolutionDetails<U>> {
     return this.service.resolveObject(
       flagKey,
-      defaultValue,
       transformedContext
     );
   }

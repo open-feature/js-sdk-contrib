@@ -26,13 +26,12 @@ The `FlagdProvider` client constructor takes a single optional argument with 3 f
 
 ```
   OpenFeature.setProvider(new FlagdProvider({
-      service: 'grpc',
       host: 'localhost',
       port: 8013,
+      protocol: 'http'
   }))
 ```
 
-**service**: "http" | "grpc" _(defaults to http)_  
 **host**: string _(defaults to "localhost")_  
 **port**: number _(defaults to 8013)_  
 **protocol**: "http" | "https" _(defaults to http - only active for http service)_
