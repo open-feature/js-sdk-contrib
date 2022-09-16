@@ -146,7 +146,7 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           new GRPCService(
-            { host: '', port: 123, protocol: 'http' },
+            { host: '', port: 123, tls: false },
             basicServiceClientMock
           )
         )
@@ -278,7 +278,7 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           new GRPCService(
-            { host: '', port: 123, protocol: 'http' },
+            { host: '', port: 123, tls: false },
             errServiceClientMock
           )
         )
@@ -361,7 +361,7 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           new GRPCService(
-            { host: '', port: 123, protocol: 'http' },
+            { host: '', port: 123, tls: false },
             undefinedObjectMock
           )
         )
