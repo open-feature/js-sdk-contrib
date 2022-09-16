@@ -22,8 +22,8 @@ export class GRPCService implements Service {
           new GrpcTransport({
             host: socketPath ? `unix://${socketPath}` : `${host}:${port}`,
             channelCredentials: tls
-              ? grpc.credentials.createInsecure()
-              : grpc.credentials.createSsl(),
+              ? grpc.credentials.createSsl()
+              : grpc.credentials.createInsecure(),
           })
         );
   }
