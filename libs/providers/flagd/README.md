@@ -24,6 +24,8 @@ Run `nx test providers-flagd` to execute the unit tests via [Jest](https://jestj
 
 The `FlagdProvider` client constructor takes a single optional argument with 3 fields, their default values correspond to the default arguments supplied to the flagd server:
 
+### Example using TCP
+
 ```
   OpenFeature.setProvider(new FlagdProvider({
       host: 'localhost',
@@ -32,6 +34,16 @@ The `FlagdProvider` client constructor takes a single optional argument with 3 f
   }))
 ```
 
+### Example using a Unix socket
+
+```
+  OpenFeature.setProvider(new FlagdProvider({
+      socketPath: "/tmp/flagd.socks",
+  }))
+```
+
+**service**: "http" | "grpc" _(defaults to http)_  
 **host**: string _(defaults to "localhost")_  
 **port**: number _(defaults to 8013)_  
 **protocol**: "http" | "https" _(defaults to http - only active for http service)_
+**socketPath**: string _(optional)_
