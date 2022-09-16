@@ -1,47 +1,70 @@
 import {
   EvaluationContext,
-  Provider,
   ResolutionDetails,
+  EventCallbackMessage,
+  EventCallbackError,
+  EventContext
 } from '@openfeature/nodejs-sdk';
-import { Service } from './service/Service';
-import { HTTPService } from './service/http/service';
-import { ConnectService } from './service/connect/service';
-
+import { RpcError } from '@protobuf-ts/runtime-rpc';
+import {
+  createConnectTransport,
+  createPromiseClient,
+  PromiseClient,
+  CallbackClient,
+  createCallbackClient
+} from "@bufbuild/connect-web";
+import { Struct } from "@bufbuild/protobuf";
+import { Service as ConnectServiceStub } from '../proto/ts/schema/v1/schema_connectweb'
 export interface FlagdProviderOptions {
-  service?: 'http' | 'connect';
   host?: string;
   port?: number;
-  protocol?: 'http' | 'https';
 }
 
-export class FlagdProvider implements Provider {
+export class FlagdProvider {
   metadata = {
     name: 'flagD Provider',
   };
 
-  private readonly service: Service;
+  eventCallbacksMessage: EventCallbackMessage[] = [];
+  eventCallbacksError: EventCallbackError[] = [];
+  promiseClient: PromiseClient<typeof ConnectServiceStub>
+  callbackClient: CallbackClient<typeof ConnectServiceStub>
 
   constructor(options?: FlagdProviderOptions) {
-    const { service, host, port, protocol }: FlagdProviderOptions = {
-      service: 'http',
-      host: 'localhost',
+    const {host, port}: FlagdProviderOptions = {
+      host: "localhost",
       port: 8013,
-      protocol: 'http',
-      ...options,
+      ...options
     };
+    const transport = createConnectTransport({
+      baseUrl: `http://${host}:${port}`
+    });
+    this.promiseClient = createPromiseClient(ConnectServiceStub, transport);
+    this.callbackClient = createCallbackClient(ConnectServiceStub, transport);
 
-    if (service === 'http') {
-      this.service = new HTTPService({
-        host,
-        port,
-        protocol,
-      });
-    } else {
-      this.service = new ConnectService({
-        host,
-        port,
-      })
-    }
+    this.callbackClient.eventStream(
+      {},
+      (message) => {
+        const m: EventContext = {
+          notificationType: message.type
+        }
+        for (const func of this.eventCallbacksMessage) {
+          func(m)
+        }
+      },
+      (err) => {
+        for (const func of this.eventCallbacksError) {
+          func(err as Error)
+        }
+      },
+    )
+  }
+
+  addMessageListener(func: EventCallbackMessage): void {
+    this.eventCallbacksMessage.push(func);
+  }
+  addErrorListener(func: EventCallbackError): void {
+    this.eventCallbacksError.push(func);
   }
 
   resolveBooleanEvaluation(
@@ -49,11 +72,23 @@ export class FlagdProvider implements Provider {
     defaultValue: boolean,
     transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<boolean>> {
-    return this.service.resolveBoolean(
-      flagKey,
-      defaultValue,
-      transformedContext
-    );
+      return this.promiseClient.resolveBoolean({
+        flagKey,
+        context: Struct.fromJsonString(JSON.stringify(transformedContext)),
+      }).then((res) => {
+        return {
+          value: res.value,
+          reason: res.reason,
+          variant: res.variant,
+        }
+      }).catch((err: unknown) => {
+        return {
+          reason: "ERROR",
+          errorCode:
+            (err as Partial<RpcError>)?.code ?? "UNKNOWN",
+          value: defaultValue,
+        };
+      })
   }
 
   resolveStringEvaluation(
@@ -61,11 +96,23 @@ export class FlagdProvider implements Provider {
     defaultValue: string,
     transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<string>> {
-    return this.service.resolveString(
+    return this.promiseClient.resolveString({
       flagKey,
-      defaultValue,
-      transformedContext
-    );
+      context: Struct.fromJsonString(JSON.stringify(transformedContext)),
+    }).then((res) => {
+      return {
+        value: res.value,
+        reason: res.reason,
+        variant: res.variant,
+      }
+    }).catch((err: unknown) => {
+      return {
+        reason: "ERROR",
+        errorCode:
+          (err as Partial<RpcError>)?.code ?? "UNKNOWN",
+        value: defaultValue,
+      };
+    })
   }
 
   resolveNumberEvaluation(
@@ -73,11 +120,23 @@ export class FlagdProvider implements Provider {
     defaultValue: number,
     transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<number>> {
-    return this.service.resolveNumber(
+    return this.promiseClient.resolveFloat({
       flagKey,
-      defaultValue,
-      transformedContext
-    );
+      context: Struct.fromJsonString(JSON.stringify(transformedContext)),
+    }).then((res) => {
+      return {
+        value: res.value,
+        reason: res.reason,
+        variant: res.variant,
+      }
+    }).catch((err: unknown) => {
+      return {
+        reason: "ERROR",
+        errorCode:
+          (err as Partial<RpcError>)?.code ?? "UNKNOWN",
+        value: defaultValue,
+      };
+    })
   }
 
   resolveObjectEvaluation<U extends object>(
@@ -85,10 +144,22 @@ export class FlagdProvider implements Provider {
     defaultValue: U,
     transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<U>> {
-    return this.service.resolveObject(
+    return this.promiseClient.resolveObject({
       flagKey,
-      defaultValue,
-      transformedContext
-    );
+      context: Struct.fromJsonString(JSON.stringify(transformedContext)),
+    }).then((res) => {
+      return {
+        value: res.value as U,
+        reason: res.reason,
+        variant: res.variant,
+      }
+    }).catch((err: unknown) => {
+      return {
+        reason: "ERROR",
+        errorCode:
+          (err as Partial<RpcError>)?.code ?? "UNKNOWN",
+        value: defaultValue,
+      };
+    })
   }
 }
