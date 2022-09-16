@@ -2,7 +2,7 @@
 
 ![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)
 
-Flagd is a simple command line tool for fetching and presenting feature flags to services.
+Flagd is a simple daemon for evaluating feature flags.
 It is designed to conform to OpenFeature schema for flag definitions.
 This repository and package provides the client code for interacting with it via the OpenFeature server-side JavaScript SDK.
 
