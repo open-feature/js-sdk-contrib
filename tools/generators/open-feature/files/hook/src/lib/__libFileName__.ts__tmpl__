@@ -4,7 +4,7 @@ import {
   Hook,
   HookContext,
   HookHints,
-} from '@openfeature/nodejs-sdk';
+} from '@openfeature/js-sdk';
 
 export class <%= libClassName %> implements Hook {
   before(hookContext: HookContext, hookHints?: HookHints) {}

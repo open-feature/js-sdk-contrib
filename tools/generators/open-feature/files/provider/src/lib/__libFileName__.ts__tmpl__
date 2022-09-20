@@ -2,7 +2,7 @@ import {
   EvaluationContext,
   Provider,
   ResolutionDetails,
-} from '@openfeature/nodejs-sdk';
+} from '@openfeature/js-sdk';
 
 export class <%= libClassName %> implements Provider {
   metadata = {

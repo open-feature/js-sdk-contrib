@@ -1,9 +1,10 @@
 import * as grpc from '@grpc/grpc-js';
 import {
   EvaluationContext,
+  JsonValue,
   ParseError,
   ResolutionDetails,
-} from '@openfeature/nodejs-sdk';
+} from '@openfeature/js-sdk';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import { JsonObject } from '@protobuf-ts/runtime';
 import { Struct } from '../../../proto/ts/google/protobuf/struct';
@@ -81,7 +82,7 @@ export class GRPCService implements Service {
     };
   }
 
-  async resolveObject<T extends object>(
+  async resolveObject<T extends JsonValue>(
     flagKey: string,
     context: EvaluationContext
   ): Promise<ResolutionDetails<T>> {

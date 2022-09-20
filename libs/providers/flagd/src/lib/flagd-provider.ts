@@ -1,8 +1,9 @@
 import {
   EvaluationContext,
+  JsonValue,
   Provider,
   ResolutionDetails,
-} from '@openfeature/nodejs-sdk';
+} from '@openfeature/js-sdk';
 import { Service } from './service/service';
 import { GRPCService } from './service/grpc/service';
 import { Protocol } from './service/grpc/protocol';
@@ -69,11 +70,11 @@ export class FlagdProvider implements Provider {
     return this.service.resolveNumber(flagKey, transformedContext);
   }
 
-  resolveObjectEvaluation<U extends object>(
+  resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
-    _: U,
+    _: T,
     transformedContext: EvaluationContext
-  ): Promise<ResolutionDetails<U>> {
+  ): Promise<ResolutionDetails<T>> {
     return this.service.resolveObject(flagKey, transformedContext);
   }
 }
