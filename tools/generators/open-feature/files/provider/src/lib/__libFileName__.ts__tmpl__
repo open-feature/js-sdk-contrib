@@ -1,6 +1,7 @@
 import {
   EvaluationContext,
   Provider,
+  JsonValue,
   ResolutionDetails,
 } from '@openfeature/js-sdk';
 
@@ -35,7 +36,7 @@ export class <%= libClassName %> implements Provider {
     throw new Error('Method not implemented.');
   }
 
-  resolveObjectEvaluation<U extends object>(
+  resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
     defaultValue: U,
     context: EvaluationContext
