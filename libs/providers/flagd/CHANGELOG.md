@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.5.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.4.0...flagd-provider-v0.5.0) (2022-09-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* add support for environment variables (#107)
+* update to js-sdk (#108)
+* Fix object parsing, remove HTTP (#102)
+
+### Features
+
+* add support for environment variables ([#107](https://github.com/open-feature/js-sdk-contrib/issues/107)) ([fcc360b](https://github.com/open-feature/js-sdk-contrib/commit/fcc360bffa328a38594ae9dc30da339aaaed8b93))
+* add Unix socket support ([#97](https://github.com/open-feature/js-sdk-contrib/issues/97)) ([326e65a](https://github.com/open-feature/js-sdk-contrib/commit/326e65ad1e518302b5a7b6a2498dec53c8c93a43))
+* update to js-sdk ([#108](https://github.com/open-feature/js-sdk-contrib/issues/108)) ([60d6146](https://github.com/open-feature/js-sdk-contrib/commit/60d6146e30d3ca547e940c3ba441d80fd75d886d))
+
+
+### Bug Fixes
+
+* Fix object parsing, remove HTTP ([#102](https://github.com/open-feature/js-sdk-contrib/issues/102)) ([d6db366](https://github.com/open-feature/js-sdk-contrib/commit/d6db366a6ef7eb47230dcc6512f189a48c0b4ef2))
+
 ## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.3.0...flagd-provider-v0.4.0) (2022-08-15)
 
 
