@@ -3,7 +3,7 @@ import {
   HookContext,
   EvaluationDetails,
   FlagValue,
-} from '@openfeature/nodejs-sdk';
+} from '@openfeature/js-sdk';
 import { Span, Tracer, trace } from '@opentelemetry/api';
 
 const SpanProperties = Object.freeze({

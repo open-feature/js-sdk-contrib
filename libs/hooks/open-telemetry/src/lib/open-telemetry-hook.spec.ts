@@ -1,4 +1,4 @@
-import { EvaluationDetails, HookContext } from '@openfeature/nodejs-sdk';
+import { EvaluationDetails, HookContext } from '@openfeature/js-sdk';
 
 const setAttributes = jest.fn();
 const setAttribute = jest.fn();
@@ -33,6 +33,7 @@ describe('OpenTelemetry Hooks', () => {
     context: {},
     defaultValue: true,
     flagValueType: 'boolean',
+    logger: console
   };
 
   let otelHook: OpenTelemetryHook;
