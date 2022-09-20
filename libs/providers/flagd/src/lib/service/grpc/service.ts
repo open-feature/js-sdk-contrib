@@ -9,30 +9,22 @@ import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import { JsonObject } from '@protobuf-ts/runtime';
 import { Struct } from '../../../proto/ts/google/protobuf/struct';
 import { ServiceClient } from '../../../proto/ts/schema/v1/schema.client';
+import { Config } from '../../configuration';
 import { Service } from '../service';
-import { Protocol } from './protocol';
-
-interface GRPCServiceOptions {
-  host: string;
-  port: number;
-  protocol: Protocol;
-  socketPath?: string;
-}
 
 export class GRPCService implements Service {
   client: ServiceClient;
 
-  constructor(options: GRPCServiceOptions, client?: ServiceClient) {
-    const { host, port, protocol, socketPath } = options;
+  constructor(config: Config, client?: ServiceClient) {
+    const { host, port, tls, socketPath } = config;
     this.client = client
       ? client
       : new ServiceClient(
           new GrpcTransport({
             host: socketPath ? `unix://${socketPath}` : `${host}:${port}`,
-            channelCredentials:
-              protocol === 'http'
-                ? grpc.credentials.createInsecure()
-                : grpc.credentials.createSsl(),
+            channelCredentials: tls
+              ? grpc.credentials.createSsl()
+              : grpc.credentials.createInsecure(),
           })
         );
   }

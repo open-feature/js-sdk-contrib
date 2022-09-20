@@ -6,44 +6,17 @@ import {
 } from '@openfeature/js-sdk';
 import { Service } from './service/service';
 import { GRPCService } from './service/grpc/service';
-import { Protocol } from './service/grpc/protocol';
-
-export interface FlagdProviderOptions {
-  host?: string;
-  port?: number;
-  // Should this be called protocol?
-  protocol?: Protocol;
-  /**
-   * When set, a unix socket connection is used.
-   *
-   * @example "/tmp/flagd.socks"
-   */
-  socketPath?: string;
-}
+import { FlagdProviderOptions, getConfig } from './configuration';
 
 export class FlagdProvider implements Provider {
   metadata = {
     name: 'flagd Provider',
   };
 
-  private readonly service: Service;
+  private readonly _service: Service;
 
   constructor(options?: FlagdProviderOptions, service?: Service) {
-    const { host, port, protocol, socketPath }: FlagdProviderOptions = {
-      host: 'localhost',
-      port: 8013,
-      protocol: 'http',
-      ...options,
-    };
-
-    this.service = service
-      ? service
-      : new GRPCService({
-          host,
-          port,
-          protocol,
-          socketPath,
-        });
+    this._service = service ? service : new GRPCService(getConfig(options));
   }
 
   resolveBooleanEvaluation(
@@ -51,7 +24,7 @@ export class FlagdProvider implements Provider {
     _: boolean,
     transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<boolean>> {
-    return this.service.resolveBoolean(flagKey, transformedContext);
+    return this._service.resolveBoolean(flagKey, transformedContext);
   }
 
   resolveStringEvaluation(
@@ -59,7 +32,7 @@ export class FlagdProvider implements Provider {
     _: string,
     transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<string>> {
-    return this.service.resolveString(flagKey, transformedContext);
+    return this._service.resolveString(flagKey, transformedContext);
   }
 
   resolveNumberEvaluation(
@@ -67,7 +40,7 @@ export class FlagdProvider implements Provider {
     _: number,
     transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<number>> {
-    return this.service.resolveNumber(flagKey, transformedContext);
+    return this._service.resolveNumber(flagKey, transformedContext);
   }
 
   resolveObjectEvaluation<T extends JsonValue>(
@@ -75,6 +48,6 @@ export class FlagdProvider implements Provider {
     _: T,
     transformedContext: EvaluationContext
   ): Promise<ResolutionDetails<T>> {
-    return this.service.resolveObject(flagKey, transformedContext);
+    return this._service.resolveObject(flagKey, transformedContext);
   }
 }
