@@ -1,6 +1,6 @@
 jest.mock('@protobuf-ts/grpc-transport');
 
-import { Client, ErrorCode, OpenFeature } from '@openfeature/nodejs-sdk';
+import { Client, ErrorCode, OpenFeature } from '@openfeature/js-sdk';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import type { UnaryCall } from '@protobuf-ts/runtime-rpc';
 import { Struct } from '../proto/ts/google/protobuf/struct';

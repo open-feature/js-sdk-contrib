@@ -2,11 +2,12 @@ import {
   ErrorCode,
   EvaluationContext,
   FlagNotFoundError,
+  JsonValue,
   Provider,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
-} from '@openfeature/nodejs-sdk';
+} from '@openfeature/js-sdk';
 import axios from 'axios';
 import { transformContext } from './context-transformer';
 import { ProxyNotReady } from './errors/proxyNotReady';
@@ -122,7 +123,7 @@ export class GoFeatureFlagProvider implements Provider {
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
    * @throws {FlagNotFoundError} When the flag does not exists
    */
-  async resolveObjectEvaluation<U extends object>(
+  async resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
     defaultValue: U,
     context: EvaluationContext

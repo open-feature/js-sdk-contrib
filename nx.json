@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "npmScope": "node-sdk-contrib",
+  "npmScope": "js-sdk-contrib",
   "affected": {
     "defaultBase": "main"
   },

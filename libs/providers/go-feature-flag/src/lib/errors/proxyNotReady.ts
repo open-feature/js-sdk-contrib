@@ -1,4 +1,4 @@
-import { ErrorCode, OpenFeatureError } from '@openfeature/nodejs-sdk'
+import { ErrorCode, OpenFeatureError } from '@openfeature/js-sdk'
 
 // ProxyNotReady is an error send when we try to call the relay proxy and he is not ready
 // to return a valid response.

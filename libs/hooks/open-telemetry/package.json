@@ -4,7 +4,7 @@
   "type": "commonjs",
   "repository": {
     "type": "git",
-    "url": "https://github.com/open-feature/node-sdk-contrib.git",
+    "url": "https://github.com/open-feature/js-sdk-contrib.git",
     "directory": "libs/hooks/open-telemetry"
   },
   "publishConfig": {
@@ -15,7 +15,7 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/nodejs-sdk": "^0.2.0"
+    "@openfeature/js-sdk": "^0.4.0"
   },
   "license": "Apache-2.0"
 }
