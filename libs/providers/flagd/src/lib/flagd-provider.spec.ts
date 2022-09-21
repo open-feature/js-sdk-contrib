@@ -1,8 +1,9 @@
 jest.mock('@protobuf-ts/grpc-transport');
 
-import { Client, ErrorCode, OpenFeature } from '@openfeature/js-sdk';
+import { Client, ErrorCode, EvaluationContext, OpenFeature } from '@openfeature/js-sdk';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import type { UnaryCall } from '@protobuf-ts/runtime-rpc';
+import { RpcError } from '@protobuf-ts/runtime-rpc';
 import { Struct } from '../proto/ts/google/protobuf/struct';
 import {
   ResolveBooleanRequest,
@@ -14,11 +15,11 @@ import {
   ResolveObjectRequest,
   ResolveObjectResponse,
   ResolveStringRequest,
-  ResolveStringResponse,
+  ResolveStringResponse
 } from '../proto/ts/schema/v1/schema';
 import { ServiceClient } from '../proto/ts/schema/v1/schema.client';
 import { FlagdProvider } from './flagd-provider';
-import { GRPCService } from './service/grpc/service';
+import { Codes, GRPCService } from './service/grpc/service';
 
 const REASON = 'STATIC';
 const ERROR_REASON = 'ERROR';
@@ -213,23 +214,32 @@ describe(FlagdProvider.name, () => {
         expect(val.reason).toEqual(REASON);
       });
     });
+
+    describe('undefined in evaluation context', () => {
+      it(`should not throw, call ${ServiceClient.prototype.resolveObject} with key and context and return details`, async () => {
+        const val = await client.getBooleanDetails(BOOLEAN_KEY, false, { it: undefined } as unknown as EvaluationContext);
+        expect(basicServiceClientMock.resolveBoolean).toHaveBeenCalledWith({
+          flagKey: BOOLEAN_KEY,
+          context: Struct.fromJson({}),
+        });
+        expect(val.value).toEqual(BOOLEAN_VALUE);
+        expect(val.variant).toEqual(BOOLEAN_VARIANT);
+        expect(val.reason).toEqual(REASON);
+      });
+    });
   });
 
   describe('resolution errors', () => {
-    const errorResponsePartial = {
-      reason: ERROR_REASON,
-    };
-
     let client: Client;
+    const message = 'error message';
 
     // mock ServiceClient to inject
     const errServiceClientMock: ServiceClient = {
       resolveBoolean: jest.fn(
         (): UnaryCall<ResolveBooleanRequest, ResolveBooleanResponse> => {
-          return Promise.reject({
-            request: {} as ResolveBooleanRequest,
-            response: errorResponsePartial,
-          }) as unknown as UnaryCall<
+          return Promise.reject(
+            new RpcError(message, Codes.DataLoss)
+          ) as unknown as UnaryCall<
             ResolveBooleanRequest,
             ResolveBooleanResponse
           >;
@@ -237,21 +247,22 @@ describe(FlagdProvider.name, () => {
       ),
       resolveString: jest.fn(
         (): UnaryCall<ResolveStringRequest, ResolveStringResponse> => {
-          return Promise.reject({
-            request: {} as ResolveStringRequest,
-            response: errorResponsePartial as ResolveStringResponse,
-          }) as unknown as UnaryCall<
-            ResolveStringRequest,
-            ResolveStringResponse
+          return Promise.reject(
+            new RpcError(message, Codes.InvalidArgument)
+          ) as unknown as UnaryCall<
+          ResolveStringRequest,
+          ResolveStringResponse
           >;
         }
       ),
       resolveFloat: jest.fn(
         (): UnaryCall<ResolveFloatRequest, ResolveFloatResponse> => {
-          return Promise.reject({
-            request: {} as ResolveFloatRequest,
-            response: errorResponsePartial as ResolveFloatResponse,
-          }) as unknown as UnaryCall<ResolveFloatRequest, ResolveFloatResponse>;
+          return Promise.reject(
+            new RpcError(message, Codes.NotFound)
+          ) as unknown as UnaryCall<
+          ResolveFloatRequest,
+          ResolveFloatResponse
+          >;
         }
       ),
       resolveInt: jest.fn(
@@ -261,12 +272,11 @@ describe(FlagdProvider.name, () => {
       ),
       resolveObject: jest.fn(
         (): UnaryCall<ResolveObjectRequest, ResolveObjectResponse> => {
-          return Promise.reject({
-            request: {} as ResolveObjectRequest,
-            response: errorResponsePartial as ResolveObjectResponse,
-          }) as unknown as UnaryCall<
-            ResolveObjectRequest,
-            ResolveObjectResponse
+          return Promise.reject(
+            new RpcError(message, Codes.Unavailable)
+          ) as unknown as UnaryCall<
+          ResolveObjectRequest,
+          ResolveObjectResponse
           >;
         }
       ),
@@ -289,33 +299,36 @@ describe(FlagdProvider.name, () => {
     describe(FlagdProvider.prototype.resolveBooleanEvaluation.name, () => {
       const DEFAULT = false;
 
-      it('should default', async () => {
+      it('should default and add error and reason', async () => {
         const val = await client.getBooleanDetails(BOOLEAN_KEY, DEFAULT);
         expect(errServiceClientMock.resolveBoolean).toHaveBeenCalled();
         expect(val.value).toEqual(DEFAULT);
         expect(val.reason).toEqual(ERROR_REASON);
+        expect(val.errorCode).toEqual(ErrorCode.PARSE_ERROR);
       });
     });
 
     describe(FlagdProvider.prototype.resolveStringEvaluation.name, () => {
       const DEFAULT = 'nope';
 
-      it('should default', async () => {
+      it('should default and add error and reason', async () => {
         const val = await client.getStringDetails(STRING_KEY, DEFAULT);
         expect(errServiceClientMock.resolveString).toHaveBeenCalled();
         expect(val.value).toEqual(DEFAULT);
         expect(val.reason).toEqual(ERROR_REASON);
+        expect(val.errorCode).toEqual(ErrorCode.TYPE_MISMATCH);
       });
     });
 
     describe(FlagdProvider.prototype.resolveNumberEvaluation.name, () => {
       const DEFAULT = 0;
 
-      it('should default', async () => {
+      it('should default and add error and reason', async () => {
         const val = await client.getNumberDetails(NUMBER_KEY, DEFAULT);
         expect(errServiceClientMock.resolveFloat).toHaveBeenCalled();
         expect(val.value).toEqual(DEFAULT);
         expect(val.reason).toEqual(ERROR_REASON);
+        expect(val.errorCode).toEqual(ErrorCode.FLAG_NOT_FOUND);
       });
     });
 
@@ -323,13 +336,14 @@ describe(FlagdProvider.name, () => {
       const DEFAULT_INNER_KEY = 'uh';
       const DEFAULT_INNER_VALUE = 'oh';
 
-      it('should default', async () => {
+      it('should default and add error and reason', async () => {
         const val = await client.getObjectDetails(OBJECT_KEY, {
           [DEFAULT_INNER_KEY]: DEFAULT_INNER_VALUE,
         });
         expect(errServiceClientMock.resolveObject).toHaveBeenCalled();
         expect(val.value).toEqual({ [DEFAULT_INNER_KEY]: DEFAULT_INNER_VALUE });
         expect(val.reason).toEqual(ERROR_REASON);
+        expect(val.errorCode).toEqual(ErrorCode.FLAG_NOT_FOUND);
       });
     });
   });
