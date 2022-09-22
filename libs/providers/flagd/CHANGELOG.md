@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.5.0...flagd-provider-v0.5.1) (2022-09-22)
+
+
+### Bug Fixes
+
+* improved errors, handle undefined context props ([#110](https://github.com/open-feature/js-sdk-contrib/issues/110)) ([ea05b49](https://github.com/open-feature/js-sdk-contrib/commit/ea05b493096664b793fcdcf5c9a66493f25e72a9))
+
 ## [0.5.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.4.0...flagd-provider-v0.5.0) (2022-09-20)
 
 
