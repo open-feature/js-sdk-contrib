@@ -1,23 +1,19 @@
 import {
   EvaluationContext,
   ResolutionDetails,
-  EventCallbackMessage,
-  EventCallbackError,
-  EventContext
 } from '@openfeature/nodejs-sdk';
 import { RpcError } from '@protobuf-ts/runtime-rpc';
 import {
   createConnectTransport,
   createPromiseClient,
   PromiseClient,
-  CallbackClient,
-  createCallbackClient
 } from "@bufbuild/connect-web";
 import { Struct } from "@bufbuild/protobuf";
 import { Service as ConnectServiceStub } from '../proto/ts/schema/v1/schema_connectweb'
 export interface FlagdProviderOptions {
   host?: string;
   port?: number;
+  protocol?: string;
 }
 
 export class FlagdProvider {
@@ -25,46 +21,19 @@ export class FlagdProvider {
     name: 'flagD Provider',
   };
 
-  eventCallbacksMessage: EventCallbackMessage[] = [];
-  eventCallbacksError: EventCallbackError[] = [];
   promiseClient: PromiseClient<typeof ConnectServiceStub>
-  callbackClient: CallbackClient<typeof ConnectServiceStub>
 
   constructor(options?: FlagdProviderOptions) {
-    const {host, port}: FlagdProviderOptions = {
+    const {host, port, protocol}: FlagdProviderOptions = {
       host: "localhost",
       port: 8013,
+      protocol: "http",
       ...options
     };
     const transport = createConnectTransport({
-      baseUrl: `http://${host}:${port}`
+      baseUrl: `${protocol}://${host}:${port}`
     });
     this.promiseClient = createPromiseClient(ConnectServiceStub, transport);
-    this.callbackClient = createCallbackClient(ConnectServiceStub, transport);
-
-    this.callbackClient.eventStream(
-      {},
-      (message) => {
-        const m: EventContext = {
-          notificationType: message.type
-        }
-        for (const func of this.eventCallbacksMessage) {
-          func(m)
-        }
-      },
-      (err) => {
-        for (const func of this.eventCallbacksError) {
-          func(err as Error)
-        }
-      },
-    )
-  }
-
-  addMessageListener(func: EventCallbackMessage): void {
-    this.eventCallbacksMessage.push(func);
-  }
-  addErrorListener(func: EventCallbackError): void {
-    this.eventCallbacksError.push(func);
   }
 
   resolveBooleanEvaluation(
