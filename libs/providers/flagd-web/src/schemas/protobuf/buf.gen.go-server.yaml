@@ -1,0 +1,18 @@
+version: v1
+managed:
+  enabled: true
+plugins:
+  - remote: buf.build/protocolbuffers/plugins/go:v1.28.0-1
+    out: ../proto/go-server
+    opt:
+      - paths=source_relative
+  - remote: buf.build/library/plugins/go-grpc:v1.1.0-2
+    out: ../proto/go-server
+    opt:
+      - require_unimplemented_servers=false
+      - paths=source_relative
+  - remote: buf.build/grpc-ecosystem/plugins/grpc-gateway:v2.10.3-1
+    out: ../proto/go-server
+    opt:
+      - paths=source_relative
+      - generate_unbound_methods=true

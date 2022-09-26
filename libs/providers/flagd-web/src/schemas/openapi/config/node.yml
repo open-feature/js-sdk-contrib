@@ -1,0 +1,8 @@
+templateDir: openapi/config/node
+additionalProperties:
+  npmName: "@openfeature/provider-rest-client"
+files:
+  LICENSE.md: {}
+  package.mustache:
+    destinationFilename: package.json
+    templateType: SupportingFiles

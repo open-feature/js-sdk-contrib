@@ -1,0 +1,8 @@
+dist
+
+# Docker run action artifact
+semicolon_delimited_script
+
+# buf generated files
+gen/
+proto/

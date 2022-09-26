@@ -9,7 +9,7 @@ import {
   PromiseClient,
 } from "@bufbuild/connect-web";
 import { Struct } from "@bufbuild/protobuf";
-import { Service as ConnectServiceStub } from '../proto/ts/schema/v1/schema_connectweb'
+import { Service } from '../proto/ts/schema/v1/schema_connectweb'
 export interface FlagdProviderOptions {
   host?: string;
   port?: number;
@@ -21,7 +21,7 @@ export class FlagdProvider {
     name: 'flagD Provider',
   };
 
-  promiseClient: PromiseClient<typeof ConnectServiceStub>
+  promiseClient: PromiseClient<typeof Service>
 
   constructor(options?: FlagdProviderOptions) {
     const {host, port, protocol}: FlagdProviderOptions = {
@@ -33,7 +33,7 @@ export class FlagdProvider {
     const transport = createConnectTransport({
       baseUrl: `${protocol}://${host}:${port}`
     });
-    this.promiseClient = createPromiseClient(ConnectServiceStub, transport);
+    this.promiseClient = createPromiseClient(Service, transport);
   }
 
   resolveBooleanEvaluation(

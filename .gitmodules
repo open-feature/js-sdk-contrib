@@ -1,6 +1,6 @@
 [submodule "libs/providers/flagd/schemas"]
 	path = libs/providers/flagd/schemas
 	url = https://github.com/open-feature/schemas
-[submodule "libs/providers/flagd-web/src/schemas"]
-	path = libs/providers/flagd-web/src/schemas
+[submodule "libs/providers/flagd-web/schemas"]
+	path = libs/providers/flagd-web/schemas
 	url = https://github.com/james-milligan/schemas.git

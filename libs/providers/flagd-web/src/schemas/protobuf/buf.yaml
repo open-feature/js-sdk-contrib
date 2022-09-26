@@ -1,0 +1,14 @@
+version: v1
+name: buf.build/open-feature/flagd
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/grpc-ecosystem/grpc-gateway
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT
+  ignore:
+    - buf.build/googleapis/googleapis
+    - buf.build/grpc-ecosystem/grpc-gateway
