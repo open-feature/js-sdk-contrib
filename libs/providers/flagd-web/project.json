@@ -49,7 +49,8 @@
         "commands": [
           "git submodule update --init --recursive",
           "rm -f -r ./src/proto",
-          "cd ./src/schemas && make gen-ts"
+          "cd schemas && buf generate buf.build/open-feature/flagd --template protobuf/buf.gen.ts-connect.yaml",
+          "mv -v ./proto ./src"
         ],
         "cwd": "libs/providers/flagd-web",
         "parallel": false

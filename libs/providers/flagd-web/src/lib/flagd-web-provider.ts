@@ -18,6 +18,7 @@ import { Service } from '../proto/ts/schema/v1/schema_connectweb'
 export const ERROR_PARSE_ERROR = "PARSE_ERROR"
 export const ERROR_DISABLED = "DISABLED"
 export const ERROR_UNKNOWN = "UNKNOWN"
+
 export interface FlagdProviderOptions {
   host?: string;
   port?: number;
@@ -143,7 +144,6 @@ export class FlagdProvider {
     })
   }
 }
-
 
 function ErrorResponse(err: unknown): string {
   err as Partial<ConnectError>
