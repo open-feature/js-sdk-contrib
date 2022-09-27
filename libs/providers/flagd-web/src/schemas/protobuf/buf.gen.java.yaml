@@ -1,8 +1,0 @@
-version: v1
-managed:
-  enabled: true
-plugins:
-  - remote: buf.build/protocolbuffers/plugins/java:v21.4.0-1
-    out: ../proto/java
-  - remote: buf.build/grpc/plugins/java:v1.48.0-1
-    out: ../proto/java
