@@ -1,4 +1,4 @@
-# NodeJS OpenTelemetry Hook for OpenFeature
+# JavaScript OpenTelemetry Hook for OpenFeature
 
 ![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)
 
@@ -11,7 +11,7 @@ $ npm install @openfeature/open-telemetry-hook
 Required peer dependencies
 
 ```
-$ npm install @openfeature/nodejs-sdk @opentelemetry/api
+$ npm install @openfeature/js-sdk @opentelemetry/api
 ```
 
 ## Building

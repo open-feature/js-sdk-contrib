@@ -1,4 +1,4 @@
-import { EvaluationContext } from '@openfeature/nodejs-sdk';
+import { EvaluationContext } from '@openfeature/js-sdk';
 import { GoFeatureFlagUser } from './model';
 import { transformContext } from './context-transformer';
 

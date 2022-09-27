@@ -7,7 +7,7 @@ import {
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
-} from '@openfeature/nodejs-sdk';
+} from '@openfeature/js-sdk';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { ProxyNotReady } from './errors/proxyNotReady';

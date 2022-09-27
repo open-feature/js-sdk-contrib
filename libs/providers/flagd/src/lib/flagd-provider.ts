@@ -1,94 +1,68 @@
 import {
   EvaluationContext,
+  JsonValue,
+  Logger,
   Provider,
-  ResolutionDetails,
-} from '@openfeature/nodejs-sdk';
-import { Service } from './service/Service';
-import { HTTPService } from './service/http/service';
+  ResolutionDetails
+} from '@openfeature/js-sdk';
+import { FlagdProviderOptions, getConfig } from './configuration';
 import { GRPCService } from './service/grpc/service';
-
-export interface FlagdProviderOptions {
-  service?: 'grpc' | 'http';
-  host?: string;
-  port?: number;
-  protocol?: 'http' | 'https';
-}
+import { Service } from './service/service';
 
 export class FlagdProvider implements Provider {
   metadata = {
-    name: 'flagD Provider',
+    name: 'flagd Provider',
   };
 
-  private readonly service: Service;
+  private readonly _service: Service;
 
-  constructor(options?: FlagdProviderOptions) {
-    const { service, host, port, protocol }: FlagdProviderOptions = {
-      service: 'http',
-      host: 'localhost',
-      port: 8013,
-      protocol: 'http',
-      ...options,
-    };
-
-    if (service === 'http') {
-      this.service = new HTTPService({
-        host,
-        port,
-        protocol,
-      });
-    } else {
-      this.service = new GRPCService({
-        host,
-        port,
-      });
-    }
+  constructor(options?: FlagdProviderOptions, service?: Service) {
+    this._service = service ? service : new GRPCService(getConfig(options));
   }
 
   resolveBooleanEvaluation(
     flagKey: string,
-    defaultValue: boolean,
-    transformedContext: EvaluationContext
+    _: boolean,
+    transformedContext: EvaluationContext,
+    logger: Logger
   ): Promise<ResolutionDetails<boolean>> {
-    return this.service.resolveBoolean(
-      flagKey,
-      defaultValue,
-      transformedContext
-    );
+    return this._service.resolveBoolean(flagKey, transformedContext, logger)
+      .catch((err) => this.logRejected(err, flagKey, logger));
   }
 
   resolveStringEvaluation(
     flagKey: string,
-    defaultValue: string,
-    transformedContext: EvaluationContext
+    _: string,
+    transformedContext: EvaluationContext,
+    logger: Logger
   ): Promise<ResolutionDetails<string>> {
-    return this.service.resolveString(
-      flagKey,
-      defaultValue,
-      transformedContext
-    );
+    return this._service.resolveString(flagKey, transformedContext, logger)
+      .catch((err) => this.logRejected(err, flagKey, logger));
   }
 
   resolveNumberEvaluation(
     flagKey: string,
-    defaultValue: number,
-    transformedContext: EvaluationContext
+    _: number,
+    transformedContext: EvaluationContext,
+    logger: Logger
   ): Promise<ResolutionDetails<number>> {
-    return this.service.resolveNumber(
-      flagKey,
-      defaultValue,
-      transformedContext
-    );
+    return this._service.resolveNumber(flagKey, transformedContext, logger)
+      .catch((err) => this.logRejected(err, flagKey, logger));
   }
 
-  resolveObjectEvaluation<U extends object>(
+  resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
-    defaultValue: U,
-    transformedContext: EvaluationContext
-  ): Promise<ResolutionDetails<U>> {
-    return this.service.resolveObject(
-      flagKey,
-      defaultValue,
-      transformedContext
-    );
+    _: T,
+    transformedContext: EvaluationContext,
+    logger: Logger
+  ): Promise<ResolutionDetails<T>> {
+    return this._service.resolveObject<T>(flagKey, transformedContext, logger)
+      .catch((err) => this.logRejected(err, flagKey, logger));
+  }
+
+  logRejected = (err: Error, flagKey: string, logger: Logger) => {
+    logger.error(`Error resolving flag ${flagKey}: ${err?.message}`);
+    logger.error(err?.stack);
+    throw err;
   }
 }

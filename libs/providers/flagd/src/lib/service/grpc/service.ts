@@ -1,129 +1,144 @@
-import { RpcError } from '@protobuf-ts/runtime-rpc';
-import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import * as grpc from '@grpc/grpc-js';
 import {
   EvaluationContext,
+  FlagNotFoundError,
+  JsonValue,
+  Logger,
+  ParseError,
   ResolutionDetails,
-  StandardResolutionReasons,
-} from '@openfeature/nodejs-sdk';
+  TypeMismatchError
+} from '@openfeature/js-sdk';
+import { GrpcTransport } from '@protobuf-ts/grpc-transport';
+import { FinishedUnaryCall, RpcError } from '@protobuf-ts/runtime-rpc';
 import { Struct } from '../../../proto/ts/google/protobuf/struct';
 import { ServiceClient } from '../../../proto/ts/schema/v1/schema.client';
-import { Service } from '../Service';
+import { Config } from '../../configuration';
+import { Service } from '../service';
 
-interface GRPCServiceOptions {
-  host: string;
-  port: number;
-}
+// see: https://grpc.github.io/grpc/core/md_doc_statuscodes.html
+export const Codes = {
+  InvalidArgument: 'INVALID_ARGUMENT',
+  NotFound: 'NOT_FOUND',
+  DataLoss: 'DATA_LOSS',
+  Unavailable: 'UNAVAILABLE'
+} as const;
+
 export class GRPCService implements Service {
   client: ServiceClient;
 
-  constructor(options: GRPCServiceOptions) {
-    const { host, port } = options;
-    this.client = new ServiceClient(
-      new GrpcTransport({
-        host: `${host}:${port}`,
-        channelCredentials: grpc.credentials.createInsecure(),
-      })
-    );
+  constructor(config: Config, client?: ServiceClient) {
+    const { host, port, tls, socketPath } = config;
+    this.client = client
+      ? client
+      : new ServiceClient(
+          new GrpcTransport({
+            host: socketPath ? `unix://${socketPath}` : `${host}:${port}`,
+            channelCredentials: tls
+              ? grpc.credentials.createSsl()
+              : grpc.credentials.createInsecure(),
+          })
+        );
   }
 
   async resolveBoolean(
     flagKey: string,
-    defaultValue: boolean,
-    context: EvaluationContext
+    context: EvaluationContext,
+    logger: Logger
   ): Promise<ResolutionDetails<boolean>> {
-    try {
-      const { response } = await this.client.resolveBoolean({
-        flagKey,
-        context: Struct.fromJsonString(JSON.stringify(context)),
-      });
-      return {
-        value: response.value,
-        reason: response.reason,
-        variant: response.variant,
-      };
-    } catch (err: unknown) {
-      return {
-        reason: StandardResolutionReasons.ERROR,
-        errorCode:
-          (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
-        value: defaultValue,
-      };
-    }
+    const { response } = await this.client.resolveBoolean({
+      flagKey,
+      context: this.convertContext(context, logger),
+    }).then(this.onFulfilled, this.onRejected);;
+    return {
+      value: response.value,
+      reason: response.reason,
+      variant: response.variant,
+    };
   }
 
   async resolveString(
     flagKey: string,
-    defaultValue: string,
-    context: EvaluationContext
+    context: EvaluationContext,
+    logger: Logger
   ): Promise<ResolutionDetails<string>> {
-    try {
-      const { response } = await this.client.resolveString({
-        flagKey,
-        context: Struct.fromJsonString(JSON.stringify(context)),
-      });
-      return {
-        value: response.value,
-        reason: response.reason,
-        variant: response.variant,
-      };
-    } catch (err: unknown) {
-      return {
-        reason: StandardResolutionReasons.ERROR,
-        errorCode:
-          (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
-        value: defaultValue,
-      };
+    const { response } = await this.client.resolveString({
+      flagKey,
+      context: this.convertContext(context, logger),
+    }).then(this.onFulfilled, this.onRejected);
+    return {
+      value: response.value,
+      reason: response.reason,
+      variant: response.variant,
     }
   }
 
   async resolveNumber(
     flagKey: string,
-    defaultValue: number,
-    context: EvaluationContext
+    context: EvaluationContext,
+    logger: Logger
   ): Promise<ResolutionDetails<number>> {
-    try {
-      const { response } = await this.client.resolveFloat({
-        flagKey,
-        context: Struct.fromJsonString(JSON.stringify(context)),
-      });
+    const { response } = await this.client.resolveFloat({
+      flagKey,
+      context: this.convertContext(context, logger),
+    }).then(this.onFulfilled, this.onRejected);
+    return {
+      value: response.value,
+      reason: response.reason,
+      variant: response.variant,
+    };
+  }
+
+  async resolveObject<T extends JsonValue>(
+    flagKey: string,
+    context: EvaluationContext,
+    logger: Logger
+  ): Promise<ResolutionDetails<T>> {
+    const { response } = await this.client.resolveObject({
+      flagKey,
+      context: this.convertContext(context, logger),
+    }).then(this.onFulfilled, this.onRejected);
+    if (response.value !== undefined) {
       return {
-        value: response.value,
+        value: Struct.toJson(response.value) as T,
         reason: response.reason,
         variant: response.variant,
       };
-    } catch (err: unknown) {
-      return {
-        reason: StandardResolutionReasons.ERROR,
-        errorCode:
-          (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
-        value: defaultValue,
-      };
+    } else {
+      throw new ParseError('Object value undefined or missing.');
     }
   }
 
-  async resolveObject<T extends object>(
-    flagKey: string,
-    defaultValue: T,
-    context: EvaluationContext
-  ): Promise<ResolutionDetails<T>> {
+  private convertContext(context: EvaluationContext, logger: Logger): Struct {
     try {
-      const { response } = await this.client.resolveObject({
-        flagKey,
-        context: Struct.fromJsonString(JSON.stringify(context)),
-      });
-      return {
-        value: response.value as T,
-        reason: response.reason,
-        variant: response.variant,
-      };
-    } catch (err: unknown) {
-      return {
-        reason: StandardResolutionReasons.ERROR,
-        errorCode:
-          (err as Partial<RpcError>)?.code ?? StandardResolutionReasons.UNKNOWN,
-        value: defaultValue,
-      };
+      // stringify to remove invalid js props
+      return Struct.fromJsonString(JSON.stringify(context));
+    } catch (e) {
+      const message = 'Error serializing context.';
+      const error = e as Error;
+      logger.error(`${message}: ${error?.message}`);
+      logger.error(error?.stack)
+      throw new ParseError(message);
+    }
+  }
+
+  private onFulfilled = <T extends object, U extends object>(value: FinishedUnaryCall<T, U>) => {
+    // no-op, just return the value
+    return value;
+  }
+
+  private onRejected = (err: RpcError) => {
+    // map the errors
+    switch (err?.code) {
+      case Codes.DataLoss:
+        throw new ParseError(err.message);
+      case Codes.InvalidArgument:
+        throw new TypeMismatchError(err.message);
+      case Codes.NotFound:
+        throw new FlagNotFoundError(err.message);
+      case Codes.Unavailable:
+        throw new FlagNotFoundError(err.message);
+      default:
+        throw err;
     }
   }
 }
