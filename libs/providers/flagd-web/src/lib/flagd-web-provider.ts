@@ -1,7 +1,8 @@
 import {
   EvaluationContext,
   ResolutionDetails,
-  ErrorCode
+  ErrorCode,
+  StandardResolutionReasons
 } from '@openfeature/nodejs-sdk';
 import { RpcError } from '@protobuf-ts/runtime-rpc';
 import {
@@ -59,7 +60,7 @@ export class FlagdProvider {
         }
       }).catch((err: unknown) => {
         return {
-          reason: "ERROR",
+          reason: StandardResolutionReasons.ERROR,
           errorCode: ErrorResponse(err),
           value: defaultValue,
         };
@@ -82,7 +83,7 @@ export class FlagdProvider {
       }
     }).catch((err: unknown) => {
       return {
-        reason: "ERROR",
+        reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorResponse(err),
         value: defaultValue,
       };
@@ -105,7 +106,7 @@ export class FlagdProvider {
       }
     }).catch((err: unknown) => {
       return {
-        reason: "ERROR",
+        reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorResponse(err),
         value: defaultValue,
       };
@@ -135,7 +136,7 @@ export class FlagdProvider {
       }
     }).catch((err: unknown) => {
       return {
-        reason: "ERROR",
+        reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorResponse(err),
         value: defaultValue,
       };
