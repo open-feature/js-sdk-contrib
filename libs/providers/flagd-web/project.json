@@ -21,7 +21,13 @@
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["libs/providers/flagd-web/**/*.ts"]
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "generate"
+        }
+      ]
     },
     "test": {
       "executor": "@nrwl/jest:jest",
@@ -29,7 +35,13 @@
       "options": {
         "jestConfig": "libs/providers/flagd-web/jest.config.ts",
         "passWithNoTests": true
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "generate"
+        }
+      ]
     },
     "generate": {
       "executor": "@nrwl/workspace:run-commands",
