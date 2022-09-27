@@ -17,6 +17,7 @@
     "@opentelemetry/api": "^1.1.0",
     "@protobuf-ts/grpc-transport": "^2.7.0",
     "axios": "^0.27.2",
+    "jest-fetch-mock": "^3.0.3",
     "object-hash": "^3.0.0",
     "tslib": "^2.3.0"
   },

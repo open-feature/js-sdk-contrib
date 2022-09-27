@@ -1,15 +1,22 @@
 import {
   EvaluationContext,
   ResolutionDetails,
+  ErrorCode
 } from '@openfeature/nodejs-sdk';
 import { RpcError } from '@protobuf-ts/runtime-rpc';
 import {
   createConnectTransport,
   createPromiseClient,
   PromiseClient,
+  ConnectError,
+  Code
 } from "@bufbuild/connect-web";
 import { Struct } from "@bufbuild/protobuf";
 import { Service } from '../proto/ts/schema/v1/schema_connectweb'
+
+export const ERROR_PARSE_ERROR = "PARSE_ERROR"
+export const ERROR_DISABLED = "DISABLED"
+export const ERROR_UNKNOWN = "UNKNOWN"
 export interface FlagdProviderOptions {
   host?: string;
   port?: number;
@@ -53,8 +60,7 @@ export class FlagdProvider {
       }).catch((err: unknown) => {
         return {
           reason: "ERROR",
-          errorCode:
-            (err as Partial<RpcError>)?.code ?? "UNKNOWN",
+          errorCode: ErrorResponse(err),
           value: defaultValue,
         };
       })
@@ -77,8 +83,7 @@ export class FlagdProvider {
     }).catch((err: unknown) => {
       return {
         reason: "ERROR",
-        errorCode:
-          (err as Partial<RpcError>)?.code ?? "UNKNOWN",
+        errorCode: ErrorResponse(err),
         value: defaultValue,
       };
     })
@@ -101,8 +106,7 @@ export class FlagdProvider {
     }).catch((err: unknown) => {
       return {
         reason: "ERROR",
-        errorCode:
-          (err as Partial<RpcError>)?.code ?? "UNKNOWN",
+        errorCode: ErrorResponse(err),
         value: defaultValue,
       };
     })
@@ -117,18 +121,41 @@ export class FlagdProvider {
       flagKey,
       context: Struct.fromJsonString(JSON.stringify(transformedContext)),
     }).then((res) => {
+      if (res.value) {
+        return {
+          value: JSON.parse(res.value.toJsonString()) as U,
+          reason: res.reason,
+          variant: res.variant,
+        }
+      }
       return {
-        value: res.value as U,
+        value: defaultValue,
         reason: res.reason,
         variant: res.variant,
       }
     }).catch((err: unknown) => {
       return {
         reason: "ERROR",
-        errorCode:
-          (err as Partial<RpcError>)?.code ?? "UNKNOWN",
+        errorCode: ErrorResponse(err),
         value: defaultValue,
       };
     })
+  }
+}
+
+
+function ErrorResponse(err: unknown): string {
+  err as Partial<ConnectError>
+  switch ((err as Partial<ConnectError>).code) {
+    case Code.NotFound:
+      return ErrorCode.FLAG_NOT_FOUND
+    case Code.InvalidArgument:
+      return ErrorCode.TYPE_MISMATCH
+    case Code.Unavailable:
+        return ERROR_DISABLED
+    case Code.DataLoss:
+        return ERROR_PARSE_ERROR
+    default:
+      return ERROR_UNKNOWN
   }
 }
