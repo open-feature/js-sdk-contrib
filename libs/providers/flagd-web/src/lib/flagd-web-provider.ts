@@ -4,7 +4,6 @@ import {
   ErrorCode,
   StandardResolutionReasons
 } from '@openfeature/nodejs-sdk';
-import { RpcError } from '@protobuf-ts/runtime-rpc';
 import {
   createConnectTransport,
   createPromiseClient,
@@ -19,21 +18,21 @@ export const ERROR_PARSE_ERROR = "PARSE_ERROR"
 export const ERROR_DISABLED = "DISABLED"
 export const ERROR_UNKNOWN = "UNKNOWN"
 
-export interface FlagdProviderOptions {
+export interface FlagdWebProviderOptions {
   host?: string;
   port?: number;
   protocol?: string;
 }
 
-export class FlagdProvider {
+export class FlagdWebProvider {
   metadata = {
     name: 'flagD Provider',
   };
 
   promiseClient: PromiseClient<typeof Service>
 
-  constructor(options?: FlagdProviderOptions) {
-    const {host, port, protocol}: FlagdProviderOptions = {
+  constructor(options?: FlagdWebProviderOptions) {
+    const {host, port, protocol}: FlagdWebProviderOptions = {
       host: "localhost",
       port: 8013,
       protocol: "http",

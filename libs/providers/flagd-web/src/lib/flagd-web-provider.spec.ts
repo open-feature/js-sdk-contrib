@@ -1,4 +1,4 @@
-import { ERROR_DISABLED, ERROR_PARSE_ERROR, FlagdProvider } from './flagd-web-provider';
+import { ERROR_DISABLED, ERROR_PARSE_ERROR, FlagdWebProvider } from './flagd-web-provider';
 import fetchMock from "jest-fetch-mock";
 import {
   OpenFeature,
@@ -16,14 +16,14 @@ describe('FlagdProvider', () => {
   fetchMock.enableMocks();
 
   it('should be and instance of FlagdProvider', () => {
-    expect(new FlagdProvider()).toBeInstanceOf(FlagdProvider);
+    expect(new FlagdWebProvider()).toBeInstanceOf(FlagdWebProvider);
   });
 
   describe('http service tests', () => {
     let client: Client;
 
     beforeEach(() => {
-      OpenFeature.setProvider(new FlagdProvider());
+      OpenFeature.setProvider(new FlagdWebProvider());
       client = OpenFeature.getClient('test');
     });
 
@@ -103,7 +103,7 @@ describe('FlagdProvider', () => {
     let client: Client;
 
     beforeEach(() => {
-      OpenFeature.setProvider(new FlagdProvider());
+      OpenFeature.setProvider(new FlagdWebProvider());
       client = OpenFeature.getClient('test');
     });
 
