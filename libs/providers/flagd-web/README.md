@@ -1,4 +1,4 @@
-# NodeJS flagd-web Provider for OpenFeature
+# Client-side flagD Provider for OpenFeature
 
 ![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)
 
