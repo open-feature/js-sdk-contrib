@@ -24,9 +24,6 @@
       ],
       "@openfeature/hooks-open-telemetry": [
         "libs/hooks/open-telemetry/src/index.ts"
-      ],
-      "@openfeature/web-flagd-provider": [
-        "libs/providers/web-flagd/src/index.ts"
       ]
     }
   },
