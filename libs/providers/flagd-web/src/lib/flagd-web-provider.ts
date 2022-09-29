@@ -2,7 +2,8 @@ import {
   EvaluationContext,
   ResolutionDetails,
   ErrorCode,
-  StandardResolutionReasons
+  StandardResolutionReasons,
+  JsonValue
 } from '@openfeature/js-sdk';
 import {
   createConnectTransport,
@@ -113,7 +114,7 @@ export class FlagdWebProvider {
     })
   }
 
-  resolveObjectEvaluation<U extends object>(
+  resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
     defaultValue: U,
     transformedContext: EvaluationContext
