@@ -3,7 +3,7 @@ import {
   ResolutionDetails,
   ErrorCode,
   StandardResolutionReasons
-} from '@openfeature/nodejs-sdk';
+} from '@openfeature/js-sdk';
 import {
   createConnectTransport,
   createPromiseClient,
