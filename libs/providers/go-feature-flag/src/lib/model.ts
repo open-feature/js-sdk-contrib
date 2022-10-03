@@ -1,7 +1,6 @@
 import {
   ErrorCode,
-  JSONValue,
-  StandardResolutionReasons,
+  EvaluationContextValue,
 } from '@openfeature/js-sdk';
 
 /**
@@ -13,7 +12,7 @@ export interface GoFeatureFlagUser {
   key: string;
   anonymous?: boolean;
   custom?: {
-    [key: string]: JSONValue;
+    [key: string]: EvaluationContextValue;
   };
 }
 
@@ -37,7 +36,7 @@ export interface GoFeatureFlagProxyResponse<T> {
   value: T;
   variationType: string;
   version?: string;
-  reason: StandardResolutionReasons | GOFeatureFlagResolutionReasons;
+  reason: string | GOFeatureFlagResolutionReasons;
   errorCode?: ErrorCode | GOFeatureFlagErrorCode;
 }
 

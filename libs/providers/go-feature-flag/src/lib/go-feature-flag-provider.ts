@@ -227,10 +227,12 @@ export class GoFeatureFlagProvider implements Provider {
     const sdkResponse: ResolutionDetails<T> = {
       value: apiResponseData.value,
       variant: apiResponseData.variationType,
-      reason: apiResponseData.reason.toString(),
+      reason: apiResponseData.reason?.toString() || 'UNKNOWN'
     };
-    if (apiResponseData.errorCode) {
-      sdkResponse.errorCode = apiResponseData.errorCode.toString();
+    if (Object.values(ErrorCode).includes(apiResponseData.errorCode as ErrorCode)) {
+      sdkResponse.errorCode = ErrorCode[apiResponseData.errorCode as ErrorCode];
+    } else if (apiResponseData.errorCode) {
+      sdkResponse.errorCode = ErrorCode.GENERAL;
     }
     return sdkResponse;
   }
