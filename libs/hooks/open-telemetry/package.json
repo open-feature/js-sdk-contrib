@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/open-telemetry-hook",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "type": "commonjs",
   "repository": {
     "type": "git",
