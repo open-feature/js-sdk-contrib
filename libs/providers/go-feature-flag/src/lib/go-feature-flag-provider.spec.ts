@@ -65,7 +65,7 @@ describe('GoFeatureFlagProvider', () => {
     });
 
     describe('error codes in HTTP response', () => {
-      it('SDK error codes should throw and return correct code', async () => {
+      it('SDK error codes should return correct code', async () => {
         const flagName = 'random-other-flag';
         const targetingKey = 'user-key';
         const dns = `${endpoint}v1/feature/${flagName}/eval`;
@@ -81,7 +81,7 @@ describe('GoFeatureFlagProvider', () => {
           })
       });
   
-      it('unknown error codes should throw and return GENERAL code', async () => {
+      it('unknown error codes should return GENERAL code', async () => {
         const flagName = 'random-other-other-flag';
         const targetingKey = 'user-key';
         const dns = `${endpoint}v1/feature/${flagName}/eval`;
