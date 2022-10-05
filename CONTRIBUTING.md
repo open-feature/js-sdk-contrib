@@ -18,7 +18,7 @@ Instructions for how to develop a component should also be included (required sy
 
 ## Testing
 
-Any published components must have reasonable testing.
+Any published components must have reasonable test coverage.
 The NX scaffolding will generate stub tests for you when you create your project.
 
 ## Versioning and releasing
