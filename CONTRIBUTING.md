@@ -21,6 +21,9 @@ Instructions for how to develop a component should also be included (required sy
 Any published components must have reasonable test coverage.
 The NX scaffolding will generate stub tests for you when you create your project.
 
+Use `npm run test` to test the entire project.
+Use `npx nx test` {COMPONENT NAME} to test just a single component.
+
 ## Versioning and releasing
 
 As described in the [README](./README.md), this project uses release-please, and semantic versioning.
