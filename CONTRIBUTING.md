@@ -6,7 +6,7 @@ node 16+, npm 8+ are recommended.
 
 ## Compilation target(s)
 
-We target `es5`, and require all modules to publish both ES-modules and CommonJS modules. The generators described below will configure this automatically.
+We target `es2015`, and require all modules to publish both ES-modules and CommonJS modules. The generators described below will configure this automatically.
 
 ## Adding a module
 
