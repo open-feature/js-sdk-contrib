@@ -1,6 +1,6 @@
 ---
 name: Add provider
-about: Add provider tempalte
+about: Add provider template
 title: Add {my-system} provider
 labels: enhancement, hacktoberfest-pending
 assignees: ''
