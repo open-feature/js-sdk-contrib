@@ -36,5 +36,11 @@ Use `npx nx test {MODULE NAME}` to test just a single module.
 
 As described in the [README](./README.md), this project uses release-please, and semantic versioning.
 Breaking changes should be identified by using a semantic PR title.
-Keep in mind, though one version of the JS-SDK is used for all modules, each module may have a different peer-dependency requirement for the JS-SDK (e.g: one module may require ^1.2.0 while another might require ^1.4.0).
-Be sure to properly express the JS-SDK peer dependency version your module needs. 
+
+## Dependencies
+
+Keep dependencies to a minimum, especially non-dev dependencies.
+The JS-SDK should be a _peer dependency_ of your module.
+Run `npm run package`, and then verify the dependencies in `dist/libs/{MODULE_PATH}/package.json` are appropriate.
+Keep in mind, though one version of the JS-SDK is used for all modules in testing, each module may have a different peer-dependency requirement for the JS-SDK (e.g: one module may require ^1.2.0 while another might require ^1.4.0).
+Be sure to properly express the JS-SDK peer dependency version your module requires.
