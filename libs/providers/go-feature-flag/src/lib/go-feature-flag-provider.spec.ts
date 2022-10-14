@@ -3,10 +3,9 @@
  */
 import {
   ErrorCode,
-  FlagNotFoundError,
-  ResolutionDetails,
+  FlagNotFoundError, ResolutionDetails,
   StandardResolutionReasons,
-  TypeMismatchError,
+  TypeMismatchError
 } from '@openfeature/js-sdk';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
@@ -63,6 +62,40 @@ describe('GoFeatureFlagProvider', () => {
             `impossible to retrieve the ${flagName} on time: Error: timeout of 0ms exceeded`
           );
         });
+    });
+
+    describe('error codes in HTTP response', () => {
+      it('SDK error codes should return correct code', async () => {
+        const flagName = 'random-other-flag';
+        const targetingKey = 'user-key';
+        const dns = `${endpoint}v1/feature/${flagName}/eval`;
+        axiosMock.onPost(dns).reply(200, {
+          value: true,
+          variationType: 'trueVariation',
+          errorCode: ErrorCode.PARSE_ERROR,
+        } as GoFeatureFlagProxyResponse<boolean>);
+        await goff
+          .resolveBooleanEvaluation(flagName, false, { targetingKey })
+          .then((result) => {
+            expect(result.errorCode).toEqual(ErrorCode.PARSE_ERROR)
+          })
+      });
+  
+      it('unknown error codes should return GENERAL code', async () => {
+        const flagName = 'random-other-other-flag';
+        const targetingKey = 'user-key';
+        const dns = `${endpoint}v1/feature/${flagName}/eval`;
+        axiosMock.onPost(dns).reply(200, {
+          value: true,
+          variationType: 'trueVariation',
+          errorCode: 'NOT-AN-SDK-ERROR',
+        } as unknown as GoFeatureFlagProxyResponse<boolean>);
+        await goff
+          .resolveBooleanEvaluation(flagName, false, { targetingKey })
+          .then((result) => {
+            expect(result.errorCode).toEqual(ErrorCode.GENERAL)
+          })
+      });
     });
 
     it('should throw an error if we fail in other network errors case', async () => {

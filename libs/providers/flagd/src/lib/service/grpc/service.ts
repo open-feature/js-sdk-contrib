@@ -2,6 +2,7 @@ import * as grpc from '@grpc/grpc-js';
 import {
   EvaluationContext,
   FlagNotFoundError,
+  GeneralError,
   JsonValue,
   Logger,
   ParseError,
@@ -138,7 +139,7 @@ export class GRPCService implements Service {
       case Codes.Unavailable:
         throw new FlagNotFoundError(err.message);
       default:
-        throw err;
+        throw new GeneralError(err.message);
     }
   }
 }
