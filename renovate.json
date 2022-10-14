@@ -2,5 +2,43 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:base"
+  ],
+  "semanticCommits": "enabled",
+  "labels": [
+    "renovate"
+  ],
+  "packageRules": [
+    {
+      "matchPackagePatterns": [
+        "@nrwl/",
+        "nx"
+      ],
+      "groupName": "NX"
+    },
+    {
+      "matchPackagePatterns": [
+        "@typescript-eslint",
+        "eslint"
+      ],
+      "groupName": "ESLint"
+    },
+    {
+      "matchPackagePatterns": [
+        "@types/"
+      ],
+      "groupName": "Types"
+    },
+    {
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "automerge": true
+    }
   ]
 }
