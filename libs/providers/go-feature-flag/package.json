@@ -7,6 +7,6 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/js-sdk": "~0.5.0"
+    "@openfeature/js-sdk": "^1.0.0"
   }
 }
