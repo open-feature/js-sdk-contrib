@@ -1,4 +1,4 @@
-# Server-side JavaScript Go Feature Flag Provider for OpenFeature
+# Server-side Go Feature Flag Provider
 
 This provider is an implementation for [`go-feature-flag`](https://github.com/thomaspoignant/go-feature-flag) a simple and complete
 feature flag solution, without any complex backend system to install, all you need is a file as your backend.

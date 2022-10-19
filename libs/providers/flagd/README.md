@@ -1,4 +1,4 @@
-# Server-side JavaScript flagd Provider for OpenFeature
+# Server-side flagd Provider
 
 Flagd is a simple daemon for evaluating feature flags.
 It is designed to conform to OpenFeature schema for flag definitions.
