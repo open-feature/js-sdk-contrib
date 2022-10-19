@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.4.0...go-feature-flag-provider-v0.5.0) (2022-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* update OpenFeature SDK version (#137)
+
+### Miscellaneous Chores
+
+* update OpenFeature SDK version ([#137](https://github.com/open-feature/js-sdk-contrib/issues/137)) ([245f024](https://github.com/open-feature/js-sdk-contrib/commit/245f02441d62f7f42627174737943f1556a6a326))
+
 ## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.3.0...go-feature-flag-provider-v0.4.0) (2022-10-03)
 
 
