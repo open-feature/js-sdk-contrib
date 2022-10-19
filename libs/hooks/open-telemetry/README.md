@@ -1,6 +1,4 @@
-# JavaScript OpenTelemetry Hook for OpenFeature
-
-![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)
+# OpenTelemetry Hook
 
 ## Installation
 

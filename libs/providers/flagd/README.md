@@ -1,6 +1,4 @@
-# Server-side JavaScript flagd Provider for OpenFeature
-
-![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)
+# Server-side flagd Provider
 
 Flagd is a simple daemon for evaluating feature flags.
 It is designed to conform to OpenFeature schema for flag definitions.
@@ -10,6 +8,12 @@ This repository and package provides the client code for interacting with it via
 
 ```
 $ npm install @openfeature/flagd-provider
+```
+
+Required peer dependencies
+
+```
+$ npm install @openfeature/js-sdk
 ```
 
 ## Usage
