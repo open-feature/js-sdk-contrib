@@ -9,22 +9,20 @@
   ],
   "packageRules": [
     {
-      "matchPackagePatterns": [
-        "@nrwl/",
-        "nx"
-      ],
+      "matchPackagePatterns": ["^@nrwl/"],
+      "matchPackageNames": ["nx"],
       "groupName": "NX"
     },
     {
       "matchPackagePatterns": [
-        "@typescript-eslint",
-        "eslint"
+        "^@typescript-eslint/",
+        "^eslint"
       ],
       "groupName": "ESLint"
     },
     {
       "matchPackagePatterns": [
-        "@types/"
+        "^@types/"
       ],
       "groupName": "Types"
     },
