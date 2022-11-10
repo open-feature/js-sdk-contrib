@@ -34,7 +34,7 @@
     "@types/object-hash": "^2.2.1",
     "@typescript-eslint/eslint-plugin": "~5.24.0",
     "@typescript-eslint/parser": "~5.24.0",
-    "axios-mock-adapter": "1.21.1",
+    "axios-mock-adapter": "1.21.2",
     "babel-preset-minify": "0.5.2",
     "eslint": "~8.15.0",
     "eslint-config-prettier": "8.1.0",
