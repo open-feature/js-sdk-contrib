@@ -1,0 +1,94 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/providers/flagd-web/src",
+  "projectType": "library",
+  "targets": {
+    "publish": {
+      "executor": "@nrwl/workspace:run-commands",
+      "options": {
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/providers/flagd-web"
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/providers/flagd-web/**/*.ts"]
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "generate"
+        }
+      ]
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/providers/flagd-web"],
+      "options": {
+        "jestConfig": "libs/providers/flagd-web/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "generate"
+        }
+      ]
+    },
+    "generate": {
+      "executor": "@nrwl/workspace:run-commands",
+      "options": {
+        "commands": [
+          "git submodule update --init --recursive",
+          "rm -f -r ./src/proto",
+          "cd schemas && buf generate buf.build/open-feature/flagd --template protobuf/buf.gen.ts-connect.yaml",
+          "mv -v ./proto ./src"
+        ],
+        "cwd": "libs/providers/flagd-web",
+        "parallel": false
+      }
+    },
+    "package": {
+      "executor": "@nrwl/web:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "buildableProjectDepsInPackageJsonType": "dependencies",
+        "project": "libs/providers/flagd-web/package.json",
+        "outputPath": "dist/libs/providers/flagd-web",
+        "entryFile": "libs/providers/flagd-web/src/index.ts",
+        "tsConfig": "libs/providers/flagd-web/tsconfig.lib.json",
+        "compiler": "babel",
+        "umdName": "flagd-web",
+        "external": ["typescript"],
+        "format": ["cjs", "esm"], 
+        "assets": [
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/providers/flagd-web",
+            "output": "./"
+          }
+        ]
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "generate"
+        }
+      ]
+    }
+  },
+  "tags": []
+}
