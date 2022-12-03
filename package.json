@@ -43,7 +43,7 @@
     "axios": "^0.27.2",
     "axios-mock-adapter": "1.21.2",
     "babel-preset-minify": "0.5.2",
-    "eslint": "~8.28.0",
+    "eslint": "~8.29.0",
     "eslint-config-prettier": "8.5.0",
     "jest": "27.5.1",
     "jest-fetch-mock": "^3.0.3",
