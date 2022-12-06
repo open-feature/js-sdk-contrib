@@ -9,16 +9,16 @@ jobs:
 
     # Release-please creates a PR that tracks all changes
     steps:
-      - uses: google-github-actions/release-please-action@v3
-        id: release
-        with:
-          command: manifest
-          token: ${{secrets.GITHUB_TOKEN}}
-          default-branch: main
+      # - uses: google-github-actions/release-please-action@v3
+      #   id: release
+        # with:
+        #   command: manifest
+        #   token: ${{secrets.GITHUB_TOKEN}}
+        #   default-branch: main
 
       # The logic below handles the npm publication:
       - name: Checkout Repository
-        if: ${{ steps.release.outputs.releases_created }}
+        #if: ${{ steps.release.outputs.releases_created }}
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -29,21 +29,28 @@ jobs:
           version: "1.1.1"
       - name: Setup Node
         uses: actions/setup-node@v3
-        if: ${{ steps.release.outputs.releases_created }}
+        #if: ${{ steps.release.outputs.releases_created }}
         with:
           node-version: 16
           registry-url: "https://registry.npmjs.org"
       - name: Build Packages
-        if: ${{ steps.release.outputs.releases_created }}
+        #if: ${{ steps.release.outputs.releases_created }}
         run: |
           npm install
           npm run package
 
+      # we need to `npm install` inside the dist to get the modules, then run this 
+      - name: SBOM 
+        uses: CycloneDX/gh-node-module-generatebom@master
+        with:
+          path: './dist/libs/providers/flagd'
+          output: './test.app.bom.xml'
+
       # Release Please has already incremented versions and published tags, so we just
       # need to publish all unpublished versions to NPM here
       # Our scripts only publish versions that do not already exist.
-      - name: Publish to NPM
-        if: ${{ steps.release.outputs.releases_created }}
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-        run: npm run publish
+      # - name: Publish to NPM
+      #   #if: ${{ steps.release.outputs.releases_created }}
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+      #   run: npm run publish

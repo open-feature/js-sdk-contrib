@@ -1,0 +1,1852 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.4.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2022-12-05T20:25:44.180Z",
+    "tools": [
+      {
+        "vendor": "@cyclonedx",
+        "name": "cyclonedx-npm",
+        "version": "1.6.1",
+        "externalReferences": [
+          {
+            "url": "git+https://github.com/CycloneDX/cyclonedx-node-npm.git",
+            "type": "vcs",
+            "comment": "as detected from PackageJson property \"repository.url\""
+          },
+          {
+            "url": "https://github.com/CycloneDX/cyclonedx-node-npm#readme",
+            "type": "website",
+            "comment": "as detected from PackageJson property \"homepage\""
+          },
+          {
+            "url": "https://github.com/CycloneDX/cyclonedx-node-npm/issues",
+            "type": "issue-tracker",
+            "comment": "as detected from PackageJson property \"bugs.url\""
+          }
+        ]
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "flagd-provider",
+      "group": "@openfeature",
+      "version": "0.7.0",
+      "bom-ref": "@openfeature/flagd-provider@0.7.0",
+      "purl": "pkg:npm/%40openfeature/flagd-provider@0.7.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": ""
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "grpc-js",
+      "group": "@grpc",
+      "version": "1.7.3",
+      "bom-ref": "@grpc/grpc-js@1.7.3",
+      "author": "Google Inc.",
+      "description": "gRPC Library for Node - pure JS implementation",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1fd97bf6ee242763d54b150d034f073180275012e3f6fe8a8d843b490ef584e65c117852844ff2e624027ac3fcfbafc893fee2d8ed1ad746cfaae21c61fb9fa2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40grpc/grpc-js@1.7.3",
+      "externalReferences": [
+        {
+          "url": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://grpc.io/",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@grpc/grpc-js/-/grpc-js-1.7.3.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@grpc/grpc-js"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "proto-loader",
+      "group": "@grpc",
+      "version": "0.7.3",
+      "bom-ref": "@grpc/proto-loader@0.7.3",
+      "author": "Google Inc.",
+      "description": "gRPC utility library for loading .proto files",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e5d02fa19c276b63f2dc47fde94c7d8c8929de267ad9352c574d29df05413cd5f92b5efc51b362f10ee0415ab05d3d58abd45e8c8186f46d883c4a3ddd3e9170"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40grpc/proto-loader@0.7.3",
+      "externalReferences": [
+        {
+          "url": "https://github.com/grpc/grpc-node.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://grpc.io/",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://github.com/grpc/grpc-node/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@grpc/proto-loader/-/proto-loader-0.7.3.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@grpc/proto-loader"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "long",
+      "group": "@types",
+      "version": "4.0.2",
+      "bom-ref": "@types/long@4.0.2",
+      "description": "TypeScript definitions for long.js",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "32a4c6128e5b8f9b75e7b53a7c0fc1883ca73649f46249d5761e3c08c3e44d2a454d59af6a8e544269bbb8417ac41128eea20c02563f25295e61a13a54e76968"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40types/long@4.0.2#types/long",
+      "externalReferences": [
+        {
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git#types/long",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/long",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@types/long/-/long-4.0.2.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@types/long"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lodash.camelcase",
+      "version": "4.3.0",
+      "bom-ref": "lodash.camelcase@4.3.0",
+      "author": "John-David Dalton <john.david.dalton@gmail.com> (http://allyoucanleet.com/)",
+      "description": "The lodash method `_.camelCase` exported as a module.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4f0b849c29f16dcdeb02f85ffcb6c6eed2540f386a5f2167bf776dccb38f8021bf84e0cbed6167b1bc24b640fbc9457446bade3ff9753c02eafd84a0e95be394"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/lodash.camelcase@4.3.0",
+      "externalReferences": [
+        {
+          "url": "lodash/lodash",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://lodash.com/",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://registry.npmjs.org/lodash.camelcase/-/lodash.camelcase-4.3.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/lodash.camelcase"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "long",
+      "version": "4.0.0",
+      "bom-ref": "long@4.0.0",
+      "author": "Daniel Wirtz <dcode@dcode.io>",
+      "description": "A Long class for representing a 64-bit two's-complement integer value.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "5ec3fe2a14227f86e35f591bb928b248914d01e84dc602dbea13d1189f50b14afc6a31e4b9719dac79855135145e10f0557d91e5b63824d644c1b52232157e30"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/long@4.0.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/long.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://github.com/dcodeIO/long.js/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/long/-/long-4.0.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/long"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "protobufjs",
+      "version": "7.1.2",
+      "bom-ref": "protobufjs@7.1.2",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "Protocol Buffers for JavaScript (& TypeScript).",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e193d33e45c275e977f8bf35cb0ddd1baf8aab7ba67562a1ec373b196fc2a4d938497de12b9f223c259e0b28554c3adb90d78aad8359ec4a233395836845932d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/protobufjs@7.1.2",
+      "externalReferences": [
+        {
+          "url": "protobufjs/protobuf.js",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://protobufjs.github.io/protobuf.js/",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://github.com/protobufjs/protobuf.js/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs\""
+        },
+        {
+          "url": "https://registry.npmjs.org/protobufjs/-/protobufjs-7.1.2.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/protobufjs"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "long",
+          "version": "5.2.1",
+          "bom-ref": "protobufjs@7.1.2|long@5.2.1",
+          "author": "Daniel Wirtz <dcode@dcode.io>",
+          "description": "A Long class for representing a 64-bit two's-complement integer value.",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "18a48d19e340b70f08af28e3921671b8a07727395c2d3c23b624021cabea41eb7cd48f77917b2584342bb8623f42c75d3bcde67034e8055cbb1aa192ff361ffc"
+            }
+          ],
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "purl": "pkg:npm/long@5.2.1",
+          "externalReferences": [
+            {
+              "url": "https://github.com/dcodeIO/long.js.git",
+              "type": "vcs",
+              "comment": "as detected from PackageJson property \"repository.url\""
+            },
+            {
+              "url": "https://github.com/dcodeIO/long.js/issues",
+              "type": "issue-tracker",
+              "comment": "as detected from PackageJson property \"bugs.url\""
+            },
+            {
+              "url": "https://registry.npmjs.org/long/-/long-5.2.1.tgz",
+              "type": "distribution",
+              "comment": "as detected from npm-ls property \"resolved\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/protobufjs/node_modules/long"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "aspromise",
+      "group": "@protobufjs",
+      "version": "1.1.2",
+      "bom-ref": "@protobufjs/aspromise@1.1.2",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "Returns a promise from a node-style callback function.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8fe80a13112e2e62b0bf3dce811397b6b276506db1f028766195316a187eb351761d9fb001c79434b92fcbacca08f551914fbe65642b771b147905e6720e2ea1"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobufjs/aspromise@1.1.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/protobuf.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobufjs/aspromise/-/aspromise-1.1.2.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/aspromise"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "base64",
+      "group": "@protobufjs",
+      "version": "1.1.2",
+      "bom-ref": "@protobufjs/base64@1.1.2",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "A minimal base64 implementation for number arrays.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "01991c000e6f9cdfefe0f0ea2b2311e65c7b859b6d3c380296ff3713ffc530d851d9331c2d485f4540470a64a5d288bdccc8030ea4542644b13b7c26f39f972e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobufjs/base64@1.1.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/protobuf.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobufjs/base64/-/base64-1.1.2.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/base64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "codegen",
+      "group": "@protobufjs",
+      "version": "2.0.4",
+      "bom-ref": "@protobufjs/codegen@2.0.4",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "A minimalistic code generation utility.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "63215a8a4a8ce6c1f4ce215908ddf10c2ef3786681fddd0851bf42013ba01d66ddd45445c16c2de2577839830f5aee5add77b4d6618050b09daa13253e5dbd26"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobufjs/codegen@2.0.4",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/protobuf.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobufjs/codegen/-/codegen-2.0.4.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/codegen"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "eventemitter",
+      "group": "@protobufjs",
+      "version": "1.1.0",
+      "bom-ref": "@protobufjs/eventemitter@1.1.0",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "A minimal event emitter.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8fd79d9d14fcd6f609f4e7d5b971ba1114937442f5c55b0d82aa64c4cb1b21a6f34a8de0a028c322f79e1afe5dd37a26dfd30bef545d9ab18d8c6e5245e04ffd"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobufjs/eventemitter@1.1.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/protobuf.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobufjs/eventemitter/-/eventemitter-1.1.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/eventemitter"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fetch",
+      "group": "@protobufjs",
+      "version": "1.1.0",
+      "bom-ref": "@protobufjs/fetch@1.1.0",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "Fetches the contents of a file accross node and browsers.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "9658d55e9a9779ba6c8a35bbd4f65a098788704e689f5c390e5432e561fa18b6c5af22d4ac10f8f77d96fc4d814a97d1256b1e20be2ffca3e0045c4338874aa5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobufjs/fetch@1.1.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/protobuf.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobufjs/fetch/-/fetch-1.1.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/fetch"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "inquire",
+      "group": "@protobufjs",
+      "version": "1.1.0",
+      "bom-ref": "@protobufjs/inquire@1.1.0",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "Requires a module only if available and hides the require call from bundlers.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "91d49e7dc3ddaee26214c5526e7f34d6de2f14aeca07fe607767d8bebc61b89620f082eb9a7f522925f6b59755e95fa4b2e956a92eda5e305c457977c07a03f5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobufjs/inquire@1.1.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/protobuf.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobufjs/inquire/-/inquire-1.1.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/inquire"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "float",
+      "group": "@protobufjs",
+      "version": "1.0.2",
+      "bom-ref": "@protobufjs/float@1.0.2",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "Reads / writes floats / doubles from / to buffers in both modern and ancient browsers.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0dd6fe9155e55ecb7d77e47d3df4c8c61d4474d920a117b9b4e5fab74d5fd656163af26748f0c1946db8d502f37323dda0d4ec6e52d476e8c6484e11ceb4d919"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobufjs/float@1.0.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/protobuf.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobufjs/float/-/float-1.0.2.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/float"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "path",
+      "group": "@protobufjs",
+      "version": "1.1.2",
+      "bom-ref": "@protobufjs/path@1.1.2",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "A minimal path module to resolve Unix, Windows and URL paths alike.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e8939c2794e6d3c74e1c06dd4771abbcffb25147e48c6e5e3ec1d87333052eadd998c9000fdf1c0e0713da2035949f4d57015de2d1ff8924a87b8e185a496d10"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobufjs/path@1.1.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/protobuf.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobufjs/path/-/path-1.1.2.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/path"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pool",
+      "group": "@protobufjs",
+      "version": "1.1.0",
+      "bom-ref": "@protobufjs/pool@1.1.0",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "A general purpose buffer pool.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d2410b6864880c12af7204b8ce48f3d4f79d75ab6b8d87263163a502e00fc0079c714acf1dd52aa3f27a2e2ca61c7122253e4dac5d54570c58d787fe7f2e1643"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobufjs/pool@1.1.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/protobuf.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobufjs/pool/-/pool-1.1.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/pool"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "utf8",
+      "group": "@protobufjs",
+      "version": "1.1.0",
+      "bom-ref": "@protobufjs/utf8@1.1.0",
+      "author": "Daniel Wirtz <dcode+protobufjs@dcode.io>",
+      "description": "A minimal UTF8 implementation for number arrays.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "56f9f7cd9ae1419924044f0b4ae5b77a6f7c73417080ee27c73bfa39d4b13ca24810a6366c66c79fe9a11883deaf3238b7077168ff3fd3ed3a1c1a707f7e392f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobufjs/utf8@1.1.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dcodeIO/protobuf.js.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobufjs/utf8/-/utf8-1.1.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/utf8"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "node",
+      "group": "@types",
+      "version": "18.11.11",
+      "bom-ref": "@types/node@18.11.11",
+      "description": "TypeScript definitions for Node.js",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "289d36d41d679505012e8a736663c156e194f6e9fb58977f5b8c9aec8874d81e14c24cb93636b4c8661abf611f608934451d90f685617fad12d97475042589da"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40types/node@18.11.11#types/node",
+      "externalReferences": [
+        {
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git#types/node",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@types/node/-/node-18.11.11.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@types/node"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "yargs",
+      "version": "16.2.0",
+      "bom-ref": "yargs@16.2.0",
+      "description": "yargs the modern, pirate-themed, successor to optimist.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0f59afbed0c6d0be5fb7f8c65a42e91b5fa6d1e43139f681bd33442eb6968f6db049550c5b1654bd880961c2a1ea3186224245847e0864f4214784caa5cf2607"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/yargs@16.2.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/yargs/yargs.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://yargs.js.org/",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://registry.npmjs.org/yargs/-/yargs-16.2.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/yargs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cliui",
+      "version": "7.0.4",
+      "bom-ref": "cliui@7.0.4",
+      "author": "Ben Coe <ben@npmjs.com>",
+      "description": "easily create complex multi-column command-line-interfaces",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "39c444ebc70eb15317a7562fa2797f7f39103b28cb4aeffc6e13c37d0b747b4fc46f6f374ca3f6d05b3632aa0fb2bf52c00e7de6b44203e40ccd873d9c13fe25"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "purl": "pkg:npm/cliui@7.0.4",
+      "externalReferences": [
+        {
+          "url": "yargs/cliui",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://registry.npmjs.org/cliui/-/cliui-7.0.4.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/cliui"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "string-width",
+      "version": "4.2.3",
+      "bom-ref": "string-width@4.2.3",
+      "author": "Sindre Sorhus",
+      "description": "Get the visual width of a string - the number of columns required to display it",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c0ac90450a63274b08a7ad84ad265d1ac8cc256b1aa79a1136284786ee86ec954effd8c807a5327af2feb57b8eaab9e0f23fdcc4a4d6c96530bd24eb8a2673fe"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/string-width@4.2.3",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/string-width",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/string-width"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "strip-ansi",
+      "version": "6.0.1",
+      "bom-ref": "strip-ansi@6.0.1",
+      "author": "Sindre Sorhus",
+      "description": "Strip ANSI escape codes from a string",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "637f153d21dcaa416b0a916743dbee4979aabaebf9a1738aa46793e9a1abaf7a3719cf409556ba2417d448e0a76f1186645fbfd28a08ecaacfb944b3b54754e4"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/strip-ansi@6.0.1",
+      "externalReferences": [
+        {
+          "url": "chalk/strip-ansi",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/strip-ansi"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-regex",
+      "version": "5.0.1",
+      "bom-ref": "ansi-regex@5.0.1",
+      "author": "Sindre Sorhus",
+      "description": "Regular expression for matching ANSI escape codes",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "aae2505e54d25062f62c7f52517a3c570b18e2ca1a9e1828e8b3529bce04d4b05c13cb373b4c29762473c91f73fd9649325316bf7eea38e6fda5d26531410a15"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/ansi-regex@5.0.1",
+      "externalReferences": [
+        {
+          "url": "chalk/ansi-regex",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/ansi-regex"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wrap-ansi",
+      "version": "7.0.0",
+      "bom-ref": "wrap-ansi@7.0.0",
+      "author": "Sindre Sorhus",
+      "description": "Wordwrap a string with ANSI escape codes",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "6151888f691a98b493c70e8db198e80717d2c2c9f4c9c75eb26738a7e436d5ce733ee675a65f8d7f155dc4fb5d1ef98d54e43a5d2606e0052dcadfc58bb0f5e9"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/wrap-ansi@7.0.0",
+      "externalReferences": [
+        {
+          "url": "chalk/wrap-ansi",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-7.0.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/wrap-ansi"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-styles",
+      "version": "4.3.0",
+      "bom-ref": "ansi-styles@4.3.0",
+      "author": "Sindre Sorhus",
+      "description": "ANSI escape codes for styling strings in the terminal",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "cdb07dac22404f5adb8e25436f686a2851cd60bc60b64f0d511c59dc86700f717a36dc5b5d94029e74a2d4b931f880e885d3e5169db6db05402c885e64941212"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/ansi-styles@4.3.0",
+      "externalReferences": [
+        {
+          "url": "chalk/ansi-styles",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-4.3.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/ansi-styles"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "color-convert",
+      "version": "2.0.1",
+      "bom-ref": "color-convert@2.0.1",
+      "author": "Heather Arthur <fayearthur@gmail.com>",
+      "description": "Plain color conversion functions",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4511023ec8fb8aeff16f9a0a61cb051d2a6914d9ec8ffe763954d129be333f9a275f0545df3566993a0d70e7c60be0910e97cafd4e7ce1f320dfc64709a12529"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/color-convert@2.0.1",
+      "externalReferences": [
+        {
+          "url": "Qix-/color-convert",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/color-convert"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "color-name",
+      "version": "1.1.4",
+      "bom-ref": "color-name@1.1.4",
+      "author": "DY <dfcreative@gmail.com>",
+      "description": "A list of color names and its values",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "74ecbedc0b96ddadb035b64722e319a537208c6b8b53fb812ffb9b71917d3976c3a3c7dfe0ef32569e417f479f4bcb84a18a39ab8171edd63d3a04065e002c40"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/color-name@1.1.4",
+      "externalReferences": [
+        {
+          "url": "git@github.com:colorjs/color-name.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://github.com/colorjs/color-name",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://github.com/colorjs/color-name/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/color-name"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "escalade",
+      "version": "3.1.1",
+      "bom-ref": "escalade@3.1.1",
+      "author": "Luke Edwards",
+      "description": "A tiny (183B to 210B) and fast utility to ascend parent directories",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "9347abda05242dff0ed332898808669139c9953bc8346bfbca00cd3db788b17fd3263189647ba1f41d94c5bb1a1249a5128f4c7e1ad2ce68489614652361979f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/escalade@3.1.1",
+      "externalReferences": [
+        {
+          "url": "lukeed/escalade",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://registry.npmjs.org/escalade/-/escalade-3.1.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/escalade"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "get-caller-file",
+      "version": "2.0.5",
+      "bom-ref": "get-caller-file@2.0.5",
+      "author": "Stefan Penner",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0f214fdc133fdd81d340e0942ffc343991d1d25a4a786af1a2d70759ca8d11d9e5b6a1705d57e110143de1e228df801f429a34ac6922e1cc8889fb58d3a87616"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "purl": "pkg:npm/get-caller-file@2.0.5",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/stefanpenner/get-caller-file.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://github.com/stefanpenner/get-caller-file#readme",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://github.com/stefanpenner/get-caller-file/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/get-caller-file/-/get-caller-file-2.0.5.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/get-caller-file"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "require-directory",
+      "version": "2.1.1",
+      "bom-ref": "require-directory@2.1.1",
+      "author": "Troy Goode <troygoode@gmail.com> (http://github.com/troygoode/)",
+      "description": "Recursively iterates over specified directory, require()'ing each file, and returning a nested hash structure containing those modules.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7c6c4423bfb0b06f71aef763b2b9662f6d8e3134e21d1c0032ba2211e320abc833a0b0bf3d0afb46c4434932d483f6d9019b45f9354890773aff84482abba2f9"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/require-directory@2.1.1",
+      "externalReferences": [
+        {
+          "url": "git://github.com/troygoode/node-require-directory.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://github.com/troygoode/node-require-directory/",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "http://github.com/troygoode/node-require-directory/issues/",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/require-directory/-/require-directory-2.1.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/require-directory"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "emoji-regex",
+      "version": "8.0.0",
+      "bom-ref": "emoji-regex@8.0.0",
+      "author": "Mathias Bynens",
+      "description": "A regular expression to match all Emoji-only symbols as per the Unicode Standard.",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3128d8cdc58d380d1ec001e9cf4331a5816fc20eb28f2d4d1b7c6d7a8ab3eb8e150a8fd13e09ebd7f186b7e89cde2253cd0f04bb74dd335e126b09d5526184e8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/emoji-regex@8.0.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/mathiasbynens/emoji-regex.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://mths.be/emoji-regex",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://github.com/mathiasbynens/emoji-regex/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs\""
+        },
+        {
+          "url": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/emoji-regex"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "is-fullwidth-code-point",
+      "version": "3.0.0",
+      "bom-ref": "is-fullwidth-code-point@3.0.0",
+      "author": "Sindre Sorhus",
+      "description": "Check if the character represented by a given Unicode code point is fullwidth",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "cf29a6e7ebbeb02b125b20fda8d69e8d5dc316f84229c94a762cd868952e1c0f3744b8dbee74ae1a775d0871afd2193e298ec130096c59e2b851e83a115e9742"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/is-fullwidth-code-point@3.0.0",
+      "externalReferences": [
+        {
+          "url": "sindresorhus/is-fullwidth-code-point",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://registry.npmjs.org/is-fullwidth-code-point/-/is-fullwidth-code-point-3.0.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/is-fullwidth-code-point"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "y18n",
+      "version": "5.0.8",
+      "bom-ref": "y18n@5.0.8",
+      "author": "Ben Coe <bencoe@gmail.com>",
+      "description": "the bare-bones internationalization library used by yargs",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d297c5cde81e0d62472480264cb44fd83c078dd179b3b8e8f6dbb3b5d43102120d09dbd2fb79c620da8f774d00a61a8947fd0b8403544baffeed209bf7c60e7c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "purl": "pkg:npm/y18n@5.0.8",
+      "externalReferences": [
+        {
+          "url": "yargs/y18n",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository\""
+        },
+        {
+          "url": "https://github.com/yargs/y18n",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://github.com/yargs/y18n/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/y18n/-/y18n-5.0.8.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/y18n"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "yargs-parser",
+      "version": "20.2.9",
+      "bom-ref": "yargs-parser@20.2.9",
+      "author": "Ben Coe <ben@npmjs.com>",
+      "description": "the mighty option parser used by yargs",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "cb5d67184953215f824f766ff6ded52a5f90de14d0a13f5ad50cdece1865e91a76d6027f2154d6ed9df2f4459786e5010b64a19dff835f46a7b5e72903048ff3"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "purl": "pkg:npm/yargs-parser@20.2.9",
+      "externalReferences": [
+        {
+          "url": "https://github.com/yargs/yargs-parser.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/yargs-parser/-/yargs-parser-20.2.9.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/yargs-parser"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "js-sdk",
+      "group": "@openfeature",
+      "version": "1.0.0",
+      "bom-ref": "@openfeature/js-sdk@1.0.0",
+      "description": "OpenFeature SDK for JavaScript",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "91514c80c936c68e1c1f6b5d8869f4663b04e01aad809dbe5349d33736224cfa77077d6acdc6b6401f450f2c38cfe765593262e6684a73ab0894bf0e37d9ee4f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40openfeature/js-sdk@1.0.0",
+      "externalReferences": [
+        {
+          "url": "git+https://github.com/open-feature/js-sdk.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://github.com/open-feature/js-sdk#readme",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://github.com/open-feature/js-sdk/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@openfeature/js-sdk/-/js-sdk-1.0.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@openfeature/js-sdk"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "runtime-rpc",
+      "group": "@protobuf-ts",
+      "version": "2.7.0",
+      "bom-ref": "@protobuf-ts/runtime-rpc@2.7.0",
+      "author": "Timo Stamm <ts@timostamm.com>",
+      "description": "Runtime library for RPC clients generated by the protoc plugin \"protobuf-ts\"",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "85ad8714960b6a6d59bf4e2ba2ae0c81881d8afa17bf7b39b83429afa8ce01f94076e3515a90792057a0bcfbed75cf3d8f8c6ceefb8d3c81b266d3ff3206005c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40protobuf-ts/runtime-rpc@2.7.0#packages/runtime-rpc",
+      "externalReferences": [
+        {
+          "url": "https://github.com/timostamm/protobuf-ts.git#packages/runtime-rpc",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/timostamm/protobuf-ts",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobuf-ts/runtime-rpc/-/runtime-rpc-2.7.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobuf-ts/runtime-rpc"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "runtime",
+      "group": "@protobuf-ts",
+      "version": "2.8.2",
+      "bom-ref": "@protobuf-ts/runtime@2.8.2",
+      "author": "Timo Stamm <ts@timostamm.com>",
+      "description": "Runtime library for code generated by the protoc plugin \"protobuf-ts\"",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3d5c6c1fcd72f6411b1e5771c46ffc637cf69935d6432b5197cccd4b49933d48e4102fbc1945fa823e8bb00f04169db97c0b3d574aee87e68d5a63dc70423d30"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "(Apache-2.0 AND BSD-3-Clause)"
+        }
+      ],
+      "purl": "pkg:npm/%40protobuf-ts/runtime@2.8.2#packages/runtime",
+      "externalReferences": [
+        {
+          "url": "https://github.com/timostamm/protobuf-ts.git#packages/runtime",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/timostamm/protobuf-ts",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "url": "https://registry.npmjs.org/@protobuf-ts/runtime/-/runtime-2.8.2.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobuf-ts/runtime"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "@openfeature/flagd-provider@0.7.0",
+      "dependsOn": [
+        "@grpc/grpc-js@1.7.3",
+        "@openfeature/js-sdk@1.0.0",
+        "@protobuf-ts/runtime-rpc@2.7.0"
+      ]
+    },
+    {
+      "ref": "@grpc/grpc-js@1.7.3",
+      "dependsOn": [
+        "@grpc/proto-loader@0.7.3",
+        "@types/node@18.11.11"
+      ]
+    },
+    {
+      "ref": "@grpc/proto-loader@0.7.3",
+      "dependsOn": [
+        "@types/long@4.0.2",
+        "lodash.camelcase@4.3.0",
+        "long@4.0.0",
+        "protobufjs@7.1.2",
+        "yargs@16.2.0"
+      ]
+    },
+    {
+      "ref": "@types/long@4.0.2"
+    },
+    {
+      "ref": "lodash.camelcase@4.3.0"
+    },
+    {
+      "ref": "long@4.0.0"
+    },
+    {
+      "ref": "protobufjs@7.1.2",
+      "dependsOn": [
+        "@protobufjs/aspromise@1.1.2",
+        "@protobufjs/base64@1.1.2",
+        "@protobufjs/codegen@2.0.4",
+        "@protobufjs/eventemitter@1.1.0",
+        "@protobufjs/fetch@1.1.0",
+        "@protobufjs/float@1.0.2",
+        "@protobufjs/inquire@1.1.0",
+        "@protobufjs/path@1.1.2",
+        "@protobufjs/pool@1.1.0",
+        "@protobufjs/utf8@1.1.0",
+        "@types/node@18.11.11",
+        "protobufjs@7.1.2|long@5.2.1"
+      ]
+    },
+    {
+      "ref": "protobufjs@7.1.2|long@5.2.1"
+    },
+    {
+      "ref": "@protobufjs/aspromise@1.1.2"
+    },
+    {
+      "ref": "@protobufjs/base64@1.1.2"
+    },
+    {
+      "ref": "@protobufjs/codegen@2.0.4"
+    },
+    {
+      "ref": "@protobufjs/eventemitter@1.1.0"
+    },
+    {
+      "ref": "@protobufjs/fetch@1.1.0",
+      "dependsOn": [
+        "@protobufjs/aspromise@1.1.2",
+        "@protobufjs/inquire@1.1.0"
+      ]
+    },
+    {
+      "ref": "@protobufjs/inquire@1.1.0"
+    },
+    {
+      "ref": "@protobufjs/float@1.0.2"
+    },
+    {
+      "ref": "@protobufjs/path@1.1.2"
+    },
+    {
+      "ref": "@protobufjs/pool@1.1.0"
+    },
+    {
+      "ref": "@protobufjs/utf8@1.1.0"
+    },
+    {
+      "ref": "@types/node@18.11.11"
+    },
+    {
+      "ref": "yargs@16.2.0",
+      "dependsOn": [
+        "cliui@7.0.4",
+        "escalade@3.1.1",
+        "get-caller-file@2.0.5",
+        "require-directory@2.1.1",
+        "string-width@4.2.3",
+        "y18n@5.0.8",
+        "yargs-parser@20.2.9"
+      ]
+    },
+    {
+      "ref": "cliui@7.0.4",
+      "dependsOn": [
+        "string-width@4.2.3",
+        "strip-ansi@6.0.1",
+        "wrap-ansi@7.0.0"
+      ]
+    },
+    {
+      "ref": "string-width@4.2.3",
+      "dependsOn": [
+        "emoji-regex@8.0.0",
+        "is-fullwidth-code-point@3.0.0",
+        "strip-ansi@6.0.1"
+      ]
+    },
+    {
+      "ref": "strip-ansi@6.0.1",
+      "dependsOn": [
+        "ansi-regex@5.0.1"
+      ]
+    },
+    {
+      "ref": "ansi-regex@5.0.1"
+    },
+    {
+      "ref": "wrap-ansi@7.0.0",
+      "dependsOn": [
+        "ansi-styles@4.3.0",
+        "string-width@4.2.3",
+        "strip-ansi@6.0.1"
+      ]
+    },
+    {
+      "ref": "ansi-styles@4.3.0",
+      "dependsOn": [
+        "color-convert@2.0.1"
+      ]
+    },
+    {
+      "ref": "color-convert@2.0.1",
+      "dependsOn": [
+        "color-name@1.1.4"
+      ]
+    },
+    {
+      "ref": "color-name@1.1.4"
+    },
+    {
+      "ref": "escalade@3.1.1"
+    },
+    {
+      "ref": "get-caller-file@2.0.5"
+    },
+    {
+      "ref": "require-directory@2.1.1"
+    },
+    {
+      "ref": "emoji-regex@8.0.0"
+    },
+    {
+      "ref": "is-fullwidth-code-point@3.0.0"
+    },
+    {
+      "ref": "y18n@5.0.8"
+    },
+    {
+      "ref": "yargs-parser@20.2.9"
+    },
+    {
+      "ref": "@openfeature/js-sdk@1.0.0"
+    },
+    {
+      "ref": "@protobuf-ts/runtime-rpc@2.7.0",
+      "dependsOn": [
+        "@protobuf-ts/runtime@2.8.2"
+      ]
+    },
+    {
+      "ref": "@protobuf-ts/runtime@2.8.2"
+    }
+  ]
+}

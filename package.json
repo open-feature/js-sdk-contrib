@@ -23,6 +23,7 @@
     "tslib": "2.4.1"
   },
   "devDependencies": {
+    "@cyclonedx/cyclonedx-npm": "^1.6.1",
     "@nrwl/cli": "15.2.4",
     "@nrwl/devkit": "15.2.4",
     "@nrwl/eslint-plugin-nx": "15.2.4",
