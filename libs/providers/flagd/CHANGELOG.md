@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.0...flagd-provider-v0.7.1) (2022-12-09)
+
+
+### Miscellaneous Chores
+
+* dependency updates
+
 ## [0.7.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.6.0...flagd-provider-v0.7.0) (2022-10-19)
 
 

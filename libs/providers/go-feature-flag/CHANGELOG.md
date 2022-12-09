@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.0...go-feature-flag-provider-v0.5.1) (2022-12-09)
+
+
+### Miscellaneous Chores
+
+* dependency updates
+
 ## [0.5.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.4.0...go-feature-flag-provider-v0.5.0) (2022-10-19)
 
 
