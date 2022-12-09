@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.1.1](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v5.1.0...open-telemetry-hook-v5.1.1) (2022-12-09)
+
+
+### Bug Fixes
+
+* correct dependencies ([#182](https://github.com/open-feature/js-sdk-contrib/issues/182)) ([16cbe42](https://github.com/open-feature/js-sdk-contrib/commit/16cbe421d6255bd95a78c3914890a63adcce831e))
+
 ## [5.0.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v4.0.0...open-telemetry-hook-v5.0.0) (2022-10-19)
 
 
