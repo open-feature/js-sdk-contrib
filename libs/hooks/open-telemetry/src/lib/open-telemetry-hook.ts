@@ -2,7 +2,7 @@ import { Hook, HookContext, EvaluationDetails, FlagValue } from '@openfeature/js
 import { trace } from '@opentelemetry/api';
 
 const eventName = 'feature_flag';
-const SpanEventProperties = Object.freeze({
+const spanEventProperties = Object.freeze({
   FLAG_KEY: 'feature_flag.key',
   PROVIDER_NAME: 'feature_flag.provider_name',
   VARIANT: 'feature_flag.variant',
@@ -23,15 +23,14 @@ export class OpenTelemetryHook implements Hook {
       }
 
       currentTrace.addEvent(eventName, {
-        [SpanEventProperties.FLAG_KEY]: hookContext.flagKey,
-        [SpanEventProperties.PROVIDER_NAME]: hookContext.providerMetadata.name,
-        [SpanEventProperties.VARIANT]: variant,
+        [spanEventProperties.FLAG_KEY]: hookContext.flagKey,
+        [spanEventProperties.PROVIDER_NAME]: hookContext.providerMetadata.name,
+        [spanEventProperties.VARIANT]: variant,
       });
     }
   }
 
   error(_: HookContext, err: Error) {
-    const currentTrace = trace.getActiveSpan();
-    currentTrace?.recordException(err);
+    trace.getActiveSpan()?.recordException(err);
   }
 }
