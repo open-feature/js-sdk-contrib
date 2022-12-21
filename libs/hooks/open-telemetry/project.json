@@ -81,7 +81,9 @@
       ],
       "options": {
         "jestConfig": "libs/hooks/open-telemetry/jest.config.ts",
-        "passWithNoTests": true
+        "passWithNoTests": true,
+        "codeCoverage": true,
+        "coverageDirectory": "coverage/libs/hooks/open-telemetry"
       }
     }
   },
