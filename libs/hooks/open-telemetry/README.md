@@ -18,7 +18,7 @@ $ npm install @openfeature/js-sdk @opentelemetry/api
 
 ## Usage
 
-OpenFeature provider various ways to register hooks. The location that a hook is registered affects when the hook is run. It's recommended to register the `OpenTelemetryHook` globally in most situations but it's possible to only enable the hook on specific clients. You should **never** register the `OpenTelemetryHook` globally and on a client.
+OpenFeature provides various ways to register hooks. The location that a hook is registered affects when the hook is run. It's recommended to register the `OpenTelemetryHook` globally in most situations but it's possible to only enable the hook on specific clients. You should **never** register the `OpenTelemetryHook` globally and on a client.
 
 More information on hooks can be found in the [OpenFeature documentation][hook-concept].
 
