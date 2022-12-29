@@ -4,7 +4,7 @@
   "projectType": "library",
   "targets": {
     "package": {
-      "executor": "@nrwl/web:rollup",
+      "executor": "@nrwl/rollup:rollup",
       "outputs": [
         "{options.outputPath}"
       ],
@@ -13,7 +13,9 @@
         "outputPath": "dist/libs/hooks/open-telemetry",
         "entryFile": "libs/hooks/open-telemetry/src/index.ts",
         "tsConfig": "libs/hooks/open-telemetry/tsconfig.lib.json",
-        "compiler": "babel",
+        "compiler": "tsc",
+        "skipTypeField": true,
+        "generateExportsField": true,
         "umdName": "OpenTelemetry",
         "external": [
           "typescript"

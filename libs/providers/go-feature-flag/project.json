@@ -38,7 +38,7 @@
       }
     },
     "package": {
-      "executor": "@nrwl/web:rollup",
+      "executor": "@nrwl/rollup:rollup",
       "outputs": [
         "{options.outputPath}"
       ],
@@ -47,7 +47,9 @@
         "outputPath": "dist/libs/providers/go-feature-flag",
         "entryFile": "libs/providers/go-feature-flag/src/index.ts",
         "tsConfig": "libs/providers/go-feature-flag/tsconfig.lib.json",
-        "compiler": "babel",
+        "compiler": "tsc",
+        "skipTypeField": true,
+        "generateExportsField": true,
         "buildableProjectDepsInPackageJsonType": "dependencies",
         "umdName": "go-feature-flag",
         "external": [

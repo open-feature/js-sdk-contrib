@@ -120,15 +120,17 @@ function normalizeOptions(tree: Tree, schema: SchemaOptions) {
 function updateProject(tree: Tree, projectRoot: string, umdName: string) {
   updateJson(tree, joinPathFragments(projectRoot, 'project.json'), (json) => {
     json.targets['package'] = {
-      executor: '@nrwl/web:rollup',
+      executor: '@nrwl/rollup:rollup',
       outputs: ['{options.outputPath}'],
       options: {
         project: `${projectRoot}/package.json`,
         outputPath: `dist/${projectRoot}`,
         entryFile: `${projectRoot}/src/index.ts`,
         tsConfig: `${projectRoot}/tsconfig.lib.json`,
-        buildableProjectDepsInPackageJsonType: "dependencies",
-        compiler: 'babel',
+        buildableProjectDepsInPackageJsonType: 'dependencies',
+        compiler: 'tsc',
+        skipTypeField: true,
+        generateExportsField: true,
         umdName,
         external: ['typescript'],
         format: ['cjs', 'esm'],
