@@ -1,5 +1,21 @@
 # Changelog
 
+## [6.0.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v5.1.1...open-telemetry-hook-v6.0.0) (2022-12-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* update the otel hook to be spec compliant ([#179](https://github.com/open-feature/js-sdk-contrib/issues/179))
+
+### Features
+
+* update the otel hook to be spec compliant ([#179](https://github.com/open-feature/js-sdk-contrib/issues/179)) ([69b2163](https://github.com/open-feature/js-sdk-contrib/commit/69b2163be1729697ebc69549aa8fb6e61be1b94d))
+
+
+### Bug Fixes
+
+* fix ESM and web polyfills issue ([#201](https://github.com/open-feature/js-sdk-contrib/issues/201)) ([acee6e1](https://github.com/open-feature/js-sdk-contrib/commit/acee6e1817a7846251f456455a7218bf98efb00e))
+
 ## [5.1.1](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v5.1.0...open-telemetry-hook-v5.1.1) (2022-12-09)
 
 

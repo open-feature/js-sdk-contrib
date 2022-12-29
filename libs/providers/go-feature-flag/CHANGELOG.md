@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.2...go-feature-flag-provider-v0.5.3) (2022-12-29)
+
+
+### Bug Fixes
+
+* fix ESM and web polyfills issue ([#201](https://github.com/open-feature/js-sdk-contrib/issues/201)) ([acee6e1](https://github.com/open-feature/js-sdk-contrib/commit/acee6e1817a7846251f456455a7218bf98efb00e))
+
 ## [0.5.2](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.1...go-feature-flag-provider-v0.5.2) (2022-12-09)
 
 

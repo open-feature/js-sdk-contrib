@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/open-telemetry-hook",
-  "version": "5.1.1",
+  "version": "6.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-feature/js-sdk-contrib.git",
