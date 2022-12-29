@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.2...flagd-provider-v0.7.3) (2022-12-29)
+
+
+### Bug Fixes
+
+* fix ESM and web polyfills issue ([#201](https://github.com/open-feature/js-sdk-contrib/issues/201)) ([acee6e1](https://github.com/open-feature/js-sdk-contrib/commit/acee6e1817a7846251f456455a7218bf98efb00e))
+
 ## [0.7.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.1...flagd-provider-v0.7.2) (2022-12-09)
 
 
