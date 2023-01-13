@@ -16,8 +16,20 @@ export class FlagdProvider implements Provider {
 
   private readonly _service: Service;
 
-  constructor(options?: FlagdProviderOptions, service?: Service) {
-    this._service = service ? service : new GRPCService(getConfig(options));
+  /**
+   * Promise indicating the gRPC stream is connected.
+   * 
+   * Can be used in instances where the provider being connected to the event stream is a prerequisite
+   * to execution (e.g. testing). Not necessary for standard usage.
+   * 
+   * @returns true if stream connected successfully, false if connection not enabled.
+   */
+  get streamConnection() {
+    return this._service.streamConnection;
+  }
+
+  constructor(options?: FlagdProviderOptions, service?: Service, private logger?: Logger) {
+    this._service = service ? service : new GRPCService(getConfig(options), undefined, logger);
   }
 
   resolveBooleanEvaluation(

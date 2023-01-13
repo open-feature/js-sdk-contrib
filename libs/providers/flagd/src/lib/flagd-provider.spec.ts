@@ -1,11 +1,12 @@
 jest.mock('@protobuf-ts/grpc-transport');
 
-import { Client, ErrorCode, EvaluationContext, OpenFeature } from '@openfeature/js-sdk';
+import { Client, ErrorCode, EvaluationContext, JsonObject, OpenFeature, StandardResolutionReasons } from '@openfeature/js-sdk';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import type { UnaryCall } from '@protobuf-ts/runtime-rpc';
 import { RpcError } from '@protobuf-ts/runtime-rpc';
 import { Struct } from '../proto/ts/google/protobuf/struct';
 import {
+  EventStreamResponse,
   ResolveBooleanRequest,
   ResolveBooleanResponse,
   ResolveFloatRequest,
@@ -18,8 +19,9 @@ import {
   ResolveStringResponse
 } from '../proto/ts/schema/v1/schema';
 import { ServiceClient } from '../proto/ts/schema/v1/schema.client';
+import { EVENT_PROVIDER_READY, EVENT_CONFIGURATION_CHANGE } from './constants';
 import { FlagdProvider } from './flagd-provider';
-import { Codes, GRPCService } from './service/grpc/service';
+import { Codes, FlagChangeMessage, GRPCService } from './service/grpc/service';
 
 const REASON = 'STATIC';
 const ERROR_REASON = 'ERROR';
@@ -52,20 +54,21 @@ const TEST_CONTEXT_CONVERTED = Struct.fromJsonString(
 );
 
 describe(FlagdProvider.name, () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('GRPC Service Options', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
 
     it('should use a unix socket', () => {
-      new FlagdProvider({ socketPath: '/tmp/flagd.sock' });
+      new FlagdProvider({ socketPath: '/tmp/flagd.sock', cache: 'disabled' });
       expect(GrpcTransport).toHaveBeenCalledWith(
         expect.objectContaining({ host: 'unix:///tmp/flagd.sock' })
       );
     });
 
     it('should use a host and port', () => {
-      new FlagdProvider();
+      new FlagdProvider({ cache: 'disabled' });
       expect(GrpcTransport).toHaveBeenCalledWith(
         expect.objectContaining({ host: 'localhost:8013' })
       );
@@ -77,6 +80,21 @@ describe(FlagdProvider.name, () => {
 
     // mock ServiceClient to inject
     const basicServiceClientMock: ServiceClient = {
+      eventStream: jest.fn(() => {
+        return {
+          responses: {
+            onComplete: jest.fn(() => {
+              return;
+            }),
+            onError: jest.fn(() => {
+              return;
+            }),
+            onMessage: jest.fn(() => {
+              return;
+            })
+          }
+        };
+      }),
       resolveBoolean: jest.fn(
         (): UnaryCall<ResolveBooleanRequest, ResolveBooleanResponse> => {
           return Promise.resolve({
@@ -229,12 +247,260 @@ describe(FlagdProvider.name, () => {
     });
   });
 
+  describe('caching', () => {
+    const STATIC_BOOLEAN_KEY_1 = 'staticBoolflagOne';
+    const STATIC_BOOLEAN_KEY_2 = 'staticBoolflagTwo';
+    const TARGETING_MATCH_BOOLEAN_KEY = 'targetingMatchBooleanKey';
+
+    // ref to callback to fire to fake error messages to flagd
+    let registeredOnErrorCallback: () => void;
+    // ref to callback to fire to fake messages to flagd
+    let registeredOnMessageCallback: (message: EventStreamResponse) => void;
+    const responsesMock = {
+      onComplete: jest.fn((callback) => {
+        return;
+      }),
+      onError: jest.fn((callback) => {
+        registeredOnErrorCallback = callback;
+        return;
+      }),
+      onMessage: jest.fn((callback) => {
+        registeredOnMessageCallback = callback;
+        return;
+      })
+    }
+
+    // mock ServiceClient to inject
+    const cacheServiceClientMock = {
+      eventStream: jest.fn(() => {
+        return {
+          responses: responsesMock
+        };
+      }),
+      resolveBoolean: jest.fn(
+        (req: ResolveBooleanRequest): UnaryCall<ResolveBooleanRequest, ResolveBooleanResponse> => {
+          
+          const response = {
+            variant: BOOLEAN_VARIANT,
+            value: true
+          } as unknown as ResolveBooleanResponse;
+
+          // mock static vs targeting keys 
+          if (req.flagKey === STATIC_BOOLEAN_KEY_1 || req.flagKey === STATIC_BOOLEAN_KEY_2) {
+            response.reason = StandardResolutionReasons.STATIC
+          } else {
+            response.reason = StandardResolutionReasons.TARGETING_MATCH
+          }
+
+          return Promise.resolve({
+            request: {} as ResolveBooleanRequest,
+            response,
+          }) as unknown as UnaryCall<
+            ResolveBooleanRequest,
+            ResolveBooleanResponse
+          >;
+        }
+      ),
+    } as unknown as ServiceClient;
+
+    describe('constructor', () => {
+      it(`should call ${ServiceClient.prototype.eventStream} and register onMessageHandler`, async () => {
+          new FlagdProvider(
+            undefined,
+            new GRPCService(
+              { host: '', port: 123, tls: false, cache: 'lru' },
+              cacheServiceClientMock
+            )
+          );
+
+          expect(cacheServiceClientMock.eventStream).toHaveBeenCalled();
+      });
+    });
+
+    describe('cached resolution', () => {
+      let client: Client;
+
+      beforeAll(() => {
+        OpenFeature.setProvider(
+          new FlagdProvider(
+            undefined,
+            new GRPCService(
+              { host: '', port: 123, tls: false, cache: 'lru' },
+              cacheServiceClientMock
+            )
+          )
+        );
+        // fire message saying provider is ready
+        registeredOnMessageCallback({ type: EVENT_PROVIDER_READY });
+        client = OpenFeature.getClient('caching-test');        
+      });
+
+      it(`should cache STATIC flag`, async () => {
+        const firstEval = await client.getBooleanDetails(STATIC_BOOLEAN_KEY_1, false);
+        const secondEval = await client.getBooleanDetails(STATIC_BOOLEAN_KEY_1, false);
+        expect(firstEval.reason).toEqual('STATIC');
+        expect(secondEval.reason).toEqual(StandardResolutionReasons.CACHED);
+      });
+
+      it(`should not cache TARGETING_MATCH flag`, async () => {
+        const firstEval = await client.getBooleanDetails(TARGETING_MATCH_BOOLEAN_KEY, false);
+        const secondEval = await client.getBooleanDetails(TARGETING_MATCH_BOOLEAN_KEY, false);
+        expect(firstEval.reason).toEqual(StandardResolutionReasons.TARGETING_MATCH);
+        expect(secondEval.reason).toEqual(StandardResolutionReasons.TARGETING_MATCH);
+      });
+    });
+
+    describe('cache invalidation', () => {
+      let client: Client;
+
+      beforeAll(() => {
+        OpenFeature.setProvider(
+          new FlagdProvider(
+            undefined,
+            new GRPCService(
+              { host: '', port: 123, tls: false, cache: 'lru' },
+              cacheServiceClientMock
+            )
+          )
+        );
+        // fire message saying provider is ready
+        registeredOnMessageCallback({ type: EVENT_PROVIDER_READY });
+        client = OpenFeature.getClient('caching-test');        
+      });
+
+      beforeEach(async () => {
+        // evaluate to cache both the static flags.
+        await Promise.all([
+          client.getBooleanDetails(STATIC_BOOLEAN_KEY_1, false),
+          client.getBooleanDetails(STATIC_BOOLEAN_KEY_2, false)
+        ]);
+        const [flag1, flag2] = await Promise.all([
+          client.getBooleanDetails(STATIC_BOOLEAN_KEY_1, false),
+          client.getBooleanDetails(STATIC_BOOLEAN_KEY_2, false)
+        ]);
+        expect(flag1.reason).toEqual(StandardResolutionReasons.CACHED);
+        expect(flag2.reason).toEqual(StandardResolutionReasons.CACHED);
+      });
+
+      describe('single key changed', () => {
+        it(`should clear cache with flag change event`, async () => {
+          // change only flag1
+          const message: FlagChangeMessage = {
+            flags: {
+              [STATIC_BOOLEAN_KEY_1]: {
+                flagKey: STATIC_BOOLEAN_KEY_1,
+                type: 'update',
+                source: '//my-source',
+              }
+            }
+          };
+          registeredOnMessageCallback({ type: EVENT_CONFIGURATION_CHANGE, data: Struct.fromJson(message as JsonObject) });
+
+          const [flag1, flag2] = await Promise.all([
+            client.getBooleanDetails(STATIC_BOOLEAN_KEY_1, false),
+            client.getBooleanDetails(STATIC_BOOLEAN_KEY_2, false)
+          ]);
+
+          // expect only flag1 to be purged
+          expect(flag1.reason).toEqual(StandardResolutionReasons.STATIC);
+          expect(flag2.reason).toEqual(StandardResolutionReasons.CACHED);
+        });
+      });
+
+      describe('multiple keys changed', () => {
+        it(`should clear cache with flag change event`, async () => {
+
+          // change both flags
+          const message: FlagChangeMessage = {
+            flags: {
+              [STATIC_BOOLEAN_KEY_1]: {
+                flagKey: STATIC_BOOLEAN_KEY_1,
+                type: 'update',
+                source: '//my-source',
+              },
+              [STATIC_BOOLEAN_KEY_2]: {
+                flagKey: STATIC_BOOLEAN_KEY_2,
+                type: 'update',
+                source: '//my-source',
+              },
+            }
+          };
+          registeredOnMessageCallback({ type: EVENT_CONFIGURATION_CHANGE, data: Struct.fromJson(message as JsonObject) });
+
+          const [flag1, flag2] = await Promise.all([
+            client.getBooleanDetails(STATIC_BOOLEAN_KEY_1, false),
+            client.getBooleanDetails(STATIC_BOOLEAN_KEY_2, false)
+          ]);
+
+          // expect both flags to be purged
+          expect(flag1.reason).toEqual(StandardResolutionReasons.STATIC);
+          expect(flag2.reason).toEqual(StandardResolutionReasons.STATIC);
+        });
+      });
+    });
+
+    describe('connection/re-connection', () => {
+        it('should attempt to inital connection multiple times', async () => {
+          new FlagdProvider(
+            undefined,
+            new GRPCService(
+              { host: '', port: 123, tls: false, cache: 'lru' },
+              cacheServiceClientMock
+            )
+          );
+
+          // fake some errors
+          registeredOnErrorCallback();
+          registeredOnErrorCallback();
+          registeredOnErrorCallback();
+          await new Promise((resolve) => setTimeout(resolve, 4000));
+
+          registeredOnMessageCallback({ type: EVENT_PROVIDER_READY });
+          // within 3 seconds, we should have seen at least 3 connect attempts.
+          expect((cacheServiceClientMock.eventStream as jest.MockedFn<any>).mock.calls.length).toBeGreaterThanOrEqual(3);
+        });
+
+        it('should attempt re-connection multiple times', async () => {
+          const provider = new FlagdProvider(
+            undefined,
+            new GRPCService(
+              { host: '', port: 123, tls: false, cache: 'lru' },
+              cacheServiceClientMock
+            )
+          );
+
+          registeredOnMessageCallback({ type: EVENT_PROVIDER_READY });
+          await provider.streamConnection;
+          // connect without issue initially
+          expect(cacheServiceClientMock.eventStream).toHaveBeenCalledTimes(1);
+
+          // fake some errors
+          registeredOnErrorCallback();
+          registeredOnErrorCallback();
+          registeredOnErrorCallback();
+          await new Promise((resolve) => setTimeout(resolve, 4000));
+
+          // within 4 seconds, we should have seen at least 3 connect attempts.
+          expect((cacheServiceClientMock.eventStream as jest.MockedFn<any>).mock.calls.length).toBeGreaterThanOrEqual(3);
+        });
+    });
+  });
+
   describe('resolution errors', () => {
     let client: Client;
     const message = 'error message';
 
     // mock ServiceClient to inject
     const errServiceClientMock: ServiceClient = {
+      eventStream: jest.fn(() => {
+        return {
+          responses: {
+            onMessage: jest.fn(() => {
+              return;
+            })
+          }
+        };
+      }),
       resolveBoolean: jest.fn(
         (): UnaryCall<ResolveBooleanRequest, ResolveBooleanResponse> => {
           return Promise.reject(
@@ -353,6 +619,15 @@ describe(FlagdProvider.name, () => {
 
     // mock ServiceClient to inject
     const undefinedObjectMock: ServiceClient = {
+      eventStream: jest.fn(() => {
+        return {
+          responses: {
+            onMessage: jest.fn(() => {
+              return;
+            })
+          }
+        };
+      }),
       resolveObject: jest.fn(
         (): UnaryCall<ResolveObjectRequest, ResolveObjectResponse> => {
           return Promise.resolve({
