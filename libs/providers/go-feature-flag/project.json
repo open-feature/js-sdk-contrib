@@ -48,7 +48,6 @@
         "entryFile": "libs/providers/go-feature-flag/src/index.ts",
         "tsConfig": "libs/providers/go-feature-flag/tsconfig.lib.json",
         "compiler": "tsc",
-        "skipTypeField": true,
         "generateExportsField": true,
         "buildableProjectDepsInPackageJsonType": "dependencies",
         "umdName": "go-feature-flag",
@@ -60,6 +59,11 @@
           "esm"
         ],
         "assets": [
+          {
+            "glob": "package.json",
+            "input": "./assets",
+            "output": "./src/"
+          },
           {
             "glob": "LICENSE",
             "input": "./",

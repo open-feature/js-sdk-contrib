@@ -14,7 +14,6 @@
         "entryFile": "libs/hooks/open-telemetry/src/index.ts",
         "tsConfig": "libs/hooks/open-telemetry/tsconfig.lib.json",
         "compiler": "tsc",
-        "skipTypeField": true,
         "generateExportsField": true,
         "umdName": "OpenTelemetry",
         "external": [
@@ -25,6 +24,11 @@
           "esm"
         ],
         "assets": [
+          {
+            "glob": "package.json",
+            "input": "./assets",
+            "output": "./src/"
+          },
           {
             "glob": "LICENSE",
             "input": "./",
