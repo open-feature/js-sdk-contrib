@@ -65,13 +65,17 @@
         "entryFile": "libs/providers/flagd/src/index.ts",
         "tsConfig": "libs/providers/flagd/tsconfig.lib.json",
         "compiler": "tsc",
-        "skipTypeField": true,
         "generateExportsField": true,
         "buildableProjectDepsInPackageJsonType": "dependencies",
         "umdName": "flagd",
         "external": ["typescript"],
         "format": ["cjs", "esm"],
         "assets": [
+          {
+            "glob": "package.json",
+            "input": "./assets",
+            "output": "./src/"
+          },
           {
             "glob": "LICENSE",
             "input": "./",

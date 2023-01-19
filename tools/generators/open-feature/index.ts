@@ -129,12 +129,18 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
         tsConfig: `${projectRoot}/tsconfig.lib.json`,
         buildableProjectDepsInPackageJsonType: 'dependencies',
         compiler: 'tsc',
-        skipTypeField: true,
         generateExportsField: true,
         umdName,
         external: ['typescript'],
         format: ['cjs', 'esm'],
         assets: [
+          // Move a "commonjs" package.json to the types root (js is bundled).
+          // This prevents us from having to add file extensions to all our imports in ESM contexts, which ESM requires.
+          {
+            glob: "package.json",
+            input: "./assets",
+            output: "./src/"
+          },
           {
             glob: 'LICENSE',
             input: './',

@@ -71,6 +71,11 @@
         "format": ["cjs", "esm"], 
         "assets": [
           {
+            "glob": "package.json",
+            "input": "./assets",
+            "output": "./src/"
+          },
+          {
             "glob": "LICENSE",
             "input": "./",
             "output": "./"
