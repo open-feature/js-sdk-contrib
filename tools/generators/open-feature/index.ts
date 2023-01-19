@@ -135,7 +135,7 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
         format: ['cjs', 'esm'],
         assets: [
           // Move a "commonjs" package.json to the types root (js is bundled).
-          // This prevents is from having to add file extensions to all our imports in ESM contexts, which ESM requires.
+          // This prevents us from having to add file extensions to all our imports in ESM contexts, which ESM requires.
           {
             glob: "package.json",
             input: "./assets",
