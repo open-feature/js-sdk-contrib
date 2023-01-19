@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.1.3...flagd-web-provider-v0.1.4) (2023-01-19)
+
+
+### Bug Fixes
+
+* module issues with types ([#212](https://github.com/open-feature/js-sdk-contrib/issues/212)) ([d2b97dd](https://github.com/open-feature/js-sdk-contrib/commit/d2b97dd24c952661ce08724a84e4b312860a9211))
+
 ## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.1.2...flagd-web-provider-v0.1.3) (2022-12-29)
 
 

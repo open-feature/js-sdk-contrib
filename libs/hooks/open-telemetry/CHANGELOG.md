@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.0.1](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v6.0.0...open-telemetry-hook-v6.0.1) (2023-01-19)
+
+
+### Bug Fixes
+
+* module issues with types ([#212](https://github.com/open-feature/js-sdk-contrib/issues/212)) ([d2b97dd](https://github.com/open-feature/js-sdk-contrib/commit/d2b97dd24c952661ce08724a84e4b312860a9211))
+
 ## [6.0.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v5.1.1...open-telemetry-hook-v6.0.0) (2022-12-29)
 
 
