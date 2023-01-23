@@ -23,8 +23,8 @@ import { EVENT_PROVIDER_READY, EVENT_CONFIGURATION_CHANGE } from './constants';
 import { FlagdProvider } from './flagd-provider';
 import { Codes, FlagChangeMessage, GRPCService } from './service/grpc/service';
 
-const REASON = 'STATIC';
-const ERROR_REASON = 'ERROR';
+const REASON = StandardResolutionReasons.STATIC;
+const ERROR_REASON = StandardResolutionReasons.ERROR;
 
 const BOOLEAN_KEY = 'bool-flag';
 const BOOLEAN_VARIANT = 'on';
@@ -338,7 +338,7 @@ describe(FlagdProvider.name, () => {
       it(`should cache STATIC flag`, async () => {
         const firstEval = await client.getBooleanDetails(STATIC_BOOLEAN_KEY_1, false);
         const secondEval = await client.getBooleanDetails(STATIC_BOOLEAN_KEY_1, false);
-        expect(firstEval.reason).toEqual('STATIC');
+        expect(firstEval.reason).toEqual(StandardResolutionReasons.STATIC);
         expect(secondEval.reason).toEqual(StandardResolutionReasons.CACHED);
       });
 
