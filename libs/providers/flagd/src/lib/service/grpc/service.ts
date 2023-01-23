@@ -212,11 +212,13 @@ export class GRPCService implements Service {
       }
     }
 
+    // invoke the passed resolver method
     const { response } = await resolver
       .call(this._client, { flagKey, context: this.convertContext(context, logger) })
       .then((resolved) => resolved, this.onRejected);
 
     const resolved = {
+      // invoke the parser method if passed
       value: parser ? parser.call(this, response.value as Struct) : response.value,
       reason: response.reason,
       variant: response.variant,
