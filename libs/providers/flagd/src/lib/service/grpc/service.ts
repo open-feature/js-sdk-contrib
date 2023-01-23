@@ -18,6 +18,7 @@ import { RpcError } from '@protobuf-ts/runtime-rpc';
 import LRU from 'lru-cache';
 import { Struct } from '../../../proto/ts/google/protobuf/struct';
 import {
+  EventStreamResponse,
   ResolveBooleanRequest,
   ResolveBooleanResponse,
   ResolveFloatRequest,
@@ -137,12 +138,8 @@ export class GRPCService implements Service {
       stream.responses.onMessage((message) => {
         if (message.type === EVENT_PROVIDER_READY) {
           this.handleProviderReady(resolve);
-        } else if (message.type === EVENT_CONFIGURATION_CHANGE && message.data) {
-          const parsedMessage = Struct.toJson(message.data) as FlagChangeMessage;
-          this.logger?.debug(`${FlagdProvider.name}: got message: ${JSON.stringify(parsedMessage, undefined, 2)}`);
-          if (parsedMessage?.flags) {
-            this.handleFlagsChanged(parsedMessage);
-          }
+        } else if (message.type === EVENT_CONFIGURATION_CHANGE) {
+          this.handleFlagsChanged(message);
         }
       })
     });
@@ -156,14 +153,18 @@ export class GRPCService implements Service {
     resolve(true);
   }
 
-  private handleFlagsChanged(changeMessage: FlagChangeMessage) {
-    if (changeMessage.flags) {
-      // remove each changed key from cache
-      Object.keys(changeMessage.flags).forEach((key) => {
-        if (this._cache?.delete(key)) {
-          this.logger?.info(`${FlagdProvider.name}: evicted key: ${key} from cache.`);
-        }
-      });
+  private handleFlagsChanged(message: EventStreamResponse) {
+    if (message.data) {
+      const parsedMessage = Struct.toJson(message.data) as FlagChangeMessage;
+      this.logger?.debug(`${FlagdProvider.name}: got message: ${JSON.stringify(parsedMessage, undefined, 2)}`);
+      if (parsedMessage.flags) {
+          // remove each changed key from cache
+          Object.keys(parsedMessage.flags).forEach((key) => {
+            if (this._cache?.delete(key)) {
+              this.logger?.info(`${FlagdProvider.name}: evicted key: ${key} from cache.`);
+            }
+          });
+      }
     }
   }
 
