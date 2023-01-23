@@ -22,13 +22,6 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
-    },
-    "libs/providers/flagd-web": {
-      "release-type": "node",
-      "prerelease": true,
-      "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "versioning": "default"
     }
   }
 }

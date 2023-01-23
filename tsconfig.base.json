@@ -12,30 +12,15 @@
     "strictNullChecks": true,
     "target": "es2015",
     "module": "esnext",
-    "lib": [
-      "esnext",
-      "dom"
-    ],
+    "lib": ["esnext", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@openfeature/flagd-provider": [
-        "libs/providers/flagd/src/index.ts"
-      ],
-      "@openfeature/flagd-web-provider": [
-        "libs/providers/flagd-web/src/index.ts"
-      ],
-      "@openfeature/go-feature-flag-provider": [
-        "libs/providers/go-feature-flag/src/index.ts"
-      ],
-      "@openfeature/hooks-open-telemetry": [
-        "libs/hooks/open-telemetry/src/index.ts"
-      ]
+      "@openfeature/flagd-provider": ["libs/providers/flagd/src/index.ts"],
+      "@openfeature/go-feature-flag-provider": ["libs/providers/go-feature-flag/src/index.ts"],
+      "@openfeature/hooks-open-telemetry": ["libs/hooks/open-telemetry/src/index.ts"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "tmp"
-  ]
+  "exclude": ["node_modules", "tmp"]
 }
