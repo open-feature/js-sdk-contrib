@@ -172,6 +172,8 @@ export class GRPCService implements Service {
     this.logger?.error(`${FlagdProvider.name}: streaming connection error, will attempt reconnect...`);
     this._cache?.clear();
     this._streamAlive = false;
+
+    // if we haven't reached max attempt, reconnect after backoff
     if (this._streamConnectAttempt <= this._maxEventStreamRetries) {
       this._streamConnectAttempt++;
       setTimeout(() => {
@@ -179,6 +181,8 @@ export class GRPCService implements Service {
         this.connectStream();
       }, this._streamConnectBackoff);
     } else {
+
+      // after max attempts, give up
       const errorMessage = `${FlagdProvider.name}: max stream connect attempts (${this._maxEventStreamRetries} reached)`;
       this.logger?.error(errorMessage);
       reject(new Error(errorMessage));
