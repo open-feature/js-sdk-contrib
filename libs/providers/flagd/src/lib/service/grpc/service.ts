@@ -91,7 +91,7 @@ export class GRPCService implements Service {
 
   constructor(config: Config, client?: ServiceClient, private logger?: Logger) {
     const { host, port, tls, socketPath } = config;
-    this._maxEventStreamRetries = config.maxEventStreamRetries || DEFAULT_MAX_EVENT_STREAM_RETRIES;
+    this._maxEventStreamRetries = config.maxEventStreamRetries ?? DEFAULT_MAX_EVENT_STREAM_RETRIES;
     this._client = client
       ? client
       : new ServiceClient(
