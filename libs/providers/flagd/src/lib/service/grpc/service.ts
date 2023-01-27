@@ -9,7 +9,7 @@ import {
   ParseError,
   ResolutionDetails,
   StandardResolutionReasons,
-  TypeMismatchError
+  TypeMismatchError,
 } from '@openfeature/js-sdk';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import type { JsonValue as PbJsonValue } from '@protobuf-ts/runtime';
@@ -28,11 +28,17 @@ import {
   ResolveObjectRequest,
   ResolveObjectResponse,
   ResolveStringRequest,
-  ResolveStringResponse
+  ResolveStringResponse,
 } from '../../../proto/ts/schema/v1/schema';
 import { ServiceClient } from '../../../proto/ts/schema/v1/schema.client';
-import { Config, DEFAULT_MAX_CACHE_SIZE } from '../../configuration';
-import { BASE_EVENT_STREAM_RETRY_BACKOFF_MS, DEFAULT_MAX_EVENT_STREAM_RETRIES, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
+import { Config } from '../../configuration';
+import {
+  BASE_EVENT_STREAM_RETRY_BACKOFF_MS,
+  DEFAULT_MAX_CACHE_SIZE,
+  DEFAULT_MAX_EVENT_STREAM_RETRIES,
+  EVENT_CONFIGURATION_CHANGE,
+  EVENT_PROVIDER_READY,
+} from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
 import { Service } from '../service';
 
@@ -80,6 +86,7 @@ export class GRPCService implements Service {
     return this._cacheEnabled && this._streamAlive;
   }
 
+  // default to false here - reassigned in the constructor if we actaully need to connect
   readonly streamConnection = Promise.resolve(false);
 
   constructor(config: Config, client?: ServiceClient, private logger?: Logger) {
@@ -94,6 +101,7 @@ export class GRPCService implements Service {
           })
         );
 
+    // for now, we only need streaming if the cache is enabled (will need to be pulled out once we support events)
     if (config.cache === 'lru') {
       this._cacheEnabled = true;
       this._cache = new LRU({ maxSize: config.maxCacheSize || DEFAULT_MAX_CACHE_SIZE, sizeCalculation: () => 1 });
@@ -127,7 +135,7 @@ export class GRPCService implements Service {
 
   private connectStream(): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      this.logger?.info(`${FlagdProvider.name}: connecting stream, attempt ${this._streamConnectAttempt}...`);
+      this.logger?.debug(`${FlagdProvider.name}: connecting stream, attempt ${this._streamConnectAttempt}...`);
       const stream = this._client.eventStream({});
       stream.responses.onError(() => {
         this.handleError(reject);
@@ -141,7 +149,7 @@ export class GRPCService implements Service {
         } else if (message.type === EVENT_CONFIGURATION_CHANGE) {
           this.handleFlagsChanged(message);
         }
-      })
+      });
     });
   }
 
@@ -155,15 +163,16 @@ export class GRPCService implements Service {
 
   private handleFlagsChanged(message: EventStreamResponse) {
     if (message.data) {
-      const parsedMessage = Struct.toJson(message.data) as FlagChangeMessage;
-      this.logger?.debug(`${FlagdProvider.name}: got message: ${JSON.stringify(parsedMessage, undefined, 2)}`);
-      if (parsedMessage.flags) {
-          // remove each changed key from cache
-          Object.keys(parsedMessage.flags).forEach((key) => {
-            if (this._cache?.delete(key)) {
-              this.logger?.info(`${FlagdProvider.name}: evicted key: ${key} from cache.`);
-            }
-          });
+      const data = Struct.toJson(message.data);
+      this.logger?.debug(`${FlagdProvider.name}: got message: ${JSON.stringify(data, undefined, 2)}`);
+      if (data && typeof data === 'object' && 'flags' in data && data?.['flags']) {
+        const flagChangeMessage = data as FlagChangeMessage;
+        // remove each changed key from cache
+        Object.keys(flagChangeMessage.flags || []).forEach((key) => {
+          if (this._cache?.delete(key)) {
+            this.logger?.debug(`${FlagdProvider.name}: evicted key: ${key} from cache.`);
+          }
+        });
       }
     }
   }
@@ -181,7 +190,6 @@ export class GRPCService implements Service {
         this.connectStream();
       }, this._streamConnectBackoff);
     } else {
-
       // after max attempts, give up
       const errorMessage = `${FlagdProvider.name}: max stream connect attempts (${this._maxEventStreamRetries} reached)`;
       this.logger?.error(errorMessage);
@@ -211,9 +219,9 @@ export class GRPCService implements Service {
     parser?: (struct: Struct) => PbJsonValue
   ): Promise<ResolutionDetails<T>> {
     if (this._cacheActive) {
-      const cached = this._cache?.get(flagKey);
+      const cached: ResolutionDetails<T> | undefined = this._cache?.get(flagKey);
       if (cached) {
-        return cached as ResolutionDetails<T>;
+        return { ...cached, reason: StandardResolutionReasons.CACHED };
       }
     }
 
@@ -231,7 +239,7 @@ export class GRPCService implements Service {
 
     if (this._cacheActive && response.reason === StandardResolutionReasons.STATIC) {
       // cache this static value
-      this._cache?.set(flagKey, { ...resolved, reason: StandardResolutionReasons.CACHED });
+      this._cache?.set(flagKey, { ...resolved });
     }
     return resolved;
   }
@@ -263,5 +271,5 @@ export class GRPCService implements Service {
       default:
         throw new GeneralError(err.message);
     }
-  };
+  }
 }

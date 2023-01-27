@@ -1,5 +1,5 @@
-import { DEFAULT_MAX_CACHE_SIZE, FlagdProviderOptions, getConfig } from './configuration';
-import { DEFAULT_MAX_EVENT_STREAM_RETRIES } from './constants';
+import { FlagdProviderOptions, getConfig } from './configuration';
+import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from './constants';
 
 describe('Configuration', () => {
   const OLD_ENV = process.env;
@@ -27,7 +27,7 @@ describe('Configuration', () => {
     const socketPath = '/tmp/flagd.socks';
     const maxCacheSize = 333;
     const maxEventStreamRetries = 10;
-    const cache = 'other';
+    const cache = 'disabled';
 
     process.env['FLAGD_HOST'] = host;
     process.env['FLAGD_PORT'] = `${port}`;

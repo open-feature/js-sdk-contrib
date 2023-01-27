@@ -1,8 +1,6 @@
-import { DEFAULT_MAX_EVENT_STREAM_RETRIES } from "./constants";
+import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from "./constants";
 
 export type CacheOption = 'lru' | 'disabled';
-
-export const DEFAULT_MAX_CACHE_SIZE = 1000;
 
 export interface Config {
   
@@ -90,8 +88,8 @@ const getEnvVarConfig = (): Partial<Config> => ({
   ...(process.env[ENV_VAR.FLAGD_SOCKET_PATH] && {
     socketPath: process.env[ENV_VAR.FLAGD_SOCKET_PATH],
   }),
-  ...(process.env[ENV_VAR.FLAGD_CACHE] && {
-    cache: process.env[ENV_VAR.FLAGD_CACHE] as CacheOption,
+  ...(process.env[ENV_VAR.FLAGD_CACHE] && (process.env[ENV_VAR.FLAGD_CACHE] === 'lru' || process.env[ENV_VAR.FLAGD_CACHE] === 'disabled') && {
+    cache: process.env[ENV_VAR.FLAGD_CACHE],
   }),
   ...(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE] && {
     maxCacheSize:  Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
