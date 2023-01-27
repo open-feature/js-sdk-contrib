@@ -2,43 +2,111 @@ import * as grpc from '@grpc/grpc-js';
 import {
   EvaluationContext,
   FlagNotFoundError,
+  FlagValue,
   GeneralError,
   JsonValue,
   Logger,
   ParseError,
   ResolutionDetails,
-  TypeMismatchError
+  StandardResolutionReasons,
+  TypeMismatchError,
 } from '@openfeature/js-sdk';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
-import { FinishedUnaryCall, RpcError } from '@protobuf-ts/runtime-rpc';
+import type { JsonValue as PbJsonValue } from '@protobuf-ts/runtime';
+import type { UnaryCall } from '@protobuf-ts/runtime-rpc';
+import { RpcError } from '@protobuf-ts/runtime-rpc';
+import LRU from 'lru-cache';
 import { Struct } from '../../../proto/ts/google/protobuf/struct';
+import {
+  EventStreamResponse,
+  ResolveBooleanRequest,
+  ResolveBooleanResponse,
+  ResolveFloatRequest,
+  ResolveFloatResponse,
+  ResolveIntRequest,
+  ResolveIntResponse,
+  ResolveObjectRequest,
+  ResolveObjectResponse,
+  ResolveStringRequest,
+  ResolveStringResponse,
+} from '../../../proto/ts/schema/v1/schema';
 import { ServiceClient } from '../../../proto/ts/schema/v1/schema.client';
 import { Config } from '../../configuration';
+import {
+  BASE_EVENT_STREAM_RETRY_BACKOFF_MS,
+  DEFAULT_MAX_CACHE_SIZE,
+  DEFAULT_MAX_EVENT_STREAM_RETRIES,
+  EVENT_CONFIGURATION_CHANGE,
+  EVENT_PROVIDER_READY,
+} from '../../constants';
+import { FlagdProvider } from '../../flagd-provider';
 import { Service } from '../service';
+
+type AnyResponse =
+  | ResolveBooleanResponse
+  | ResolveStringResponse
+  | ResolveIntResponse
+  | ResolveFloatResponse
+  | ResolveObjectResponse;
+type AnyRequest =
+  | ResolveBooleanRequest
+  | ResolveStringRequest
+  | ResolveIntRequest
+  | ResolveFloatRequest
+  | ResolveObjectRequest;
+
+interface FlagChange {
+  type: 'delete' | 'write' | 'update';
+  source: string;
+  flagKey: string;
+}
+
+export interface FlagChangeMessage {
+  flags?: { [key: string]: FlagChange };
+}
 
 // see: https://grpc.github.io/grpc/core/md_doc_statuscodes.html
 export const Codes = {
   InvalidArgument: 'INVALID_ARGUMENT',
   NotFound: 'NOT_FOUND',
   DataLoss: 'DATA_LOSS',
-  Unavailable: 'UNAVAILABLE'
+  Unavailable: 'UNAVAILABLE',
 } as const;
 
 export class GRPCService implements Service {
-  client: ServiceClient;
+  private _client: ServiceClient;
+  private _cache: LRU<string, ResolutionDetails<FlagValue>> | undefined;
+  private _cacheEnabled = false;
+  private _streamAlive = false;
+  private _streamConnectAttempt = 0;
+  private _streamConnectBackoff = BASE_EVENT_STREAM_RETRY_BACKOFF_MS;
+  private _maxEventStreamRetries;
+  private get _cacheActive() {
+    // the cache is "active" (able to be used) if the config enabled it, AND the gRPC stream is live
+    return this._cacheEnabled && this._streamAlive;
+  }
 
-  constructor(config: Config, client?: ServiceClient) {
+  // default to false here - reassigned in the constructor if we actaully need to connect
+  readonly streamConnection = Promise.resolve(false);
+
+  constructor(config: Config, client?: ServiceClient, private logger?: Logger) {
     const { host, port, tls, socketPath } = config;
-    this.client = client
+    this._maxEventStreamRetries = config.maxEventStreamRetries ?? DEFAULT_MAX_EVENT_STREAM_RETRIES;
+    this._client = client
       ? client
       : new ServiceClient(
           new GrpcTransport({
             host: socketPath ? `unix://${socketPath}` : `${host}:${port}`,
-            channelCredentials: tls
-              ? grpc.credentials.createSsl()
-              : grpc.credentials.createInsecure(),
+            channelCredentials: tls ? grpc.credentials.createSsl() : grpc.credentials.createInsecure(),
           })
         );
+
+    // for now, we only need streaming if the cache is enabled (will need to be pulled out once we support events)
+    if (config.cache === 'lru') {
+      this._cacheEnabled = true;
+      this._cache = new LRU({ maxSize: config.maxCacheSize || DEFAULT_MAX_CACHE_SIZE, sizeCalculation: () => 1 });
+      this.streamConnection = this.connectStream();
+    }
   }
 
   async resolveBoolean(
@@ -46,47 +114,15 @@ export class GRPCService implements Service {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<boolean>> {
-    const { response } = await this.client.resolveBoolean({
-      flagKey,
-      context: this.convertContext(context, logger),
-    }).then(this.onFulfilled, this.onRejected);;
-    return {
-      value: response.value,
-      reason: response.reason,
-      variant: response.variant,
-    };
+    return this.resolve(this._client.resolveBoolean, flagKey, context, logger);
   }
 
-  async resolveString(
-    flagKey: string,
-    context: EvaluationContext,
-    logger: Logger
-  ): Promise<ResolutionDetails<string>> {
-    const { response } = await this.client.resolveString({
-      flagKey,
-      context: this.convertContext(context, logger),
-    }).then(this.onFulfilled, this.onRejected);
-    return {
-      value: response.value,
-      reason: response.reason,
-      variant: response.variant,
-    }
+  async resolveString(flagKey: string, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<string>> {
+    return this.resolve(this._client.resolveString, flagKey, context, logger);
   }
 
-  async resolveNumber(
-    flagKey: string,
-    context: EvaluationContext,
-    logger: Logger
-  ): Promise<ResolutionDetails<number>> {
-    const { response } = await this.client.resolveFloat({
-      flagKey,
-      context: this.convertContext(context, logger),
-    }).then(this.onFulfilled, this.onRejected);
-    return {
-      value: response.value,
-      reason: response.reason,
-      variant: response.variant,
-    };
+  async resolveNumber(flagKey: string, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<number>> {
+    return this.resolve(this._client.resolveFloat, flagKey, context, logger);
   }
 
   async resolveObject<T extends JsonValue>(
@@ -94,19 +130,118 @@ export class GRPCService implements Service {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<T>> {
-    const { response } = await this.client.resolveObject({
-      flagKey,
-      context: this.convertContext(context, logger),
-    }).then(this.onFulfilled, this.onRejected);
-    if (response.value !== undefined) {
-      return {
-        value: Struct.toJson(response.value) as T,
-        reason: response.reason,
-        variant: response.variant,
-      };
+    return this.resolve(this._client.resolveObject, flagKey, context, logger, this.objectParser);
+  }
+
+  private connectStream(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.logger?.debug(`${FlagdProvider.name}: connecting stream, attempt ${this._streamConnectAttempt}...`);
+      const stream = this._client.eventStream({});
+      stream.responses.onError(() => {
+        this.handleError(reject);
+      });
+      stream.responses.onComplete(() => {
+        this.handleComplete();
+      });
+      stream.responses.onMessage((message) => {
+        if (message.type === EVENT_PROVIDER_READY) {
+          this.handleProviderReady(resolve);
+        } else if (message.type === EVENT_CONFIGURATION_CHANGE) {
+          this.handleFlagsChanged(message);
+        }
+      });
+    });
+  }
+
+  private handleProviderReady(resolve: (value: boolean | PromiseLike<boolean>) => void) {
+    this.logger?.info(`${FlagdProvider.name}: streaming connection established with flagd`);
+    this._streamAlive = true;
+    this._streamConnectAttempt = 0;
+    this._streamConnectBackoff = BASE_EVENT_STREAM_RETRY_BACKOFF_MS;
+    resolve(true);
+  }
+
+  private handleFlagsChanged(message: EventStreamResponse) {
+    if (message.data) {
+      const data = Struct.toJson(message.data);
+      this.logger?.debug(`${FlagdProvider.name}: got message: ${JSON.stringify(data, undefined, 2)}`);
+      if (data && typeof data === 'object' && 'flags' in data && data?.['flags']) {
+        const flagChangeMessage = data as FlagChangeMessage;
+        // remove each changed key from cache
+        Object.keys(flagChangeMessage.flags || []).forEach((key) => {
+          if (this._cache?.delete(key)) {
+            this.logger?.debug(`${FlagdProvider.name}: evicted key: ${key} from cache.`);
+          }
+        });
+      }
+    }
+  }
+
+  private handleError(reject: (reason?: any) => void) {
+    this.logger?.error(`${FlagdProvider.name}: streaming connection error, will attempt reconnect...`);
+    this._cache?.clear();
+    this._streamAlive = false;
+
+    // if we haven't reached max attempt, reconnect after backoff
+    if (this._streamConnectAttempt <= this._maxEventStreamRetries) {
+      this._streamConnectAttempt++;
+      setTimeout(() => {
+        this._streamConnectBackoff = this._streamConnectBackoff * 2;
+        this.connectStream();
+      }, this._streamConnectBackoff);
+    } else {
+      // after max attempts, give up
+      const errorMessage = `${FlagdProvider.name}: max stream connect attempts (${this._maxEventStreamRetries} reached)`;
+      this.logger?.error(errorMessage);
+      reject(new Error(errorMessage));
+    }
+  }
+
+  private handleComplete() {
+    this.logger?.info(`${FlagdProvider.name}: streaming connection closed gracefully`);
+    this._cache?.clear();
+    this._streamAlive = false;
+  }
+
+  private objectParser = (struct: Struct) => {
+    if (struct !== undefined) {
+      return Struct.toJson(struct);
     } else {
       throw new ParseError('Object value undefined or missing.');
     }
+  };
+
+  private async resolve<T extends FlagValue, Rq extends AnyRequest, Rs extends AnyResponse>(
+    resolver: (request: AnyRequest) => UnaryCall<Rq, Rs>,
+    flagKey: string,
+    context: EvaluationContext,
+    logger: Logger,
+    parser?: (struct: Struct) => PbJsonValue
+  ): Promise<ResolutionDetails<T>> {
+    if (this._cacheActive) {
+      const cached: ResolutionDetails<T> | undefined = this._cache?.get(flagKey);
+      if (cached) {
+        return { ...cached, reason: StandardResolutionReasons.CACHED };
+      }
+    }
+
+    // invoke the passed resolver method
+    const { response } = await resolver
+      .call(this._client, { flagKey, context: this.convertContext(context, logger) })
+      .then((resolved) => resolved, this.onRejected);
+
+    const resolved = {
+      // invoke the parser method if passed
+      value: parser ? parser.call(this, response.value as Struct) : response.value,
+      reason: response.reason,
+      variant: response.variant,
+    } as ResolutionDetails<T>;
+
+    if (this._cacheActive && response.reason === StandardResolutionReasons.STATIC) {
+      // cache this static value
+      this._cache?.set(flagKey, { ...resolved });
+    }
+    return resolved;
   }
 
   private convertContext(context: EvaluationContext, logger: Logger): Struct {
@@ -117,14 +252,9 @@ export class GRPCService implements Service {
       const message = 'Error serializing context.';
       const error = e as Error;
       logger.error(`${message}: ${error?.message}`);
-      logger.error(error?.stack)
+      logger.error(error?.stack);
       throw new ParseError(message);
     }
-  }
-
-  private onFulfilled = <T extends object, U extends object>(value: FinishedUnaryCall<T, U>) => {
-    // no-op, just return the value
-    return value;
   }
 
   private onRejected = (err: RpcError) => {
