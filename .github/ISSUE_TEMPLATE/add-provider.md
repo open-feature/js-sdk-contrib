@@ -27,6 +27,6 @@ I want to add an OpenFeature provider for {my-system}. This would be valuable be
 
 ## Resources
 
-- {useful link}
+- {useful-link}
 
 Keep in mind the CONTRIBUTING guidelines: https://github.com/open-feature/js-sdk-contrib/blob/main/CONTRIBUTING.md
