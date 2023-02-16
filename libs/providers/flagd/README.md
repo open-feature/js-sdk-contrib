@@ -23,12 +23,15 @@ Options can be defined in the constructor or as environment variables, with cons
 
 ### Available options
 
-| Option name | Environment variable name | Type    | Default   |
-| ----------- | ------------------------- | ------- | --------- |
-| host        | FLAGD_HOST                | string  | localhost |
-| port        | FLAGD_PORT                | number  | 8013      |
-| tls         | FLAGD_TLS                 | boolean | false     |
-| socketPath  | FLAGD_SOCKET_PATH         | string  | -         |
+| Option name           | Environment variable name       | Type    | Default   | Values        |
+| --------------------- | ------------------------------- | ------- | --------- | ------------- |
+| host                  | FLAGD_HOST                      | string  | localhost |               |
+| port                  | FLAGD_PORT                      | number  | 8013      |               |
+| tls                   | FLAGD_TLS                       | boolean | false     |               |
+| socketPath            | FLAGD_SOCKET_PATH               | string  | -         |               |
+| cache                 | FLAGD_CACHE                     | string  | lru       | lru,disabled  |
+| maxCacheSize          | FLAGD_MAX_CACHE_SIZE            | int     | 1000      |               |
+| maxEventStreamRetries | FLAGD_MAX_EVENT_STREAM_RETRIES  | int     | 5         |               |
 
 ### Example using TCP
 
