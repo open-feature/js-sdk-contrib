@@ -55,6 +55,7 @@ export class EnvVarProvider implements Provider {
   async resolveNumberEvaluation(flagKey: string): Promise<ResolutionDetails<number>> {
     return this.evaluateEnvironmentVariable(flagKey, (value) => {
       const result = Number.parseFloat(value);
+      // perform some basic validation
       if (Number.isNaN(result)) {
         throw new ParseError(`'${value}' is not a number`);
       }
