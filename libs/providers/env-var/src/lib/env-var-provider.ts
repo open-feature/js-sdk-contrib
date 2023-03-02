@@ -56,7 +56,7 @@ export class EnvVarProvider implements Provider {
     return this.evaluateEnvironmentVariable(flagKey, (value) => {
       const result = Number.parseFloat(value);
       if (Number.isNaN(result)) {
-        throw new ParseError(`Unable to cast '${value}' to a number`);
+        throw new ParseError(`'${value}' is not a number`);
       }
       return result;
     });
