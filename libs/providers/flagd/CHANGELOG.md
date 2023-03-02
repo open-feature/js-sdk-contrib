@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.4...flagd-provider-v0.7.5) (2023-03-02)
+
+
+### Features
+
+* add standard flagd caching ([1e93b5f](https://github.com/open-feature/js-sdk-contrib/commit/1e93b5f3845beb5b4a523d1f9081a4c538200924))
+* add standard flagd caching ([#218](https://github.com/open-feature/js-sdk-contrib/issues/218)) ([1e93b5f](https://github.com/open-feature/js-sdk-contrib/commit/1e93b5f3845beb5b4a523d1f9081a4c538200924))
+
 ## [0.7.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.3...flagd-provider-v0.7.4) (2023-01-19)
 
 
