@@ -20,9 +20,9 @@ $ npm install @openfeature/js-sdk
 
 ## Usage
 
-The environment variable provider uses the environment variables defined on the application to determine the value of a feature flag.
-It supports `booleans`, `strings`, `numbers` and `objects` by attempting to cast the value of an environment variable to the requested type.
-The fallback value will be return if the environment variable doesn't exist or the value can't be cast to the desired type.
+The environment variable provider uses environment variables to determine the value of a feature flag.
+It supports `booleans`, `strings`, `numbers` and `objects` by attempting to interpret the value of an environment variable to the requested type.
+The default value will be returned if the environment variable doesn't exist or the value can't be cast to the desired type.
 
 ```typescript
 // Register the environment variable provider globally
