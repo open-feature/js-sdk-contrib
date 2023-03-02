@@ -96,7 +96,8 @@ export class EnvVarProvider implements Provider {
       if (err instanceof ParseError) {
         throw err;
       }
-      throw new ParseError();
+      const errorMessage = err instanceof Error ? err.message : 'unknown parsing error';
+      throw new ParseError(errorMessage);
     }
   }
 }
