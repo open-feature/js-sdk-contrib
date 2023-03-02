@@ -27,6 +27,7 @@ export class EnvVarProvider implements Provider {
 
   private readonly options: Config;
 
+  // use the constructor for provider-specific configuration
   constructor(options: Partial<Config> = {}) {
     this.options = {
       disableConstantCase: false,
