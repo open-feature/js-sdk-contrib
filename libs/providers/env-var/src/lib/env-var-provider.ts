@@ -81,6 +81,7 @@ export class EnvVarProvider implements Provider {
     const value = process.env[envVarKey];
 
     if (!value) {
+      // an error thrown in a resolver method is caught by the SDK, and the default is returned
       throw new FlagNotFoundError(`Unable to find an environment variable with the key '${envVarKey}'`);
     }
 
