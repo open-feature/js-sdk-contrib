@@ -11,7 +11,7 @@
   },
   "private": true,
   "dependencies": {
-    "@bufbuild/connect-web": "^0.6.0",
+    "@bufbuild/connect-web": "^0.7.0",
     "@grpc/grpc-js": "^1.7.3",
     "@opentelemetry/api": "^1.3.0",
     "@protobuf-ts/grpc-transport": "2.8.2",
