@@ -1,18 +1,37 @@
-import { EvaluationContext, Provider, JsonValue, ResolutionDetails } from '@openfeature/js-sdk';
+import {
+  EvaluationContext,
+  Provider,
+  JsonValue,
+  ResolutionDetails,
+  FlagNotFoundError,
+  TypeMismatchError,
+  StandardResolutionReasons,
+} from '@openfeature/js-sdk';
+import { FlagConfiguration } from './flag-configuration';
 
 export class InMemoryProvider implements Provider {
-  metadata = {
-    name: InMemoryProvider.name,
-  };
+  readonly metadata = {
+    name: 'In-Memory Provider',
+  } as const;
+  private _flagConfiguration: FlagConfiguration;
 
-  hooks = [];
+  constructor(flagConfiguration: FlagConfiguration = {}) {
+    this._flagConfiguration = flagConfiguration;
+  }
 
-  resolveBooleanEvaluation(
-    flagKey: string,
-    defaultValue: boolean,
-    context: EvaluationContext
-  ): Promise<ResolutionDetails<boolean>> {
-    throw new Error('Method not implemented.');
+  async resolveBooleanEvaluation(flagKey: string): Promise<ResolutionDetails<boolean>> {
+    if (!(flagKey in this._flagConfiguration)) {
+      throw new FlagNotFoundError();
+    }
+    const flagValue = this._flagConfiguration[flagKey];
+    if (typeof flagValue !== 'boolean') {
+      throw new TypeMismatchError();
+    }
+
+    return {
+      value: flagValue,
+      reason: StandardResolutionReasons.STATIC,
+    };
   }
 
   resolveStringEvaluation(
