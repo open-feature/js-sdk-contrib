@@ -1,5 +1,6 @@
 import {
   FlagNotFoundError,
+  GeneralError,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
@@ -12,6 +13,7 @@ describe(InMemoryProvider, () => {
     const flags = {
       'a-string-flag': 'configured-value',
       'a-boolean-flag': true,
+      'a-numeric-flag': 42,
     };
     provider = new InMemoryProvider(flags);
   });
@@ -53,6 +55,35 @@ describe(InMemoryProvider, () => {
       const evaluation = provider.resolveStringEvaluation('a-boolean-flag');
 
       expect(evaluation).rejects.toThrow(TypeMismatchError);
+    });
+  });
+
+  describe('numeric flags', () => {
+    it('resolves to the configured value for a known flag', async () => {
+      const resolution = await provider.resolveNumberEvaluation('a-numeric-flag');
+      verifyResolution(resolution, { expectedValue: 42 });
+    });
+
+    it('throws when asked for an unrecognized flag', async () => {
+      const evaluation = provider.resolveNumberEvaluation('unknown-string-flag');
+      expect(evaluation).rejects.toThrow(FlagNotFoundError);
+    });
+
+    it('throws a TypeMismatchError when asked to resolve a non-string flag', async () => {
+      const evaluation = provider.resolveNumberEvaluation('a-boolean-flag');
+
+      expect(evaluation).rejects.toThrow(TypeMismatchError);
+    });
+  });
+
+  describe('object flags', () => {
+    it('is not currently supported, even if you try providing an object flag', async () => {
+      const provider = new InMemoryProvider({
+        'an-object-flag': { foo: 'bar' },
+      } as any); // bypass type-safety to simulate a JS consumer
+
+      const evaluation = provider.resolveObjectEvaluation('an-object-flag');
+      expect(evaluation).rejects.toThrow(GeneralError);
     });
   });
 

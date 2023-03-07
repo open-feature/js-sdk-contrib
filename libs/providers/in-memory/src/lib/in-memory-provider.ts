@@ -6,6 +6,7 @@ import {
   FlagNotFoundError,
   TypeMismatchError,
   StandardResolutionReasons,
+  GeneralError,
 } from '@openfeature/js-sdk';
 import { FlagConfiguration } from './flag-configuration';
 
@@ -53,19 +54,22 @@ export class InMemoryProvider implements Provider {
     };
   }
 
-  resolveNumberEvaluation(
-    flagKey: string,
-    defaultValue: number,
-    context: EvaluationContext
-  ): Promise<ResolutionDetails<number>> {
-    throw new Error('Method not implemented.');
+  async resolveNumberEvaluation(flagKey: string): Promise<ResolutionDetails<number>> {
+    if (!(flagKey in this._flagConfiguration)) {
+      throw new FlagNotFoundError();
+    }
+    const flagValue = this._flagConfiguration[flagKey];
+    if (typeof flagValue !== 'number') {
+      throw new TypeMismatchError();
+    }
+
+    return {
+      value: flagValue,
+      reason: StandardResolutionReasons.STATIC,
+    };
   }
 
-  resolveObjectEvaluation<U extends JsonValue>(
-    flagKey: string,
-    defaultValue: U,
-    context: EvaluationContext
-  ): Promise<ResolutionDetails<U>> {
-    throw new Error('Method not implemented.');
+  async resolveObjectEvaluation<U extends JsonValue>(flagKey: string): Promise<ResolutionDetails<U>> {
+    throw new GeneralError('support for object flags has not been implemented');
   }
 }
