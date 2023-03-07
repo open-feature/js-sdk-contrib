@@ -25,7 +25,7 @@ describe(InMemoryProvider, () => {
     });
 
     it('throws a TypeMismatchError when asked to resolve a non-boolean flag', async () => {
-      const evaluation = provider.resolveStringEvaluation('a-string-flag');
+      const evaluation = provider.resolveBooleanEvaluation('a-string-flag');
 
       expect(evaluation).rejects.toThrow(TypeMismatchError);
     });
