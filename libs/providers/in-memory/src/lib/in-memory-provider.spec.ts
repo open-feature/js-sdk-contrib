@@ -18,10 +18,6 @@ describe(InMemoryProvider, () => {
     provider = new InMemoryProvider(flags);
   });
 
-  it('should be and instance of InMemoryProvider', () => {
-    expect(provider).toBeInstanceOf(InMemoryProvider);
-  });
-
   describe('boolean flags', () => {
     it('resolves to the configured value for a known flag', async () => {
       const resolution = await provider.resolveBooleanEvaluation('a-boolean-flag');
