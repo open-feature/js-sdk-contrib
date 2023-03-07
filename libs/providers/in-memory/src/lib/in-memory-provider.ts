@@ -19,6 +19,10 @@ export class InMemoryProvider implements Provider {
     this._flagConfiguration = flagConfiguration;
   }
 
+  replaceConfiguration(flagConfiguration: FlagConfiguration) {
+    this._flagConfiguration = flagConfiguration;
+  }
+
   async resolveBooleanEvaluation(flagKey: string): Promise<ResolutionDetails<boolean>> {
     if (!(flagKey in this._flagConfiguration)) {
       throw new FlagNotFoundError();
@@ -34,12 +38,19 @@ export class InMemoryProvider implements Provider {
     };
   }
 
-  resolveStringEvaluation(
-    flagKey: string,
-    defaultValue: string,
-    context: EvaluationContext
-  ): Promise<ResolutionDetails<string>> {
-    throw new Error('Method not implemented.');
+  async resolveStringEvaluation(flagKey: string): Promise<ResolutionDetails<string>> {
+    if (!(flagKey in this._flagConfiguration)) {
+      throw new FlagNotFoundError();
+    }
+    const flagValue = this._flagConfiguration[flagKey];
+    if (typeof flagValue !== 'string') {
+      throw new TypeMismatchError();
+    }
+
+    return {
+      value: flagValue,
+      reason: StandardResolutionReasons.STATIC,
+    };
   }
 
   resolveNumberEvaluation(
