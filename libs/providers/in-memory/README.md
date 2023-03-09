@@ -2,7 +2,9 @@
 
 An *extremely* simple OpenFeature provider, intended for simple demos and as a test stub.
 
-Flag values are entirely static - evaluation context is ignored and there's no way to update the flags at runtime. 
+Flagging decisions are static - evaluation context is ignored. The only way to change a flag value is 
+to replace the entire configuration (with `replaceConfiguration`), and this is only intended to be used
+when the provider is acting as a test stub.
 
 Object values are not currently supported (but a PR implementing them would be gratefully received!)
 
@@ -35,6 +37,19 @@ const client = OpenFeature.getClient('my-app');
 // get that hardcoded boolean flag
 const boolValue = await client.getBooleanValue('a-boolean-flag', false);
 ```
+
+### replace the flag configuration
+*a crude facility for when the provider is being used as a test stub*
+
+```
+provider.replaceConfiguration({
+  'a-boolean-flag': false
+})
+```
+
+Note that this entirely replaces the previous configuration - no merging is
+performed and all previous values are lost.
+
 
 ## Development
 
