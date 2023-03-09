@@ -18,11 +18,11 @@ export class InMemoryProvider implements Provider {
   private _flagConfiguration: FlagConfiguration;
 
   constructor(flagConfiguration: FlagConfiguration = {}) {
-    this._flagConfiguration = flagConfiguration;
+    this._flagConfiguration = { ...flagConfiguration };
   }
 
   replaceConfiguration(flagConfiguration: FlagConfiguration) {
-    this._flagConfiguration = flagConfiguration;
+    this._flagConfiguration = { ...flagConfiguration };
   }
 
   async resolveBooleanEvaluation(flagKey: string): Promise<ResolutionDetails<boolean>> {

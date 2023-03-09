@@ -98,6 +98,20 @@ describe(InMemoryProvider, () => {
     const secondResolution = await provider.resolveStringEvaluation('some-flag');
     verifyResolution(secondResolution, { expectedValue: 'updated-value' });
   });
+
+  it('does not let you monkey with the configuration passed by reference', async () => {
+    const configuration = {
+      'some-flag': 'initial-value',
+    };
+    const provider = new InMemoryProvider(configuration);
+
+    // I passed configuration by reference, so maybe I can mess
+    // with it behind the providers back!
+    configuration['some-flag'] = 'change';
+
+    const resolution = await provider.resolveStringEvaluation('some-flag');
+    verifyResolution(resolution, { expectedValue: 'initial-value' });
+  });
 });
 
 type VerifyResolutionParams<U> = {
