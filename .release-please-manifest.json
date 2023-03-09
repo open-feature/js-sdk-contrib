@@ -3,5 +3,5 @@
   "libs/providers/go-feature-flag": "0.5.4",
   "libs/providers/flagd": "0.7.5",
   "libs/providers/env-var": "0.1.1",
-  "libs/providers/in-memory": "0.1.0"
+  "libs/providers/in-memory": "0.1.1"
 }
