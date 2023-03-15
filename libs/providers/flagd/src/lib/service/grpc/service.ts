@@ -219,9 +219,9 @@ export class GRPCService implements Service {
     parser?: (struct: Struct) => PbJsonValue
   ): Promise<ResolutionDetails<T>> {
     if (this._cacheActive) {
-      const cached: ResolutionDetails<T> | undefined = this._cache?.get(flagKey);
+      const cached = this._cache?.get(flagKey);
       if (cached) {
-        return { ...cached, reason: StandardResolutionReasons.CACHED };
+        return { ...cached, reason: StandardResolutionReasons.CACHED } as ResolutionDetails<T>;
       }
     }
 
@@ -271,5 +271,5 @@ export class GRPCService implements Service {
       default:
         throw new GeneralError(err.message);
     }
-  }
+  };
 }
