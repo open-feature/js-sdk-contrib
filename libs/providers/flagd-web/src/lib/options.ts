@@ -14,6 +14,13 @@ export interface Options {
   port: number;
 
   /**
+   * The path at which the flagd gRPC service is available, for example: /flagd-api (optional).
+   * 
+   * @default ""
+   */
+  pathPrefix: string;
+
+  /**
    * Determines if TLS should be used.
    *
    * @default false
@@ -47,6 +54,7 @@ export function getOptions(options: FlagdProviderOptions): Options {
       tls: true,
       maxRetries: 0,
       maxDelay: DEFAULT_MAX_DELAY,
+      pathPrefix: ""
     },
     ...options,
   };

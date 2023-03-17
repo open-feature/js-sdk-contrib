@@ -53,9 +53,9 @@ export class FlagdWebProvider implements Provider, EventProvider {
     promiseClient?: PromiseClient<typeof Service>,
     callbackClient?: CallbackClient<typeof Service>,
   ) {
-    const { host, port, tls, maxRetries, maxDelay } = getOptions(options);
+    const { host, port, tls, maxRetries, maxDelay, pathPrefix } = getOptions(options);
     const transport = createConnectTransport({
-      baseUrl: `${tls ? 'https' : 'http'}://${host}:${port}`,
+      baseUrl: `${tls ? 'https' : 'http'}://${host}:${port}/${pathPrefix}`,
     });
     this._promiseClient = promiseClient ? promiseClient : createPromiseClient(Service, transport);
     this._callbackClient = callbackClient ? callbackClient : createCallbackClient(Service, transport);
@@ -150,6 +150,7 @@ export class FlagdWebProvider implements Provider, EventProvider {
         if (this._retry < this._maxRetries) {
           this._retry++;
           setTimeout(() => this.retryConnect(context), this._delayMs);
+        } else {
           this._logger?.warn(`${FlagdWebProvider.name}: max retries reached`);
         }
       }
