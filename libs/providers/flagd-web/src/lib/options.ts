@@ -1,8 +1,6 @@
 export interface Options {
   /**
    * The domain name or IP address of flagd.
-   *
-   * @default window
    */
   host: string;
 
