@@ -36,7 +36,7 @@ If the connection to the flagd instance fails, the provider will attempt to reco
 
 ### Event streaming
 
-The `FlagdWebProvider` receives events from flag with changes. Combined with the event API in the web SDK, this allows for subscription to flag value changes in clients.
+The `FlagdWebProvider` receives events from flagd with changes. Combined with the event API in the web SDK, this allows for subscription to flag value changes in clients.
 
 ```typescript
 client.addHandler(ProviderEvents.Ready, () => {
