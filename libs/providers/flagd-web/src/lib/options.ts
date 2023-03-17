@@ -7,7 +7,7 @@ export interface Options {
   host: string;
 
   /**
-   * The port flagd is listen on.
+   * The port flagd is listening on.
    *
    * @default 443
    */
