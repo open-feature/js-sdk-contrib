@@ -5,7 +5,7 @@ export interface Options {
   host: string;
 
   /**
-   * The port flagd is listening on.
+   * The port at which the flagd gRPC service is exposed.
    *
    * @default 443
    */
