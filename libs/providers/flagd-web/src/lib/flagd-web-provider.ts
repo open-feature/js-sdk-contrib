@@ -1,15 +1,11 @@
 import {
-  CallbackClient,
-  Code,
-  ConnectError,
-  createCallbackClient,
+  CallbackClient, createCallbackClient,
   createConnectTransport,
   createPromiseClient,
   PromiseClient
 } from '@bufbuild/connect-web';
 import { Struct } from '@bufbuild/protobuf';
 import {
-  ErrorCode,
   EvaluationContext,
   EventProvider,
   FlagNotFoundError,
@@ -128,10 +124,7 @@ export class FlagdWebProvider implements Provider, EventProvider {
 
   private async retryConnect(context: EvaluationContext) {
     this._delayMs = Math.min(this._delayMs * BACK_OFF_MULTIPLIER, this._maxDelay);
-    if (this._retry >= this._maxRetries) {
-      this._logger?.warn(`${FlagdWebProvider.name}: max retries reached`);
-      return;
-    }
+
     this._callbackClient.eventStream(
       {},
       (message) => {
@@ -154,10 +147,13 @@ export class FlagdWebProvider implements Provider, EventProvider {
       () => {
         window.dispatchEvent(new Event(ProviderEvents.Error));
         this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd`);
-        setTimeout(() => this.retryConnect(context), this._delayMs);
+        if (this._retry < this._maxRetries) {
+          this._retry++;
+          setTimeout(() => this.retryConnect(context), this._delayMs);
+          this._logger?.warn(`${FlagdWebProvider.name}: max retries reached`);
+        }
       }
     );
-    this._retry++;
   }
 
   private async fetchAll(context: EvaluationContext) {

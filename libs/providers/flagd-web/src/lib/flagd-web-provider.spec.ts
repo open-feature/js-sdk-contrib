@@ -239,7 +239,7 @@ describe(FlagdWebProvider.name, () => {
         });
         setTimeout(() => {
           try {
-            expect(mockCallbackClient.eventStream.mock.calls.length).toBeGreaterThanOrEqual(3);
+            expect(mockCallbackClient.eventStream.mock.calls.length).toBeGreaterThanOrEqual(4);
             done();
           } catch (err) {
             done(err);
@@ -249,11 +249,11 @@ describe(FlagdWebProvider.name, () => {
     });
 
     describe('finite maxRetries', () => {
-      it('should attempt reconnect maxRetries (2) times', (done) => {
+      it('should attempt reconnect if maxRetries (1) times', (done) => {
         const mockCallbackClient = new MockCallbackClient();
         OpenFeature.setProvider(
           new FlagdWebProvider(
-            { host: 'fake.com', maxRetries: 2 },
+            { host: 'fake.com', maxRetries: 1 },
             console,
             undefined,
             mockCallbackClient as unknown as CallbackClient<typeof Service>
@@ -266,7 +266,32 @@ describe(FlagdWebProvider.name, () => {
         });
         setTimeout(() => {
           try {
-            expect(mockCallbackClient.eventStream.mock.calls.length).toEqual(2);
+            expect(mockCallbackClient.eventStream.mock.calls.length).toEqual(2); // initial + 1 retry
+            done();
+          } catch (err) {
+            done(err);
+          }
+        }, RECONNECT_TIME_LIMIT);
+      });
+
+      it('should NOT attempt reconnect if maxRetries (0) times', (done) => {
+        const mockCallbackClient = new MockCallbackClient();
+        OpenFeature.setProvider(
+          new FlagdWebProvider(
+            { host: 'fake.com', maxRetries: -1 },
+            console,
+            undefined,
+            mockCallbackClient as unknown as CallbackClient<typeof Service>
+          )
+        );
+
+        mockCallbackClient.fail = true;
+        mockCallbackClient.mockClose({
+          code: Code.Unavailable,
+        });
+        setTimeout(() => {
+          try {
+            expect(mockCallbackClient.eventStream.mock.calls.length).toEqual(1); // initial only
             done();
           } catch (err) {
             done(err);

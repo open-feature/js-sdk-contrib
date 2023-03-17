@@ -29,7 +29,7 @@ export interface Options {
 
   /**
    * Sets the maximum number of retries for a connection to be made to the flagd instance
-   * 0 means unlimited.
+   * 0 means unlimited. A negative number means no retries.
    *
    * @default 0
    */
