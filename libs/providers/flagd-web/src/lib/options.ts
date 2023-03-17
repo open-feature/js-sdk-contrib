@@ -21,9 +21,9 @@ export interface Options {
   pathPrefix: string;
 
   /**
-   * Determines if TLS should be used.
+   * Determines if TLS (https) should be used.
    *
-   * @default false
+   * @default true
    */
   tls: boolean;
 

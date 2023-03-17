@@ -25,9 +25,10 @@ The `FlagdWebProvider` communicates with flagd via the [connect protocol](https:
 | Option name | Type    | Default   | Description                                                                                                                                            |
 | ----------- | ------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | host        | string  | localhost | sets the host used to connect to the flagd instance                                                                                                    |
+| pathPrefix  | string  | ""        | sets the path at which the flagd gRPC service is available, for example: `/api/flagd` (optional)                                                       |
 | port        | number  | 8013      | sets the port used to connect to the flagd instance                                                                                                    |
-| tls         | boolean | false     | when set to true the provider will attempt to connect to flagd via https                                                                               |
-| maxRetries  | number  | 0         | sets the maximum number of retries for a connection to be made to the flagd instance, a value of 0 means unlimited. A negative value means no retries. |
+| tls         | boolean | true      | when set to true the provider will attempt to connect to flagd via https                                                                               |
+| maxRetries  | number  | 0         | Sets the maximum number of retries for a connection to be made to the flagd instance. A value of 0 means unlimited. A negative value means no retries. |
 | maxDelay    | number  | 60000     | sets the maximum time in ms to wait between reconnect intervals                                                                                        |
 
 ### Reconnection
@@ -46,7 +47,8 @@ client.addHandler(ProviderEvents.Ready, () => {
 
 ### Caching
 
-The `FlagdWebProvider` evaluates flags in bulk, taking into account the evaluation context, and then caches them for local evaluation. The cache is invalidated when flag configuration change events are received.
+The `FlagdWebProvider` evaluates flags in bulk, taking into account the evaluation context, and then caches them in memory for local evaluation.
+The cache is invalidated when flag configuration change events are received.
 
 ## Example
 
