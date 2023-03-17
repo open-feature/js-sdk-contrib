@@ -9,7 +9,7 @@ A feature flag daemon with a Unix philosophy.
 :warning: This provider requires the use of the experimental @openfeature/web-sdk:
 
 ```
-npm i @openfeature/web-sdk
+npm install @openfeature/web-sdk
 ```
 
 ```sh
