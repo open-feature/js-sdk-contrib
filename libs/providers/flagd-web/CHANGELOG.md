@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.1.4...flagd-web-provider-v0.2.0) (2023-03-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* flagd-web uses bulk resolution ([#238](https://github.com/open-feature/js-sdk-contrib/issues/238))
+
+### 🧹 Chore
+
+* temporarily remove flagd-web ([#215](https://github.com/open-feature/js-sdk-contrib/issues/215)) ([030e026](https://github.com/open-feature/js-sdk-contrib/commit/030e02632885a906a8dd4abd940f5d399e6f58c4))
+
+
+### ✨ New Features
+
+* flagd-web uses bulk resolution ([#238](https://github.com/open-feature/js-sdk-contrib/issues/238)) ([8aeeb1d](https://github.com/open-feature/js-sdk-contrib/commit/8aeeb1d198f766400b00f8aeda1e3daa84e268bf))
+
 ## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.1.3...flagd-web-provider-v0.1.4) (2023-01-19)
 
 
