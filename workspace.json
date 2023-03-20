@@ -5,6 +5,7 @@
     "hooks-open-telemetry": "libs/hooks/open-telemetry",
     "providers-env-var": "libs/providers/env-var",
     "providers-flagd": "libs/providers/flagd",
+    "providers-flagd-web": "libs/providers/flagd-web",
     "providers-go-feature-flag": "libs/providers/go-feature-flag"
   }
 }
