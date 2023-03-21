@@ -7,13 +7,10 @@ import {
 import { Struct } from '@bufbuild/protobuf';
 import {
   EvaluationContext,
-  EventProvider,
   FlagNotFoundError,
   FlagValue,
   JsonValue,
-  Logger,
-  OpenFeature,
-  Provider,
+  Logger, Provider,
   ProviderEvents,
   ResolutionDetails,
   StandardResolutionReasons,
@@ -32,7 +29,7 @@ const BACK_OFF_MULTIPLIER =- 3;
 const INITIAL_DELAY_MS = 100;
 type AnyFlagResolutionType = typeof AnyFlag.prototype.value.case;
 
-export class FlagdWebProvider implements Provider, EventProvider {
+export class FlagdWebProvider implements Provider {
   metadata = {
     name: 'flagd-web',
   };
@@ -63,17 +60,16 @@ export class FlagdWebProvider implements Provider, EventProvider {
     this._maxDelay = maxDelay;
     this._logger = logger;
 
-    // TODO: when web-sdk has initialization, put this there.
-    this.retryConnect(OpenFeature.getContext());
+
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     await this.fetchAll(newContext);
   }
 
-  // if the cache is active, or we're connected, or streaming is disabled, we're ready.
-  get ready() {
-    return this._connected;
+  async initialize(context: EvaluationContext): Promise<void> {
+    // TODO: when web-sdk has initialization, put this there.
+    await this.retryConnect(context);
   }
 
   resolveBooleanEvaluation(
@@ -125,36 +121,39 @@ export class FlagdWebProvider implements Provider, EventProvider {
   private async retryConnect(context: EvaluationContext) {
     this._delayMs = Math.min(this._delayMs * BACK_OFF_MULTIPLIER, this._maxDelay);
 
-    this._callbackClient.eventStream(
-      {},
-      (message) => {
-        this._logger?.debug(`${FlagdWebProvider.name}: event received: ${message.type}`);
-        switch (message.type) {
-          case EVENT_PROVIDER_READY:
-            this.fetchAll(context).then(() => {
-              this.resetConnectionState();
-              window.dispatchEvent(new Event(ProviderEvents.Ready));
-            });
-            return;
-          case EVENT_CONFIGURATION_CHANGE: {
-            this.fetchAll(context).then(() => {
-              window.dispatchEvent(new Event(ProviderEvents.ConfigurationChanged));
-            })
-            return;
+    const promise = new Promise<void>((resolve, reject) => {
+      this._callbackClient.eventStream(
+        {},
+        (message) => {
+          this._logger?.debug(`${FlagdWebProvider.name}: event received: ${message.type}`);
+          switch (message.type) {
+            case EVENT_PROVIDER_READY:
+              this.fetchAll(context).then(() => {
+                this.resetConnectionState();
+                resolve();
+              });
+              return;
+            case EVENT_CONFIGURATION_CHANGE: {
+              this.fetchAll(context).then(() => {
+                window.dispatchEvent(new Event(ProviderEvents.ConfigurationChanged));
+              })
+              return;
+            }
+          }
+        },
+        () => {
+          reject();
+          this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd`);
+          if (this._retry < this._maxRetries) {
+            this._retry++;
+            setTimeout(() => this.retryConnect(context), this._delayMs);
+          } else {
+            this._logger?.warn(`${FlagdWebProvider.name}: max retries reached`);
           }
         }
-      },
-      () => {
-        window.dispatchEvent(new Event(ProviderEvents.Error));
-        this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd`);
-        if (this._retry < this._maxRetries) {
-          this._retry++;
-          setTimeout(() => this.retryConnect(context), this._delayMs);
-        } else {
-          this._logger?.warn(`${FlagdWebProvider.name}: max retries reached`);
-        }
-      }
-    );
+      );
+    });
+    return promise;
   }
 
   private async fetchAll(context: EvaluationContext) {
