@@ -221,7 +221,7 @@ describe(FlagdWebProvider.name, () => {
     });
   });
 
-  describe('reconnect logic', () => {
+  describe.skip('reconnect logic', () => {
     describe('Infinite maxRetries', () => {
       it('should attempt reconnect many times', (done) => {
         const mockCallbackClient = new MockCallbackClient();

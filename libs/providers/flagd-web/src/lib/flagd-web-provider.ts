@@ -1,24 +1,24 @@
 import {
-  CallbackClient, createCallbackClient,
+  CallbackClient,
+  createCallbackClient,
   createConnectTransport,
   createPromiseClient,
-  PromiseClient
+  PromiseClient,
 } from '@bufbuild/connect-web';
 import { Struct } from '@bufbuild/protobuf';
 import {
   EvaluationContext,
-  EventProvider,
   FlagNotFoundError,
   FlagValue,
   JsonValue,
   Logger,
-  OpenFeature,
   Provider,
   ProviderEvents,
   ResolutionDetails,
   StandardResolutionReasons,
-  TypeMismatchError
+  TypeMismatchError,
 } from '@openfeature/web-sdk';
+import { EventEmitter } from 'events';
 import { Service } from '../proto/ts/schema/v1/schema_connectweb';
 import { AnyFlag } from '../proto/ts/schema/v1/schema_pb';
 import { FlagdProviderOptions, getOptions } from './options';
@@ -32,7 +32,7 @@ const BACK_OFF_MULTIPLIER =- 3;
 const INITIAL_DELAY_MS = 100;
 type AnyFlagResolutionType = typeof AnyFlag.prototype.value.case;
 
-export class FlagdWebProvider implements Provider, EventProvider {
+export class FlagdWebProvider implements Provider {
   metadata = {
     name: 'flagd-web',
   };
@@ -51,7 +51,7 @@ export class FlagdWebProvider implements Provider, EventProvider {
     options: FlagdProviderOptions,
     logger?: Logger,
     promiseClient?: PromiseClient<typeof Service>,
-    callbackClient?: CallbackClient<typeof Service>,
+    callbackClient?: CallbackClient<typeof Service>
   ) {
     const { host, port, tls, maxRetries, maxDelay, pathPrefix } = getOptions(options);
     const transport = createConnectTransport({
@@ -59,55 +59,38 @@ export class FlagdWebProvider implements Provider, EventProvider {
     });
     this._promiseClient = promiseClient ? promiseClient : createPromiseClient(Service, transport);
     this._callbackClient = callbackClient ? callbackClient : createCallbackClient(Service, transport);
-    this._maxRetries = maxRetries === 0 ? Infinity: maxRetries;
+    this._maxRetries = maxRetries === 0 ? Infinity : maxRetries;
     this._maxDelay = maxDelay;
     this._logger = logger;
-
-    // TODO: when web-sdk has initialization, put this there.
-    this.retryConnect(OpenFeature.getContext());
   }
+
+  events = new EventEmitter();
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     await this.fetchAll(newContext);
   }
 
-  // if the cache is active, or we're connected, or streaming is disabled, we're ready.
-  get ready() {
-    return this._connected;
+  async initialize(context: EvaluationContext): Promise<void> {
+    await this.retryConnect(context);
   }
 
-  resolveBooleanEvaluation(
-    flagKey: string,
-    defaultValue: boolean,
-  ): ResolutionDetails<boolean> {
+  resolveBooleanEvaluation(flagKey: string, _: boolean): ResolutionDetails<boolean> {
     return this.evaluate(flagKey, 'boolValue');
   }
 
-  resolveStringEvaluation(
-    flagKey: string,
-    defaultValue: string,
-  ): ResolutionDetails<string> {
+  resolveStringEvaluation(flagKey: string, _: string): ResolutionDetails<string> {
     return this.evaluate(flagKey, 'stringValue');
   }
 
-  resolveNumberEvaluation(
-    flagKey: string,
-    defaultValue: number,
-  ): ResolutionDetails<number> {
+  resolveNumberEvaluation(flagKey: string, _: number): ResolutionDetails<number> {
     return this.evaluate(flagKey, 'doubleValue');
   }
 
-  resolveObjectEvaluation<U extends JsonValue>(
-    flagKey: string,
-    defaultValue: U,
-  ): ResolutionDetails<U> {
+  resolveObjectEvaluation<U extends JsonValue>(flagKey: string, _: U): ResolutionDetails<U> {
     return this.evaluate(flagKey, 'objectValue');
   }
 
-  private evaluate<T extends FlagValue>(
-    flagKey: string,
-    type: AnyFlagResolutionType,
-  ): ResolutionDetails<T> {
+  private evaluate<T extends FlagValue>(flagKey: string, type: AnyFlagResolutionType): ResolutionDetails<T> {
     const resolved = this._flags[flagKey];
     if (!resolved) {
       throw new FlagNotFoundError(`flag key ${flagKey} not found in cache`);
@@ -118,43 +101,45 @@ export class FlagdWebProvider implements Provider, EventProvider {
     return {
       reason: this._connected ? resolved.reason : StandardResolutionReasons.CACHED,
       variant: resolved.variant,
-      value: resolved.value as T
-    }
+      value: resolved.value as T,
+    };
   }
 
   private async retryConnect(context: EvaluationContext) {
     this._delayMs = Math.min(this._delayMs * BACK_OFF_MULTIPLIER, this._maxDelay);
 
-    this._callbackClient.eventStream(
-      {},
-      (message) => {
-        this._logger?.debug(`${FlagdWebProvider.name}: event received: ${message.type}`);
-        switch (message.type) {
-          case EVENT_PROVIDER_READY:
-            this.fetchAll(context).then(() => {
-              this.resetConnectionState();
-              window.dispatchEvent(new Event(ProviderEvents.Ready));
-            });
-            return;
-          case EVENT_CONFIGURATION_CHANGE: {
-            this.fetchAll(context).then(() => {
-              window.dispatchEvent(new Event(ProviderEvents.ConfigurationChanged));
-            })
-            return;
+    return new Promise<void>((resolve, reject) => {
+      this._callbackClient.eventStream(
+        {},
+        (message) => {
+          this._logger?.debug(`${FlagdWebProvider.name}: event received: ${message.type}`);
+          switch (message.type) {
+            case EVENT_PROVIDER_READY:
+              this.fetchAll(context).then(() => {
+                this.resetConnectionState();
+                resolve();
+              });
+              return;
+            case EVENT_CONFIGURATION_CHANGE: {
+              this.fetchAll(context).then(() => {
+                this.events.emit(ProviderEvents.ConfigurationChanged);
+              });
+              return;
+            }
+          }
+        },
+        () => {
+          reject();
+          this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd`);
+          if (this._retry < this._maxRetries) {
+            this._retry++;
+            setTimeout(() => this.retryConnect(context), this._delayMs);
+          } else {
+            this._logger?.warn(`${FlagdWebProvider.name}: max retries reached`);
           }
         }
-      },
-      () => {
-        window.dispatchEvent(new Event(ProviderEvents.Error));
-        this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd`);
-        if (this._retry < this._maxRetries) {
-          this._retry++;
-          setTimeout(() => this.retryConnect(context), this._delayMs);
-        } else {
-          this._logger?.warn(`${FlagdWebProvider.name}: max retries reached`);
-        }
-      }
-    );
+      );
+    });
   }
 
   private async fetchAll(context: EvaluationContext) {
@@ -171,12 +156,11 @@ export class FlagdWebProvider implements Provider, EventProvider {
           reason: resolved.reason,
           variant: resolved.variant,
           // if it's an object, we have to parse it.
-          value: (resolved.value.case === 'objectValue') 
-            ? (resolved.value.value as Struct).toJson()
-            : resolved.value.value
-        }
-      }
-    }, {})
+          value:
+            resolved.value.case === 'objectValue' ? (resolved.value.value as Struct).toJson() : resolved.value.value,
+        },
+      };
+    }, {});
   }
 
   private resetConnectionState() {
