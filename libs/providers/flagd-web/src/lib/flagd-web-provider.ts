@@ -27,7 +27,7 @@ export const ERROR_DISABLED = 'DISABLED';
 
 const EVENT_CONFIGURATION_CHANGE = 'configuration_change';
 const EVENT_PROVIDER_READY = 'provider_ready';
-const BACK_OFF_MULTIPLIER = -3;
+const BACK_OFF_MULTIPLIER =- 3;
 
 const INITIAL_DELAY_MS = 100;
 type AnyFlagResolutionType = typeof AnyFlag.prototype.value.case;
