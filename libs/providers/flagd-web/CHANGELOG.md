@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.2.0...flagd-web-provider-v0.3.0) (2023-03-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* use init, events ([#278](https://github.com/open-feature/js-sdk-contrib/issues/278))
+
+### ✨ New Features
+
+* use init, events ([#278](https://github.com/open-feature/js-sdk-contrib/issues/278)) ([5cc817c](https://github.com/open-feature/js-sdk-contrib/commit/5cc817cb15f53365747875cea05f15fef9c37841))
+
 ## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.1.4...flagd-web-provider-v0.2.0) (2023-03-20)
 
 
