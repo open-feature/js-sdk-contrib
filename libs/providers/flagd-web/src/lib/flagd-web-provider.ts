@@ -16,6 +16,7 @@ import {
   StandardResolutionReasons,
   TypeMismatchError
 } from '@openfeature/web-sdk';
+import { EventEmitter } from 'events';
 import { Service } from '../proto/ts/schema/v1/schema_connectweb';
 import { AnyFlag } from '../proto/ts/schema/v1/schema_pb';
 import { FlagdProviderOptions, getOptions } from './options';
@@ -59,43 +60,42 @@ export class FlagdWebProvider implements Provider {
     this._maxRetries = maxRetries === 0 ? Infinity: maxRetries;
     this._maxDelay = maxDelay;
     this._logger = logger;
-
-
   }
+
+  events = new EventEmitter();
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     await this.fetchAll(newContext);
   }
 
   async initialize(context: EvaluationContext): Promise<void> {
-    // TODO: when web-sdk has initialization, put this there.
     await this.retryConnect(context);
   }
 
   resolveBooleanEvaluation(
     flagKey: string,
-    defaultValue: boolean,
+    _: boolean,
   ): ResolutionDetails<boolean> {
     return this.evaluate(flagKey, 'boolValue');
   }
 
   resolveStringEvaluation(
     flagKey: string,
-    defaultValue: string,
+    _: string,
   ): ResolutionDetails<string> {
     return this.evaluate(flagKey, 'stringValue');
   }
 
   resolveNumberEvaluation(
     flagKey: string,
-    defaultValue: number,
+    _: number,
   ): ResolutionDetails<number> {
     return this.evaluate(flagKey, 'doubleValue');
   }
 
   resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
-    defaultValue: U,
+    _: U,
   ): ResolutionDetails<U> {
     return this.evaluate(flagKey, 'objectValue');
   }
@@ -121,7 +121,7 @@ export class FlagdWebProvider implements Provider {
   private async retryConnect(context: EvaluationContext) {
     this._delayMs = Math.min(this._delayMs * BACK_OFF_MULTIPLIER, this._maxDelay);
 
-    const promise = new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this._callbackClient.eventStream(
         {},
         (message) => {
@@ -135,7 +135,7 @@ export class FlagdWebProvider implements Provider {
               return;
             case EVENT_CONFIGURATION_CHANGE: {
               this.fetchAll(context).then(() => {
-                window.dispatchEvent(new Event(ProviderEvents.ConfigurationChanged));
+                this.events.emit(ProviderEvents.ConfigurationChanged);
               })
               return;
             }
@@ -153,7 +153,6 @@ export class FlagdWebProvider implements Provider {
         }
       );
     });
-    return promise;
   }
 
   private async fetchAll(context: EvaluationContext) {
