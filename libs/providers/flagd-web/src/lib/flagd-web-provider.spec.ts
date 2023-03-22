@@ -168,7 +168,7 @@ describe(FlagdWebProvider.name, () => {
       const mockPromiseClient = new MockPromiseClient() as unknown as PromiseClient<typeof Service>;
       OpenFeature.setProvider(
         new FlagdWebProvider(
-          { host: 'fake.com' },
+          { host: 'fake.com', maxRetries: -1 },
           console,
           mockPromiseClient,
           mockCallbackClient as unknown as CallbackClient<typeof Service>
@@ -221,7 +221,7 @@ describe(FlagdWebProvider.name, () => {
     });
   });
 
-  describe.skip('reconnect logic', () => {
+  describe('reconnect logic', () => {
     describe('Infinite maxRetries', () => {
       it('should attempt reconnect many times', (done) => {
         const mockCallbackClient = new MockCallbackClient();
@@ -239,7 +239,7 @@ describe(FlagdWebProvider.name, () => {
         });
         setTimeout(() => {
           try {
-            expect(mockCallbackClient.eventStream.mock.calls.length).toBeGreaterThanOrEqual(4);
+            expect(mockCallbackClient.eventStream.mock.calls.length).toBeGreaterThanOrEqual(3);
             done();
           } catch (err) {
             done(err);
@@ -274,7 +274,7 @@ describe(FlagdWebProvider.name, () => {
         }, RECONNECT_TIME_LIMIT);
       });
 
-      it('should NOT attempt reconnect if maxRetries (0) times', (done) => {
+      it('should NOT attempt reconnect if maxRetries (-1) times', (done) => {
         const mockCallbackClient = new MockCallbackClient();
         OpenFeature.setProvider(
           new FlagdWebProvider(

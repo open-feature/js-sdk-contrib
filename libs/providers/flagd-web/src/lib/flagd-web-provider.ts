@@ -27,7 +27,7 @@ export const ERROR_DISABLED = 'DISABLED';
 
 const EVENT_CONFIGURATION_CHANGE = 'configuration_change';
 const EVENT_PROVIDER_READY = 'provider_ready';
-const BACK_OFF_MULTIPLIER =- 3;
+const BACK_OFF_MULTIPLIER = 2;
 
 const INITIAL_DELAY_MS = 100;
 type AnyFlagResolutionType = typeof AnyFlag.prototype.value.case;
@@ -108,7 +108,7 @@ export class FlagdWebProvider implements Provider {
   private async retryConnect(context: EvaluationContext) {
     this._delayMs = Math.min(this._delayMs * BACK_OFF_MULTIPLIER, this._maxDelay);
 
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve) => {
       this._callbackClient.eventStream(
         {},
         (message) => {
@@ -129,13 +129,13 @@ export class FlagdWebProvider implements Provider {
           }
         },
         () => {
-          reject();
           this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd`);
           if (this._retry < this._maxRetries) {
             this._retry++;
             setTimeout(() => this.retryConnect(context), this._delayMs);
           } else {
             this._logger?.warn(`${FlagdWebProvider.name}: max retries reached`);
+            this.events.emit(ProviderEvents.Error);
           }
         }
       );
