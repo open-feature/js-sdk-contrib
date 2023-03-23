@@ -12,6 +12,7 @@ import {
   FlagValue,
   JsonValue,
   Logger,
+  OpenFeature,
   Provider,
   ProviderEvents,
   ResolutionDetails,
@@ -71,7 +72,7 @@ export class FlagdWebProvider implements Provider {
   }
 
   async initialize(context: EvaluationContext): Promise<void> {
-    await this.retryConnect(context);
+    await this.retryConnect();
   }
 
   resolveBooleanEvaluation(flagKey: string, _: boolean): ResolutionDetails<boolean> {
@@ -105,23 +106,25 @@ export class FlagdWebProvider implements Provider {
     };
   }
 
-  private async retryConnect(context: EvaluationContext) {
+  private async retryConnect() {
     this._delayMs = Math.min(this._delayMs * BACK_OFF_MULTIPLIER, this._maxDelay);
 
     return new Promise<void>((resolve) => {
       this._callbackClient.eventStream(
         {},
         (message) => {
+          // get the context at the time of the message
+          const currentContext = OpenFeature.getContext();
           this._logger?.debug(`${FlagdWebProvider.name}: event received: ${message.type}`);
           switch (message.type) {
             case EVENT_PROVIDER_READY:
-              this.fetchAll(context).then(() => {
+              this.fetchAll(currentContext).then(() => {
                 this.resetConnectionState();
                 resolve();
               });
               return;
             case EVENT_CONFIGURATION_CHANGE: {
-              this.fetchAll(context).then(() => {
+              this.fetchAll(currentContext).then(() => {
                 this.events.emit(ProviderEvents.ConfigurationChanged);
               });
               return;
@@ -132,7 +135,7 @@ export class FlagdWebProvider implements Provider {
           this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd`);
           if (this._retry < this._maxRetries) {
             this._retry++;
-            setTimeout(() => this.retryConnect(context), this._delayMs);
+            setTimeout(() => this.retryConnect(), this._delayMs);
           } else {
             this._logger?.warn(`${FlagdWebProvider.name}: max retries reached`);
             this.events.emit(ProviderEvents.Error);
