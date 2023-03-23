@@ -11,7 +11,7 @@
   },
   "private": true,
   "dependencies": {
-    "@bufbuild/connect-web": "^0.6.0",
+    "@bufbuild/connect-web": "^0.8.0",
     "@bufbuild/protobuf": "^1.0.0",
     "@grpc/grpc-js": "^1.7.3",
     "@openfeature/web-sdk": "0.2.0-experimental",
