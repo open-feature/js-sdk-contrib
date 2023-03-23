@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.3.0...flagd-web-provider-v0.3.1) (2023-03-23)
+
+
+### 🐛 Bug Fixes
+
+* reconnect, tests ([#280](https://github.com/open-feature/js-sdk-contrib/issues/280)) ([9cb4da9](https://github.com/open-feature/js-sdk-contrib/commit/9cb4da961fe45684630f4045bc1007b10eef75b2))
+
 ## [0.3.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.2.0...flagd-web-provider-v0.3.0) (2023-03-22)
 
 
