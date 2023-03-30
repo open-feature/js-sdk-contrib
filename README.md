@@ -1,4 +1,6 @@
 # OpenFeature JS Contributions
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopen-feature%2Fjs-sdk-contrib.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopen-feature%2Fjs-sdk-contrib?ref=badge_shield)
+
 
 This repository is intended for OpenFeature contributions which are not included in the [OpenFeature SDK](https://github.com/open-feature/js-sdk).
 
@@ -22,3 +24,6 @@ Interested in contributing? Great, we'd love your help! To get started, take a l
 
 [github-issue]: https://github.com/open-feature/js-sdk-contrib/issues/new/choose
 [slack]: https://cloud-native.slack.com/archives/C0344AANLA1
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopen-feature%2Fjs-sdk-contrib.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopen-feature%2Fjs-sdk-contrib?ref=badge_large)
