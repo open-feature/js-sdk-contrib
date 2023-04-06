@@ -13,13 +13,13 @@ import {
   JsonValue,
   Logger,
   OpenFeature,
+  OpenFeatureEventEmitter,
   Provider,
   ProviderEvents,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
-import { EventEmitter } from 'events';
 import { Service } from '../proto/ts/schema/v1/schema_connectweb';
 import { AnyFlag } from '../proto/ts/schema/v1/schema_pb';
 import { FlagdProviderOptions, getOptions } from './options';
@@ -65,7 +65,7 @@ export class FlagdWebProvider implements Provider {
     this._logger = logger;
   }
 
-  events = new EventEmitter();
+  events = new OpenFeatureEventEmitter();
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     await this.fetchAll(newContext);
