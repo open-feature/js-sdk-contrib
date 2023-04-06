@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.3.2...flagd-web-provider-v0.3.3) (2023-04-06)
+
+
+### ✨ New Features
+
+* use new event emitter ([#305](https://github.com/open-feature/js-sdk-contrib/issues/305)) ([7b5613e](https://github.com/open-feature/js-sdk-contrib/commit/7b5613e6b3258b2d74fdc8acf4f0ed6d2cdcf74a))
+
 ## [0.3.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.3.1...flagd-web-provider-v0.3.2) (2023-03-23)
 
 
