@@ -60,19 +60,14 @@ export default async function (tree: Tree, schema: SchemaOptions) {
    * Creates files using the shared and type specific templates
    */
   ['shared', schema.type].forEach((folder) => {
-    generateFiles(
-      tree,
-      joinPathFragments(__dirname, 'files', folder),
-      projectRoot,
-      {
-        name,
-        libFileName,
-        libClassName,
-        importPath,
-        nxProjectName,
-        tmpl: '',
-      }
-    );
+    generateFiles(tree, joinPathFragments(__dirname, 'files', folder), projectRoot, {
+      name,
+      libFileName,
+      libClassName,
+      importPath,
+      nxProjectName,
+      tmpl: '',
+    });
   });
 
   updateProject(tree, projectRoot, name);
@@ -137,9 +132,9 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
           // Move a "commonjs" package.json to the types root (js is bundled).
           // This prevents us from having to add file extensions to all our imports in ESM contexts, which ESM requires.
           {
-            glob: "package.json",
-            input: "./assets",
-            output: "./src/"
+            glob: 'package.json',
+            input: './assets',
+            output: './src/',
           },
           {
             glob: 'LICENSE',
@@ -157,7 +152,7 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
 
     // add publishing
     json.targets['publish'] = {
-      executor: '@nrwl/workspace:run-commands',
+      executor: 'nx:run-commands',
       options: {
         command: 'npm run publish-if-not-exists',
         cwd: `dist/${projectRoot}`,
@@ -183,8 +178,8 @@ function updatePackage(tree: Tree, projectRoot: string) {
       'current-version': 'echo $npm_package_version',
     };
     json.peerDependencies = {
-      "@openfeature/js-sdk": "^1.0.0"
-    }
+      '@openfeature/js-sdk': '^1.0.0',
+    };
 
     return json;
   });
