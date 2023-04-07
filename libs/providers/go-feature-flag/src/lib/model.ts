@@ -47,6 +47,12 @@ export interface GoFeatureFlagProxyResponse<T> {
 export interface GoFeatureFlagProviderOptions {
   endpoint: string;
   timeout?: number; // in millisecond
+
+  // apiKey (optional) If the relay proxy is configured to authenticate the requests, you should provide
+  // an API Key to the provider. Please ask the administrator of the relay proxy to provide an API Key.
+  // (This feature is available only if you are using GO Feature Flag relay proxy v1.7.0 or above)
+  // Default: null
+  apiKey?: string;
 }
 
 // GOFeatureFlagResolutionReasons allows to extends resolution reasons
