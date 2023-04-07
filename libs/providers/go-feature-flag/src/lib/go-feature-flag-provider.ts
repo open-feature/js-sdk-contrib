@@ -178,7 +178,7 @@ export class GoFeatureFlagProvider implements Provider {
         timeout: this.timeout,
       };
 
-      if (this.apiKey && this.apiKey !== ''){
+      if (this.apiKey) {
         reqConfig.headers?.put('Authorization', `Bearer ${this.apiKey}`);
       }
 
