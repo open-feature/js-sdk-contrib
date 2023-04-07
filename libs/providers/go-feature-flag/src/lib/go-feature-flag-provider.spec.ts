@@ -12,7 +12,7 @@ import MockAdapter from 'axios-mock-adapter';
 import { ProxyNotReady } from './errors/proxyNotReady';
 import { ProxyTimeout } from './errors/proxyTimeout';
 import { UnknownError } from './errors/unknownError';
-import {Unauthorized} from './errors/unauthorized';
+import { Unauthorized } from './errors/unauthorized';
 import { GoFeatureFlagProvider } from './go-feature-flag-provider';
 import { GoFeatureFlagProxyResponse } from './model';
 
