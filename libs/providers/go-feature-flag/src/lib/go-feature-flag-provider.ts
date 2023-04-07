@@ -8,17 +8,19 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/js-sdk';
-import axios from 'axios';
+import axios, {AxiosRequestConfig} from 'axios';
 import { transformContext } from './context-transformer';
 import { ProxyNotReady } from './errors/proxyNotReady';
 import { ProxyTimeout } from './errors/proxyTimeout';
 import { UnknownError } from './errors/unknownError';
+import {Unauthorized} from './errors/unauthorized';
 import {
   GoFeatureFlagProviderOptions,
   GoFeatureFlagProxyRequest,
   GoFeatureFlagProxyResponse,
   GoFeatureFlagUser,
 } from './model';
+
 
 // GoFeatureFlagProvider is the official Open-feature provider for GO Feature Flag.
 export class GoFeatureFlagProvider implements Provider {
@@ -30,10 +32,13 @@ export class GoFeatureFlagProvider implements Provider {
   private endpoint: string;
   // timeout in millisecond before we consider the request as a failure
   private timeout: number;
+  // apiKey contains the token to use while calling GO Feature Flag relay proxy
+  private apiKey?: string;
 
   constructor(options: GoFeatureFlagProviderOptions) {
     this.timeout = options.timeout || 0; // default is 0 = no timeout
     this.endpoint = options.endpoint;
+    this.apiKey = options.apiKey;
   }
 
   /**
@@ -149,7 +154,7 @@ export class GoFeatureFlagProvider implements Provider {
    * @throws {ProxyTimeout} When the HTTP call is timing out
    * @throws {UnknownError} When an unknown error occurs
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
-   * @throws {FlagNotFoundError} When the flag does not exists
+   * @throws {FlagNotFoundError} When the flag does not exist
    */
   async resolveEvaluationGoFeatureFlagProxy<T>(
     flagKey: string,
@@ -165,19 +170,24 @@ export class GoFeatureFlagProvider implements Provider {
 
     let apiResponseData: GoFeatureFlagProxyResponse<T>;
     try {
-      const response = await axios.post<GoFeatureFlagProxyResponse<T>>(
-        endpointURL.toString(),
-        request,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          timeout: this.timeout,
-        }
-      );
+      const reqConfig: AxiosRequestConfig  = {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        timeout: this.timeout,
+      };
+
+      if (this.apiKey && this.apiKey !== ''){
+        reqConfig.headers?.put('Authorization', `Bearer ${this.apiKey}`);
+      }
+
+      const response = await axios.post<GoFeatureFlagProxyResponse<T>>(endpointURL.toString(), request, reqConfig);
       apiResponseData = response.data;
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status == 401) {
+        throw new Unauthorized('invalid token used to contact GO Feature Flag relay proxy instance');
+      }
       // Impossible to contact the relay-proxy
       if (
         axios.isAxiosError(error) &&
