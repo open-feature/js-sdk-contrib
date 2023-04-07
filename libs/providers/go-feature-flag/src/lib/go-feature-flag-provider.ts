@@ -13,7 +13,7 @@ import { transformContext } from './context-transformer';
 import { ProxyNotReady } from './errors/proxyNotReady';
 import { ProxyTimeout } from './errors/proxyTimeout';
 import { UnknownError } from './errors/unknownError';
-import {Unauthorized} from './errors/unauthorized';
+import { Unauthorized } from './errors/unauthorized';
 import {
   GoFeatureFlagProviderOptions,
   GoFeatureFlagProxyRequest,
