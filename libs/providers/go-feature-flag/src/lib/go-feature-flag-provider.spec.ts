@@ -12,6 +12,7 @@ import MockAdapter from 'axios-mock-adapter';
 import { ProxyNotReady } from './errors/proxyNotReady';
 import { ProxyTimeout } from './errors/proxyTimeout';
 import { UnknownError } from './errors/unknownError';
+import { Unauthorized } from './errors/unauthorized';
 import { GoFeatureFlagProvider } from './go-feature-flag-provider';
 import { GoFeatureFlagProxyResponse } from './model';
 
@@ -80,7 +81,7 @@ describe('GoFeatureFlagProvider', () => {
             expect(result.errorCode).toEqual(ErrorCode.PARSE_ERROR)
           })
       });
-  
+
       it('unknown error codes should return GENERAL code', async () => {
         const flagName = 'random-other-other-flag';
         const targetingKey = 'user-key';
@@ -129,6 +130,22 @@ describe('GoFeatureFlagProvider', () => {
           expect(err).toBeInstanceOf(FlagNotFoundError);
           expect(err.message).toEqual(
             `Flag ${flagName} was not found in your configuration`
+          );
+        });
+    });
+    it('should throw an error if invalid api key is propvided', async () => {
+      const flagName = 'unauthorized';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(401, {} as GoFeatureFlagProxyResponse<string>);
+
+      await goff
+        .resolveStringEvaluation(flagName, 'sdk-default', { targetingKey })
+        .catch((err) => {
+          expect(err).toBeInstanceOf(Unauthorized);
+          expect(err.message).toEqual(
+            'invalid token used to contact GO Feature Flag relay proxy instance'
           );
         });
     });
