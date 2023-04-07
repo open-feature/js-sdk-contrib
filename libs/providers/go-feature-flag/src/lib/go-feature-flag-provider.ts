@@ -8,7 +8,7 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/js-sdk';
-import axios, {AxiosRequestConfig} from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import { transformContext } from './context-transformer';
 import { ProxyNotReady } from './errors/proxyNotReady';
 import { ProxyTimeout } from './errors/proxyTimeout';
