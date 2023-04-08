@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.8](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.7...go-feature-flag-provider-v0.5.8) (2023-04-08)
+
+
+### 🐛 Bug Fixes
+
+* go-feature-flag provider this.apiKey is undefined ([#319](https://github.com/open-feature/js-sdk-contrib/issues/319)) ([ff60b6f](https://github.com/open-feature/js-sdk-contrib/commit/ff60b6fd988d5e6a479589b5e320221a3a807775))
+
 ## [0.5.7](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.6...go-feature-flag-provider-v0.5.7) (2023-04-08)
 
 
