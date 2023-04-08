@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.7](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.6...go-feature-flag-provider-v0.5.7) (2023-04-08)
+
+
+### 🐛 Bug Fixes
+
+* go-feature-flag provider add authentication header ([#317](https://github.com/open-feature/js-sdk-contrib/issues/317)) ([eaf6458](https://github.com/open-feature/js-sdk-contrib/commit/eaf6458d1d66578dfba052f5abfce45516429008))
+
 ## [0.5.6](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.5...go-feature-flag-provider-v0.5.6) (2023-04-08)
 
 
