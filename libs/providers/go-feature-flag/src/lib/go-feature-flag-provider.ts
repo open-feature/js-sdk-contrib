@@ -41,7 +41,7 @@ export class GoFeatureFlagProvider implements Provider {
 
     // Add API key to the headers
     if (options.apiKey) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${this.apiKey}`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${options.apiKey}`;
     }
   }
 
