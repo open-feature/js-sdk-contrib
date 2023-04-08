@@ -133,20 +133,49 @@ describe('GoFeatureFlagProvider', () => {
           );
         });
     });
-    it('should throw an error if invalid api key is propvided', async () => {
+    it('should throw an error if invalid api key is provided', async () => {
       const flagName = 'unauthorized';
       const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
+      const apiKey = 'invalid-api-key';
 
       axiosMock.onPost(dns).reply(401, {} as GoFeatureFlagProxyResponse<string>);
 
-      await goff
+      const authenticatedGoff = new GoFeatureFlagProvider({ endpoint, apiKey });
+      await authenticatedGoff
         .resolveStringEvaluation(flagName, 'sdk-default', { targetingKey })
         .catch((err) => {
           expect(err).toBeInstanceOf(Unauthorized);
           expect(err.message).toEqual(
             'invalid token used to contact GO Feature Flag relay proxy instance'
           );
+        });
+    });
+
+    it('should be valid with an API key provided', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+      const apiKey = 'valid-api-key';
+
+      axiosMock.onPost(dns).reply(200, {
+        value: true,
+        variationType: 'trueVariation',
+        reason: StandardResolutionReasons.TARGETING_MATCH,
+        failed: false,
+        trackEvents: true,
+        version: '1.0.0',
+      } as GoFeatureFlagProxyResponse<boolean>);
+
+      const authenticatedGoff = new GoFeatureFlagProvider({ endpoint, apiKey });
+      await authenticatedGoff
+        .resolveBooleanEvaluation(flagName, false, { targetingKey })
+        .then((res) => {
+          expect(res).toEqual({
+            reason: StandardResolutionReasons.TARGETING_MATCH,
+            value: true,
+            variant: 'trueVariation',
+          } as ResolutionDetails<boolean>);
         });
     });
   });
