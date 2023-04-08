@@ -38,7 +38,11 @@ export class GoFeatureFlagProvider implements Provider {
   constructor(options: GoFeatureFlagProviderOptions) {
     this.timeout = options.timeout || 0; // default is 0 = no timeout
     this.endpoint = options.endpoint;
-    this.apiKey = options.apiKey;
+
+    // Add API key to the headers
+    if (options.apiKey) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${this.apiKey}`;
+    }
   }
 
   /**
@@ -170,19 +174,13 @@ export class GoFeatureFlagProvider implements Provider {
 
     let apiResponseData: GoFeatureFlagProxyResponse<T>;
     try {
-      const reqConfig: AxiosRequestConfig  = {
+      const response = await axios.post<GoFeatureFlagProxyResponse<T>>(endpointURL.toString(), request, {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
         timeout: this.timeout,
-      };
-
-      if (this.apiKey) {
-        reqConfig.headers?.put('Authorization', `Bearer ${this.apiKey}`);
-      }
-
-      const response = await axios.post<GoFeatureFlagProxyResponse<T>>(endpointURL.toString(), request, reqConfig);
+      });
       apiResponseData = response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status == 401) {
