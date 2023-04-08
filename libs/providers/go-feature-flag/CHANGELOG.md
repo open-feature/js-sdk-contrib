@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.6](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.5...go-feature-flag-provider-v0.5.6) (2023-04-08)
+
+
+### 🐛 Bug Fixes
+
+* comment typo ([#315](https://github.com/open-feature/js-sdk-contrib/issues/315)) ([d9130c8](https://github.com/open-feature/js-sdk-contrib/commit/d9130c8e058676babb51464e4a912641032a4ee1))
+
 ## [0.5.5](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.4...go-feature-flag-provider-v0.5.5) (2023-04-07)
 
 
