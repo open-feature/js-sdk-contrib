@@ -1,10 +1,11 @@
 {
+  "name": "providers-flagd",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/providers/flagd/src",
   "projectType": "library",
   "targets": {
     "publish": {
-      "executor": "@nrwl/workspace:run-commands",
+      "executor": "nx:run-commands",
       "options": {
         "command": "npm run publish-if-not-exists",
         "cwd": "dist/libs/providers/flagd"
@@ -17,7 +18,7 @@
       ]
     },
     "generate": {
-      "executor": "@nrwl/workspace:run-commands",
+      "executor": "nx:run-commands",
       "options": {
         "commands": [
           "git submodule update --init --recursive",
