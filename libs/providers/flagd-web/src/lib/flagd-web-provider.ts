@@ -1,10 +1,5 @@
-import {
-  CallbackClient,
-  createCallbackClient,
-  createConnectTransport,
-  createPromiseClient,
-  PromiseClient,
-} from '@bufbuild/connect-web';
+import { CallbackClient, createCallbackClient, createPromiseClient, PromiseClient } from '@bufbuild/connect';
+import { createConnectTransport } from '@bufbuild/connect-web';
 import { Struct } from '@bufbuild/protobuf';
 import {
   EvaluationContext,
@@ -47,6 +42,7 @@ export class FlagdWebProvider implements Provider {
   private _delayMs = INITIAL_DELAY_MS;
   private _logger?: Logger;
   private _flags: { [key: string]: ResolutionDetails<FlagValue> & { type: AnyFlagResolutionType } } = {};
+  private _cancelFunction: (() => void) | undefined;
 
   constructor(
     options: FlagdProviderOptions,
@@ -91,6 +87,11 @@ export class FlagdWebProvider implements Provider {
     return this.evaluate(flagKey, 'objectValue');
   }
 
+  onClose(): Promise<void> {
+    // close the steam using the saved cancel function
+    return Promise.resolve(this._cancelFunction?.());
+  }
+
   private evaluate<T extends FlagValue>(flagKey: string, type: AnyFlagResolutionType): ResolutionDetails<T> {
     const resolved = this._flags[flagKey];
     if (!resolved) {
@@ -100,6 +101,7 @@ export class FlagdWebProvider implements Provider {
       throw new TypeMismatchError(`flag key ${flagKey} is not of type ${type}`);
     }
     return {
+      // return reason=CACHED if we're disconnected since we can't guarantee things are up to date
       reason: this._connected ? resolved.reason : StandardResolutionReasons.CACHED,
       variant: resolved.variant,
       value: resolved.value as T,
@@ -110,7 +112,7 @@ export class FlagdWebProvider implements Provider {
     this._delayMs = Math.min(this._delayMs * BACK_OFF_MULTIPLIER, this._maxDelay);
 
     return new Promise<void>((resolve) => {
-      this._callbackClient.eventStream(
+      this._cancelFunction = this._callbackClient.eventStream(
         {},
         (message) => {
           // get the context at the time of the message
@@ -131,8 +133,9 @@ export class FlagdWebProvider implements Provider {
             }
           }
         },
-        () => {
-          this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd`);
+        (err) => {
+          this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd, ${err?.message}`);
+          this._logger?.debug(err?.stack);
           if (this._retry < this._maxRetries) {
             this._retry++;
             setTimeout(() => this.retryConnect(), this._delayMs);
