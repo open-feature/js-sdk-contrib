@@ -1,0 +1,76 @@
+{
+  "name": "providers-backstage",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/providers/backstage/src",
+  "projectType": "library",
+  "targets": {
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/providers/backstage"
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/providers/backstage/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/providers/backstage/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    },
+    "package": {
+      "executor": "@nrwl/rollup:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "project": "libs/providers/backstage/package.json",
+        "outputPath": "dist/libs/providers/backstage",
+        "entryFile": "libs/providers/backstage/src/index.ts",
+        "tsConfig": "libs/providers/backstage/tsconfig.lib.json",
+        "buildableProjectDepsInPackageJsonType": "dependencies",
+        "compiler": "tsc",
+        "generateExportsField": true,
+        "umdName": "backstage",
+        "external": ["typescript"],
+        "format": ["cjs", "esm"],
+        "assets": [
+          {
+            "glob": "package.json",
+            "input": "./assets",
+            "output": "./src/"
+          },
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/providers/backstage",
+            "output": "./"
+          }
+        ]
+      }
+    }
+  },
+  "tags": []
+}
