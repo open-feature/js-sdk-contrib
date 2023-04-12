@@ -88,7 +88,7 @@ export class FlagdWebProvider implements Provider {
   }
 
   onClose(): Promise<void> {
-    // close the steam using the saved cancel function
+    // close the stream using the saved cancel function
     return Promise.resolve(this._cancelFunction?.());
   }
 
