@@ -56,4 +56,4 @@ Run `nx package hooks-open-telemetry` to build the library.
 Run `nx test hooks-open-telemetry` to execute the unit tests via [Jest](https://jestjs.io).
 
 [otel-spec]: https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/feature-flags/
-[hook-concept]: https://docs.openfeature.dev/docs/reference/concepts/hooks
+[hook-concept]: https://openfeature.dev/docs/reference/concepts/hooks

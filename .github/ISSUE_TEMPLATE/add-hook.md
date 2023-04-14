@@ -23,6 +23,6 @@ I want to add a hook which performs {my-behavior}.
 - [ ] implement `Hook` interface
 - [ ] add tests
 - [ ] complete README
-- [ ] add the new provider to the [OpenFeature docs](https://github.com/open-feature/docs.openfeature.dev/issues/new/choose)
+- [ ] add the new provider to the [OpenFeature docs](https://github.com/open-feature/openfeature.dev/issues/new/choose)
 
 Keep in mind the CONTRIBUTING guidelines: https://github.com/open-feature/js-sdk-contrib/blob/main/CONTRIBUTING.md

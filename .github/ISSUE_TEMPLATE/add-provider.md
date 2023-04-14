@@ -23,7 +23,7 @@ I want to add an OpenFeature provider for {my-system}. This would be valuable be
 - [ ] implement `Provider` interface
 - [ ] add tests
 - [ ] complete README
-- [ ] add the new provider to the [OpenFeature docs](https://github.com/open-feature/docs.openfeature.dev/issues/new/choose)
+- [ ] add the new provider to the [OpenFeature docs](https://github.com/open-feature/openfeature.dev/issues/new/choose)
 
 ## Resources
 

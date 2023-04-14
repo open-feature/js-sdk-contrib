@@ -12,7 +12,7 @@ We target `es2015`, and require all modules to publish both ES-modules and Commo
 
 The project is a monorepo that uses NX to manage it's modules.
 
-The project has some NX generators for creating [hooks](https://docs.openfeature.dev/docs/reference/concepts/hooks) and [providers](https://docs.openfeature.dev/docs/reference/concepts/provider).
+The project has some NX generators for creating [hooks](https://openfeature.dev/docs/reference/concepts/hooks) and [providers](https://openfeature.dev/docs/reference/concepts/provider).
 
 `npm run generate-hook` <- generates a hook module
 `npm run generate-provider` <- generates a provider module
