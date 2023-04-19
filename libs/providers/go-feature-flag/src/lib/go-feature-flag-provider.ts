@@ -71,7 +71,7 @@ export class GoFeatureFlagProvider implements Provider {
   }
 
   /**
-   * resolveBooleanEvaluation is calling the GO Feature Flag relay-proxy API and return a boolean value.
+   * resolveStringEvaluation is calling the GO Feature Flag relay-proxy API and return a string value.
    * @param flagKey - name of your feature flag key.
    * @param defaultValue - default value is used if we are not able to evaluate the flag for this user.
    * @param context - the context used for flag evaluation.
@@ -96,7 +96,7 @@ export class GoFeatureFlagProvider implements Provider {
   }
 
   /**
-   * resolveBooleanEvaluation is calling the GO Feature Flag relay-proxy API and return a boolean value.
+   * resolveNumberEvaluation is calling the GO Feature Flag relay-proxy API and return a number value.
    * @param flagKey - name of your feature flag key.
    * @param defaultValue - default value is used if we are not able to evaluate the flag for this user.
    * @param context - the context used for flag evaluation.
@@ -121,7 +121,7 @@ export class GoFeatureFlagProvider implements Provider {
   }
 
   /**
-   * resolveBooleanEvaluation is calling the GO Feature Flag relay-proxy API and return a boolean value.
+   * resolveObjectEvaluation is calling the GO Feature Flag relay-proxy API and return an object.
    * @param flagKey - name of your feature flag key.
    * @param defaultValue - default value is used if we are not able to evaluate the flag for this user.
    * @param context - the context used for flag evaluation.
