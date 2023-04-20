@@ -204,28 +204,28 @@ export class GRPCService implements Service {
   }
 
   private objectParser = (struct: Struct) => {
-    if (struct !== undefined) {
+    if (struct) {
       return Struct.toJson(struct);
     }
     return {}
   };
 
   private booleanParser = (value: boolean) => {
-    if (value !== undefined) {
+    if (value) {
       return value;
     }
     return false
   };
 
   private stringParser = (value: string) => {
-    if (value !== undefined) {
+    if (value) {
       return value;
     }
     return ''
   };
 
   private numberParser = (value: number) => {
-    if (value !== undefined) {
+    if (value) {
       return value;
     }
     return 0
