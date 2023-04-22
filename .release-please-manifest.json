@@ -4,5 +4,6 @@
   "libs/providers/flagd": "0.7.6",
   "libs/providers/flagd-web": "0.3.4",
   "libs/providers/env-var": "0.1.1",
-  "libs/providers/in-memory": "0.1.1"
+  "libs/providers/in-memory": "0.1.1",
+  "libs/providers/config-cat": "0.1.0"
 }
