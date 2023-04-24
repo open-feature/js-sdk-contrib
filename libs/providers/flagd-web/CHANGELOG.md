@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.3.3...flagd-web-provider-v0.3.4) (2023-04-24)
+
+
+### 🐛 Bug Fixes
+
+* add shutdown to flagd-web provider ([#325](https://github.com/open-feature/js-sdk-contrib/issues/325)) ([cbc76ed](https://github.com/open-feature/js-sdk-contrib/commit/cbc76edba964d7a8f453334ec8f0c4aca9070c3c))
+
 ## [0.3.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.3.2...flagd-web-provider-v0.3.3) (2023-04-06)
 
 
