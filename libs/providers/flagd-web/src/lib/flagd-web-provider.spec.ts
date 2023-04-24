@@ -1,4 +1,4 @@
-import { CallbackClient, Code, ConnectError, PromiseClient } from '@bufbuild/connect-web';
+import { CallbackClient, Code, ConnectError, PromiseClient } from '@bufbuild/connect';
 import { Struct } from '@bufbuild/protobuf';
 import { Client, ErrorCode, JsonValue, OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/web-sdk';
 import fetchMock from 'jest-fetch-mock';
@@ -35,13 +35,18 @@ class MockCallbackClient implements Partial<CallbackClient<typeof Service>> {
    */
   fail = false;
 
+  // use to fire an incoming mock message
   mockMessage(message: Partial<EventStreamResponse>) {
     this.messageCallback?.(message as EventStreamResponse);
   }
 
+  // use to fire a mock connection close
   mockClose(error: Partial<ConnectError>) {
     this.closeCallback?.(error as ConnectError);
   }
+
+  // cancel function stub to make assertions against
+  cancelFunction = jest.fn(() => undefined);
 
   eventStream = jest.fn(
     (
@@ -57,7 +62,7 @@ class MockCallbackClient implements Partial<CallbackClient<typeof Service>> {
         setTimeout(() => this.closeCallback?.({ code: Code.Unavailable } as unknown as ConnectError), 0);
       }
 
-      return () => undefined;
+      return this.cancelFunction;
     }
   );
 }
@@ -235,6 +240,34 @@ describe(FlagdWebProvider.name, () => {
         mockCallbackClient.mockClose({
           code: Code.Unavailable,
         });
+      });
+    });
+  });
+
+  describe('shutdown', () => {
+    let client: Client;
+    let mockCallbackClient: MockCallbackClient;
+    const mockPromiseClient = new MockPromiseClient() as unknown as PromiseClient<typeof Service>;
+    const context = { some: 'value' };
+
+    beforeEach(() => {
+      mockCallbackClient = new MockCallbackClient();
+      OpenFeature.setProvider(
+        new FlagdWebProvider(
+          { host: 'fake.com', maxRetries: -1 },
+          console,
+          mockPromiseClient,
+          mockCallbackClient as unknown as CallbackClient<typeof Service>
+        )
+      );
+      client = OpenFeature.getClient('events-test');
+    });
+
+    describe('API close', () => {
+      it('should call cancel function on provider', () => {
+        expect(mockCallbackClient.cancelFunction).not.toHaveBeenCalled();
+        OpenFeature.close();
+        expect(mockCallbackClient.cancelFunction).toHaveBeenCalled();
       });
     });
   });
