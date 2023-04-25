@@ -1,8 +1,17 @@
-import { EvaluationContext } from '@openfeature/js-sdk';
+import { EvaluationContext, TargetingKeyMissingError } from '@openfeature/js-sdk';
 import { transformContext } from './context-transformer';
 
 describe('context-transformer', () => {
   describe('transformContext', () => {
+    it('throw TargetingKeyMissingError if targeting key is missing', () => {
+      const context: EvaluationContext = {
+        customProp: 'test',
+      };
+
+      expect(() => transformContext(context)).toThrow(TargetingKeyMissingError);
+    });
+
+
     it('map targeting key to identifier', () => {
       const context: EvaluationContext = {
         targetingKey: 'test',
@@ -117,6 +126,8 @@ describe('context-transformer', () => {
     it('map several custom properties correctly', () => {
       const context: EvaluationContext = {
         targetingKey: 'test',
+        email: "email",
+        country: "country",
         customString: 'customString',
         customNumber: 1,
         customBoolean: true,
@@ -129,6 +140,8 @@ describe('context-transformer', () => {
 
       const user = {
         identifier: 'test',
+        email: "email",
+        country: "country",
         custom: {
           customString: 'customString',
           customBoolean: 'true',

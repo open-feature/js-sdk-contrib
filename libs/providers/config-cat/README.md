@@ -50,6 +50,66 @@ const provider = ConfigCatProvider.createFromClient(configCatClient);
 OpenFeature.setProvider(provider);
 ```
 
+## Evaluation Context
+
+ConfigCat only supports string values in its "evaluation
+context", [there known as user](https://configcat.com/docs/advanced/user-object/).
+
+This means that every value is converted to a string. This is trivial for numbers and booleans. Objects and arrays are
+converted to JSON strings that can be interpreted in ConfigCat.
+
+ConfigCat has three known attributes, and allows for additional attributes.
+The following shows how the attributes are mapped:
+
+| OpenFeature EvaluationContext Field | ConfigCat User Field | Required |
+|-------------------------------------|----------------------|----------|
+| targetingKey                        | identifier           | yes      |
+| email                               | email                | no       |
+| country                             | country              | no       |
+| _Any Other_                         | custom               | no       |
+
+The following example shows the conversion between an OpenFeature Evaluation Context and the corresponding ConfigCat
+User:
+
+#### OpenFeature
+
+```json
+{
+  "targetingKey": "test",
+  "email": "email",
+  "country": "country",
+  "customString": "customString",
+  "customNumber": 1,
+  "customBoolean": true,
+  "customObject": {
+    "prop1": "1",
+    "prop2": 2
+  },
+  "customArray": [
+    1,
+    "2",
+    false
+  ]
+}
+```
+
+#### ConfigCat
+
+```json
+{
+  "identifier": "test",
+  "email": "email",
+  "country": "country",
+  "custom": {
+    "customString": "customString",
+    "customBoolean": "true",
+    "customNumber": "1",
+    "customObject": "{\"prop1\":\"1\",\"prop2\":2}",
+    "customArray": "[1,\"2\",false]"
+  }
+}
+```
+
 ## Building
 
 Run `nx package providers-config-cat` to build the library.

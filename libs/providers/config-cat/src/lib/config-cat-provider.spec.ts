@@ -10,7 +10,7 @@ import {
 import { LogLevel } from 'configcat-common';
 
 describe('ConfigCatProvider', () => {
-  const targetingKey = '';
+  const targetingKey = "abc";
 
   let client: IConfigCatClient;
   let provider: ConfigCatProvider;
