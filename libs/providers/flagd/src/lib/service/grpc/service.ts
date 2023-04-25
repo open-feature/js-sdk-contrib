@@ -114,15 +114,15 @@ export class GRPCService implements Service {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<boolean>> {
-    return this.resolve(this._client.resolveBoolean, flagKey, context, logger);
+    return this.resolve(this._client.resolveBoolean, flagKey, context, logger, this.booleanParser);
   }
 
   async resolveString(flagKey: string, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<string>> {
-    return this.resolve(this._client.resolveString, flagKey, context, logger);
+    return this.resolve(this._client.resolveString, flagKey, context, logger, this.stringParser);
   }
 
   async resolveNumber(flagKey: string, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<number>> {
-    return this.resolve(this._client.resolveFloat, flagKey, context, logger);
+    return this.resolve(this._client.resolveFloat, flagKey, context, logger, this.numberParser);
   }
 
   async resolveObject<T extends JsonValue>(
@@ -204,11 +204,31 @@ export class GRPCService implements Service {
   }
 
   private objectParser = (struct: Struct) => {
-    if (struct !== undefined) {
+    if (struct) {
       return Struct.toJson(struct);
-    } else {
-      throw new ParseError('Object value undefined or missing.');
     }
+    return {}
+  };
+
+  private booleanParser = (value: boolean) => {
+    if (value) {
+      return value;
+    }
+    return false
+  };
+
+  private stringParser = (value: string) => {
+    if (value) {
+      return value;
+    }
+    return ''
+  };
+
+  private numberParser = (value: number) => {
+    if (value) {
+      return value;
+    }
+    return 0
   };
 
   private async resolve<T extends FlagValue, Rq extends AnyRequest, Rs extends AnyResponse>(
@@ -216,7 +236,7 @@ export class GRPCService implements Service {
     flagKey: string,
     context: EvaluationContext,
     logger: Logger,
-    parser?: (struct: Struct) => PbJsonValue
+    parser?: (value: any) => any
   ): Promise<ResolutionDetails<T>> {
     if (this._cacheActive) {
       const cached = this._cache?.get(flagKey);
@@ -232,7 +252,7 @@ export class GRPCService implements Service {
 
     const resolved = {
       // invoke the parser method if passed
-      value: parser ? parser.call(this, response.value as Struct) : response.value,
+      value: parser ? parser.call(this, response.value) : response.value,
       reason: response.reason,
       variant: response.variant,
     } as ResolutionDetails<T>;

@@ -216,6 +216,128 @@ describe(FlagdProvider.name, () => {
     });
   });
 
+  describe('basic flag resolution with zero values', () => {
+    let client: Client;
+
+    // mock ServiceClient to inject
+    const basicServiceClientMock: ServiceClient = {
+      eventStream: jest.fn(() => {
+        return {
+          responses: {
+            onComplete: jest.fn(() => {
+              return;
+            }),
+            onError: jest.fn(() => {
+              return;
+            }),
+            onMessage: jest.fn(() => {
+              return;
+            }),
+          },
+        };
+      }),
+      resolveBoolean: jest.fn((): UnaryCall<ResolveBooleanRequest, ResolveBooleanResponse> => {
+        return Promise.resolve({
+          request: {} as ResolveBooleanRequest,
+          response: {
+            variant: BOOLEAN_VARIANT,
+            reason: REASON,
+          },
+        }) as unknown as UnaryCall<ResolveBooleanRequest, ResolveBooleanResponse>;
+      }),
+      resolveString: jest.fn((): UnaryCall<ResolveStringRequest, ResolveStringResponse> => {
+        return Promise.resolve({
+          request: {} as ResolveStringRequest,
+          response: {
+            variant: STRING_VARIANT,
+            reason: REASON,
+          } as ResolveStringResponse,
+        }) as unknown as UnaryCall<ResolveStringRequest, ResolveStringResponse>;
+      }),
+      resolveFloat: jest.fn((): UnaryCall<ResolveFloatRequest, ResolveFloatResponse> => {
+        return Promise.resolve({
+          request: {} as ResolveFloatRequest,
+          response: {
+            variant: NUMBER_VARIANT,
+            reason: REASON,
+          } as ResolveFloatResponse,
+        }) as unknown as UnaryCall<ResolveFloatRequest, ResolveFloatResponse>;
+      }),
+      resolveInt: jest.fn((): UnaryCall<ResolveIntRequest, ResolveIntResponse> => {
+        throw new Error('resolveInt should not be called'); // we never call this method, we resolveFloat for all numbers.
+      }),
+      resolveObject: jest.fn((): UnaryCall<ResolveObjectRequest, ResolveObjectResponse> => {
+        return Promise.resolve({
+          request: {} as ResolveObjectRequest,
+          response: {
+            variant: OBJECT_VARIANT,
+            reason: REASON,
+          } as ResolveObjectResponse,
+        }) as unknown as UnaryCall<ResolveObjectRequest, ResolveObjectResponse>;
+      }),
+    } as unknown as ServiceClient;
+
+    beforeEach(() => {
+      // inject our mock GRPCService and ServiceClient
+      OpenFeature.setProvider(
+        new FlagdProvider(undefined, new GRPCService({ host: '', port: 123, tls: false }, basicServiceClientMock))
+      );
+      client = OpenFeature.getClient('test');
+    });
+
+    describe(FlagdProvider.prototype.resolveBooleanEvaluation.name, () => {
+      it(`should call ${ServiceClient.prototype.resolveBoolean} with key and context and return details`, async () => {
+        const val = await client.getBooleanDetails(BOOLEAN_KEY, false, TEST_CONTEXT);
+        expect(basicServiceClientMock.resolveBoolean).toHaveBeenCalledWith({
+          flagKey: BOOLEAN_KEY,
+          context: TEST_CONTEXT_CONVERTED,
+        });
+        expect(val.value).toEqual(false);
+        expect(val.variant).toEqual(BOOLEAN_VARIANT);
+        expect(val.reason).toEqual(REASON);
+      });
+    });
+
+    describe(FlagdProvider.prototype.resolveStringEvaluation.name, () => {
+      it(`should call ${ServiceClient.prototype.resolveString} with key and context and return details`, async () => {
+        const val = await client.getStringDetails(STRING_KEY, '', TEST_CONTEXT);
+        expect(basicServiceClientMock.resolveString).toHaveBeenCalledWith({
+          flagKey: STRING_KEY,
+          context: TEST_CONTEXT_CONVERTED,
+        });
+        expect(val.value).toEqual('');
+        expect(val.variant).toEqual(STRING_VARIANT);
+        expect(val.reason).toEqual(REASON);
+      });
+    });
+
+    describe(FlagdProvider.prototype.resolveNumberEvaluation.name, () => {
+      it(`should call ${ServiceClient.prototype.resolveFloat} with key and context and return details`, async () => {
+        const val = await client.getNumberDetails(NUMBER_KEY, 0, TEST_CONTEXT);
+        expect(basicServiceClientMock.resolveFloat).toHaveBeenCalledWith({
+          flagKey: NUMBER_KEY,
+          context: TEST_CONTEXT_CONVERTED,
+        });
+        expect(val.value).toEqual(0);
+        expect(val.variant).toEqual(NUMBER_VARIANT);
+        expect(val.reason).toEqual(REASON);
+      });
+    });
+
+    describe(FlagdProvider.prototype.resolveObjectEvaluation.name, () => {
+      it(`should call ${ServiceClient.prototype.resolveObject} with key and context and return details`, async () => {
+        const val = await client.getObjectDetails(OBJECT_KEY, {}, TEST_CONTEXT);
+        expect(basicServiceClientMock.resolveObject).toHaveBeenCalledWith({
+          flagKey: OBJECT_KEY,
+          context: TEST_CONTEXT_CONVERTED,
+        });
+        expect(val.value).toEqual({});
+        expect(val.variant).toEqual(OBJECT_VARIANT);
+        expect(val.reason).toEqual(REASON);
+      });
+    });
+  });
+
   describe('caching', () => {
     const STATIC_BOOLEAN_KEY_1 = 'staticBoolflagOne';
     const STATIC_BOOLEAN_KEY_2 = 'staticBoolflagTwo';
@@ -541,55 +663,6 @@ describe(FlagdProvider.name, () => {
         expect(val.value).toEqual({ [DEFAULT_INNER_KEY]: DEFAULT_INNER_VALUE });
         expect(val.reason).toEqual(ERROR_REASON);
         expect(val.errorCode).toEqual(ErrorCode.FLAG_NOT_FOUND);
-      });
-    });
-  });
-
-  describe('undefined object value', () => {
-    let client: Client;
-
-    // mock ServiceClient to inject
-    const undefinedObjectMock: ServiceClient = {
-      eventStream: jest.fn(() => {
-        return {
-          responses: {
-            onMessage: jest.fn(() => {
-              return;
-            }),
-          },
-        };
-      }),
-      resolveObject: jest.fn((): UnaryCall<ResolveObjectRequest, ResolveObjectResponse> => {
-        return Promise.resolve({
-          request: {} as ResolveObjectRequest,
-          response: {
-            value: undefined,
-            reason: REASON,
-          } as ResolveObjectResponse,
-        }) as unknown as UnaryCall<ResolveObjectRequest, ResolveObjectResponse>;
-      }),
-    } as unknown as ServiceClient;
-
-    beforeEach(() => {
-      // inject our mock GRPCService and ServiceClient
-      OpenFeature.setProvider(
-        new FlagdProvider(undefined, new GRPCService({ host: '', port: 123, tls: false }, undefinedObjectMock))
-      );
-      client = OpenFeature.getClient('test');
-    });
-
-    describe(FlagdProvider.prototype.resolveObjectEvaluation.name, () => {
-      const DEFAULT_INNER_KEY = 'some';
-      const DEFAULT_INNER_VALUE = 'key';
-
-      it('should default and throw correct error', async () => {
-        const val = await client.getObjectDetails(OBJECT_KEY, {
-          [DEFAULT_INNER_KEY]: DEFAULT_INNER_VALUE,
-        });
-        expect(undefinedObjectMock.resolveObject).toHaveBeenCalled();
-        expect(val.value).toEqual({ [DEFAULT_INNER_KEY]: DEFAULT_INNER_VALUE });
-        expect(val.reason).toEqual(ERROR_REASON);
-        expect(val.errorCode).toEqual(ErrorCode.PARSE_ERROR);
       });
     });
   });
