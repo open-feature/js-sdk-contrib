@@ -17,6 +17,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@openfeature/config-cat-provider": ["libs/providers/config-cat/src/index.ts"],
       "@openfeature/env-var-provider": ["libs/providers/env-var/src/index.ts"],
       "@openfeature/flagd-provider": ["libs/providers/flagd/src/index.ts"],
       "@openfeature/go-feature-flag-provider": ["libs/providers/go-feature-flag/src/index.ts"],

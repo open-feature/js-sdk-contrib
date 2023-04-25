@@ -1,0 +1,76 @@
+{
+  "name": "providers-config-cat",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/providers/config-cat/src",
+  "projectType": "library",
+  "targets": {
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/providers/config-cat"
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/providers/config-cat/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/providers/config-cat/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    },
+    "package": {
+      "executor": "@nrwl/rollup:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "project": "libs/providers/config-cat/package.json",
+        "outputPath": "dist/libs/providers/config-cat",
+        "entryFile": "libs/providers/config-cat/src/index.ts",
+        "tsConfig": "libs/providers/config-cat/tsconfig.lib.json",
+        "buildableProjectDepsInPackageJsonType": "dependencies",
+        "compiler": "tsc",
+        "generateExportsField": true,
+        "umdName": "config-cat",
+        "external": ["typescript"],
+        "format": ["cjs", "esm"],
+        "assets": [
+          {
+            "glob": "package.json",
+            "input": "./assets",
+            "output": "./src/"
+          },
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/providers/config-cat",
+            "output": "./"
+          }
+        ]
+      }
+    }
+  },
+  "tags": []
+}
