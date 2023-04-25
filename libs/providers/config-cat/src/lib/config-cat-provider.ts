@@ -1,16 +1,16 @@
 import {
   EvaluationContext,
-  Provider,
   JsonValue,
-  ResolutionDetails,
   ParseError,
-  TypeMismatchError,
-  StandardResolutionReasons,
+  Provider,
+  ResolutionDetails,
   ResolutionReason,
+  StandardResolutionReasons,
+  TypeMismatchError,
 } from '@openfeature/js-sdk';
 import * as configcat from 'configcat-js';
-import { SettingValue } from 'configcat-common/lib/RolloutEvaluator';
 import { IConfigCatClient } from 'configcat-js';
+import { SettingValue } from 'configcat-common/lib/RolloutEvaluator';
 import { transformContext } from './context-transformer';
 
 export class ConfigCatProvider implements Provider {
@@ -43,12 +43,10 @@ export class ConfigCatProvider implements Provider {
       transformContext(context)
     );
 
-    if (typeof value !== 'undefined' && !(typeof value === 'boolean')) {
-      throw new TypeMismatchError(`Requested boolean flag but the actual value is ${typeof value}`);
-    }
+    const validatedValue = validateFlagType('boolean', value);
 
-    return value
-      ? toResolutionDetails(value, evaluationData)
+    return validatedValue
+      ? toResolutionDetails(validatedValue, evaluationData)
       : toResolutionDetails(defaultValue, evaluationData, StandardResolutionReasons.DEFAULT);
   }
 
@@ -63,12 +61,10 @@ export class ConfigCatProvider implements Provider {
       transformContext(context)
     );
 
-    if (typeof value !== 'undefined' && !(typeof value === 'string')) {
-      throw new TypeMismatchError(`Requested string flag but the actual value is ${typeof value}`);
-    }
+    const validatedValue = validateFlagType('string', value);
 
-    return value
-      ? toResolutionDetails(value, evaluationData)
+    return validatedValue
+      ? toResolutionDetails(validatedValue, evaluationData)
       : toResolutionDetails(defaultValue, evaluationData, StandardResolutionReasons.DEFAULT);
   }
 
@@ -83,12 +79,10 @@ export class ConfigCatProvider implements Provider {
       transformContext(context)
     );
 
-    if (typeof value !== 'undefined' && !(typeof value === 'number')) {
-      throw new TypeMismatchError(`Requested number flag but the actual value is ${typeof value}`);
-    }
+    const validatedValue = validateFlagType('number', value);
 
-    return value
-      ? toResolutionDetails(value, evaluationData)
+    return validatedValue
+      ? toResolutionDetails(validatedValue, evaluationData)
       : toResolutionDetails(defaultValue, evaluationData, StandardResolutionReasons.DEFAULT);
   }
 
@@ -107,7 +101,7 @@ export class ConfigCatProvider implements Provider {
       return toResolutionDetails(defaultValue, evaluationData, StandardResolutionReasons.DEFAULT);
     }
 
-    if (typeof value !== 'string') {
+    if (!isType('string', value)) {
       throw new TypeMismatchError(`Requested object flag but the actual value is not a JSON string`);
     }
 
@@ -143,4 +137,29 @@ function toResolutionDetails<U extends JsonValue>(
     errorMessage: data.errorMessage,
     variant: data.variationId ?? undefined,
   };
+}
+
+type PrimitiveTypeName = 'string' | 'boolean' | 'number' | 'object' | 'undefined';
+type PrimitiveType<T> = T extends 'string'
+  ? string
+  : T extends 'boolean'
+  ? boolean
+  : T extends 'number'
+  ? number
+  : T extends 'object'
+  ? object
+  : T extends 'undefined'
+  ? undefined
+  : unknown;
+
+function isType<T extends PrimitiveTypeName>(type: T, value: unknown): value is PrimitiveType<T> {
+  return typeof value === type;
+}
+
+function validateFlagType<T extends PrimitiveTypeName>(type: T, value: unknown): PrimitiveType<T> | undefined {
+  if (typeof value !== 'undefined' && !isType(type, value)) {
+    throw new TypeMismatchError(`Requested ${type} flag but the actual value is ${typeof value}`);
+  }
+
+  return value;
 }
