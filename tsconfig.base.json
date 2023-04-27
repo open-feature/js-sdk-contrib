@@ -22,7 +22,8 @@
       "@openfeature/flagd-provider": ["libs/providers/flagd/src/index.ts"],
       "@openfeature/go-feature-flag-provider": ["libs/providers/go-feature-flag/src/index.ts"],
       "@openfeature/hooks-open-telemetry": ["libs/hooks/open-telemetry/src/index.ts"],
-      "@openfeature/in-memory-provider": ["libs/providers/in-memory/src/index.ts"]
+      "@openfeature/in-memory-provider": ["libs/providers/in-memory/src/index.ts"],
+      "@openfeature/launchdarkly-client-provider": ["libs/providers/launchdarkly-client/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
