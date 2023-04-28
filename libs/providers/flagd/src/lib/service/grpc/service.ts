@@ -9,13 +9,12 @@ import {
   ParseError,
   ResolutionDetails,
   StandardResolutionReasons,
-  TypeMismatchError,
+  TypeMismatchError
 } from '@openfeature/js-sdk';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
-import type { JsonValue as PbJsonValue } from '@protobuf-ts/runtime';
 import type { UnaryCall } from '@protobuf-ts/runtime-rpc';
 import { RpcError } from '@protobuf-ts/runtime-rpc';
-import LRU from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import { Struct } from '../../../proto/ts/google/protobuf/struct';
 import {
   EventStreamResponse,
@@ -28,7 +27,7 @@ import {
   ResolveObjectRequest,
   ResolveObjectResponse,
   ResolveStringRequest,
-  ResolveStringResponse,
+  ResolveStringResponse
 } from '../../../proto/ts/schema/v1/schema';
 import { ServiceClient } from '../../../proto/ts/schema/v1/schema.client';
 import { Config } from '../../configuration';
@@ -37,7 +36,7 @@ import {
   DEFAULT_MAX_CACHE_SIZE,
   DEFAULT_MAX_EVENT_STREAM_RETRIES,
   EVENT_CONFIGURATION_CHANGE,
-  EVENT_PROVIDER_READY,
+  EVENT_PROVIDER_READY
 } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
 import { Service } from '../service';
@@ -75,7 +74,7 @@ export const Codes = {
 
 export class GRPCService implements Service {
   private _client: ServiceClient;
-  private _cache: LRU<string, ResolutionDetails<FlagValue>> | undefined;
+  private _cache: LRUCache<string, ResolutionDetails<FlagValue>> | undefined;
   private _cacheEnabled = false;
   private _streamAlive = false;
   private _streamConnectAttempt = 0;
@@ -104,7 +103,7 @@ export class GRPCService implements Service {
     // for now, we only need streaming if the cache is enabled (will need to be pulled out once we support events)
     if (config.cache === 'lru') {
       this._cacheEnabled = true;
-      this._cache = new LRU({ maxSize: config.maxCacheSize || DEFAULT_MAX_CACHE_SIZE, sizeCalculation: () => 1 });
+      this._cache = new LRUCache({ maxSize: config.maxCacheSize || DEFAULT_MAX_CACHE_SIZE, sizeCalculation: () => 1 });
       this.streamConnection = this.connectStream();
     }
   }
