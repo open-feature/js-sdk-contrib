@@ -19,7 +19,7 @@
     "@protobuf-ts/grpc-transport": "2.9.0",
     "axios": "1.4.0",
     "configcat-js": "^7.0.0",
-    "lru-cache": "^8.0.0",
+    "lru-cache": "^9.0.0",
     "object-hash": "^3.0.0",
     "tslib": "2.5.0"
   },
