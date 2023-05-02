@@ -3,17 +3,16 @@ import {
   Provider,
   JsonValue,
   ResolutionDetails,
-  StandardResolutionReasons, ErrorCode, FlagValue, Hook
-} from '@openfeature/js-sdk';
+  StandardResolutionReasons, ErrorCode, ProviderMetadata, Logger
+} from '@openfeature/web-sdk';
 import {
-  basicLogger, LDClient, LDLogger,
+  basicLogger, LDClient, LDLogger
 } from 'launchdarkly-js-client-sdk';
-import {LDFlagSet} from 'launchdarkly-js-sdk-common';
-import isEqual from 'lodash.isequal';
 
 import {LaunchDarklyProviderOptions} from './launchdarkly-provider-options';
 import translateContext from './translate-context';
 import translateResult from './translate-result';
+
 
 /**
  * Create a ResolutionDetails for an evaluation that produced a type different
@@ -30,13 +29,13 @@ function wrongTypeResult<T>(value: T): ResolutionDetails<T> {
 }
 
 export class LaunchDarklyClientProvider implements Provider {
-  private readonly logger: LDLogger;
-
-  metadata = {
+  readonly metadata: ProviderMetadata = {
     name: 'launchdarkly-client-provider',
   };
 
-  constructor(private readonly client: LDClient, options: LaunchDarklyProviderOptions = {}) {
+  private readonly logger: LDLogger;
+
+  constructor(private client: LDClient, options: LaunchDarklyProviderOptions = {}) {
     if (options.logger) {
       this.logger = options.logger;
     } else {
@@ -44,13 +43,20 @@ export class LaunchDarklyClientProvider implements Provider {
     }
   }
 
-  async resolveBooleanEvaluation(
-    flagKey: string,
-    defaultValue: boolean,
-    context: EvaluationContext,
-  ): Promise<ResolutionDetails<boolean>> {
-    await this.setContext(context);
-    const res = await this.client.variationDetail(
+  initialize(context: EvaluationContext): Promise<void> {
+    return this.client.waitUntilReady();
+  }
+
+  onClose(): Promise<void> {
+    return this.client.close();
+  }
+
+  async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+    await this.client.identify(this.translateContext(newContext));
+  }
+
+  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, context: EvaluationContext, logger: Logger): ResolutionDetails<boolean> {
+    const res = this.client.variationDetail(
       flagKey,
       defaultValue,
     );
@@ -60,29 +66,8 @@ export class LaunchDarklyClientProvider implements Provider {
     return wrongTypeResult(defaultValue);
   }
 
-  async resolveStringEvaluation(
-    flagKey: string,
-    defaultValue: string,
-    context: EvaluationContext,
-  ): Promise<ResolutionDetails<string>> {
-    await this.setContext(context);
-    const res = await this.client.variationDetail(
-      flagKey,
-      defaultValue,
-    );
-    if (typeof res.value === 'string') {
-      return translateResult(res);
-    }
-    return wrongTypeResult(defaultValue);
-  }
-
-  async resolveNumberEvaluation(
-    flagKey: string,
-    defaultValue: number,
-    context: EvaluationContext,
-  ): Promise<ResolutionDetails<number>> {
-    await this.setContext(context);
-    const res = await this.client.variationDetail(
+  resolveNumberEvaluation(flagKey: string, defaultValue: number, context: EvaluationContext, logger: Logger): ResolutionDetails<number> {
+    const res = this.client.variationDetail(
       flagKey,
       defaultValue,
     );
@@ -92,41 +77,32 @@ export class LaunchDarklyClientProvider implements Provider {
     return wrongTypeResult(defaultValue);
   }
 
-  async resolveObjectEvaluation<U extends JsonValue>(
-    flagKey: string,
-    defaultValue: U,
-    context: EvaluationContext,
-  ): Promise<ResolutionDetails<U>> {
-    await this.setContext(context);
-    const res = await this.client.variationDetail(
+  resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext, logger: Logger): ResolutionDetails<T> {
+    const res = this.client.variationDetail(
       flagKey,
       defaultValue,
     );
     if (typeof res.value === 'object') {
       return translateResult(res);
     }
-    return wrongTypeResult<U>(defaultValue);
+    return wrongTypeResult<T>(defaultValue);
   }
 
-  get hooks(): Hook<FlagValue>[] {
-    return [];
+  resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext, logger: Logger): ResolutionDetails<string> {
+    const res = this.client.variationDetail(
+      flagKey,
+      defaultValue,
+    );
+    if (typeof res.value === 'string') {
+      return translateResult(res);
+    }
+    return wrongTypeResult(defaultValue);
   }
 
   private translateContext(context: EvaluationContext) {
     return translateContext(this.logger, context);
   }
 
-  /**
-   * launchdarkly-js-client-sdk saves the context this prevents triggering an update if the context has not changed
-   * @param context
-   * @private
-   */
-  private async setContext(context: EvaluationContext): Promise<LDFlagSet> {
-    const newContext = this.translateContext(context);
-    const oldContext = this.client.getContext();
-    if(isEqual(newContext, oldContext)) {
-      return oldContext
-    }
-    return await this.client.identify(newContext);
-  }
 }
+
+

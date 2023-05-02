@@ -1,244 +1,240 @@
 import { LaunchDarklyClientProvider } from './launchdarkly-client-provider';
-import {LDClient} from "launchdarkly-js-client-sdk";
-import {Client, ErrorCode, OpenFeature} from "@openfeature/js-sdk";
+import {LDClient} from 'launchdarkly-js-client-sdk';
+import {Client, ErrorCode, OpenFeature} from '@openfeature/web-sdk';
 
-import TestLogger from "./test-logger";
-import translateContext from "./translate-context";
+import TestLogger from './test-logger';
+import translateContext from './translate-context';
 
-const basicContext = { targetingKey: 'the-key' };
 const logger: TestLogger = new TestLogger();
-const ldContext = translateContext(logger, basicContext);
 const testFlagKey = 'a-key';
 describe('LaunchDarklyClientProvider', () => {
   let ldClient: LDClient;
   let ofClient: Client;
 
-  beforeEach(() => {
+  beforeAll(() => {
     ldClient = {
       variationDetail: jest.fn(),
+      waitUntilReady: jest.fn().mockResolvedValue({}),
     } as any;
     OpenFeature.setProvider(new LaunchDarklyClientProvider(ldClient, { logger }));
     ofClient = OpenFeature.getClient();
+  })
+  beforeEach(() => {
     logger.reset();
-  });
-
-  it('calls the client correctly for boolean variations', async () => {
-    // @ts-ignore we don't care about the arguments
-    ldClient.variationDetail = jest.fn(async () => ({
-      value: true,
-      reason: {
-        kind: 'OFF',
-      },
-    }));
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn().mockReturnValueOnce(ldContext);
-    await ofClient.getBooleanDetails(testFlagKey, false, basicContext);
-    expect(ldClient.variationDetail)
-      .toHaveBeenCalledWith(testFlagKey, false);
-    expect(ldClient.identify).not.toHaveBeenCalled()
     jest.clearAllMocks();
-    await ofClient.getBooleanValue(testFlagKey, false, basicContext);
-    expect(ldClient.variationDetail)
-      .toHaveBeenCalledWith(testFlagKey, false);
-    expect(ldClient.identify).toHaveBeenCalledWith(ldContext)
   });
 
-  it('handles correct return types for boolean variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: true,
-      reason: {
-        kind: 'OFF',
-      },
+  describe('resolveBooleanEvaluation', () => {
+    it('calls the client correctly for boolean variations', () => {
+      // @ts-ignore we don't care about the arguments
+      ldClient.variationDetail = jest.fn(async () => ({
+        value: true,
+        reason: {
+          kind: 'OFF',
+        },
+      }));
+      ofClient.getBooleanDetails(testFlagKey, false);
+      expect(ldClient.variationDetail)
+        .toHaveBeenCalledWith(testFlagKey, false);
+      jest.clearAllMocks();
+      ofClient.getBooleanValue(testFlagKey, false);
+      expect(ldClient.variationDetail)
+        .toHaveBeenCalledWith(testFlagKey, false);
     });
 
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    const res = await ofClient.getBooleanDetails(testFlagKey, false, basicContext);
-    expect(res).toEqual({
-      flagKey: testFlagKey,
-      value: true,
-      reason: 'OFF',
+    it('handles correct return types for boolean variations', () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: true,
+        reason: {
+          kind: 'OFF',
+        },
+      });
+
+
+      const res = ofClient.getBooleanDetails(testFlagKey, false);
+      expect(res).toEqual({
+        flagKey: testFlagKey,
+        value: true,
+        reason: 'OFF',
+      });
     });
+
+    it('handles incorrect return types for boolean variations', () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: 'badness',
+        reason: {
+          kind: 'OFF',
+        },
+      });
+
+      const res = ofClient.getBooleanDetails(testFlagKey, false);
+      expect(res).toEqual({
+        flagKey: testFlagKey,
+        value: false,
+        reason: 'ERROR',
+        errorCode: 'TYPE_MISMATCH',
+      });
+    });
+
   });
 
-  it('handles incorrect return types for boolean variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: 'badness',
-      reason: {
-        kind: 'OFF',
-      },
+  describe('resolveNumberEvaluation', () => {
+    it('calls the client correctly for numeric variations', () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: 8,
+        reason: {
+          kind: 'OFF',
+        },
+      });
+
+      ofClient.getNumberDetails(testFlagKey, 0);
+      expect(ldClient.variationDetail)
+        .toHaveBeenCalledWith(testFlagKey, 0);
+      jest.clearAllMocks();
+      ofClient.getNumberValue(testFlagKey, 0);
+      expect(ldClient.variationDetail)
+        .toHaveBeenCalledWith(testFlagKey, 0);
     });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    const res = await ofClient.getBooleanDetails(testFlagKey, false, basicContext);
-    expect(res).toEqual({
-      flagKey: testFlagKey,
-      value: false,
-      reason: 'ERROR',
-      errorCode: 'TYPE_MISMATCH',
+
+    it('handles correct return types for numeric variations', () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: 17,
+        reason: {
+          kind: 'OFF',
+        },
+      });
+
+      const res = ofClient.getNumberDetails(testFlagKey, 0);
+      expect(res).toEqual({
+        flagKey: testFlagKey,
+        value: 17,
+        reason: 'OFF',
+      });
     });
+
+    it('handles incorrect return types for numeric variations', () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: true,
+        reason: {
+          kind: 'OFF',
+        },
+      });
+
+      const res = ofClient.getNumberDetails(testFlagKey, 0);
+      expect(res).toEqual({
+        flagKey: testFlagKey,
+        value: 0,
+        reason: 'ERROR',
+        errorCode: 'TYPE_MISMATCH',
+      });
+    });
+
   });
 
-  it('calls the client correctly for string variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: 'test',
-      reason: {
-        kind: 'OFF',
-      },
-    });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    await ofClient.getStringDetails(testFlagKey, 'default', basicContext);
-    expect(ldClient.variationDetail)
-      .toHaveBeenCalledWith(testFlagKey, 'default');
-    jest.clearAllMocks();
-    await ofClient.getStringValue(testFlagKey, 'default', basicContext);
-    expect(ldClient.variationDetail)
-      .toHaveBeenCalledWith(testFlagKey, 'default');
-    expect(ldClient.identify).toHaveBeenCalledWith(ldContext)
-  });
+  describe('resolveObjectEvaluation', () => {
+    it('calls the client correctly for object variations', async () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: { yes: 'no' },
+        reason: {
+          kind: 'OFF',
+        },
+      });
 
-  it('handles correct return types for string variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: 'good',
-      reason: {
-        kind: 'OFF',
-      },
+      ofClient.getObjectDetails(testFlagKey, {});
+      expect(ldClient.variationDetail)
+        .toHaveBeenCalledWith(testFlagKey, {});
+      jest.clearAllMocks();
+      ofClient.getObjectValue(testFlagKey, {});
+      expect(ldClient.variationDetail)
+        .toHaveBeenCalledWith(testFlagKey, {});
     });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    const res = await ofClient.getStringDetails(testFlagKey, 'default', basicContext);
-    expect(res).toEqual({
-      flagKey: testFlagKey,
-      value: 'good',
-      reason: 'OFF',
-    });
-  });
 
-  it('handles incorrect return types for string variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: true,
-      reason: {
-        kind: 'OFF',
-      },
-    });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    const res = await ofClient.getStringDetails(testFlagKey, 'default', basicContext);
-    expect(res).toEqual({
-      flagKey: testFlagKey,
-      value: 'default',
-      reason: 'ERROR',
-      errorCode: 'TYPE_MISMATCH',
-    });
-  });
+    it('handles correct return types for object variations', () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: { some: 'value' },
+        reason: {
+          kind: 'OFF',
+        },
+      });
 
-  it('calls the client correctly for numeric variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: 8,
-      reason: {
-        kind: 'OFF',
-      },
+      const res = ofClient.getObjectDetails(testFlagKey, {});
+      expect(res).toEqual({
+        flagKey: testFlagKey,
+        value: { some: 'value' },
+        reason: 'OFF',
+      });
     });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    await ofClient.getNumberDetails(testFlagKey, 0, basicContext);
-    expect(ldClient.variationDetail)
-      .toHaveBeenCalledWith(testFlagKey, 0);
-    jest.clearAllMocks();
-    await ofClient.getNumberValue(testFlagKey, 0, basicContext);
-    expect(ldClient.variationDetail)
-      .toHaveBeenCalledWith(testFlagKey, 0);
-    expect(ldClient.identify).toHaveBeenCalledWith(ldContext)
-  });
 
-  it('handles correct return types for numeric variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: 17,
-      reason: {
-        kind: 'OFF',
-      },
-    });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    const res = await ofClient.getNumberDetails(testFlagKey, 0, basicContext);
-    expect(res).toEqual({
-      flagKey: testFlagKey,
-      value: 17,
-      reason: 'OFF',
-    });
-  });
+    it('handles incorrect return types for object variations', () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: 22,
+        reason: {
+          kind: 'OFF',
+        },
+      });
 
-  it('handles incorrect return types for numeric variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: true,
-      reason: {
-        kind: 'OFF',
-      },
+      const res = ofClient.getObjectDetails(testFlagKey, {});
+      expect(res).toEqual({
+        flagKey: testFlagKey,
+        value: {},
+        reason: 'ERROR',
+        errorCode: 'TYPE_MISMATCH',
+      });
     });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    const res = await ofClient.getNumberDetails(testFlagKey, 0, basicContext);
-    expect(res).toEqual({
-      flagKey: testFlagKey,
-      value: 0,
-      reason: 'ERROR',
-      errorCode: 'TYPE_MISMATCH',
-    });
-  });
 
-  it('calls the client correctly for object variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: { yes: 'no' },
-      reason: {
-        kind: 'OFF',
-      },
-    });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    await ofClient.getObjectDetails(testFlagKey, {}, basicContext);
-    expect(ldClient.variationDetail)
-      .toHaveBeenCalledWith(testFlagKey, {});
-    jest.clearAllMocks();
-    await ofClient.getObjectValue(testFlagKey, {}, basicContext);
-    expect(ldClient.variationDetail)
-      .toHaveBeenCalledWith(testFlagKey, {});
-    expect(ldClient.identify).toHaveBeenCalledWith(ldContext)
-  });
+  })
 
-  it('handles correct return types for object variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: { some: 'value' },
-      reason: {
-        kind: 'OFF',
-      },
-    });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    const res = await ofClient.getObjectDetails(testFlagKey, {}, basicContext);
-    expect(res).toEqual({
-      flagKey: testFlagKey,
-      value: { some: 'value' },
-      reason: 'OFF',
-    });
-  });
+  describe('resolveStringEvaluation', ( ) => {
+    it('calls the client correctly for string variations', () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: 'test',
+        reason: {
+          kind: 'OFF',
+        },
+      });
 
-  it('handles incorrect return types for object variations', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
-      value: 22,
-      reason: {
-        kind: 'OFF',
-      },
+      ofClient.getStringDetails(testFlagKey, 'default');
+      expect(ldClient.variationDetail)
+        .toHaveBeenCalledWith(testFlagKey, 'default');
+      jest.clearAllMocks();
+      ofClient.getStringValue(testFlagKey, 'default');
+      expect(ldClient.variationDetail)
+        .toHaveBeenCalledWith(testFlagKey, 'default');
     });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    const res = await ofClient.getObjectDetails(testFlagKey, {}, basicContext);
-    expect(res).toEqual({
-      flagKey: testFlagKey,
-      value: {},
-      reason: 'ERROR',
-      errorCode: 'TYPE_MISMATCH',
+
+    it('handles correct return types for string variations', () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: 'good',
+        reason: {
+          kind: 'OFF',
+        },
+      });
+
+      const res = ofClient.getStringDetails(testFlagKey, 'default');
+      expect(res).toEqual({
+        flagKey: testFlagKey,
+        value: 'good',
+        reason: 'OFF',
+      });
     });
+
+    it('handles incorrect return types for string variations', () => {
+      ldClient.variationDetail = jest.fn().mockReturnValue({
+        value: true,
+        reason: {
+          kind: 'OFF',
+        },
+      });
+
+      const res =  ofClient.getStringDetails(testFlagKey, 'default');
+      expect(res).toEqual({
+        flagKey: testFlagKey,
+        value: 'default',
+        reason: 'ERROR',
+        errorCode: 'TYPE_MISMATCH',
+      });
+    });
+
   });
 
   it.each([
@@ -249,16 +245,15 @@ describe('LaunchDarklyClientProvider', () => {
     ['UNSPECIFIED', ErrorCode.GENERAL],
     [undefined, ErrorCode.GENERAL],
   ])('handles errors from the client', async (ldError, ofError) => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
+    ldClient.variationDetail = jest.fn().mockReturnValue({
       value: { yes: 'no' },
       reason: {
         kind: 'ERROR',
         errorKind: ldError,
       },
     });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    const res = await ofClient.getObjectDetails(testFlagKey, {}, basicContext);
+
+    const res = await ofClient.getObjectDetails(testFlagKey, {});
     expect(res).toEqual({
       flagKey: testFlagKey,
       value: { yes: 'no' },
@@ -268,16 +263,15 @@ describe('LaunchDarklyClientProvider', () => {
   });
 
   it('includes the variant', async () => {
-    ldClient.variationDetail = jest.fn().mockResolvedValue({
+    ldClient.variationDetail = jest.fn().mockReturnValue({
       value: { yes: 'no' },
       variationIndex: 22,
       reason: {
         kind: 'OFF',
       },
     });
-    ldClient.identify = jest.fn().mockResolvedValue({});
-    ldClient.getContext = jest.fn();
-    const res = await ofClient.getObjectDetails(testFlagKey, {}, basicContext);
+
+    const res = await ofClient.getObjectDetails(testFlagKey, {});
     expect(res).toEqual({
       flagKey: testFlagKey,
       value: { yes: 'no' },
@@ -286,15 +280,21 @@ describe('LaunchDarklyClientProvider', () => {
     });
   });
 
-  it('logs information about missing keys', async () => {
-    await ofClient.getObjectDetails(testFlagKey, {}, {});
-    expect(logger.logs[0]).toEqual("The EvaluationContext must contain either a 'targetingKey' "
-      + "or a 'key' and the type must be a string.");
-  });
+  describe('onContextChange', () => {
+    it('logs information about missing keys', async () => {
+      ldClient.identify = jest.fn().mockResolvedValue({});
+      await OpenFeature.setContext({});
+      expect(ldClient.identify).toHaveBeenCalledWith(translateContext(logger, {}))
+      expect(logger.logs[0]).toEqual("The EvaluationContext must contain either a 'targetingKey' "
+        + "or a 'key' and the type must be a string.");
+    });
 
-  it('logs information about double keys', async () => {
-    await ofClient.getObjectDetails(testFlagKey, {}, { targetingKey: '1', key: '2' });
-    expect(logger.logs[0]).toEqual("The EvaluationContext contained both a 'targetingKey' and a"
-      + " 'key' attribute. The 'key' attribute will be discarded.");
+    it('logs information about double keys', async () => {
+      ldClient.identify = jest.fn().mockResolvedValue({});
+      await OpenFeature.setContext({ targetingKey: '1', key: '2' });
+      expect(ldClient.identify).toHaveBeenCalledWith(translateContext(logger, { targetingKey: '1', key: '2' }))
+      expect(logger.logs[0]).toEqual("The EvaluationContext contained both a 'targetingKey' and a"
+        + " 'key' attribute. The 'key' attribute will be discarded.");
+    });
   });
 });
