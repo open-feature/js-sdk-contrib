@@ -6,7 +6,7 @@ import {
   StandardResolutionReasons, ErrorCode, ProviderMetadata, Logger
 } from '@openfeature/web-sdk';
 import {
-  basicLogger, LDClient, LDLogger
+  basicLogger, LDClient
 } from 'launchdarkly-js-client-sdk';
 
 import {LaunchDarklyProviderOptions} from './launchdarkly-provider-options';
@@ -33,7 +33,7 @@ export class LaunchDarklyClientProvider implements Provider {
     name: 'launchdarkly-client-provider',
   };
 
-  private readonly logger: LDLogger;
+  private readonly logger: Logger;
 
   constructor(private client: LDClient, options: LaunchDarklyProviderOptions = {}) {
     if (options.logger) {
@@ -52,6 +52,7 @@ export class LaunchDarklyClientProvider implements Provider {
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+    // update the context on the LaunchDarkly client, this is so it does not have to be checked on each evaluation
     await this.client.identify(this.translateContext(newContext));
   }
 
@@ -104,5 +105,3 @@ export class LaunchDarklyClientProvider implements Provider {
   }
 
 }
-
-

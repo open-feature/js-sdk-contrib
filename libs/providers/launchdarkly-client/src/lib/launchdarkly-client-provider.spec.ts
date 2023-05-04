@@ -50,7 +50,6 @@ describe('LaunchDarklyClientProvider', () => {
         },
       });
 
-
       const res = ofClient.getBooleanDetails(testFlagKey, false);
       expect(res).toEqual({
         flagKey: testFlagKey,
@@ -128,7 +127,6 @@ describe('LaunchDarklyClientProvider', () => {
         errorCode: 'TYPE_MISMATCH',
       });
     });
-
   });
 
   describe('resolveObjectEvaluation', () => {
@@ -181,7 +179,6 @@ describe('LaunchDarklyClientProvider', () => {
         errorCode: 'TYPE_MISMATCH',
       });
     });
-
   })
 
   describe('resolveStringEvaluation', ( ) => {
@@ -234,7 +231,6 @@ describe('LaunchDarklyClientProvider', () => {
         errorCode: 'TYPE_MISMATCH',
       });
     });
-
   });
 
   it.each([
