@@ -2,19 +2,13 @@
 
 ![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)
 
+An unofficial browser provider for LaunchDarkly.
+
 ## Installation
 
 ```
 $ npm install @openfeature/launchdarkly-client-provider
 ```
-
-## Building
-
-Run `nx package providers-launchdarkly-client` to build the library.
-
-## Running unit tests
-
-Run `nx test providers-launchdarkly-client` to execute the unit tests via [Jest](https://jestjs.io).
 
 ## Sample initialization
 ``` ts
@@ -33,9 +27,19 @@ Run `nx test providers-launchdarkly-client` to execute the unit tests via [Jest]
 ```
 ## Update Context
 For context update always use ``OpenFeature.setContext(myNewContext);`` instead of ``ldClient.identify(myNewContext);``, as this will always be handled internally.
+
+Please note that context changes result in network traffic, so changes should be made sparingly in accordance to relevant user behavior.
 ``` ts
   await OpenFeature.setContext({ targetingKey: 'my-key' })
   //Laundarkly uses key but this provider tranlates targetingKey to key; 
   //So the above is the same as doing
   await OpenFeature.setContext({ key: 'my-key' });
 ```
+
+## Building
+
+Run `nx package providers-launchdarkly-client` to build the library.
+
+## Running unit tests
+
+Run `nx test providers-launchdarkly-client` to execute the unit tests via [Jest](https://jestjs.io).
