@@ -9,19 +9,63 @@ const logger: TestLogger = new TestLogger();
 const testFlagKey = 'a-key';
 describe('LaunchDarklyClientProvider', () => {
   let ldClient: LDClient;
+  let ldProvider: LaunchDarklyClientProvider
   let ofClient: Client;
 
   beforeAll(() => {
     ldClient = {
       variationDetail: jest.fn(),
       waitUntilReady: jest.fn().mockResolvedValue({}),
+      getContext: jest.fn().mockReturnValue({}),
     } as any;
-    OpenFeature.setProvider(new LaunchDarklyClientProvider(ldClient, { logger }));
+    ldProvider = new LaunchDarklyClientProvider(ldClient, { logger });
+    OpenFeature.setProvider(ldProvider);
     ofClient = OpenFeature.getClient();
   })
   beforeEach(() => {
     logger.reset();
     jest.clearAllMocks();
+  });
+
+  describe('initialize', () => {
+    test('should not update context if it did not change', async () => {
+      const newContext = {kind: 'user', targetingKey: 'test-key'};
+      const oldContext = {kind: 'user', key: 'test-key'};
+      ldClient.getContext = jest.fn().mockReturnValue(oldContext);
+      ldClient.identify = jest.fn().mockResolvedValue(undefined);
+      await ldProvider.initialize(newContext);
+      expect(ldClient.identify).not.toHaveBeenCalled();
+    });
+
+    test('should update context if it changed', async() => {
+      const newContext = {kind: 'organization', targetingKey: 'test-key'};
+      const oldContext = {kind: 'user', key: 'test-key'};
+      ldClient.getContext = jest.fn().mockReturnValue(oldContext);
+      ldClient.identify = jest.fn().mockResolvedValue(undefined);
+      await ldProvider.initialize(newContext);
+      expect(ldClient.identify).toHaveBeenCalledTimes(1);
+      expect(ldClient.identify).toHaveBeenCalledWith(translateContext(logger, newContext));
+    });
+
+    test('should not update context if anonymous and no key', async() => {
+      const newContext = {anonymous: true};
+      const oldContext = {kind: 'user', anonymous: true, key: 'generated-key'};
+      ldClient.getContext = jest.fn().mockReturnValue(oldContext);
+      ldClient.identify = jest.fn().mockResolvedValue(undefined);
+      await ldProvider.initialize(newContext);
+      expect(ldClient.identify).not.toHaveBeenCalled();
+    });
+
+    test('should update context if anonymous and custom key', async() => {
+      const newContext = {anonymous: true, key: 'custom-key'};
+      const oldContext = {kind: 'user', anonymous: true, key: 'generated-key'};
+      ldClient.getContext = jest.fn().mockReturnValue(oldContext);
+      ldClient.identify = jest.fn().mockResolvedValue(undefined);
+      await ldProvider.initialize(newContext);
+      expect(ldClient.identify).toHaveBeenCalledTimes(1);
+      expect(ldClient.identify).toHaveBeenCalledWith(translateContext(logger, newContext));
+    });
+
   });
 
   describe('resolveBooleanEvaluation', () => {

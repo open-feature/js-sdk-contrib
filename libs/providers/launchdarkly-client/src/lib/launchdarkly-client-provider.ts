@@ -8,6 +8,7 @@ import {
 import {
   basicLogger, LDClient
 } from 'launchdarkly-js-client-sdk';
+import isEqual from 'lodash.isequal';
 
 import {LaunchDarklyProviderOptions} from './launchdarkly-provider-options';
 import translateContext from './translate-context';
@@ -43,7 +44,13 @@ export class LaunchDarklyClientProvider implements Provider {
     }
   }
 
-  initialize(context: EvaluationContext): Promise<void> {
+  async initialize(context: EvaluationContext): Promise<void> {
+    const newContext = this.translateContext(context);
+    const oldContext = this.client.getContext();
+    const ignoreAnonymous = newContext.anonymous && oldContext.anonymous && !newContext.key
+    if(!ignoreAnonymous && !isEqual(newContext, oldContext)) {
+       await this.client.identify(newContext);
+    }
     return this.client.waitUntilReady();
   }
 
