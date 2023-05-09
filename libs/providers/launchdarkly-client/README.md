@@ -13,7 +13,9 @@ $ npm install @openfeature/launchdarkly-client-provider
 ## Sample initialization
 ``` ts
   // init launchdarkly-js-client-sdk
-  const initialContext = {};
+  const initialContext = {
+    anonymous: true,
+  };
   const ldClient =  initialize('LDId', initialContext);
   await ldClient.waitForInitialization();
   const ldOpenFeatureProvider = new LaunchDarklyClientProvider(ldClient);
@@ -35,6 +37,8 @@ Please note that context changes result in network traffic, so changes should be
   //So the above is the same as doing
   await OpenFeature.setContext({ key: 'my-key' });
 ```
+
+Read more about LD contexts [here](https://github.com/launchdarkly/openfeature-node-server#openfeature-specific-considerations)
 
 ## Building
 
