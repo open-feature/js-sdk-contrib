@@ -8,7 +8,7 @@ import translateContext from './translate-context';
 const logger: TestLogger = new TestLogger();
 const testFlagKey = 'a-key';
 describe('LaunchDarklyClientProvider', () => {
-  let ldClient: LDClient;
+  let ldClient: Partial<LDClient>;
   let ldProvider: LaunchDarklyClientProvider
   let ofClient: Client;
 
@@ -17,8 +17,8 @@ describe('LaunchDarklyClientProvider', () => {
       variationDetail: jest.fn(),
       waitUntilReady: jest.fn().mockResolvedValue({}),
       getContext: jest.fn().mockReturnValue({}),
-    } as any;
-    ldProvider = new LaunchDarklyClientProvider(ldClient, { logger });
+    };
+    ldProvider = new LaunchDarklyClientProvider(ldClient as LDClient, { logger });
     OpenFeature.setProvider(ldProvider);
     ofClient = OpenFeature.getClient();
   })
@@ -70,8 +70,7 @@ describe('LaunchDarklyClientProvider', () => {
 
   describe('resolveBooleanEvaluation', () => {
     it('calls the client correctly for boolean variations', () => {
-      // @ts-ignore we don't care about the arguments
-      ldClient.variationDetail = jest.fn(async () => ({
+      ldClient.variationDetail = jest.fn(() => ({
         value: true,
         reason: {
           kind: 'OFF',

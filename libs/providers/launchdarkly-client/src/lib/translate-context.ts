@@ -101,13 +101,12 @@ function translateContextCommon(
         privateAttributes: value as string[],
       };
     } else if (key in LDContextBuiltIns) {
-      // @ts-ignore previous if ensures key is an index of LDContextBuiltIns
-      if (typeof value === LDContextBuiltIns[key]) {
+      const typedKey = key as 'name'| 'anonymous';
+      if (typeof value === LDContextBuiltIns[typedKey]) {
         convertedContext[key] = value;
       } else {
         // If the type does not match, then discard.
-        // @ts-ignore previous if ensures key is an index of LDContextBuiltIns
-        logger.error(`The attribute '${key}' must be of type ${LDContextBuiltIns[key]}`);
+        logger.error(`The attribute '${key}' must be of type ${LDContextBuiltIns[typedKey]}`);
       }
     } else {
       convertAttributes(logger, key, value, convertedContext, [inCommon]);

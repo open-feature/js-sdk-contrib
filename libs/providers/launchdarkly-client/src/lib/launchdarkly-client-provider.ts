@@ -63,7 +63,7 @@ export class LaunchDarklyClientProvider implements Provider {
     await this.client.identify(this.translateContext(newContext));
   }
 
-  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, context: EvaluationContext, logger: Logger): ResolutionDetails<boolean> {
+  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
     const res = this.client.variationDetail(
       flagKey,
       defaultValue,
@@ -74,7 +74,7 @@ export class LaunchDarklyClientProvider implements Provider {
     return wrongTypeResult(defaultValue);
   }
 
-  resolveNumberEvaluation(flagKey: string, defaultValue: number, context: EvaluationContext, logger: Logger): ResolutionDetails<number> {
+  resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number> {
     const res = this.client.variationDetail(
       flagKey,
       defaultValue,
@@ -85,7 +85,7 @@ export class LaunchDarklyClientProvider implements Provider {
     return wrongTypeResult(defaultValue);
   }
 
-  resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext, logger: Logger): ResolutionDetails<T> {
+  resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
     const res = this.client.variationDetail(
       flagKey,
       defaultValue,
@@ -96,7 +96,7 @@ export class LaunchDarklyClientProvider implements Provider {
     return wrongTypeResult<T>(defaultValue);
   }
 
-  resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext, logger: Logger): ResolutionDetails<string> {
+  resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
     const res = this.client.variationDetail(
       flagKey,
       defaultValue,
