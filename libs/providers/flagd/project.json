@@ -12,7 +12,6 @@
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "package"
         }
       ]
@@ -31,20 +30,19 @@
       }
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["libs/providers/flagd/**/*.ts"]
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "generate"
         }
       ]
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
+      "executor": "@nx/jest:jest",
       "outputs": ["coverage/libs/providers/flagd"],
       "options": {
         "jestConfig": "libs/providers/flagd/jest.config.ts",
@@ -52,13 +50,12 @@
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "generate"
         }
       ]
     },
     "package": {
-      "executor": "@nrwl/rollup:rollup",
+      "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/providers/flagd/package.json",
@@ -91,7 +88,6 @@
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "generate"
         }
       ]

@@ -7,9 +7,9 @@ import {
   names,
   Tree,
   updateJson,
-} from '@nrwl/devkit';
-import { libraryGenerator } from '@nrwl/js';
-import { Linter } from '@nrwl/linter';
+} from '@nx/devkit';
+import { libraryGenerator } from '@nx/js';
+import { Linter } from '@nx/linter';
 
 /**
  * Enforced by the json schema.
@@ -115,7 +115,7 @@ function normalizeOptions(tree: Tree, schema: SchemaOptions) {
 function updateProject(tree: Tree, projectRoot: string, umdName: string) {
   updateJson(tree, joinPathFragments(projectRoot, 'project.json'), (json) => {
     json.targets['package'] = {
-      executor: '@nrwl/rollup:rollup',
+      executor: '@nx/rollup:rollup',
       outputs: ['{options.outputPath}'],
       options: {
         project: `${projectRoot}/package.json`,

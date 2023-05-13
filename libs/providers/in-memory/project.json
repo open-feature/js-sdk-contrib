@@ -5,27 +5,26 @@
   "projectType": "library",
   "targets": {
     "publish": {
-      "executor": "@nrwl/workspace:run-commands",
+      "executor": "@nx/workspace:run-commands",
       "options": {
         "command": "npm run publish-if-not-exists",
         "cwd": "dist/libs/providers/in-memory"
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "package"
         }
       ]
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["libs/providers/in-memory/**/*.ts"]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
+      "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "libs/providers/in-memory/jest.config.ts",
@@ -39,7 +38,7 @@
       }
     },
     "package": {
-      "executor": "@nrwl/rollup:rollup",
+      "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/providers/in-memory/package.json",
