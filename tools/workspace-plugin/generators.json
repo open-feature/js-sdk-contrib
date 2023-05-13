@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "open-feature": {
+      "implementation": "./src/generators/open-feature",
+      "schema": "./src/generators/open-feature/schema.json",
+      "description": "Generator open-feature"
+    }
+  }
+}
