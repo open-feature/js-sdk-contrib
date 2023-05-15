@@ -5,7 +5,7 @@
   "projectType": "library",
   "targets": {
     "package": {
-      "executor": "@nrwl/rollup:rollup",
+      "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/hooks/open-telemetry/package.json",
@@ -15,7 +15,7 @@
         "compiler": "tsc",
         "generateExportsField": true,
         "umdName": "OpenTelemetry",
-        "external": ["typescript"],
+        "external": "all",
         "format": ["cjs", "esm"],
         "assets": [
           {
@@ -37,7 +37,7 @@
       }
     },
     "build": {
-      "executor": "@nrwl/js:tsc",
+      "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/libs/hooks/open-telemetry",
@@ -47,27 +47,26 @@
       }
     },
     "publish": {
-      "executor": "@nrwl/workspace:run-commands",
+      "executor": "@nx/workspace:run-commands",
       "options": {
         "command": "npm run publish-if-not-exists",
         "cwd": "dist/libs/hooks/open-telemetry"
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "package"
         }
       ]
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["libs/hooks/open-telemetry/**/*.ts"]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
+      "executor": "@nx/jest:jest",
       "outputs": ["coverage/libs/hooks/open-telemetry"],
       "options": {
         "jestConfig": "libs/hooks/open-telemetry/jest.config.ts",

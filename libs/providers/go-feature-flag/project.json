@@ -5,27 +5,26 @@
   "projectType": "library",
   "targets": {
     "publish": {
-      "executor": "@nrwl/workspace:run-commands",
+      "executor": "@nx/workspace:run-commands",
       "options": {
         "command": "npm run publish-if-not-exists",
         "cwd": "dist/libs/providers/go-feature-flag"
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "package"
         }
       ]
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["libs/providers/go-feature-flag/**/*.ts"]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
+      "executor": "@nx/jest:jest",
       "outputs": ["coverage/libs/providers/go-feature-flag"],
       "options": {
         "jestConfig": "libs/providers/go-feature-flag/jest.config.ts",
@@ -33,7 +32,7 @@
       }
     },
     "package": {
-      "executor": "@nrwl/rollup:rollup",
+      "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/providers/go-feature-flag/package.json",
@@ -44,7 +43,7 @@
         "generateExportsField": true,
         "buildableProjectDepsInPackageJsonType": "dependencies",
         "umdName": "go-feature-flag",
-        "external": ["typescript"],
+        "external": "all",
         "format": ["cjs", "esm"],
         "assets": [
           {
