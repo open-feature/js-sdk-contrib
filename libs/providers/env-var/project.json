@@ -5,7 +5,7 @@
   "projectType": "library",
   "targets": {
     "publish": {
-      "executor": "@nx/workspace:run-commands",
+      "executor": "nx:run-commands",
       "options": {
         "command": "npm run publish-if-not-exists",
         "cwd": "dist/libs/providers/env-var"
