@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.9](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.8...go-feature-flag-provider-v0.5.9) (2023-05-16)
+
+
+### 🐛 Bug Fixes
+
+* handling zero value responses (previously undefined) ([#330](https://github.com/open-feature/js-sdk-contrib/issues/330)) ([2db7fa8](https://github.com/open-feature/js-sdk-contrib/commit/2db7fa825bd12d18d0804997e54d0b6aa3cd5a14))
+
+
+### 🧹 Chore
+
+* correct publish executor ([#378](https://github.com/open-feature/js-sdk-contrib/issues/378)) ([395ed18](https://github.com/open-feature/js-sdk-contrib/commit/395ed186de8811ae249f087821fdbdf8899c19f2))
+* migrate to nx 16 ([#366](https://github.com/open-feature/js-sdk-contrib/issues/366)) ([7a9c201](https://github.com/open-feature/js-sdk-contrib/commit/7a9c201d16fd7f070a1bcd2e359487ba6e7b78d7))
+
 ## [0.5.8](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.7...go-feature-flag-provider-v0.5.8) (2023-04-08)
 
 
