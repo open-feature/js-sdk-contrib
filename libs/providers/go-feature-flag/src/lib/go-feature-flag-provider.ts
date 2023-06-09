@@ -227,7 +227,7 @@ export class GoFeatureFlagProvider implements Provider {
 
     // Case of the flag is disabled
     if (apiResponseData.reason === StandardResolutionReasons.DISABLED) {
-      // we don't set a variant since we are using the default value and we are not able to know
+      // we don't set a variant since we are using the default value, and we are not able to know
       // which variant it is.
       return { value: defaultValue, reason: apiResponseData.reason };
     }
@@ -235,7 +235,8 @@ export class GoFeatureFlagProvider implements Provider {
     const sdkResponse: ResolutionDetails<T> = {
       value: apiResponseData.value,
       variant: apiResponseData.variationType,
-      reason: apiResponseData.reason?.toString() || 'UNKNOWN'
+      reason: apiResponseData.reason?.toString() || 'UNKNOWN',
+      flagMetadata: apiResponseData.metadata || undefined,
     };
     if (Object.values(ErrorCode).includes(apiResponseData.errorCode as ErrorCode)) {
       sdkResponse.errorCode = ErrorCode[apiResponseData.errorCode as ErrorCode];

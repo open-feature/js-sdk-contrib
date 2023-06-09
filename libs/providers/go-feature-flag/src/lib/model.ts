@@ -37,7 +37,7 @@ export interface GoFeatureFlagProxyResponse<T> {
   variationType: string;
   version?: string;
   reason: string | GOFeatureFlagResolutionReasons;
-  metadata: Object;
+  metadata: Record<string, string | number | boolean>;
   errorCode?: ErrorCode | GOFeatureFlagErrorCode;
 }
 

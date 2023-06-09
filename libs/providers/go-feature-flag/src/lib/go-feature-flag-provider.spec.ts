@@ -625,5 +625,37 @@ describe('GoFeatureFlagProvider', () => {
           } as ResolutionDetails<object>);
         });
     });
+    it('should return metadata associated to the flag', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, {
+        value: true,
+        variationType: 'trueVariation',
+        reason: StandardResolutionReasons.TARGETING_MATCH,
+        failed: false,
+        trackEvents: true,
+        version: '1.0.0',
+        metadata: {
+          description: 'a description of the flag',
+          issue_number: 1,
+        }
+      } as GoFeatureFlagProxyResponse<boolean>);
+
+      await goff
+        .resolveBooleanEvaluation(flagName, false, { targetingKey })
+        .then((res) => {
+          expect(res).toEqual({
+            reason: StandardResolutionReasons.TARGETING_MATCH,
+            value: true,
+            variant: 'trueVariation',
+            flagMetadata: {
+              description: 'a description of the flag',
+              issue_number: 1,
+            }
+          } as ResolutionDetails<boolean>);
+        });
+    });
   });
 });
