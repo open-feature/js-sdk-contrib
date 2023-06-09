@@ -20,6 +20,7 @@ import {
   GoFeatureFlagProxyResponse,
   GoFeatureFlagUser,
 } from './model';
+import Receptacle from 'receptacle';
 
 
 // GoFeatureFlagProvider is the official Open-feature provider for GO Feature Flag.
@@ -29,19 +30,29 @@ export class GoFeatureFlagProvider implements Provider {
   };
 
   // endpoint of your go-feature-flag relay proxy instance
-  private endpoint: string;
+  private readonly endpoint: string;
   // timeout in millisecond before we consider the request as a failure
-  private timeout: number;
-  // apiKey contains the token to use while calling GO Feature Flag relay proxy
-  private apiKey?: string;
+  private readonly timeout: number;
+  // cache contains the local cache used in the provider to avoid calling the relay-proxy for every evaluation
+  private cache?: Receptacle<ResolutionDetails<any>>;
+
+  // cacheTTL is the time we keep the evaluation in the cache before we consider it as obsolete.
+  // If you want to keep the value forever you can set the FlagCacheTTL field to -1
+  private readonly cacheTTL?: number
 
   constructor(options: GoFeatureFlagProviderOptions) {
     this.timeout = options.timeout || 0; // default is 0 = no timeout
     this.endpoint = options.endpoint;
+    this.cacheTTL = options.flagCacheTTL !== undefined && options.flagCacheTTL !== 0 ? options.flagCacheTTL : 1000 * 60;
 
     // Add API key to the headers
     if (options.apiKey) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${options.apiKey}`;
+    }
+
+    if(!options.disableCache) {
+      const cacheSize = options.flagCacheSize!== undefined && options.flagCacheSize !== 0 ? options.flagCacheSize : 10000;
+      this.cache = new Receptacle<ResolutionDetails<any>>({max: cacheSize})
     }
   }
 
@@ -166,8 +177,17 @@ export class GoFeatureFlagProvider implements Provider {
     user: GoFeatureFlagUser,
     expectedType: string
   ): Promise<ResolutionDetails<T>> {
-    const request: GoFeatureFlagProxyRequest<T> = { user, defaultValue };
+    const cacheKey = `${flagKey}-${user.key}`;
+    // check if flag is available in the cache
+    if (this.cache !== undefined) {
+      const cacheValue = this.cache.get(cacheKey);
+      if (cacheValue !== null) {
+        // console.log(this.cache.get(cacheKey).)
+        return cacheValue;
+      }
+    }
 
+    const request: GoFeatureFlagProxyRequest<T> = { user, defaultValue };
     // build URL to access to the endpoint
     const endpointURL = new URL(this.endpoint);
     endpointURL.pathname = `v1/feature/${flagKey}/eval`;
@@ -234,13 +254,21 @@ export class GoFeatureFlagProvider implements Provider {
 
     const sdkResponse: ResolutionDetails<T> = {
       value: apiResponseData.value,
-      variant: apiResponseData.variationType,
       reason: apiResponseData.reason?.toString() || 'UNKNOWN'
     };
     if (Object.values(ErrorCode).includes(apiResponseData.errorCode as ErrorCode)) {
       sdkResponse.errorCode = ErrorCode[apiResponseData.errorCode as ErrorCode];
     } else if (apiResponseData.errorCode) {
       sdkResponse.errorCode = ErrorCode.GENERAL;
+    }
+
+    if(this.cache!==undefined && apiResponseData.cacheable){
+      console.log('add cache', cacheKey)
+      if (this.cacheTTL === -1){
+        this.cache.set(cacheKey, sdkResponse)
+      } else {
+        this.cache.set(cacheKey, sdkResponse, {ttl: this.cacheTTL, refresh: false})
+      }
     }
     return sdkResponse;
   }
