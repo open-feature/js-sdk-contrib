@@ -8,7 +8,7 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/js-sdk';
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import { transformContext } from './context-transformer';
 import { ProxyNotReady } from './errors/proxyNotReady';
 import { ProxyTimeout } from './errors/proxyTimeout';
@@ -55,7 +55,7 @@ export class GoFeatureFlagProvider implements Provider {
    * @throws {ProxyTimeout} When the HTTP call is timing out
    * @throws {UnknownError} When an unknown error occurs
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
-   * @throws {FlagNotFoundError} When the flag does not exists
+   * @throws {FlagNotFoundError} When the flag does not exist
    */
   async resolveBooleanEvaluation(
     flagKey: string,
@@ -80,7 +80,7 @@ export class GoFeatureFlagProvider implements Provider {
    * @throws {ProxyTimeout} When the HTTP call is timing out
    * @throws {UnknownError} When an unknown error occurs
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
-   * @throws {FlagNotFoundError} When the flag does not exists
+   * @throws {FlagNotFoundError} When the flag does not exist
    */
   async resolveStringEvaluation(
     flagKey: string,
@@ -105,7 +105,7 @@ export class GoFeatureFlagProvider implements Provider {
    * @throws {ProxyTimeout} When the HTTP call is timing out
    * @throws {UnknownError} When an unknown error occurs
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
-   * @throws {FlagNotFoundError} When the flag does not exists
+   * @throws {FlagNotFoundError} When the flag does not exist
    */
   async resolveNumberEvaluation(
     flagKey: string,
@@ -130,7 +130,7 @@ export class GoFeatureFlagProvider implements Provider {
    * @throws {ProxyTimeout} When the HTTP call is timing out
    * @throws {UnknownError} When an unknown error occurs
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
-   * @throws {FlagNotFoundError} When the flag does not exists
+   * @throws {FlagNotFoundError} When the flag does not exist
    */
   async resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
