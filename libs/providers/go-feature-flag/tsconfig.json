@@ -7,7 +7,10 @@
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": [
+      "node"
+    ]
   },
   "files": [],
   "include": [],
@@ -18,5 +21,5 @@
     {
       "path": "./tsconfig.spec.json"
     }
-  ]
+  ],
 }
