@@ -73,6 +73,9 @@ export interface GoFeatureFlagProviderOptions {
   // when calling the evaluation API.
   // default: 1 minute
   dataFlushInterval?: number
+
+  // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
+  disableDataCollection: boolean
 }
 
 // GOFeatureFlagResolutionReasons allows to extends resolution reasons

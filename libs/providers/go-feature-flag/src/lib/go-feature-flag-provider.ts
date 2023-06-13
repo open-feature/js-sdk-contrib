@@ -57,12 +57,15 @@ export class GoFeatureFlagProvider implements Provider {
 
   // dataFlushInterval interval time (in millisecond) we use to call the relay proxy to collect data.
   private readonly dataFlushInterval: number;
+  // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
+  private readonly disableDataCollection: boolean;
 
   constructor(options: GoFeatureFlagProviderOptions) {
     this.timeout = options.timeout || 0; // default is 0 = no timeout
     this.endpoint = options.endpoint;
     this.cacheTTL = options.flagCacheTTL !== undefined && options.flagCacheTTL !== 0 ? options.flagCacheTTL : 1000 * 60;
     this.dataFlushInterval = options.dataFlushInterval || 1000 * 60;
+    this.disableDataCollection = options.disableDataCollection;
 
     // Add API key to the headers
     if (options.apiKey) {
@@ -75,7 +78,21 @@ export class GoFeatureFlagProvider implements Provider {
     }
   }
 
+  /**
+   * initialize is called everytime the provider is instanced inside GO Feature Flag.
+   * It will start the background process for data collection to be able to run every X ms.
+   */
+  async initialize() {
+    if (!this.disableDataCollection) {
+      this.bgScheduler = setInterval(async () => await this.callGoffDataCollection(), this.dataFlushInterval)
+      this.dataCollectorBuffer = []
+    }
+  }
 
+  /**
+   * onClose is called everytime OpenFeature.Close() function is called.
+   * It will terminate gracefully the provider and ensure that all the data are send to the relay-proxy.
+   */
   async onClose() {
     if (this.cache !== undefined && this.bgScheduler !== undefined) {
       // we stop the background task to call the data collector endpoint
@@ -85,12 +102,6 @@ export class GoFeatureFlagProvider implements Provider {
     }
   }
 
-  async initialize() {
-    if (this.cache !== undefined) {
-      this.bgScheduler = setInterval(async () => await this.callGoffDataCollection(), this.dataFlushInterval)
-      this.dataCollectorBuffer = []
-    }
-  }
 
   async callGoffDataCollection() {
     if (this.dataCollectorBuffer?.length === 0) {
