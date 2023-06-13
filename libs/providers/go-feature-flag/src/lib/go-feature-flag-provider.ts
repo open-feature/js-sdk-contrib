@@ -8,7 +8,7 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/js-sdk';
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import { transformContext } from './context-transformer';
 import { ProxyNotReady } from './errors/proxyNotReady';
 import { ProxyTimeout } from './errors/proxyTimeout';
@@ -66,7 +66,7 @@ export class GoFeatureFlagProvider implements Provider {
    * @throws {ProxyTimeout} When the HTTP call is timing out
    * @throws {UnknownError} When an unknown error occurs
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
-   * @throws {FlagNotFoundError} When the flag does not exists
+   * @throws {FlagNotFoundError} When the flag does not exist
    */
   async resolveBooleanEvaluation(
     flagKey: string,
@@ -91,7 +91,7 @@ export class GoFeatureFlagProvider implements Provider {
    * @throws {ProxyTimeout} When the HTTP call is timing out
    * @throws {UnknownError} When an unknown error occurs
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
-   * @throws {FlagNotFoundError} When the flag does not exists
+   * @throws {FlagNotFoundError} When the flag does not exist
    */
   async resolveStringEvaluation(
     flagKey: string,
@@ -116,7 +116,7 @@ export class GoFeatureFlagProvider implements Provider {
    * @throws {ProxyTimeout} When the HTTP call is timing out
    * @throws {UnknownError} When an unknown error occurs
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
-   * @throws {FlagNotFoundError} When the flag does not exists
+   * @throws {FlagNotFoundError} When the flag does not exist
    */
   async resolveNumberEvaluation(
     flagKey: string,
@@ -141,7 +141,7 @@ export class GoFeatureFlagProvider implements Provider {
    * @throws {ProxyTimeout} When the HTTP call is timing out
    * @throws {UnknownError} When an unknown error occurs
    * @throws {TypeMismatchError} When the type of the variation is not the one expected
-   * @throws {FlagNotFoundError} When the flag does not exists
+   * @throws {FlagNotFoundError} When the flag does not exist
    */
   async resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
@@ -247,7 +247,7 @@ export class GoFeatureFlagProvider implements Provider {
 
     // Case of the flag is disabled
     if (apiResponseData.reason === StandardResolutionReasons.DISABLED) {
-      // we don't set a variant since we are using the default value and we are not able to know
+      // we don't set a variant since we are using the default value, and we are not able to know
       // which variant it is.
       return { value: defaultValue, reason: apiResponseData.reason };
     }
@@ -255,6 +255,9 @@ export class GoFeatureFlagProvider implements Provider {
     const sdkResponse: ResolutionDetails<T> = {
       value: apiResponseData.value,
       reason: apiResponseData.reason?.toString() || 'UNKNOWN'
+      variant: apiResponseData.variationType,
+      reason: apiResponseData.reason?.toString() || 'UNKNOWN',
+      flagMetadata: apiResponseData.metadata || undefined,
     };
     if (Object.values(ErrorCode).includes(apiResponseData.errorCode as ErrorCode)) {
       sdkResponse.errorCode = ErrorCode[apiResponseData.errorCode as ErrorCode];
