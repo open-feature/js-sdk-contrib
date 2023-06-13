@@ -18,6 +18,9 @@ describe('OpenTelemetry Hooks', () => {
   const hookContext: HookContext = {
     flagKey: 'testFlagKey',
     clientMetadata: {
+      providerMetadata: {
+        name: "fake"
+      },
       name: 'testClient',
     },
     providerMetadata: {
@@ -45,6 +48,7 @@ describe('OpenTelemetry Hooks', () => {
         flagKey: hookContext.flagKey,
         value: true,
         variant: 'enabled',
+        flagMetadata: {}
       };
 
       otelHook.after(hookContext, evaluationDetails);
@@ -60,6 +64,7 @@ describe('OpenTelemetry Hooks', () => {
       const evaluationDetails: EvaluationDetails<boolean> = {
         flagKey: hookContext.flagKey,
         value: true,
+        flagMetadata: {},
       };
 
       otelHook.after(hookContext, evaluationDetails);
@@ -75,6 +80,7 @@ describe('OpenTelemetry Hooks', () => {
       const evaluationDetails: EvaluationDetails<string> = {
         flagKey: hookContext.flagKey,
         value: 'already-string',
+        flagMetadata: {},
       };
       otelHook.after(hookContext, evaluationDetails);
 
@@ -91,6 +97,7 @@ describe('OpenTelemetry Hooks', () => {
         flagKey: hookContext.flagKey,
         value: true,
         variant: 'enabled',
+        flagMetadata: {},
       };
 
       otelHook.after(hookContext, evaluationDetails);
