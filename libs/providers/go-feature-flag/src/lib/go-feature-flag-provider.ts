@@ -33,13 +33,12 @@ export class GoFeatureFlagProvider implements Provider {
 
   // endpoint of your go-feature-flag relay proxy instance
   private readonly endpoint: string;
+
   // timeout in millisecond before we consider the request as a failure
   private readonly timeout: number;
 
-
   // cache contains the local cache used in the provider to avoid calling the relay-proxy for every evaluation
   private readonly cache?: LRUCache<string, ResolutionDetails<any>>;
-
 
   // bgSchedulerId contains the id of the setInterval that is running.
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -48,6 +47,7 @@ export class GoFeatureFlagProvider implements Provider {
 
   // dataCollectorBuffer contains all the FeatureEvents that we need to send to the relay-proxy for data collection.
   private dataCollectorBuffer?: FeatureEvent<any>[];
+
   // dataCollectorMetadata are the metadata used when calling the data collector endpoint
   private readonly dataCollectorMetadata: Record<string, string> = {
     provider: 'open-feature-js-sdk',
@@ -59,6 +59,7 @@ export class GoFeatureFlagProvider implements Provider {
 
   // dataFlushInterval interval time (in millisecond) we use to call the relay proxy to collect data.
   private readonly dataFlushInterval: number;
+  
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
   private readonly disableDataCollection: boolean;
 
