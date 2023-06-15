@@ -18,17 +18,33 @@ import {GoFeatureFlagProxyResponse} from './model';
 
 describe('GoFeatureFlagProvider', () => {
   const endpoint = 'http://go-feature-flag-relay-proxy.local:1031/';
+  const dataCollectorEndpoint = `${endpoint}v1/data/collector`;
   const axiosMock = new MockAdapter(axios);
+  const validBoolResponse: GoFeatureFlagProxyResponse<boolean> = {
+    value: true,
+    variationType: 'trueVariation',
+    reason: StandardResolutionReasons.TARGETING_MATCH,
+    failed: false,
+    trackEvents: true,
+    version: '1.0.0',
+    metadata: {
+      description: 'a description of the flag',
+      issue_number: 1,
+    },
+    cacheable: true,
+  };
   let goff: GoFeatureFlagProvider;
 
   afterEach(async () => {
-    axiosMock.reset();
-    axiosMock.resetHistory();
-    axiosMock.resetHandlers()
     await OpenFeature.close();
+    await axiosMock.reset();
+    await axiosMock.resetHistory();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await OpenFeature.close();
+    await axiosMock.reset();
+    await axiosMock.resetHistory();
     goff = new GoFeatureFlagProvider({endpoint});
   });
 
@@ -663,20 +679,6 @@ describe('GoFeatureFlagProvider', () => {
     });
   });
   describe('cache testing', () => {
-    const validBoolResponse: GoFeatureFlagProxyResponse<boolean> = {
-      value: true,
-      variationType: 'trueVariation',
-      reason: StandardResolutionReasons.TARGETING_MATCH,
-      failed: false,
-      trackEvents: true,
-      version: '1.0.0',
-      metadata: {
-        description: 'a description of the flag',
-        issue_number: 1,
-      },
-      cacheable: true,
-    };
-
     it('should use the cache if we evaluate 2 times the same flag', async () => {
       const flagName = 'random-flag';
       const targetingKey = 'user-key';
@@ -791,6 +793,117 @@ describe('GoFeatureFlagProvider', () => {
       await cli.getBooleanDetails(flagName1, false, {targetingKey});
       await cli.getBooleanDetails(flagName2, false, {targetingKey});
       expect(axiosMock.history['post'].length).toBe(2);
+    });
+  });
+  describe('data collector testing', () => {
+    it('should call the data collector when closing Open Feature', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+        dataFlushInterval: 1000, // in milliseconds
+      })
+      const providerName = expect.getState().currentTestName || 'test';
+      OpenFeature.setProvider(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await OpenFeature.close()
+      const collectorCalls = axiosMock.history['post'].filter(i => i.url === dataCollectorEndpoint);
+      expect(collectorCalls.length).toBe(1);
+      const got = JSON.parse(collectorCalls[0].data);
+      expect(isNaN(got.events[0].creationDate)).toBe(false);
+      const want = {
+        events: [{
+          contextKind: 'user',
+          kind: 'feature',
+          creationDate: got.events[0].creationDate,
+          default: false,
+          key: 'random-flag',
+          value: true,
+          variation: 'trueVariation',
+          userKey: 'user-key'
+        }], meta: {provider: 'open-feature-js-sdk'}
+      };
+      expect(want).toEqual(got);
+    });
+
+    it('should call the data collector when waiting more than the dataFlushInterval', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+        dataFlushInterval: 100, // in milliseconds
+      })
+      const providerName = expect.getState().currentTestName || 'test';
+      OpenFeature.setProvider(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await new Promise((r) => setTimeout(r, 130));
+      const collectorCalls = axiosMock.history['post'].filter(i => i.url === dataCollectorEndpoint);
+      expect(collectorCalls.length).toBe(1);
+    });
+
+    it('should call the data collector multiple time while waiting dataFlushInterval time', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+        dataFlushInterval: 100, // in milliseconds
+      })
+      const providerName = expect.getState().currentTestName || 'test';
+      OpenFeature.setProvider(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await new Promise((r) => setTimeout(r, 130));
+      const collectorCalls = axiosMock.history['post'].filter(i => i.url === dataCollectorEndpoint);
+      expect(collectorCalls.length).toBe(1);
+      axiosMock.resetHistory();
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await new Promise((r) => setTimeout(r, 130));
+      const collectorCalls2 = axiosMock.history['post'].filter(i => i.url === dataCollectorEndpoint);
+      expect(collectorCalls2.length).toBe(1);
+    });
+
+    it('should not call the data collector before the dataFlushInterval', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+        dataFlushInterval: 200, // in milliseconds
+      })
+      const providerName = expect.getState().currentTestName || 'test';
+      OpenFeature.setProvider(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await new Promise((r) => setTimeout(r, 130));
+      const collectorCalls = axiosMock.history['post'].filter(i => i.url === dataCollectorEndpoint);
+
+      expect(collectorCalls.length).toBe(0);
     });
   });
 });
