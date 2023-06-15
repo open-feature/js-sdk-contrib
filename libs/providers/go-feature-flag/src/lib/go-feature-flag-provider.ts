@@ -14,6 +14,7 @@ import {ProxyNotReady} from './errors/proxyNotReady';
 import {ProxyTimeout} from './errors/proxyTimeout';
 import {UnknownError} from './errors/unknownError';
 import {Unauthorized} from './errors/unauthorized';
+import {LRUCache} from 'lru-cache';
 import {
   DataCollectorRequest,
   DataCollectorResponse,
@@ -23,7 +24,6 @@ import {
   GoFeatureFlagProxyResponse,
   GoFeatureFlagUser,
 } from './model';
-import Receptacle from 'receptacle';
 
 // GoFeatureFlagProvider is the official Open-feature provider for GO Feature Flag.
 export class GoFeatureFlagProvider implements Provider {
@@ -38,7 +38,9 @@ export class GoFeatureFlagProvider implements Provider {
 
 
   // cache contains the local cache used in the provider to avoid calling the relay-proxy for every evaluation
-  private readonly cache?: Receptacle<ResolutionDetails<any>>;
+  private readonly cache?: LRUCache<string, ResolutionDetails<any>>;
+
+
   // bgSchedulerId contains the id of the setInterval that is running.
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
@@ -74,7 +76,7 @@ export class GoFeatureFlagProvider implements Provider {
 
     if (!options.disableCache) {
       const cacheSize = options.flagCacheSize !== undefined && options.flagCacheSize !== 0 ? options.flagCacheSize : 10000;
-      this.cache = new Receptacle<ResolutionDetails<any>>({max: cacheSize})
+      this.cache = new LRUCache({maxSize: cacheSize, sizeCalculation: () => 1});
     }
   }
 
@@ -103,6 +105,10 @@ export class GoFeatureFlagProvider implements Provider {
   }
 
 
+  /**
+   * callGoffDataCollection is a function called periodically to send the usage of the flag to the
+   * central service in charge of collecting the data.
+   */
   async callGoffDataCollection() {
     if (this.dataCollectorBuffer?.length === 0) {
       return
@@ -255,7 +261,7 @@ export class GoFeatureFlagProvider implements Provider {
     // check if flag is available in the cache
     if (this.cache !== undefined) {
       const cacheValue = this.cache.get(cacheKey);
-      if (cacheValue !== null) {
+      if (cacheValue !== undefined) {
         // Building and inserting an event to the data collector buffer,
         // so we will be able to bulk send these events to GO Feature Flag.
         const dataCollectorEvent: FeatureEvent<T> = {
@@ -269,7 +275,6 @@ export class GoFeatureFlagProvider implements Provider {
           userKey: user.key,
         }
         this.dataCollectorBuffer?.push(dataCollectorEvent)
-
         return cacheValue;
       }
     }
@@ -355,7 +360,7 @@ export class GoFeatureFlagProvider implements Provider {
       if (this.cacheTTL === -1) {
         this.cache.set(cacheKey, sdkResponse)
       } else {
-        this.cache.set(cacheKey, sdkResponse, {ttl: this.cacheTTL, refresh: false})
+        this.cache.set(cacheKey, sdkResponse, {ttl: this.cacheTTL})
       }
     }
     return sdkResponse;
