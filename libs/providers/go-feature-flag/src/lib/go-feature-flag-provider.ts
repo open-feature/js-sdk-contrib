@@ -65,7 +65,7 @@ export class GoFeatureFlagProvider implements Provider {
     this.endpoint = options.endpoint;
     this.cacheTTL = options.flagCacheTTL !== undefined && options.flagCacheTTL !== 0 ? options.flagCacheTTL : 1000 * 60;
     this.dataFlushInterval = options.dataFlushInterval || 1000 * 60;
-    this.disableDataCollection = options.disableDataCollection;
+    this.disableDataCollection = options.disableDataCollection || false;
 
     // Add API key to the headers
     if (options.apiKey) {

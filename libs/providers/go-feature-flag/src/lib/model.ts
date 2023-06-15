@@ -75,7 +75,7 @@ export interface GoFeatureFlagProviderOptions {
   dataFlushInterval?: number
 
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
-  disableDataCollection: boolean
+  disableDataCollection?: boolean
 }
 
 // GOFeatureFlagResolutionReasons allows to extends resolution reasons
