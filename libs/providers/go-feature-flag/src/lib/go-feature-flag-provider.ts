@@ -3,6 +3,7 @@ import {
   EvaluationContext,
   FlagNotFoundError,
   JsonValue,
+  Logger,
   Provider,
   ResolutionDetails,
   StandardResolutionReasons,
@@ -59,16 +60,20 @@ export class GoFeatureFlagProvider implements Provider {
 
   // dataFlushInterval interval time (in millisecond) we use to call the relay proxy to collect data.
   private readonly dataFlushInterval: number;
-  
+
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
   private readonly disableDataCollection: boolean;
 
-  constructor(options: GoFeatureFlagProviderOptions) {
+  // logger is the Open Feature logger to use
+  private logger?: Logger;
+
+  constructor(options: GoFeatureFlagProviderOptions, logger?: Logger) {
     this.timeout = options.timeout || 0; // default is 0 = no timeout
     this.endpoint = options.endpoint;
     this.cacheTTL = options.flagCacheTTL !== undefined && options.flagCacheTTL !== 0 ? options.flagCacheTTL : 1000 * 60;
     this.dataFlushInterval = options.dataFlushInterval || 1000 * 60;
     this.disableDataCollection = options.disableDataCollection || false;
+    this.logger = logger;
 
     // Add API key to the headers
     if (options.apiKey) {
@@ -131,7 +136,7 @@ export class GoFeatureFlagProvider implements Provider {
         timeout: this.timeout,
       });
     } catch (e) {
-      // TODO : add a log here
+      this.logger?.error(`impossible to send the data to the collector: ${e}`)
       // if we have an issue calling the collector we put the data back in the buffer
       this.dataCollectorBuffer = [...this.dataCollectorBuffer, ...dataToSend]
     }

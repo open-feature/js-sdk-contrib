@@ -17,6 +17,7 @@ import {UnknownError} from './errors/unknownError';
 import {Unauthorized} from './errors/unauthorized';
 import {GoFeatureFlagProvider} from './go-feature-flag-provider';
 import {GoFeatureFlagProxyResponse} from './model';
+import TestLogger from './test-logger';
 
 describe('GoFeatureFlagProvider', () => {
   const endpoint = 'http://go-feature-flag-relay-proxy.local:1031/';
@@ -35,12 +36,15 @@ describe('GoFeatureFlagProvider', () => {
     },
     cacheable: true,
   };
+
   let goff: GoFeatureFlagProvider;
+  const testLogger = new TestLogger();
 
   afterEach(async () => {
     await OpenFeature.close();
     await axiosMock.reset();
     await axiosMock.resetHistory();
+    testLogger.reset();
   });
 
   beforeEach(async () => {
@@ -906,6 +910,31 @@ describe('GoFeatureFlagProvider', () => {
       const collectorCalls = axiosMock.history['post'].filter(i => i.url === dataCollectorEndpoint);
 
       expect(collectorCalls.length).toBe(0);
+    });
+
+    it('should have a log when data collector is not available', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      axiosMock.onPost(dataCollectorEndpoint).reply(500, {});
+
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+        dataFlushInterval: 2000, // in milliseconds
+      }, testLogger)
+      const providerName = expect.getState().currentTestName || 'test';
+      OpenFeature.setProvider(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await cli.getBooleanDetails(flagName, false, {targetingKey});
+      await OpenFeature.close();
+
+      expect(testLogger.inMemoryLogger['error'].length).toBe(1);
+      expect(testLogger.inMemoryLogger['error']).toContain('impossible to send the data to the collector: Error: Request failed with status code 500')
     });
   });
 });
