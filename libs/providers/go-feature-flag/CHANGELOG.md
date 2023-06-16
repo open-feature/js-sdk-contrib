@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.10](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.9...go-feature-flag-provider-v0.5.10) (2023-06-16)
+
+
+### ✨ New Features
+
+* add LRU TTL cache for GO Feature Flag Provider ([#411](https://github.com/open-feature/js-sdk-contrib/issues/411)) ([1a76aec](https://github.com/open-feature/js-sdk-contrib/commit/1a76aec01350cfab7c3324dcc5e15ea4e90e1462))
+* support metadata (go feature flag provider) ([#410](https://github.com/open-feature/js-sdk-contrib/issues/410)) ([9aadf74](https://github.com/open-feature/js-sdk-contrib/commit/9aadf7492e3bca54db5ec648249c3f63858066fe))
+
 ## [0.5.9](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.8...go-feature-flag-provider-v0.5.9) (2023-05-16)
 
 
