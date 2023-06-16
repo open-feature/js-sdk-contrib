@@ -3,7 +3,9 @@
  */
 import {
   ErrorCode,
-  FlagNotFoundError, OpenFeature, ResolutionDetails,
+  FlagNotFoundError,
+  OpenFeature,
+  ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError
 } from '@openfeature/js-sdk';
