@@ -8,6 +8,15 @@ This provider is an implementation for [ConfigCat](https://configcat.com) a mana
 $ npm install @openfeature/config-cat-provider
 ```
 
+#### Required peer dependencies
+
+The OpenFeature SDK is required as peer dependency.
+The minimum required version of `@openfeature/js-sdk` currently is `1.3.0`.
+
+```
+$ npm install @openfeature/js-sdk
+```
+
 ## Usage
 
 The ConfigCat provider uses the [ConfigCat Javascript SDK](https://configcat.com/docs/sdk-reference/js/).
