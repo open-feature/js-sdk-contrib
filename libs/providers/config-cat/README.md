@@ -22,7 +22,7 @@ The available options can be found in the [ConfigCat Javascript SDK docs](https:
 ```javascript
 import { ConfigCatProvider } from '@openfeature/config-cat-provider';
 
-const provider = OpenFeature.setProvider(ConfigCatProvider.create('<sdk_key>'));
+const provider = ConfigCatProvider.create('<sdk_key>');
 OpenFeature.setProvider(provider);
 ```
 
@@ -109,6 +109,15 @@ User:
   }
 }
 ```
+
+## Events
+
+The ConfigCat provider emits the
+following [OpenFeature events](https://openfeature.dev/specification/types#provider-events):
+
+- PROVIDER_READY
+- PROVIDER_ERROR
+- PROVIDER_CONFIGURATION_CHANGED
 
 ## Building
 

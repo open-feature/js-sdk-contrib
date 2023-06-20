@@ -1,19 +1,30 @@
 import { ConfigCatProvider } from './config-cat-provider';
-import { ParseError, TypeMismatchError } from '@openfeature/js-sdk';
+import { ParseError, ProviderEvents, TypeMismatchError } from '@openfeature/js-sdk';
 import {
-  IConfigCatClient,
-  getClient,
-  createFlagOverridesFromMap,
-  OverrideBehaviour,
   createConsoleLogger,
+  createFlagOverridesFromMap,
+  IConfigCatClient,
+  LogLevel,
+  OverrideBehaviour,
+  PollingMode,
+  HookEvents,
+  ProjectConfig,
+  getClient,
 } from 'configcat-js';
-import { LogLevel } from 'configcat-common';
+
+import * as configcatcommon from 'configcat-common';
+import { HttpConfigFetcher } from 'configcat-js/lib/ConfigFetcher';
+import CONFIGCAT_SDK_VERSION from 'configcat-js/lib/Version';
+import { IEventEmitter } from 'configcat-common/lib/EventEmitter';
+
+import { EventEmitter } from 'events';
 
 describe('ConfigCatProvider', () => {
-  const targetingKey = "abc";
+  const targetingKey = 'abc';
 
   let client: IConfigCatClient;
   let provider: ConfigCatProvider;
+  let configCatEmitter: IEventEmitter<HookEvents>;
 
   const values = {
     booleanFalse: false,
@@ -27,11 +38,25 @@ describe('ConfigCatProvider', () => {
   };
 
   beforeAll(() => {
-    client = getClient('__key__', undefined, {
-      logger: createConsoleLogger(LogLevel.Off),
-      offline: true,
-      flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
-    });
+    client = configcatcommon.getClient(
+      '__key__',
+      PollingMode.AutoPoll,
+      {
+        logger: createConsoleLogger(LogLevel.Off),
+        offline: true,
+        flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
+      },
+      {
+        configFetcher: new HttpConfigFetcher(),
+        sdkType: 'ConfigCat-JS',
+        sdkVersion: CONFIGCAT_SDK_VERSION,
+        eventEmitterFactory() {
+          configCatEmitter = new EventEmitter() as IEventEmitter<HookEvents>;
+          return configCatEmitter;
+        },
+      }
+    );
+
     provider = ConfigCatProvider.createFromClient(client);
   });
 
@@ -41,6 +66,56 @@ describe('ConfigCatProvider', () => {
 
   it('should be an instance of ConfigCatProvider', () => {
     expect(provider).toBeInstanceOf(ConfigCatProvider);
+  });
+
+  it('should dispose the configcat client on provider closing', async () => {
+    const newClient = getClient('__another_key__', PollingMode.AutoPoll, {
+      logger: createConsoleLogger(LogLevel.Off),
+      offline: true,
+      flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
+    });
+
+    const clientDisposeSpy = jest.spyOn(newClient, 'dispose');
+    const newProvider = ConfigCatProvider.createFromClient(newClient);
+    await newProvider.onClose();
+
+    expect(clientDisposeSpy).toHaveBeenCalled();
+  });
+
+  describe('events', () => {
+    it('should emit PROVIDER_READY event', () => {
+      const handler = jest.fn();
+
+      provider.events.addHandler(ProviderEvents.Ready, handler);
+      configCatEmitter.emit('clientReady');
+
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('should emit PROVIDER_CONFIGURATION_CHANGED event', () => {
+      const handler = jest.fn();
+      const eventData = new ProjectConfig(1, {});
+
+      provider.events.addHandler(ProviderEvents.ConfigurationChanged, handler);
+      configCatEmitter.emit('configChanged', eventData);
+
+      expect(handler).toHaveBeenCalledWith({
+        metadata: eventData,
+      });
+    });
+
+    it('should emit PROVIDER_ERROR event', () => {
+      const handler = jest.fn();
+      const eventData: [string, unknown] = ['error', { error: 'error' }];
+
+      provider.events.addHandler(ProviderEvents.Error, handler);
+      configCatEmitter.emit('clientError', ...eventData);
+
+      expect(handler).toHaveBeenCalledWith({
+        message: eventData[0],
+        metadata: eventData[1],
+      });
+    });
   });
 
   describe('method resolveBooleanEvaluation', () => {

@@ -1,36 +1,52 @@
 import {
   EvaluationContext,
   JsonValue,
+  OpenFeatureEventEmitter,
   ParseError,
   Provider,
+  ProviderEvents,
   ResolutionDetails,
   ResolutionReason,
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/js-sdk';
-import * as configcat from 'configcat-js';
-import { IConfigCatClient } from 'configcat-js';
-import { SettingValue } from 'configcat-common/lib/RolloutEvaluator';
+import { getClient, IConfigCatClient, IEvaluationDetails, SettingValue } from 'configcat-js';
 import { transformContext } from './context-transformer';
 
 export class ConfigCatProvider implements Provider {
   private client: IConfigCatClient;
+  public events = new OpenFeatureEventEmitter();
+
+  public metadata = {
+    name: ConfigCatProvider.name,
+  };
 
   private constructor(client: IConfigCatClient) {
     this.client = client;
+
+    client.on('clientReady', () => this.events.emit(ProviderEvents.Ready));
+    client.on('configChanged', (projectConfig) =>
+      this.events.emit(ProviderEvents.ConfigurationChanged, { metadata: { ...projectConfig } })
+    );
+    client.on('clientError', (message: string, error) =>
+      this.events.emit(ProviderEvents.Error, {
+        message: message,
+        metadata: error,
+      })
+    );
   }
 
-  public static create(...params: Parameters<typeof configcat.getClient>) {
-    return new ConfigCatProvider(configcat.getClient(...params));
+  public static create(...params: Parameters<typeof getClient>) {
+    return new ConfigCatProvider(getClient(...params));
   }
 
   public static createFromClient(client: IConfigCatClient) {
     return new ConfigCatProvider(client);
   }
 
-  metadata = {
-    name: ConfigCatProvider.name,
-  };
+  public async onClose(): Promise<void> {
+    await this.client.dispose();
+  }
 
   async resolveBooleanEvaluation(
     flagKey: string,
@@ -125,7 +141,7 @@ export class ConfigCatProvider implements Provider {
 
 function toResolutionDetails<U extends JsonValue>(
   value: U,
-  data: Omit<configcat.IEvaluationDetails, 'value'>,
+  data: Omit<IEvaluationDetails, 'value'>,
   reason?: ResolutionReason
 ): ResolutionDetails<U> {
   const matchedRule = Boolean(data.matchedEvaluationRule || data.matchedEvaluationPercentageRule);
