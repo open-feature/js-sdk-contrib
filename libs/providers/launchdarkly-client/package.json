@@ -1,0 +1,13 @@
+{
+  "name": "@openfeature/launchdarkly-client-provider",
+  "version": "0.1.2",
+  "type": "commonjs",
+  "scripts": {
+    "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
+    "current-version": "echo $npm_package_version"
+  },
+  "peerDependencies": {
+    "@openfeature/web-sdk": "~0.3.2-experimental",
+    "launchdarkly-js-client-sdk": "^3.1.3"
+  }
+}

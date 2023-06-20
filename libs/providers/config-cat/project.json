@@ -12,20 +12,19 @@
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "package"
         }
       ]
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["libs/providers/config-cat/**/*.ts"]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
+      "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "libs/providers/config-cat/jest.config.ts",
@@ -39,7 +38,7 @@
       }
     },
     "package": {
-      "executor": "@nrwl/rollup:rollup",
+      "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/providers/config-cat/package.json",
@@ -50,7 +49,7 @@
         "compiler": "tsc",
         "generateExportsField": true,
         "umdName": "config-cat",
-        "external": ["typescript"],
+        "external": "all",
         "format": ["cjs", "esm"],
         "assets": [
           {
