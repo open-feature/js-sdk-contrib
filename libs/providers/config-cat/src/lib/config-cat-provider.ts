@@ -23,12 +23,14 @@ export class ConfigCatProvider implements Provider {
 
   private constructor(client: IConfigCatClient) {
     this.client = client;
+  }
 
-    client.on('clientReady', () => this.events.emit(ProviderEvents.Ready));
-    client.on('configChanged', (projectConfig) =>
+  public async initialize(context?: EvaluationContext): Promise<void> {
+    this.client.on('clientReady', () => this.events.emit(ProviderEvents.Ready));
+    this.client.on('configChanged', (projectConfig) =>
       this.events.emit(ProviderEvents.ConfigurationChanged, { metadata: { ...projectConfig } })
     );
-    client.on('clientError', (message: string, error) =>
+    this.client.on('clientError', (message: string, error) =>
       this.events.emit(ProviderEvents.Error, {
         message: message,
         metadata: error,

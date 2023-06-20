@@ -37,7 +37,7 @@ describe('ConfigCatProvider', () => {
     jsonPrimitive: JSON.stringify(123),
   };
 
-  beforeAll(() => {
+  beforeAll(async () => {
     client = configcatcommon.getClient(
       '__key__',
       PollingMode.AutoPoll,
@@ -58,6 +58,7 @@ describe('ConfigCatProvider', () => {
     );
 
     provider = ConfigCatProvider.createFromClient(client);
+    await provider.initialize()
   });
 
   afterAll(() => {
