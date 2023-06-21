@@ -34,33 +34,32 @@ export class ConfigCatProvider implements Provider {
   public async initialize(): Promise<void> {
     return new Promise((resolve) => {
       const originalParameters = this.clientParameters;
-      const options = originalParameters[2];
+      originalParameters[2] ??= {};
 
-      if (options) {
-        const oldSetupHooks = options.setupHooks;
+      const options = originalParameters[2]
+      const oldSetupHooks = options.setupHooks;
 
-        options.setupHooks = (hooks) => {
-          oldSetupHooks?.(hooks);
+      options.setupHooks = (hooks) => {
+        oldSetupHooks?.(hooks);
 
-          // After resolving, once, we can simply emit events the next time
-          hooks.once('clientReady', () => {
-            hooks.on('clientReady', () => this.events.emit(ProviderEvents.Ready));
-            this.events.emit(ProviderEvents.Ready);
-            resolve();
-          });
+        // After resolving, once, we can simply emit events the next time
+        hooks.once('clientReady', () => {
+          hooks.on('clientReady', () => this.events.emit(ProviderEvents.Ready));
+          this.events.emit(ProviderEvents.Ready);
+          resolve();
+        });
 
-          hooks.on('configChanged', (projectConfig) =>
-            this.events.emit(ProviderEvents.ConfigurationChanged, { metadata: { ...projectConfig } })
-          );
+        hooks.on('configChanged', (projectConfig) =>
+          this.events.emit(ProviderEvents.ConfigurationChanged, { metadata: { ...projectConfig } })
+        );
 
-          hooks.on('clientError', (message: string, error) =>
-            this.events.emit(ProviderEvents.Error, {
-              message: message,
-              metadata: error,
-            })
-          );
-        };
-      }
+        hooks.on('clientError', (message: string, error) =>
+          this.events.emit(ProviderEvents.Error, {
+            message: message,
+            metadata: error,
+          })
+        );
+      };
 
       this.client = getClient(...originalParameters);
     });

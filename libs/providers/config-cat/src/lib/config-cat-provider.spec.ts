@@ -92,6 +92,16 @@ describe('ConfigCatProvider', () => {
       expect(handler).toHaveBeenCalled();
     });
 
+    it('should emit PROVIDER_READY event without options', async () => {
+      const newProvider = ConfigCatProvider.create('__yet_another_key__', PollingMode.ManualPoll);
+
+      const handler = jest.fn();
+      newProvider.events.addHandler(ProviderEvents.Ready, handler);
+      await newProvider.initialize();
+
+      expect(handler).toHaveBeenCalled();
+    });
+
     it('should emit PROVIDER_CONFIGURATION_CHANGED event', () => {
       const handler = jest.fn();
       const eventData = new ProjectConfig(1, {});
