@@ -1,28 +1,21 @@
 import { ConfigCatProvider } from './config-cat-provider';
-import { ParseError, ProviderEvents, TypeMismatchError } from '@openfeature/js-sdk';
+import { OpenFeature, ParseError, ProviderEvents, TypeMismatchError } from '@openfeature/js-sdk';
 import {
   createConsoleLogger,
   createFlagOverridesFromMap,
+  HookEvents,
   IConfigCatClient,
   LogLevel,
   OverrideBehaviour,
   PollingMode,
-  HookEvents,
   ProjectConfig,
-  getClient,
 } from 'configcat-js';
 
-import * as configcatcommon from 'configcat-common';
-import { HttpConfigFetcher } from 'configcat-js/lib/ConfigFetcher';
-import CONFIGCAT_SDK_VERSION from 'configcat-js/lib/Version';
 import { IEventEmitter } from 'configcat-common/lib/EventEmitter';
-
-import { EventEmitter } from 'events';
 
 describe('ConfigCatProvider', () => {
   const targetingKey = 'abc';
 
-  let client: IConfigCatClient;
   let provider: ConfigCatProvider;
   let configCatEmitter: IEventEmitter<HookEvents>;
 
@@ -38,31 +31,20 @@ describe('ConfigCatProvider', () => {
   };
 
   beforeAll(async () => {
-    client = configcatcommon.getClient(
-      '__key__',
-      PollingMode.AutoPoll,
-      {
-        logger: createConsoleLogger(LogLevel.Off),
-        offline: true,
-        flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
-      },
-      {
-        configFetcher: new HttpConfigFetcher(),
-        sdkType: 'ConfigCat-JS',
-        sdkVersion: CONFIGCAT_SDK_VERSION,
-        eventEmitterFactory() {
-          configCatEmitter = new EventEmitter() as IEventEmitter<HookEvents>;
-          return configCatEmitter;
-        },
-      }
-    );
+    provider = ConfigCatProvider.create('__key__', PollingMode.ManualPoll, {
+      logger: createConsoleLogger(LogLevel.Off),
+      offline: true,
+      flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
+    });
 
-    provider = ConfigCatProvider.createFromClient(client);
-    await provider.initialize()
+    await provider.initialize();
+
+    // Currently there is no option to get access to the event emitter
+    configCatEmitter = (provider.configCatClient as any).options.hooks;
   });
 
   afterAll(() => {
-    client.dispose();
+    provider.onClose();
   });
 
   it('should be an instance of ConfigCatProvider', () => {
@@ -70,14 +52,19 @@ describe('ConfigCatProvider', () => {
   });
 
   it('should dispose the configcat client on provider closing', async () => {
-    const newClient = getClient('__another_key__', PollingMode.AutoPoll, {
+    const newProvider = ConfigCatProvider.create('__another_key__', PollingMode.AutoPoll, {
       logger: createConsoleLogger(LogLevel.Off),
       offline: true,
       flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
     });
 
-    const clientDisposeSpy = jest.spyOn(newClient, 'dispose');
-    const newProvider = ConfigCatProvider.createFromClient(newClient);
+    await newProvider.initialize();
+
+    if (!newProvider.configCatClient) {
+      throw Error('No ConfigCat client');
+    }
+
+    const clientDisposeSpy = jest.spyOn(newProvider.configCatClient, 'dispose');
     await newProvider.onClose();
 
     expect(clientDisposeSpy).toHaveBeenCalled();
@@ -86,9 +73,21 @@ describe('ConfigCatProvider', () => {
   describe('events', () => {
     it('should emit PROVIDER_READY event', () => {
       const handler = jest.fn();
-
       provider.events.addHandler(ProviderEvents.Ready, handler);
       configCatEmitter.emit('clientReady');
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('should emit PROVIDER_READY event on initialization', async () => {
+      const newProvider = ConfigCatProvider.create('__another_key__', PollingMode.ManualPoll, {
+        logger: createConsoleLogger(LogLevel.Off),
+        offline: true,
+        flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
+      });
+
+      const handler = jest.fn();
+      newProvider.events.addHandler(ProviderEvents.Ready, handler);
+      await newProvider.initialize();
 
       expect(handler).toHaveBeenCalled();
     });
