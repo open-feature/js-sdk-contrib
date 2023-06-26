@@ -8,6 +8,6 @@
   },
   "peerDependencies": {
     "@openfeature/js-sdk": "^1.0.0",
-    "configcat-js": "^7.0.0"
+    "configcat-js": "^7.0.0 || ^8.0.0"
   }
 }
