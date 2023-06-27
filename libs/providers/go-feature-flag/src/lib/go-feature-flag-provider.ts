@@ -280,7 +280,8 @@ export class GoFeatureFlagProvider implements Provider {
           variation: cacheValue.variant || 'SdkDefault',
           userKey: user.key,
         }
-        this.dataCollectorBuffer?.push(dataCollectorEvent)
+        this.dataCollectorBuffer?.push(dataCollectorEvent);
+        cacheValue.reason = StandardResolutionReasons.CACHED;
         return cacheValue;
       }
     }

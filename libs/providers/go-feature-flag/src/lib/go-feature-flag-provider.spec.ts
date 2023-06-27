@@ -701,7 +701,8 @@ describe('GoFeatureFlagProvider', () => {
       const cli = OpenFeature.getClient();
       const got1 = await cli.getBooleanDetails(flagName, false, {targetingKey});
       const got2 = await cli.getBooleanDetails(flagName, false, {targetingKey});
-      expect(got1).toEqual(got2);
+      expect(got1.reason).toEqual(StandardResolutionReasons.TARGETING_MATCH);
+      expect(got2.reason).toEqual(StandardResolutionReasons.CACHED);
       expect(axiosMock.history['post'].length).toBe(1);
     });
 
