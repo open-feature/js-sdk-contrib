@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.11](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.10...go-feature-flag-provider-v0.5.11) (2023-06-27)
+
+
+### ✨ New Features
+
+* Return CACHED reason when using cache ([#425](https://github.com/open-feature/js-sdk-contrib/issues/425)) ([f285dab](https://github.com/open-feature/js-sdk-contrib/commit/f285dab379f98c3f1d70e144d5599847fe6cf0f5))
+
 ## [0.5.10](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.9...go-feature-flag-provider-v0.5.10) (2023-06-16)
 
 
