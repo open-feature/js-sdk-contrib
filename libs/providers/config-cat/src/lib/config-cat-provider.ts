@@ -36,7 +36,7 @@ export class ConfigCatProvider implements Provider {
       const originalParameters = this.clientParameters;
       originalParameters[2] ??= {};
 
-      const options = originalParameters[2]
+      const options = originalParameters[2];
       const oldSetupHooks = options.setupHooks;
 
       options.setupHooks = (hooks) => {
@@ -50,7 +50,9 @@ export class ConfigCatProvider implements Provider {
         });
 
         hooks.on('configChanged', (projectConfig) =>
-          this.events.emit(ProviderEvents.ConfigurationChanged, { metadata: { ...projectConfig } })
+          this.events.emit(ProviderEvents.ConfigurationChanged, {
+            flagsChanged: Object.keys(projectConfig.settings),
+          })
         );
 
         hooks.on('clientError', (message: string, error) =>

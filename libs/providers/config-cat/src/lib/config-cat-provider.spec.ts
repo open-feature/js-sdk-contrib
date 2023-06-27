@@ -1,14 +1,13 @@
 import { ConfigCatProvider } from './config-cat-provider';
-import { OpenFeature, ParseError, ProviderEvents, TypeMismatchError } from '@openfeature/js-sdk';
+import { ParseError, ProviderEvents, TypeMismatchError } from '@openfeature/js-sdk';
 import {
   createConsoleLogger,
   createFlagOverridesFromMap,
   HookEvents,
-  IConfigCatClient,
+  ISetting,
   LogLevel,
   OverrideBehaviour,
   PollingMode,
-  ProjectConfig,
 } from 'configcat-js';
 
 import { IEventEmitter } from 'configcat-common/lib/EventEmitter';
@@ -104,13 +103,13 @@ describe('ConfigCatProvider', () => {
 
     it('should emit PROVIDER_CONFIGURATION_CHANGED event', () => {
       const handler = jest.fn();
-      const eventData = new ProjectConfig(1, {});
+      const eventData = { settings: { myFlag: {} as ISetting } };
 
       provider.events.addHandler(ProviderEvents.ConfigurationChanged, handler);
       configCatEmitter.emit('configChanged', eventData);
 
       expect(handler).toHaveBeenCalledWith({
-        metadata: eventData,
+        flagsChanged: ['myFlag'],
       });
     });
 
