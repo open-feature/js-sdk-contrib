@@ -1,19 +1,22 @@
 import { ConfigCatProvider } from './config-cat-provider';
-import { ParseError, TypeMismatchError } from '@openfeature/js-sdk';
+import { ParseError, ProviderEvents, TypeMismatchError } from '@openfeature/js-sdk';
 import {
-  IConfigCatClient,
-  getClient,
-  createFlagOverridesFromMap,
-  OverrideBehaviour,
   createConsoleLogger,
+  createFlagOverridesFromMap,
+  HookEvents,
+  ISetting,
+  LogLevel,
+  OverrideBehaviour,
+  PollingMode,
 } from 'configcat-js';
-import { LogLevel } from 'configcat-common';
+
+import { IEventEmitter } from 'configcat-common/lib/EventEmitter';
 
 describe('ConfigCatProvider', () => {
-  const targetingKey = "abc";
+  const targetingKey = 'abc';
 
-  let client: IConfigCatClient;
   let provider: ConfigCatProvider;
+  let configCatEmitter: IEventEmitter<HookEvents>;
 
   const values = {
     booleanFalse: false,
@@ -26,21 +29,102 @@ describe('ConfigCatProvider', () => {
     jsonPrimitive: JSON.stringify(123),
   };
 
-  beforeAll(() => {
-    client = getClient('__key__', undefined, {
+  beforeAll(async () => {
+    provider = ConfigCatProvider.create('__key__', PollingMode.ManualPoll, {
       logger: createConsoleLogger(LogLevel.Off),
       offline: true,
       flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
     });
-    provider = ConfigCatProvider.createFromClient(client);
+
+    await provider.initialize();
+
+    // Currently there is no option to get access to the event emitter
+    configCatEmitter = (provider.configCatClient as any).options.hooks;
   });
 
   afterAll(() => {
-    client.dispose();
+    provider.onClose();
   });
 
   it('should be an instance of ConfigCatProvider', () => {
     expect(provider).toBeInstanceOf(ConfigCatProvider);
+  });
+
+  it('should dispose the configcat client on provider closing', async () => {
+    const newProvider = ConfigCatProvider.create('__another_key__', PollingMode.AutoPoll, {
+      logger: createConsoleLogger(LogLevel.Off),
+      offline: true,
+      flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
+    });
+
+    await newProvider.initialize();
+
+    if (!newProvider.configCatClient) {
+      throw Error('No ConfigCat client');
+    }
+
+    const clientDisposeSpy = jest.spyOn(newProvider.configCatClient, 'dispose');
+    await newProvider.onClose();
+
+    expect(clientDisposeSpy).toHaveBeenCalled();
+  });
+
+  describe('events', () => {
+    it('should emit PROVIDER_READY event', () => {
+      const handler = jest.fn();
+      provider.events.addHandler(ProviderEvents.Ready, handler);
+      configCatEmitter.emit('clientReady');
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('should emit PROVIDER_READY event on initialization', async () => {
+      const newProvider = ConfigCatProvider.create('__another_key__', PollingMode.ManualPoll, {
+        logger: createConsoleLogger(LogLevel.Off),
+        offline: true,
+        flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
+      });
+
+      const handler = jest.fn();
+      newProvider.events.addHandler(ProviderEvents.Ready, handler);
+      await newProvider.initialize();
+
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('should emit PROVIDER_READY event without options', async () => {
+      const newProvider = ConfigCatProvider.create('__yet_another_key__', PollingMode.ManualPoll);
+
+      const handler = jest.fn();
+      newProvider.events.addHandler(ProviderEvents.Ready, handler);
+      await newProvider.initialize();
+
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('should emit PROVIDER_CONFIGURATION_CHANGED event', () => {
+      const handler = jest.fn();
+      const eventData = { settings: { myFlag: {} as ISetting } };
+
+      provider.events.addHandler(ProviderEvents.ConfigurationChanged, handler);
+      configCatEmitter.emit('configChanged', eventData);
+
+      expect(handler).toHaveBeenCalledWith({
+        flagsChanged: ['myFlag'],
+      });
+    });
+
+    it('should emit PROVIDER_ERROR event', () => {
+      const handler = jest.fn();
+      const eventData: [string, unknown] = ['error', { error: 'error' }];
+
+      provider.events.addHandler(ProviderEvents.Error, handler);
+      configCatEmitter.emit('clientError', ...eventData);
+
+      expect(handler).toHaveBeenCalledWith({
+        message: eventData[0],
+        metadata: eventData[1],
+      });
+    });
   });
 
   describe('method resolveBooleanEvaluation', () => {

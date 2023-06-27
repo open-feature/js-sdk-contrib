@@ -1,42 +1,89 @@
 import {
   EvaluationContext,
+  GeneralError,
   JsonValue,
+  OpenFeatureEventEmitter,
   ParseError,
   Provider,
+  ProviderEvents,
   ResolutionDetails,
   ResolutionReason,
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/js-sdk';
-import * as configcat from 'configcat-js';
-import { IConfigCatClient } from 'configcat-js';
-import { SettingValue } from 'configcat-common/lib/RolloutEvaluator';
+import { getClient, IConfigCatClient, IEvaluationDetails, SettingValue } from 'configcat-js';
 import { transformContext } from './context-transformer';
 
 export class ConfigCatProvider implements Provider {
-  private client: IConfigCatClient;
+  private readonly clientParameters: Parameters<typeof getClient>;
+  public readonly events = new OpenFeatureEventEmitter();
+  private client?: IConfigCatClient;
 
-  private constructor(client: IConfigCatClient) {
-    this.client = client;
-  }
-
-  public static create(...params: Parameters<typeof configcat.getClient>) {
-    return new ConfigCatProvider(configcat.getClient(...params));
-  }
-
-  public static createFromClient(client: IConfigCatClient) {
-    return new ConfigCatProvider(client);
-  }
-
-  metadata = {
+  public metadata = {
     name: ConfigCatProvider.name,
   };
+
+  constructor(...params: Parameters<typeof getClient>) {
+    this.clientParameters = params;
+  }
+
+  public static create(...params: Parameters<typeof getClient>) {
+    return new ConfigCatProvider(...params);
+  }
+
+  public async initialize(): Promise<void> {
+    return new Promise((resolve) => {
+      const originalParameters = this.clientParameters;
+      originalParameters[2] ??= {};
+
+      const options = originalParameters[2];
+      const oldSetupHooks = options.setupHooks;
+
+      options.setupHooks = (hooks) => {
+        oldSetupHooks?.(hooks);
+
+        // After resolving, once, we can simply emit events the next time
+        hooks.once('clientReady', () => {
+          hooks.on('clientReady', () => this.events.emit(ProviderEvents.Ready));
+          this.events.emit(ProviderEvents.Ready);
+          resolve();
+        });
+
+        hooks.on('configChanged', (projectConfig) =>
+          this.events.emit(ProviderEvents.ConfigurationChanged, {
+            flagsChanged: Object.keys(projectConfig.settings),
+          })
+        );
+
+        hooks.on('clientError', (message: string, error) =>
+          this.events.emit(ProviderEvents.Error, {
+            message: message,
+            metadata: error,
+          })
+        );
+      };
+
+      this.client = getClient(...originalParameters);
+    });
+  }
+
+  public get configCatClient() {
+    return this.client;
+  }
+
+  public async onClose(): Promise<void> {
+    await this.client?.dispose();
+  }
 
   async resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,
     context: EvaluationContext
   ): Promise<ResolutionDetails<boolean>> {
+    if (!this.client) {
+      throw new GeneralError('Provider is not initialized');
+    }
+
     const { value, ...evaluationData } = await this.client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
@@ -55,6 +102,10 @@ export class ConfigCatProvider implements Provider {
     defaultValue: string,
     context: EvaluationContext
   ): Promise<ResolutionDetails<string>> {
+    if (!this.client) {
+      throw new GeneralError('Provider is not initialized');
+    }
+
     const { value, ...evaluationData } = await this.client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
@@ -73,6 +124,10 @@ export class ConfigCatProvider implements Provider {
     defaultValue: number,
     context: EvaluationContext
   ): Promise<ResolutionDetails<number>> {
+    if (!this.client) {
+      throw new GeneralError('Provider is not initialized');
+    }
+
     const { value, ...evaluationData } = await this.client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
@@ -91,6 +146,10 @@ export class ConfigCatProvider implements Provider {
     defaultValue: U,
     context: EvaluationContext
   ): Promise<ResolutionDetails<U>> {
+    if (!this.client) {
+      throw new GeneralError('Provider is not initialized');
+    }
+
     const { value, ...evaluationData } = await this.client.getValueDetailsAsync(
       flagKey,
       undefined,
@@ -125,7 +184,7 @@ export class ConfigCatProvider implements Provider {
 
 function toResolutionDetails<U extends JsonValue>(
   value: U,
-  data: Omit<configcat.IEvaluationDetails, 'value'>,
+  data: Omit<IEvaluationDetails, 'value'>,
   reason?: ResolutionReason
 ): ResolutionDetails<U> {
   const matchedRule = Boolean(data.matchedEvaluationRule || data.matchedEvaluationPercentageRule);

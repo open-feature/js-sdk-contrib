@@ -8,12 +8,24 @@ This provider is an implementation for [ConfigCat](https://configcat.com) a mana
 $ npm install @openfeature/config-cat-provider
 ```
 
+#### Required peer dependencies
+
+The OpenFeature SDK is required as peer dependency.
+
+The minimum required version of `@openfeature/js-sdk` currently is `1.3.0`.
+
+The minimum required version of `configcat-js` currently is `7.0.0`.
+
+```
+$ npm install @openfeature/js-sdk configcat-js
+```
+
 ## Usage
 
 The ConfigCat provider uses the [ConfigCat Javascript SDK](https://configcat.com/docs/sdk-reference/js/).
 
-It can either be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create``` or injecting a ConfigCat
-SDK client into ```ConfigCatProvider.createFromClient```.
+It can either be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create``` or
+the ```ConfigCatProvider``` constructor.
 
 The available options can be found in the [ConfigCat Javascript SDK docs](https://configcat.com/docs/sdk-reference/js/).
 
@@ -22,7 +34,7 @@ The available options can be found in the [ConfigCat Javascript SDK docs](https:
 ```javascript
 import { ConfigCatProvider } from '@openfeature/config-cat-provider';
 
-const provider = OpenFeature.setProvider(ConfigCatProvider.create('<sdk_key>'));
+const provider = ConfigCatProvider.create('<sdk_key>');
 OpenFeature.setProvider(provider);
 ```
 
@@ -34,18 +46,6 @@ import { ConfigCatProvider } from '@openfeature/config-cat-provider';
 const provider = ConfigCatProvider.create('<sdk_key>', PollingMode.LazyLoad, {
   setupHooks: (hooks) => hooks.on('clientReady', () => console.log('Client is ready!')),
 });
-
-OpenFeature.setProvider(provider);
-```
-
-### Example injecting a client
-
-```javascript
-import { ConfigCatProvider } from '@openfeature/config-cat-provider';
-import * as configcat from 'configcat-js';
-
-const configCatClient = configcat.getClient("<sdk_key>")
-const provider = ConfigCatProvider.createFromClient(configCatClient);
 
 OpenFeature.setProvider(provider);
 ```
@@ -109,6 +109,15 @@ User:
   }
 }
 ```
+
+## Events
+
+The ConfigCat provider emits the
+following [OpenFeature events](https://openfeature.dev/specification/types#provider-events):
+
+- PROVIDER_READY
+- PROVIDER_ERROR
+- PROVIDER_CONFIGURATION_CHANGED
 
 ## Building
 
