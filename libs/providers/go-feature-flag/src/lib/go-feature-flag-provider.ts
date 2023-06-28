@@ -10,6 +10,7 @@ import {
   TypeMismatchError,
 } from '@openfeature/js-sdk';
 import axios from 'axios';
+import _ from 'lodash';
 import {transformContext} from './context-transformer';
 import {ProxyNotReady} from './errors/proxyNotReady';
 import {ProxyTimeout} from './errors/proxyTimeout';
@@ -117,11 +118,11 @@ export class GoFeatureFlagProvider implements Provider {
    */
   async callGoffDataCollection() {
     if (this.dataCollectorBuffer?.length === 0) {
-      return
+      return;
     }
 
-    const dataToSend = structuredClone(this.dataCollectorBuffer);
-    this.dataCollectorBuffer = []
+    const dataToSend = _.cloneDeep<FeatureEvent<any>[] | undefined>(this.dataCollectorBuffer) || [];
+    this.dataCollectorBuffer = [];
 
     const request: DataCollectorRequest<boolean> = {events: dataToSend, meta: this.dataCollectorMetadata,}
     const endpointURL = new URL(this.endpoint);
@@ -138,7 +139,7 @@ export class GoFeatureFlagProvider implements Provider {
     } catch (e) {
       this.logger?.error(`impossible to send the data to the collector: ${e}`)
       // if we have an issue calling the collector we put the data back in the buffer
-      this.dataCollectorBuffer = [...this.dataCollectorBuffer, ...dataToSend]
+      this.dataCollectorBuffer = [...this.dataCollectorBuffer, ...dataToSend];
     }
   }
 
