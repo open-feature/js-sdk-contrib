@@ -10,7 +10,7 @@ import {
   TypeMismatchError,
 } from '@openfeature/js-sdk';
 import axios from 'axios';
-import _ from 'lodash';
+import {copy} from 'copy-anything';
 import {transformContext} from './context-transformer';
 import {ProxyNotReady} from './errors/proxyNotReady';
 import {ProxyTimeout} from './errors/proxyTimeout';
@@ -121,7 +121,7 @@ export class GoFeatureFlagProvider implements Provider {
       return;
     }
 
-    const dataToSend = _.cloneDeep<FeatureEvent<any>[] | undefined>(this.dataCollectorBuffer) || [];
+    const dataToSend = copy(this.dataCollectorBuffer) || [];
     this.dataCollectorBuffer = [];
 
     const request: DataCollectorRequest<boolean> = {events: dataToSend, meta: this.dataCollectorMetadata,}
