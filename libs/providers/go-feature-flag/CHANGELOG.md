@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.12](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.11...go-feature-flag-provider-v0.5.12) (2023-06-28)
+
+
+### 🐛 Bug Fixes
+
+* use copy-anything for deepClone to be compatible with nodeJS before v17 ([#429](https://github.com/open-feature/js-sdk-contrib/issues/429)) ([b4a7ffe](https://github.com/open-feature/js-sdk-contrib/commit/b4a7ffe0dce5073046ec6d5c6dc08e1eafb31b3f))
+
 ## [0.5.11](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.10...go-feature-flag-provider-v0.5.11) (2023-06-27)
 
 
