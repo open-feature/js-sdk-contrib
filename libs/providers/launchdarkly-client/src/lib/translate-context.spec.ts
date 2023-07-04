@@ -14,8 +14,8 @@
 
 //Code taken from https://github.com/launchdarkly/openfeature-node-server/blob/main/__tests__/translateContext.test.ts
 
-import translateContext from "./translate-context";
-import TestLogger from "./test-logger";
+import translateContext from './translate-context';
+import TestLogger from './test-logger';
 
 describe('translateContext', () => {
   it('Uses the targetingKey as the user key', () => {

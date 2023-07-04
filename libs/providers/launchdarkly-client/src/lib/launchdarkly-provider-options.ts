@@ -14,8 +14,8 @@
 
 //Code based on https://github.com/launchdarkly/openfeature-node-server/blob/main/src/LaunchDarklyProviderOptions.ts
 
-import { LDLogger, LDOptions } from "launchdarkly-js-client-sdk";
-import { Logger } from "@openfeature/web-sdk";
+import { LDLogger, LDOptions } from 'launchdarkly-js-client-sdk';
+import { Logger } from '@openfeature/web-sdk';
 
 /**
  * Options for the {@link LaunchDarklyClientProvider}.
