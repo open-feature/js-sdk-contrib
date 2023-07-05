@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.7](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.6...flagd-provider-v0.7.7) (2023-07-03)
+
+
+### 🧹 Chore
+
+* migrate to nx 16 ([#366](https://github.com/open-feature/js-sdk-contrib/issues/366)) ([7a9c201](https://github.com/open-feature/js-sdk-contrib/commit/7a9c201d16fd7f070a1bcd2e359487ba6e7b78d7))
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update dependency lru-cache to v9 ([#321](https://github.com/open-feature/js-sdk-contrib/issues/321)) ([6e247ad](https://github.com/open-feature/js-sdk-contrib/commit/6e247ad2ba14d148ff99ff1d5283ccce5708e366))
+* failure to create grpc credentials ([#431](https://github.com/open-feature/js-sdk-contrib/issues/431)) ([71379c8](https://github.com/open-feature/js-sdk-contrib/commit/71379c8d2b2a71f244aeff8ea0c83f1d593aacc9))
+
 ## [0.7.6](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.5...flagd-provider-v0.7.6) (2023-04-25)
 
 
