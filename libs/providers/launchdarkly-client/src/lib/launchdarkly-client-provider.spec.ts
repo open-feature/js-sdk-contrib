@@ -117,6 +117,7 @@ describe('LaunchDarklyClientProvider', () => {
     it('handles correct return types for boolean variations', () => {
       ldClientMock.variationDetail = jest.fn().mockReturnValue({
         value: true,
+        variationIndex: 0,
         reason: {
           kind: 'OFF',
         },
@@ -125,8 +126,10 @@ describe('LaunchDarklyClientProvider', () => {
       const res = ofClient.getBooleanDetails(testFlagKey, false);
       expect(res).toEqual({
         flagKey: testFlagKey,
+        flagMetadata: {},
         value: true,
         reason: 'OFF',
+        variant: '0',
       });
     });
 
@@ -141,6 +144,7 @@ describe('LaunchDarklyClientProvider', () => {
       const res = ofClient.getBooleanDetails(testFlagKey, false);
       expect(res).toEqual({
         flagKey: testFlagKey,
+        flagMetadata: {},
         value: false,
         reason: 'ERROR',
         errorCode: 'TYPE_MISMATCH',
@@ -170,6 +174,7 @@ describe('LaunchDarklyClientProvider', () => {
     it('handles correct return types for numeric variations', () => {
       ldClientMock.variationDetail = jest.fn().mockReturnValue({
         value: 17,
+        variationIndex: 0,
         reason: {
           kind: 'OFF',
         },
@@ -178,8 +183,10 @@ describe('LaunchDarklyClientProvider', () => {
       const res = ofClient.getNumberDetails(testFlagKey, 0);
       expect(res).toEqual({
         flagKey: testFlagKey,
+        flagMetadata: {},
         value: 17,
         reason: 'OFF',
+        variant: '0',
       });
     });
 
@@ -194,6 +201,7 @@ describe('LaunchDarklyClientProvider', () => {
       const res = ofClient.getNumberDetails(testFlagKey, 0);
       expect(res).toEqual({
         flagKey: testFlagKey,
+        flagMetadata: {},
         value: 0,
         reason: 'ERROR',
         errorCode: 'TYPE_MISMATCH',
@@ -222,6 +230,7 @@ describe('LaunchDarklyClientProvider', () => {
     it('handles correct return types for object variations', () => {
       ldClientMock.variationDetail = jest.fn().mockReturnValue({
         value: { some: 'value' },
+        variationIndex: 0,
         reason: {
           kind: 'OFF',
         },
@@ -230,8 +239,10 @@ describe('LaunchDarklyClientProvider', () => {
       const res = ofClient.getObjectDetails(testFlagKey, {});
       expect(res).toEqual({
         flagKey: testFlagKey,
+        flagMetadata: {},
         value: { some: 'value' },
         reason: 'OFF',
+        variant: '0',
       });
     });
 
@@ -246,6 +257,7 @@ describe('LaunchDarklyClientProvider', () => {
       const res = ofClient.getObjectDetails(testFlagKey, {});
       expect(res).toEqual({
         flagKey: testFlagKey,
+        flagMetadata: {},
         value: {},
         reason: 'ERROR',
         errorCode: 'TYPE_MISMATCH',
@@ -274,6 +286,7 @@ describe('LaunchDarklyClientProvider', () => {
     it('handles correct return types for string variations', () => {
       ldClientMock.variationDetail = jest.fn().mockReturnValue({
         value: 'good',
+        variationIndex: 0,
         reason: {
           kind: 'OFF',
         },
@@ -282,8 +295,10 @@ describe('LaunchDarklyClientProvider', () => {
       const res = ofClient.getStringDetails(testFlagKey, 'default');
       expect(res).toEqual({
         flagKey: testFlagKey,
+        flagMetadata: {},
         value: 'good',
         reason: 'OFF',
+        variant: '0',
       });
     });
 
@@ -298,6 +313,7 @@ describe('LaunchDarklyClientProvider', () => {
       const res =  ofClient.getStringDetails(testFlagKey, 'default');
       expect(res).toEqual({
         flagKey: testFlagKey,
+        flagMetadata: {},
         value: 'default',
         reason: 'ERROR',
         errorCode: 'TYPE_MISMATCH',
@@ -324,9 +340,11 @@ describe('LaunchDarklyClientProvider', () => {
     const res = ofClient.getObjectDetails(testFlagKey, {});
     expect(res).toEqual({
       flagKey: testFlagKey,
+      flagMetadata: {},
       value: { yes: 'no' },
       reason: 'ERROR',
       errorCode: ofError,
+      variant: undefined,
     });
   });
 
@@ -342,6 +360,7 @@ describe('LaunchDarklyClientProvider', () => {
     const res = ofClient.getObjectDetails(testFlagKey, {});
     expect(res).toEqual({
       flagKey: testFlagKey,
+      flagMetadata: {},
       value: { yes: 'no' },
       variant: '22',
       reason: 'OFF',
