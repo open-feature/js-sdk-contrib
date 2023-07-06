@@ -1,1 +1,2 @@
-export * from './lib/open-telemetry-hook';
+export * from './lib/traces';
+export * from './lib/metrics';
