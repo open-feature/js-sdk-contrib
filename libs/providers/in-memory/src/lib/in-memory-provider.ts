@@ -1,17 +1,19 @@
 import {
-  EvaluationContext,
-  Provider,
-  JsonValue,
-  ResolutionDetails,
   FlagNotFoundError,
-  TypeMismatchError,
-  StandardResolutionReasons,
-  GeneralError,
   FlagValue,
+  GeneralError,
+  JsonValue,
+  OpenFeatureEventEmitter,
+  Provider,
+  ProviderEvents,
+  ResolutionDetails,
+  StandardResolutionReasons,
+  TypeMismatchError,
 } from '@openfeature/js-sdk';
 import { FlagConfiguration } from './flag-configuration';
 
 export class InMemoryProvider implements Provider {
+  public readonly events = new OpenFeatureEventEmitter();
   readonly metadata = {
     name: 'In-Memory Provider',
   } as const;
@@ -22,7 +24,12 @@ export class InMemoryProvider implements Provider {
   }
 
   replaceConfiguration(flagConfiguration: FlagConfiguration) {
+    const flagsChanged = Object.entries(flagConfiguration)
+      .filter(([key, value]) => this._flagConfiguration[key] !== value)
+      .map(([key]) => key);
+
     this._flagConfiguration = { ...flagConfiguration };
+    this.events.emit(ProviderEvents.ConfigurationChanged, { flagsChanged });
   }
 
   async resolveBooleanEvaluation(flagKey: string): Promise<ResolutionDetails<boolean>> {

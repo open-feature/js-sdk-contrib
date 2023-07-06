@@ -1,6 +1,7 @@
 import {
   FlagNotFoundError,
   GeneralError,
+  ProviderEvents,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
@@ -112,11 +113,44 @@ describe(InMemoryProvider, () => {
     const resolution = await provider.resolveStringEvaluation('some-flag');
     verifyResolution(resolution, { expectedValue: 'initial-value' });
   });
+
+  describe('events', () => {
+    it('emits provider changed event if a new value is added', (done) => {
+      const configuration = {
+        'some-flag': 'initial-value',
+      };
+      const provider = new InMemoryProvider(configuration);
+
+      provider.events.addHandler(ProviderEvents.ConfigurationChanged, (details) => {
+        expect(details?.flagsChanged).toEqual(['some-other-flag']);
+        done();
+      });
+
+      const newConfiguration = { ...configuration, 'some-other-flag': 'value' };
+      provider.replaceConfiguration(newConfiguration);
+    });
+
+    it('emits provider changed event if an existing value is changed', (done) => {
+      const configuration = {
+        'some-flag': 'initial-value',
+      };
+      const provider = new InMemoryProvider(configuration);
+
+      provider.events.addHandler(ProviderEvents.ConfigurationChanged, (details) => {
+        expect(details?.flagsChanged).toEqual(['some-flag']);
+        done();
+      });
+
+      const newConfiguration = { 'some-flag': 'new-value' };
+      provider.replaceConfiguration(newConfiguration);
+    });
+  });
 });
 
 type VerifyResolutionParams<U> = {
   expectedValue: U;
 };
+
 function verifyResolution<U>(resolution: ResolutionDetails<U>, { expectedValue }: VerifyResolutionParams<U>) {
   expect(resolution.value).toBe(expectedValue);
   expect(resolution.reason).toBe(StandardResolutionReasons.STATIC);
