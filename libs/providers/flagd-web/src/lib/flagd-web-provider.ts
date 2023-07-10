@@ -15,7 +15,7 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
-import { Service } from '../proto/ts/schema/v1/schema_connectweb';
+import { Service } from '../proto/ts/schema/v1/schema_connect';
 import { AnyFlag } from '../proto/ts/schema/v1/schema_pb';
 import { FlagdProviderOptions, getOptions } from './options';
 
