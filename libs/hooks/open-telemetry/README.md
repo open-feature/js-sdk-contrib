@@ -1,4 +1,4 @@
-:warning: This package will be deprecated. Please use TracingHook from `@openfeature/open-telemetry-hooks`.
+:warning: This package will be deprecated. Please use the telemetry hooks package from `@openfeature/open-telemetry-hooks`.
 
 # OpenTelemetry Hook
 
