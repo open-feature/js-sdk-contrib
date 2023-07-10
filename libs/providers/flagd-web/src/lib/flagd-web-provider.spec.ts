@@ -2,7 +2,7 @@ import { CallbackClient, Code, ConnectError, PromiseClient } from '@bufbuild/con
 import { Struct } from '@bufbuild/protobuf';
 import { Client, ErrorCode, JsonValue, OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/web-sdk';
 import fetchMock from 'jest-fetch-mock';
-import { Service } from '../proto/ts/schema/v1/schema_connectweb';
+import { Service } from '../proto/ts/schema/v1/schema_connect';
 import { AnyFlag, EventStreamResponse, ResolveAllResponse } from '../proto/ts/schema/v1/schema_pb';
 import { FlagdWebProvider } from './flagd-web-provider';
 
