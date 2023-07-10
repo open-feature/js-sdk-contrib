@@ -245,10 +245,8 @@ describe(FlagdWebProvider.name, () => {
   });
 
   describe('shutdown', () => {
-    let client: Client;
     let mockCallbackClient: MockCallbackClient;
     const mockPromiseClient = new MockPromiseClient() as unknown as PromiseClient<typeof Service>;
-    const context = { some: 'value' };
 
     beforeEach(() => {
       mockCallbackClient = new MockCallbackClient();
@@ -260,7 +258,6 @@ describe(FlagdWebProvider.name, () => {
           mockCallbackClient as unknown as CallbackClient<typeof Service>
         )
       );
-      client = OpenFeature.getClient('events-test');
     });
 
     describe('API close', () => {
