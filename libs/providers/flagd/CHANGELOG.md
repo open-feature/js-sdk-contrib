@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.8](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.7...flagd-provider-v0.7.8) (2023-07-10)
+
+
+### 🧹 Chore
+
+* update schemas submodules ([91439fc](https://github.com/open-feature/js-sdk-contrib/commit/91439fc3eaae984075cab78342079f55ef6e2c2d))
+
 ## [0.7.7](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.6...flagd-provider-v0.7.7) (2023-07-03)
 
 
