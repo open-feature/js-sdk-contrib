@@ -2,7 +2,7 @@ import { CallbackClient, Code, ConnectError, PromiseClient } from '@bufbuild/con
 import { Struct } from '@bufbuild/protobuf';
 import { Client, ErrorCode, JsonValue, OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/web-sdk';
 import fetchMock from 'jest-fetch-mock';
-import { Service } from '../proto/ts/schema/v1/schema_connectweb';
+import { Service } from '../proto/ts/schema/v1/schema_connect';
 import { AnyFlag, EventStreamResponse, ResolveAllResponse } from '../proto/ts/schema/v1/schema_pb';
 import { FlagdWebProvider } from './flagd-web-provider';
 
@@ -245,10 +245,8 @@ describe(FlagdWebProvider.name, () => {
   });
 
   describe('shutdown', () => {
-    let client: Client;
     let mockCallbackClient: MockCallbackClient;
     const mockPromiseClient = new MockPromiseClient() as unknown as PromiseClient<typeof Service>;
-    const context = { some: 'value' };
 
     beforeEach(() => {
       mockCallbackClient = new MockCallbackClient();
@@ -260,7 +258,6 @@ describe(FlagdWebProvider.name, () => {
           mockCallbackClient as unknown as CallbackClient<typeof Service>
         )
       );
-      client = OpenFeature.getClient('events-test');
     });
 
     describe('API close', () => {
