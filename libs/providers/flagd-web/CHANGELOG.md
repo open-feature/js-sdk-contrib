@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.3.4...flagd-web-provider-v0.3.5) (2023-07-10)
+
+
+### 🧹 Chore
+
+* migrate to nx 16 ([#366](https://github.com/open-feature/js-sdk-contrib/issues/366)) ([7a9c201](https://github.com/open-feature/js-sdk-contrib/commit/7a9c201d16fd7f070a1bcd2e359487ba6e7b78d7))
+* update schemas submodules ([91439fc](https://github.com/open-feature/js-sdk-contrib/commit/91439fc3eaae984075cab78342079f55ef6e2c2d))
+
 ## [0.3.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.3.3...flagd-web-provider-v0.3.4) (2023-04-24)
 
 
