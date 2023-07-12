@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.2.0...open-telemetry-hooks-v0.2.1) (2023-07-12)
+
+
+### 🐛 Bug Fixes
+
+* update README to remove deprecation ([#465](https://github.com/open-feature/js-sdk-contrib/issues/465)) ([ac5b91b](https://github.com/open-feature/js-sdk-contrib/commit/ac5b91b60eaf39b31fc9899f20ad4fef792a50e8))
+
 ## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.1.0...open-telemetry-hooks-v0.2.0) (2023-07-12)
 
 
