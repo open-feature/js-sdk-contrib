@@ -2,6 +2,9 @@
 
 ## [6.0.2](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v6.0.1...open-telemetry-hook-v6.0.2) (2023-07-12)
 
+###  ⚠️ Deprecation warning
+
+* this package is now deprecated, use `@openfeature/open-telemetry-hooks` instead
 
 ### 🧹 Chore
 
