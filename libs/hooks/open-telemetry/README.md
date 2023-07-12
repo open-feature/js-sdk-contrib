@@ -1,4 +1,4 @@
-# OpenTelemetry Hook
+# OpenTelemetry Hook TEST COMPONENT OWNERS
 
 The OpenTelemetry hook for OpenFeature provides a [spec compliant][otel-spec] way to automatically add a feature flag evaluation to a span as a span event. Since feature flags are dynamic and affect runtime behavior, it’s important to collect relevant feature flag telemetry signals. This can be used to determine the impact a feature has on a request, enabling enhanced observability use cases, such as A/B testing or progressive feature releases.
 
