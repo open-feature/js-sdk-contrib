@@ -1,6 +1,4 @@
-:warning: This package will be deprecated. Please use the telemetry hooks package from `@openfeature/open-telemetry-hooks`.
-
-# OpenTelemetry Hook
+# OpenTelemetry Hooks
 
 The OpenTelemetry hooks for OpenFeature provide a [spec compliant][otel-spec] way to automatically add feature flag evaluation information to traces and metrics.
 Since feature flags are dynamic and affect runtime behavior, it’s important to collect relevant feature flag telemetry signals.
