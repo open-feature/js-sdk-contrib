@@ -4,7 +4,7 @@
 
 ###  ⚠️ Deprecation warning
 
-* this package is now deprecated, use `@openfeature/open-telemetry-hooks` instead
+* the `@openfeature/open-telemetry-hook` package is now deprecated, use `@openfeature/open-telemetry-hooks` instead
 
 ### 🧹 Chore
 
