@@ -3,58 +3,13 @@
 ## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.1.0...open-telemetry-hooks-v0.2.0) (2023-07-12)
 
 
-### ⚠ BREAKING CHANGES
+### ⤴️ Upgrade Instructions
 
-* add metrics hook ([#448](https://github.com/open-feature/js-sdk-contrib/issues/448))
-* update the otel hook to be spec compliant ([#179](https://github.com/open-feature/js-sdk-contrib/issues/179))
-* update OpenFeature SDK version ([#137](https://github.com/open-feature/js-sdk-contrib/issues/137))
-* migrate to sdk 0.5.0 ([#114](https://github.com/open-feature/js-sdk-contrib/issues/114))
-* update to js-sdk ([#108](https://github.com/open-feature/js-sdk-contrib/issues/108))
-* set openfeature sdk min version to 0.2.0 ([#93](https://github.com/open-feature/js-sdk-contrib/issues/93))
-
-### 🐛 Bug Fixes
-
-* add test ([#71](https://github.com/open-feature/js-sdk-contrib/issues/71)) ([080fc4b](https://github.com/open-feature/js-sdk-contrib/commit/080fc4b3c926728361ad34d6763df7bc2d5ab023))
-* change test name ([#75](https://github.com/open-feature/js-sdk-contrib/issues/75)) ([abac20d](https://github.com/open-feature/js-sdk-contrib/commit/abac20d29f54865a18662baacaeb60fb5d8c8175))
-* correct dependencies ([#182](https://github.com/open-feature/js-sdk-contrib/issues/182)) ([16cbe42](https://github.com/open-feature/js-sdk-contrib/commit/16cbe421d6255bd95a78c3914890a63adcce831e))
-* deprecate otel hook ([#449](https://github.com/open-feature/js-sdk-contrib/issues/449)) ([58aa56c](https://github.com/open-feature/js-sdk-contrib/commit/58aa56cdc13ee5177b64a0a1e126b9d31c8d5756))
-* fix ESM and web polyfills issue ([#201](https://github.com/open-feature/js-sdk-contrib/issues/201)) ([acee6e1](https://github.com/open-feature/js-sdk-contrib/commit/acee6e1817a7846251f456455a7218bf98efb00e))
-* module issues with types ([#212](https://github.com/open-feature/js-sdk-contrib/issues/212)) ([d2b97dd](https://github.com/open-feature/js-sdk-contrib/commit/d2b97dd24c952661ce08724a84e4b312860a9211))
-* set openfeature sdk min version to 0.2.0 ([#93](https://github.com/open-feature/js-sdk-contrib/issues/93)) ([a733102](https://github.com/open-feature/js-sdk-contrib/commit/a733102f523f9289fdce356a342828cc2e020f48))
-* shell scripts in templates ([#73](https://github.com/open-feature/js-sdk-contrib/issues/73)) ([89c8cfe](https://github.com/open-feature/js-sdk-contrib/commit/89c8cfe981348376995f50ca757299077249544e))
-
-
-### 🧹 Chore
-
-* change node -&gt; js in readmes ([#109](https://github.com/open-feature/js-sdk-contrib/issues/109)) ([2558d80](https://github.com/open-feature/js-sdk-contrib/commit/2558d8025aa2830e7229e71b1f2e5a363ed4b81b))
-* correct publish executor ([#378](https://github.com/open-feature/js-sdk-contrib/issues/378)) ([395ed18](https://github.com/open-feature/js-sdk-contrib/commit/395ed186de8811ae249f087821fdbdf8899c19f2))
-* **deps:** update dependency @openfeature/js-sdk to v1.3.1 ([#409](https://github.com/open-feature/js-sdk-contrib/issues/409)) ([5bf9932](https://github.com/open-feature/js-sdk-contrib/commit/5bf993208825e3e1eded941decc067125935d912))
-* **main:** release open-telemetry-hook 1.1.0-alpha ([#67](https://github.com/open-feature/js-sdk-contrib/issues/67)) ([5064531](https://github.com/open-feature/js-sdk-contrib/commit/5064531008fc5ffcc03b408188116c53f4e31ba9))
-* **main:** release open-telemetry-hook 1.2.0-alpha ([#68](https://github.com/open-feature/js-sdk-contrib/issues/68)) ([5847db4](https://github.com/open-feature/js-sdk-contrib/commit/5847db4e466f3c65ee5f780c79f469fef171c924))
-* **main:** release open-telemetry-hook 6.0.2 ([#462](https://github.com/open-feature/js-sdk-contrib/issues/462)) ([5820141](https://github.com/open-feature/js-sdk-contrib/commit/5820141508483b1dbaf4bf342895f4baa1dc9667))
-* migrate to nx 16 ([#366](https://github.com/open-feature/js-sdk-contrib/issues/366)) ([7a9c201](https://github.com/open-feature/js-sdk-contrib/commit/7a9c201d16fd7f070a1bcd2e359487ba6e7b78d7))
-* release main ([#103](https://github.com/open-feature/js-sdk-contrib/issues/103)) ([31f81e7](https://github.com/open-feature/js-sdk-contrib/commit/31f81e72c87c46096d92bd6bf8561cc3bc633aee))
-* release main ([#115](https://github.com/open-feature/js-sdk-contrib/issues/115)) ([8e41930](https://github.com/open-feature/js-sdk-contrib/commit/8e41930f7bfd68c520d09a27f60aa911b9796474))
-* release main ([#138](https://github.com/open-feature/js-sdk-contrib/issues/138)) ([f0b7704](https://github.com/open-feature/js-sdk-contrib/commit/f0b7704cfe26817e07d6591e41396768bdcd6f48))
-* release main ([#163](https://github.com/open-feature/js-sdk-contrib/issues/163)) ([a56a280](https://github.com/open-feature/js-sdk-contrib/commit/a56a2804f5fada634dbb2b5115858832dfd6be4e))
-* release main ([#183](https://github.com/open-feature/js-sdk-contrib/issues/183)) ([0867b93](https://github.com/open-feature/js-sdk-contrib/commit/0867b93d3016bb1a80be8c0f204725414c18b7ab))
-* release main ([#195](https://github.com/open-feature/js-sdk-contrib/issues/195)) ([551eb86](https://github.com/open-feature/js-sdk-contrib/commit/551eb867981c60344b390c7a304d69c8aeb34526))
-* release main ([#213](https://github.com/open-feature/js-sdk-contrib/issues/213)) ([be55c42](https://github.com/open-feature/js-sdk-contrib/commit/be55c42bce438f3b4d082a82c1d96d45808caac1))
-* release main ([#72](https://github.com/open-feature/js-sdk-contrib/issues/72)) ([b424678](https://github.com/open-feature/js-sdk-contrib/commit/b4246781b1efb2b86ca43e82d8c9bfe3943657cc))
-* release main ([#74](https://github.com/open-feature/js-sdk-contrib/issues/74)) ([0b85175](https://github.com/open-feature/js-sdk-contrib/commit/0b851755a2e071a9db30655840dd625679eb8726))
-* release main ([#76](https://github.com/open-feature/js-sdk-contrib/issues/76)) ([656a0dd](https://github.com/open-feature/js-sdk-contrib/commit/656a0ddb9dc751b198ec5e8d116edf2623ff51b0))
-* release main ([#94](https://github.com/open-feature/js-sdk-contrib/issues/94)) ([3bc8799](https://github.com/open-feature/js-sdk-contrib/commit/3bc87990f3db5dae27969b5eaa9c1ee77dbb7ef3))
-* update OpenFeature SDK version ([#137](https://github.com/open-feature/js-sdk-contrib/issues/137)) ([245f024](https://github.com/open-feature/js-sdk-contrib/commit/245f02441d62f7f42627174737943f1556a6a326))
-
+* if upgrading from `@@openfeature/open-telemetry-hook`,  import and use `TracingHook` instead of `OpenTelemetryHook`
 
 ### ✨ New Features
 
 * add metrics hook ([#448](https://github.com/open-feature/js-sdk-contrib/issues/448)) ([131db1e](https://github.com/open-feature/js-sdk-contrib/commit/131db1ef47962288e1c7723e768296307d06837b))
-* flagd-web provider ([#142](https://github.com/open-feature/js-sdk-contrib/issues/142)) ([bd83124](https://github.com/open-feature/js-sdk-contrib/commit/bd8312418fbfab16d77a4ec069d3ff9452f7f744))
-* migrate to sdk 0.5.0 ([#114](https://github.com/open-feature/js-sdk-contrib/issues/114)) ([f9e9a55](https://github.com/open-feature/js-sdk-contrib/commit/f9e9a55ad5a16e99bb169fdf1a8d11c959520f7b))
-* Update OTel hook to latest semantic convention ([#65](https://github.com/open-feature/js-sdk-contrib/issues/65)) ([0dd7802](https://github.com/open-feature/js-sdk-contrib/commit/0dd780271fabd7aa7c503a48bff75bebb63b46b9))
-* update the otel hook to be spec compliant ([#179](https://github.com/open-feature/js-sdk-contrib/issues/179)) ([69b2163](https://github.com/open-feature/js-sdk-contrib/commit/69b2163be1729697ebc69549aa8fb6e61be1b94d))
-* update to js-sdk ([#108](https://github.com/open-feature/js-sdk-contrib/issues/108)) ([60d6146](https://github.com/open-feature/js-sdk-contrib/commit/60d6146e30d3ca547e940c3ba441d80fd75d886d))
 
 ## [6.0.2](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v6.0.1...open-telemetry-hook-v6.0.2) (2023-07-12)
 
