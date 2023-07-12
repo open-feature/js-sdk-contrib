@@ -1,0 +1,29 @@
+# Keep all in alphabetical order
+components:
+  libs/hooks/open-telemetry:
+    - beeme1mr
+    - toddbaert
+  libs/providers/config-cat:
+    - lukas-reining
+  libs/providers/env-var:
+    - beeme1mr
+    - toddbaert
+  libs/providers/flagd:
+    - beeme1mr
+    - toddbaert
+  libs/providers/flagd-web:
+    - beeme1mr
+    - toddbaert
+  libs/providers/go-feature-flag:
+    - thomaspoignant
+  libs/providers/in-memory:
+    - moredip
+    - beeme1mr
+    - toddbaert
+  libs/providers/launchdarkly-client:
+    - kinyoklion
+    - mateoc
+    - sago2k8
+
+ignored-authors:
+  - renovate-bot
