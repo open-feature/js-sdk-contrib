@@ -8,6 +8,9 @@ const spanEventProperties = Object.freeze({
   VARIANT: 'feature_flag.variant',
 });
 
+/**
+ * @deprecated OpenTelemetryHook (and this package) will be deprecated. Please use TracingHook from `@openfeature/open-telemetry-hooks`
+ */
 export class OpenTelemetryHook implements Hook {
   after(hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>) {
     const currentTrace = trace.getActiveSpan();
