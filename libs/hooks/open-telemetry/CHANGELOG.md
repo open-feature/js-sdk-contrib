@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.1.0...open-telemetry-hooks-v0.2.0) (2023-07-12)
+
+
+### ⤴️ Upgrade Instructions
+
+* if upgrading from `@openfeature/open-telemetry-hook`,  import and use `TracingHook` instead of `OpenTelemetryHook`
+
+### ✨ New Features
+
+* add metrics hook ([#448](https://github.com/open-feature/js-sdk-contrib/issues/448)) ([131db1e](https://github.com/open-feature/js-sdk-contrib/commit/131db1ef47962288e1c7723e768296307d06837b))
+
 ## [6.0.2](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v6.0.1...open-telemetry-hook-v6.0.2) (2023-07-12)
 
 
