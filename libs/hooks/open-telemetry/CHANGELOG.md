@@ -5,7 +5,7 @@
 
 ### ⤴️ Upgrade Instructions
 
-* if upgrading from `@@openfeature/open-telemetry-hook`,  import and use `TracingHook` instead of `OpenTelemetryHook`
+* if upgrading from `@openfeature/open-telemetry-hook`,  import and use `TracingHook` instead of `OpenTelemetryHook`
 
 ### ✨ New Features
 
