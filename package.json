@@ -28,7 +28,7 @@
     "lodash.isequal": "^4.5.0",
     "lru-cache": "^10.0.0",
     "object-hash": "^3.0.0",
-    "tslib": "2.5.0"
+    "tslib": "2.6.0"
   },
   "devDependencies": {
     "@nx/devkit": "16.2.2",
