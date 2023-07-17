@@ -12,20 +12,42 @@
     "strictNullChecks": true,
     "target": "es2015",
     "module": "esnext",
-    "lib": ["esnext", "dom"],
+    "lib": [
+      "esnext",
+      "dom"
+    ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@js-sdk-contrib/workspace-plugin": ["tools/workspace-plugin/src/index.ts"],
-      "@openfeature/config-cat-provider": ["libs/providers/config-cat/src/index.ts"],
-      "@openfeature/env-var-provider": ["libs/providers/env-var/src/index.ts"],
-      "@openfeature/flagd-provider": ["libs/providers/flagd/src/index.ts"],
-      "@openfeature/go-feature-flag-provider": ["libs/providers/go-feature-flag/src/index.ts"],
-      "@openfeature/hooks-open-telemetry": ["libs/hooks/open-telemetry/src/index.ts"],
-      "@openfeature/in-memory-provider": ["libs/providers/in-memory/src/index.ts"],
-      "@openfeature/launchdarkly-client-provider": ["libs/providers/launchdarkly-client/src/index.ts"]
+      "@js-sdk-contrib/workspace-plugin": [
+        "tools/workspace-plugin/src/index.ts"
+      ],
+      "@openfeature/config-cat-provider": [
+        "libs/providers/config-cat/src/index.ts"
+      ],
+      "@openfeature/env-var-provider": [
+        "libs/providers/env-var/src/index.ts"
+      ],
+      "@openfeature/flagd-provider": [
+        "libs/providers/flagd/src/index.ts"
+      ],
+      "@openfeature/go-feature-flag-provider": [
+        "libs/providers/go-feature-flag/src/index.ts"
+      ],
+      "@openfeature/hooks-open-telemetry": [
+        "libs/hooks/open-telemetry/src/index.ts"
+      ],
+      "@openfeature/in-memory-provider": [
+        "libs/providers/in-memory/src/index.ts"
+      ],
+      "@openfeature/launchdarkly-client-provider": [
+        "libs/providers/launchdarkly-client/src/index.ts"
+      ]
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
 }

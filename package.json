@@ -31,15 +31,15 @@
     "tslib": "2.6.0"
   },
   "devDependencies": {
-    "@nx/devkit": "16.2.2",
-    "@nx/eslint-plugin": "16.2.2",
-    "@nx/jest": "16.2.2",
-    "@nx/js": "16.2.2",
-    "@nx/linter": "16.2.2",
-    "@nx/plugin": "16.2.2",
-    "@nx/rollup": "16.2.2",
-    "@nx/web": "16.2.2",
-    "@nx/workspace": "16.2.2",
+    "@nx/devkit": "16.5.2",
+    "@nx/eslint-plugin": "16.5.2",
+    "@nx/jest": "16.5.2",
+    "@nx/js": "16.5.2",
+    "@nx/linter": "16.5.2",
+    "@nx/plugin": "16.5.2",
+    "@nx/rollup": "16.5.2",
+    "@nx/web": "16.5.2",
+    "@nx/workspace": "16.5.2",
     "@openfeature/js-sdk": "^1.3.1",
     "@opentelemetry/sdk-metrics": "^1.15.0",
     "@swc-node/register": "~1.6.0",
@@ -61,11 +61,12 @@
     "jest-environment-jsdom": "^29.4.1",
     "jest-fetch-mock": "^3.0.3",
     "jsonc-eslint-parser": "^2.1.0",
-    "nx": "16.2.2",
-    "nx-cloud": "16.0.5",
+    "nx": "16.5.2",
+    "nx-cloud": "16.1.0",
     "prettier": "3.0.0",
     "ts-jest": "29.1.1",
     "ts-node": "10.9.1",
-    "typescript": "5.0.4"
+    "typescript": "5.1.6"
   }
 }
+
