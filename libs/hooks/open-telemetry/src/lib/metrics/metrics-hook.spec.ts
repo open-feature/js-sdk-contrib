@@ -6,7 +6,7 @@ import {
   MetricReader,
   ScopeMetrics,
 } from '@opentelemetry/sdk-metrics';
-import { ACTIVE_COUNT_NAME, ERROR_TOTAL_NAME, REQUESTS_TOTAL_NAME, SUCCESS_TOTAL_NAME } from '../attributes';
+import { ACTIVE_COUNT_NAME, ERROR_TOTAL_NAME, KEY_ATTR, PROVIDER_NAME_ATTR, REASON_ATTR, REQUESTS_TOTAL_NAME, SUCCESS_TOTAL_NAME, VARIANT_ATTR } from '../attributes';
 import { MetricsHook } from './metrics-hook';
 
 // no-op "in-memory" reader
@@ -53,7 +53,7 @@ describe(MetricsHook.name, () => {
           ACTIVE_COUNT_NAME,
           0,
           (point) =>
-            point.value === 1 && point.attributes['feature_flag.key'] === FLAG_KEY && point.attributes['feature_flag.provider_name'] === PROVIDER_NAME
+            point.value === 1 && point.attributes[KEY_ATTR] === FLAG_KEY && point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME
         )
       ).toBeTruthy();
       expect(
@@ -62,7 +62,7 @@ describe(MetricsHook.name, () => {
           REQUESTS_TOTAL_NAME,
           0,
           (point) =>
-            point.value === 1 && point.attributes['feature_flag.key'] === FLAG_KEY && point.attributes['feature_flag.provider_name'] === PROVIDER_NAME
+            point.value === 1 && point.attributes[KEY_ATTR] === FLAG_KEY && point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME
         )
       ).toBeTruthy();
     });
@@ -97,10 +97,10 @@ describe(MetricsHook.name, () => {
             0,
             (point) =>
               point.value === 1 &&
-              point.attributes['feature_flag.key'] === FLAG_KEY &&
-              point.attributes['feature_flag.provider_name'] === PROVIDER_NAME &&
-              point.attributes['feature_flag.variant'] === VARIANT &&
-              point.attributes['feature_flag.reason'] === StandardResolutionReasons.STATIC
+              point.attributes[KEY_ATTR] === FLAG_KEY &&
+              point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
+              point.attributes[VARIANT_ATTR] === VARIANT &&
+              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC
           )
         ).toBeTruthy();
       });
@@ -130,10 +130,10 @@ describe(MetricsHook.name, () => {
             1,
             (point) =>
               point.value === 1 &&
-              point.attributes['feature_flag.key'] === FLAG_KEY &&
-              point.attributes['feature_flag.provider_name'] === PROVIDER_NAME &&
-              point.attributes['feature_flag.variant'] === VALUE.toString() &&
-              point.attributes['feature_flag.reason'] === StandardResolutionReasons.STATIC
+              point.attributes[KEY_ATTR] === FLAG_KEY &&
+              point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
+              point.attributes[VARIANT_ATTR] === VALUE.toString() &&
+              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC
           )
         ).toBeTruthy();
       });
@@ -160,7 +160,7 @@ describe(MetricsHook.name, () => {
           ACTIVE_COUNT_NAME,
           1,
           (point) =>
-            point.value === -1 && point.attributes['feature_flag.key'] === FLAG_KEY && point.attributes['feature_flag.provider_name'] === PROVIDER_NAME
+            point.value === -1 && point.attributes[KEY_ATTR] === FLAG_KEY && point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME
         )
       ).toBeTruthy();
     });
@@ -188,7 +188,7 @@ describe(MetricsHook.name, () => {
           ERROR_TOTAL_NAME,
           0,
           (point) =>
-            point.value === 1 && point.attributes['feature_flag.key'] === FLAG_KEY && point.attributes['feature_flag.provider_name'] === PROVIDER_NAME
+            point.value === 1 && point.attributes[KEY_ATTR] === FLAG_KEY && point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME
         )
       ).toBeTruthy();
     });
