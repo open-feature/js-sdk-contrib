@@ -9,10 +9,10 @@ import {
 import { Counter, UpDownCounter, ValueType, metrics } from '@opentelemetry/api';
 import {
   ACTIVE_COUNT_NAME,
-  ERROR_ATTR,
+  EXCEPTION_ATTR,
   ERROR_TOTAL_NAME,
   EvaluationAttributes,
-  ExceptionAttribute,
+  ExceptionAttributes,
   KEY_ATTR,
   PROVIDER_NAME_ATTR,
   REASON_ATTR,
@@ -21,7 +21,7 @@ import {
   VARIANT_ATTR
 } from '../conventions';
 
-type ErrorEvaluationAttributes = EvaluationAttributes & ExceptionAttribute;
+type ErrorEvaluationAttributes = EvaluationAttributes & ExceptionAttributes;
 
 const METER_NAME = 'js.openfeature.dev';
 
@@ -78,7 +78,7 @@ export class MetricsHook implements Hook {
     this.evaluationErrorCounter.add(1, {
       [KEY_ATTR]: hookContext.flagKey,
       [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
-      [ERROR_ATTR]: (error as Error)?.message || 'Unknown error',
+      [EXCEPTION_ATTR]: (error as Error)?.message || 'Unknown error',
     });
   }
 
