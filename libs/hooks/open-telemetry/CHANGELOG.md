@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.2.1...open-telemetry-hooks-v0.2.2) (2023-07-19)
+
+
+### 🐛 Bug Fixes
+
+* otel metric semantic convs ([#475](https://github.com/open-feature/js-sdk-contrib/issues/475)) ([6febfb0](https://github.com/open-feature/js-sdk-contrib/commit/6febfb0d09849fb4a722af2c1333ebb4b2386684))
+
 ## [0.2.1](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.2.0...open-telemetry-hooks-v0.2.1) (2023-07-12)
 
 
