@@ -1,7 +1,7 @@
 import {EvaluationContext} from '@openfeature/js-sdk';
 import {GoFeatureFlagEvaluationContext} from './model';
 import {transformContext} from './context-transformer';
-import {InvalidTargetingKey} from "./error/invalid-targeting-key";
+import {TargetingKeyMissingError} from "@openfeature/web-sdk";
 
 describe('contextTransformer', () => {
   it('should use the targetingKey as user key', () => {
@@ -37,9 +37,9 @@ describe('contextTransformer', () => {
         lastname: 'Doe',
         email: 'john.doe@gofeatureflag.org',
       } as EvaluationContext);
-    }).toThrow(InvalidTargetingKey);
+    }).toThrow(TargetingKeyMissingError);
   });
-  
+
   it('should fill custom fields if extra field are present', () => {
     const got = transformContext({
       targetingKey: 'user-key',
