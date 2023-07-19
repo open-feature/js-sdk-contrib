@@ -1,3 +1,4 @@
+// see: https://opentelemetry.io/docs/specs/otel/logs/semantic_conventions/feature-flags/
 export const FEATURE_FLAG = 'feature_flag';
 
 export const ACTIVE_COUNT_NAME = `${FEATURE_FLAG}.evaluation_active_count`;
