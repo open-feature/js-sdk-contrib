@@ -1,4 +1,4 @@
-import translateResult from "./translate-result";
+import translateResult from './translate-result';
 
 describe('translateResult', () => {
   it.each([

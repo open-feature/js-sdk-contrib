@@ -3,7 +3,7 @@ import { EvaluationDetails, HookContext } from '@openfeature/js-sdk';
 const addEvent = jest.fn();
 const recordException = jest.fn();
 
-const getActiveSpan = jest.fn<any, any>(() => ({ addEvent, recordException }));
+const getActiveSpan = jest.fn<unknown, unknown[]>(() => ({ addEvent, recordException }));
 
 jest.mock('@opentelemetry/api', () => ({
   trace: {
@@ -12,7 +12,7 @@ jest.mock('@opentelemetry/api', () => ({
 }));
 
 // Import must be after the mocks
-import { OpenTelemetryHook } from './open-telemetry-hook';
+import { TracingHook } from './tracing-hook';
 
 describe('OpenTelemetry Hooks', () => {
   const hookContext: HookContext = {
@@ -32,10 +32,10 @@ describe('OpenTelemetry Hooks', () => {
     logger: console,
   };
 
-  let otelHook: OpenTelemetryHook;
+  let otelHook: TracingHook;
 
   beforeEach(() => {
-    otelHook = new OpenTelemetryHook();
+    otelHook = new TracingHook();
   });
 
   afterEach(() => {

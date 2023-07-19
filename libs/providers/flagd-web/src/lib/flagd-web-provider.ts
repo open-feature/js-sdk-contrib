@@ -15,7 +15,7 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
-import { Service } from '../proto/ts/schema/v1/schema_connectweb';
+import { Service } from '../proto/ts/schema/v1/schema_connect';
 import { AnyFlag } from '../proto/ts/schema/v1/schema_pb';
 import { FlagdProviderOptions, getOptions } from './options';
 
@@ -67,23 +67,23 @@ export class FlagdWebProvider implements Provider {
     await this.fetchAll(newContext);
   }
 
-  async initialize(context: EvaluationContext): Promise<void> {
+  async initialize(): Promise<void> {
     await this.retryConnect();
   }
 
-  resolveBooleanEvaluation(flagKey: string, _: boolean): ResolutionDetails<boolean> {
+  resolveBooleanEvaluation(flagKey: string): ResolutionDetails<boolean> {
     return this.evaluate(flagKey, 'boolValue');
   }
 
-  resolveStringEvaluation(flagKey: string, _: string): ResolutionDetails<string> {
+  resolveStringEvaluation(flagKey: string): ResolutionDetails<string> {
     return this.evaluate(flagKey, 'stringValue');
   }
 
-  resolveNumberEvaluation(flagKey: string, _: number): ResolutionDetails<number> {
+  resolveNumberEvaluation(flagKey: string): ResolutionDetails<number> {
     return this.evaluate(flagKey, 'doubleValue');
   }
 
-  resolveObjectEvaluation<U extends JsonValue>(flagKey: string, _: U): ResolutionDetails<U> {
+  resolveObjectEvaluation<U extends JsonValue>(flagKey: string): ResolutionDetails<U> {
     return this.evaluate(flagKey, 'objectValue');
   }
 

@@ -11,34 +11,51 @@ $ npm install @openfeature/launchdarkly-client-provider
 ```
 
 ## Sample initialization
-``` ts
-  // init launchdarkly-js-client-sdk
-  const initialContext = {
-    anonymous: true,
-  };
-  const ldClient =  initialize('LDId', initialContext);
-  await ldClient.waitForInitialization();
-  const ldOpenFeatureProvider = new LaunchDarklyClientProvider(ldClient);
 
-  //set open feature provider and get client
-  OpenFeature.setProvider(ldOpenFeatureProvider);
-  const client = OpenFeature.getClient('my-client');
+```ts
+// initialize provider
+const clientEnvKey = 'LDEnvironmentID';
 
-  //use client
-  const boolValue = client.getBooleanValue('boolFlag', false);
+/*
+ * optional launch darkly options
+ * @see https://launchdarkly.github.io/js-client-sdk/interfaces/LDOptions.html
+ */
+const ldOptions = {
+  straming: true,
+};
+
+/*
+  * initialization happens inside the provider, the initial context will be { anonymous: true } by default if there is not context set in Open Feature.
+  * @see https://launchdarkly.github.io/js-client-sdk/interfaces/LDContextCommon.html#anonymous
+  * you can change it using setContext. 
+
+  */
+const ldOpenFeatureProvider = new LaunchDarklyClientProvider(clientEnvKey, options);
+
+//set open feature provider and get client
+OpenFeature.setProvider(ldOpenFeatureProvider);
+const client = OpenFeature.getClient('my-client');
+
+//use client
+const boolValue = client.getBooleanValue('boolFlag', false);
 ```
+
+To opt in for streaming, you should set `"streaming: true"` explicitly, that guarantee you set the appropriate listeners and you enable streaming in the LD SDK
+
 ## Update Context
-For context update always use ``OpenFeature.setContext(myNewContext);`` instead of ``ldClient.identify(myNewContext);``, as this will always be handled internally.
+
+For context update always use `OpenFeature.setContext(myNewContext);`
 
 Please note that context changes result in network traffic, so changes should be made sparingly in accordance to relevant user behavior.
-``` ts
-  await OpenFeature.setContext({ targetingKey: 'my-key' })
-  //Laundarkly uses key but this provider tranlates targetingKey to key; 
-  //So the above is the same as doing
-  await OpenFeature.setContext({ key: 'my-key' });
+
+```ts
+await OpenFeature.setContext({ targetingKey: 'my-key' });
+//Laundarkly uses key but this provider tranlates targetingKey to key;
+//So the above is the same as doing
+await OpenFeature.setContext({ key: 'my-key' });
 ```
 
-Read more about LD contexts [here](https://github.com/launchdarkly/openfeature-node-server#openfeature-specific-considerations)
+Read more about LD contexts [here](https://launchdarkly.github.io/js-client-sdk/interfaces/LDContextCommon.html)
 
 ## Building
 

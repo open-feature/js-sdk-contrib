@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.2.1](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.2.0...open-telemetry-hooks-v0.2.1) (2023-07-12)
+
+
+### 🐛 Bug Fixes
+
+* update README to remove deprecation ([#465](https://github.com/open-feature/js-sdk-contrib/issues/465)) ([ac5b91b](https://github.com/open-feature/js-sdk-contrib/commit/ac5b91b60eaf39b31fc9899f20ad4fef792a50e8))
+
+## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.1.0...open-telemetry-hooks-v0.2.0) (2023-07-12)
+
+
+### ⤴️ Upgrade Instructions
+
+* if upgrading from `@openfeature/open-telemetry-hook`,  import and use `TracingHook` instead of `OpenTelemetryHook`
+
+### ✨ New Features
+
+* add metrics hook ([#448](https://github.com/open-feature/js-sdk-contrib/issues/448)) ([131db1e](https://github.com/open-feature/js-sdk-contrib/commit/131db1ef47962288e1c7723e768296307d06837b))
+
+## [6.0.2](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v6.0.1...open-telemetry-hook-v6.0.2) (2023-07-12)
+
+
+###  ⚠️ Deprecation warning
+
+* the `@openfeature/open-telemetry-hook` package is now deprecated, use `@openfeature/open-telemetry-hooks` instead
+
+### 🧹 Chore
+
+* correct publish executor ([#378](https://github.com/open-feature/js-sdk-contrib/issues/378)) ([395ed18](https://github.com/open-feature/js-sdk-contrib/commit/395ed186de8811ae249f087821fdbdf8899c19f2))
+* **deps:** update dependency @openfeature/js-sdk to v1.3.1 ([#409](https://github.com/open-feature/js-sdk-contrib/issues/409)) ([5bf9932](https://github.com/open-feature/js-sdk-contrib/commit/5bf993208825e3e1eded941decc067125935d912))
+* migrate to nx 16 ([#366](https://github.com/open-feature/js-sdk-contrib/issues/366)) ([7a9c201](https://github.com/open-feature/js-sdk-contrib/commit/7a9c201d16fd7f070a1bcd2e359487ba6e7b78d7))
+
+
+### 🐛 Bug Fixes
+
+* deprecate otel hook ([#449](https://github.com/open-feature/js-sdk-contrib/issues/449)) ([58aa56c](https://github.com/open-feature/js-sdk-contrib/commit/58aa56cdc13ee5177b64a0a1e126b9d31c8d5756))
+
 ## [6.0.1](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hook-v6.0.0...open-telemetry-hook-v6.0.1) (2023-01-19)
 
 
