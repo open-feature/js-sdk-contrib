@@ -7,13 +7,21 @@ import {
   type HookContext,
 } from '@openfeature/js-sdk';
 import { Counter, UpDownCounter, ValueType, metrics } from '@opentelemetry/api';
-import { ACTIVE_COUNT_NAME, ERROR_TOTAL_NAME, REQUESTS_TOTAL_NAME, SUCCESS_TOTAL_NAME } from '../constants';
+import {
+  ACTIVE_COUNT_NAME,
+  EXCEPTION_ATTR,
+  ERROR_TOTAL_NAME,
+  EvaluationAttributes,
+  ExceptionAttributes,
+  KEY_ATTR,
+  PROVIDER_NAME_ATTR,
+  REASON_ATTR,
+  REQUESTS_TOTAL_NAME,
+  SUCCESS_TOTAL_NAME,
+  VARIANT_ATTR
+} from '../conventions';
 
-type EvaluationAttributes = Pick<EvaluationDetails<FlagValue>, 'variant' | 'reason'> & {
-  key: string;
-  provider: string;
-};
-type ErrorEvaluationAttributes = EvaluationAttributes & { exception: string };
+type ErrorEvaluationAttributes = EvaluationAttributes & ExceptionAttributes;
 
 const METER_NAME = 'js.openfeature.dev';
 
@@ -49,9 +57,9 @@ export class MetricsHook implements Hook {
   }
 
   before(hookContext: BeforeHookContext) {
-    const attributes = {
-      key: hookContext.flagKey,
-      provider: hookContext.providerMetadata.name,
+    const attributes: EvaluationAttributes = {
+      [KEY_ATTR]: hookContext.flagKey,
+      [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
     };
     this.evaluationActiveUpDownCounter.add(1, attributes);
     this.evaluationRequestCounter.add(1, attributes);
@@ -59,25 +67,25 @@ export class MetricsHook implements Hook {
 
   after(hookContext: Readonly<HookContext<FlagValue>>, evaluationDetails: EvaluationDetails<FlagValue>) {
     this.evaluationSuccessCounter.add(1, {
-      key: hookContext.flagKey,
-      provider: hookContext.providerMetadata.name,
-      variant: evaluationDetails.variant ?? evaluationDetails.value?.toString(),
-      reason: evaluationDetails.reason ?? StandardResolutionReasons.UNKNOWN,
+      [KEY_ATTR]: hookContext.flagKey,
+      [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
+      [VARIANT_ATTR]: evaluationDetails.variant ?? evaluationDetails.value?.toString(),
+      [REASON_ATTR]: evaluationDetails.reason ?? StandardResolutionReasons.UNKNOWN,
     });
   }
 
   error(hookContext: Readonly<HookContext<FlagValue>>, error: unknown) {
     this.evaluationErrorCounter.add(1, {
-      key: hookContext.flagKey,
-      provider: hookContext.providerMetadata.name,
-      exception: (error as Error)?.message || 'Unknown error',
+      [KEY_ATTR]: hookContext.flagKey,
+      [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
+      [EXCEPTION_ATTR]: (error as Error)?.message || 'Unknown error',
     });
   }
 
   finally(hookContext: Readonly<HookContext<FlagValue>>) {
     this.evaluationActiveUpDownCounter.add(-1, {
-      key: hookContext.flagKey,
-      provider: hookContext.providerMetadata.name,
+      [KEY_ATTR]: hookContext.flagKey,
+      [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
     });
   }
 }
