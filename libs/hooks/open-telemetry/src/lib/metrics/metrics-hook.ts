@@ -7,10 +7,20 @@ import {
   type HookContext,
 } from '@openfeature/js-sdk';
 import { Counter, UpDownCounter, ValueType, metrics } from '@opentelemetry/api';
-import { ACTIVE_COUNT_NAME, ERROR_TOTAL_NAME, FEATURE_FLAG, REQUESTS_TOTAL_NAME, SUCCESS_TOTAL_NAME } from '../constants';
+import {
+  ACTIVE_COUNT_NAME,
+  ERROR_ATTR,
+  ERROR_TOTAL_NAME,
+  EvaluationAttributes,
+  ExceptionAttribute,
+  KEY_ATTR,
+  PROVIDER_NAME_ATTR,
+  REASON_ATTR,
+  REQUESTS_TOTAL_NAME,
+  SUCCESS_TOTAL_NAME,
+  VARIANT_ATTR
+} from '../attributes';
 
-type EvaluationAttributes = {[key: `${typeof FEATURE_FLAG}.${string}`]: string | undefined };
-type ExceptionAttribute =  { [key in `${typeof FEATURE_FLAG}.exception`]: string };
 type ErrorEvaluationAttributes = EvaluationAttributes & ExceptionAttribute;
 
 const METER_NAME = 'js.openfeature.dev';
@@ -19,12 +29,6 @@ const ACTIVE_DESCRIPTION = 'active flag evaluations counter';
 const REQUESTS_DESCRIPTION = 'feature flag evaluation request counter';
 const SUCCESS_DESCRIPTION = 'feature flag evaluation success counter';
 const ERROR_DESCRIPTION = 'feature flag evaluation error counter';
-
-const KEY_ATTR: keyof EvaluationAttributes = `${FEATURE_FLAG}.key`;
-const PROVIDER_NAME_ATTR: keyof EvaluationAttributes = `${FEATURE_FLAG}.provider_name`;
-const VARIANT_ATTR: keyof EvaluationAttributes = `${FEATURE_FLAG}.variant`;
-const REASON_ATTR: keyof EvaluationAttributes = `${FEATURE_FLAG}.reason`;
-const ERROR_ATTR: keyof ExceptionAttribute = `${FEATURE_FLAG}.exception`;
 
 export class MetricsHook implements Hook {
   private readonly evaluationActiveUpDownCounter: UpDownCounter<EvaluationAttributes>;
