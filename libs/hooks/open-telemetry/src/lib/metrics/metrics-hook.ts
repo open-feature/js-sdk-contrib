@@ -19,7 +19,7 @@ import {
   REQUESTS_TOTAL_NAME,
   SUCCESS_TOTAL_NAME,
   VARIANT_ATTR
-} from '../attributes';
+} from '../conventions';
 
 type ErrorEvaluationAttributes = EvaluationAttributes & ExceptionAttribute;
 

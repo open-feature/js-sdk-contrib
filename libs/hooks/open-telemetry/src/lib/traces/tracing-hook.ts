@@ -1,6 +1,6 @@
 import { Hook, HookContext, EvaluationDetails, FlagValue } from '@openfeature/js-sdk';
 import { trace } from '@opentelemetry/api';
-import { FEATURE_FLAG, KEY_ATTR, PROVIDER_NAME_ATTR, VARIANT_ATTR } from '../attributes';
+import { FEATURE_FLAG, KEY_ATTR, PROVIDER_NAME_ATTR, VARIANT_ATTR } from '../conventions';
 
 export class TracingHook implements Hook {
   after(hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>) {

@@ -6,7 +6,7 @@ import {
   MetricReader,
   ScopeMetrics,
 } from '@opentelemetry/sdk-metrics';
-import { ACTIVE_COUNT_NAME, ERROR_TOTAL_NAME, KEY_ATTR, PROVIDER_NAME_ATTR, REASON_ATTR, REQUESTS_TOTAL_NAME, SUCCESS_TOTAL_NAME, VARIANT_ATTR } from '../attributes';
+import { ACTIVE_COUNT_NAME, ERROR_TOTAL_NAME, KEY_ATTR, PROVIDER_NAME_ATTR, REASON_ATTR, REQUESTS_TOTAL_NAME, SUCCESS_TOTAL_NAME, VARIANT_ATTR } from '../conventions';
 import { MetricsHook } from './metrics-hook';
 
 // no-op "in-memory" reader
