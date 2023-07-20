@@ -1,12 +1,6 @@
 import { Hook, HookContext, EvaluationDetails, FlagValue } from '@openfeature/js-sdk';
 import { trace } from '@opentelemetry/api';
-import { FEATURE_FLAG } from '../constants';
-
-const spanEventProperties = Object.freeze({
-  FLAG_KEY: `${FEATURE_FLAG}.key`,
-  PROVIDER_NAME: `${FEATURE_FLAG}.provider_name`,
-  VARIANT: `${FEATURE_FLAG}.variant`,
-});
+import { FEATURE_FLAG, KEY_ATTR, PROVIDER_NAME_ATTR, VARIANT_ATTR } from '../conventions';
 
 export class TracingHook implements Hook {
   after(hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>) {
@@ -23,9 +17,9 @@ export class TracingHook implements Hook {
       }
 
       currentTrace.addEvent(FEATURE_FLAG, {
-        [spanEventProperties.FLAG_KEY]: hookContext.flagKey,
-        [spanEventProperties.PROVIDER_NAME]: hookContext.providerMetadata.name,
-        [spanEventProperties.VARIANT]: variant,
+        [KEY_ATTR]: hookContext.flagKey,
+        [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
+        [VARIANT_ATTR]: variant,
       });
     }
   }
