@@ -57,6 +57,9 @@ export interface GoFeatureFlagWebProviderOptions {
 }
 
 
+/**
+ * FlagState is the object used to get the value return by GO Feature Flag.
+ */
 export interface FlagState<T extends FlagValue> {
   failed: boolean;
   trackEvents: boolean;
@@ -69,6 +72,10 @@ export interface FlagState<T extends FlagValue> {
   cacheable: boolean;
 }
 
+/**
+ * GOFeatureFlagAllFlagsResponse is the object containing the results returned
+ * by GO Feature Flag.
+ */
 export interface GOFeatureFlagAllFlagsResponse {
   valid: boolean
   flags: Record<string, FlagState<FlagValue>>

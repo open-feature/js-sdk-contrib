@@ -18,10 +18,10 @@ import {transformContext} from "./context-transformer";
 export class GoFeatureFlagWebProvider implements Provider {
   private readonly _websocketPath = "ws/v1/flag/change"
 
-
   metadata = {
     name: GoFeatureFlagWebProvider.name,
   };
+  events = new OpenFeatureEventEmitter();
 
   // logger is the Open Feature logger to use
   private _logger?: Logger;
@@ -36,10 +36,12 @@ export class GoFeatureFlagWebProvider implements Provider {
   private readonly _websocketRetryDelayMultiplier;
   // maximum number of retries
   private readonly _websocketMaxRetries;
+
+  // _websocket is the reference to the websocket connection
   private _websocket?: WebSocket;
+  // _flags is the in memory representation of all the flags.
   private _flags: { [key: string]: ResolutionDetails<FlagValue> } = {};
 
-  events = new OpenFeatureEventEmitter();
 
   constructor(options: GoFeatureFlagWebProviderOptions, logger?: Logger) {
     this._logger = logger;

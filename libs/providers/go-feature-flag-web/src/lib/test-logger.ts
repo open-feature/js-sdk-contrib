@@ -1,3 +1,7 @@
+/**
+ * TestLogger is a logger build for testing purposes.
+ * This is not ready to be production ready, so please avoid using it.
+ */
 export default class TestLogger {
   public inMemoryLogger: Record<string, string[]> = {
     error: [],

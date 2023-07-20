@@ -111,7 +111,6 @@ describe('GoFeatureFlagWebProvider', () => {
     logger.reset();
   });
 
-
   describe('provider metadata', () => {
     it('should be and instance of GoFeatureFlagWebProvider', () => {
       expect(defaultProvider).toBeInstanceOf(GoFeatureFlagWebProvider);
