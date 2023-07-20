@@ -12,5 +12,5 @@ export default {
   },
   testEnvironment: 'jsdom',
   moduleFileExtensions: ['ts', 'js', 'html'],
-  coverageDirectory: '../../../coverage/libs/providers/flagd-web',
+  coverageDirectory: '../../../coverage/libs/providers/go-feature-flag-web',
 };
