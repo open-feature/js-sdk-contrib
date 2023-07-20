@@ -31,7 +31,7 @@ describe('contextTransformer', () => {
 
   it('should hash the context as key if no targetingKey provided', () => {
     expect(() => {
-      const got = transformContext({
+      transformContext({
         anonymous: true,
         firstname: 'John',
         lastname: 'Doe',

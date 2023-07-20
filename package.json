@@ -60,6 +60,7 @@
     "jest": "^29.4.1",
     "jest-environment-jsdom": "^29.4.1",
     "jest-fetch-mock": "^3.0.3",
+    "jest-websocket-mock": "^2.4.0",
     "jsonc-eslint-parser": "^2.1.0",
     "nx": "16.5.2",
     "nx-cloud": "16.1.0",

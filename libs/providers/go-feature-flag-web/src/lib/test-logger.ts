@@ -1,4 +1,4 @@
-export default class TestLoggerSpec {
+export default class TestLogger {
   public inMemoryLogger: Record<string, string[]> = {
     error: [],
     warn: [],

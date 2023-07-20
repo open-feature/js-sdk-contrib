@@ -3,7 +3,7 @@ import {EvaluationContext, OpenFeature, ProviderEvents, StandardResolutionReason
 import MockAdapter from "axios-mock-adapter";
 import axios from "axios";
 import WS from "jest-websocket-mock";
-import TestLoggerSpec from "./test-logger.spec";
+import TestLogger from "./test-logger";
 import {ErrorCode, EvaluationDetails, JsonValue} from "@openfeature/js-sdk";
 
 describe('GoFeatureFlagWebProvider', () => {
@@ -79,7 +79,7 @@ describe('GoFeatureFlagWebProvider', () => {
   const errorHandler = jest.fn();
   const configurationChangedHandler = jest.fn();
   const staleHandler = jest.fn();
-  const logger = new TestLoggerSpec();
+  const logger = new TestLogger();
 
   beforeEach(async () => {
     await WS.clean();
