@@ -5,6 +5,7 @@ import axios from "axios";
 import WS from "jest-websocket-mock";
 import TestLogger from "./test-logger";
 import {ErrorCode, EvaluationDetails, JsonValue} from "@openfeature/js-sdk";
+import {GOFeatureFlagWebsocketResponse} from "./model";
 
 describe('GoFeatureFlagWebProvider', () => {
   let websocketMockServer: WS;
@@ -92,7 +93,7 @@ describe('GoFeatureFlagWebProvider', () => {
     defaultProvider = new GoFeatureFlagWebProvider({
       endpoint: endpoint,
       apiTimeout: 1000,
-    }, logger); // TODO: remove console logger
+    }, logger);
     defaultContext = {targetingKey: 'user-key'};
   });
 
@@ -336,7 +337,20 @@ describe('GoFeatureFlagWebProvider', () => {
 
       // Need to wait before using the mock
       await new Promise((resolve) => setTimeout(resolve, 5));
-      websocketMockServer.send({});
+      websocketMockServer.send({
+        added: {
+          "added-flag-1": {},
+          "added-flag-2": {}
+        },
+        updated: {
+          "updated-flag-1": {},
+          "updated-flag-2": {},
+        },
+        deleted: {
+          "deleted-flag-1": {},
+          "deleted-flag-2": {},
+        }
+      } as GOFeatureFlagWebsocketResponse);
       // waiting the call to the API to be successful
       await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -344,6 +358,11 @@ describe('GoFeatureFlagWebProvider', () => {
       expect(errorHandler).not.toBeCalled();
       expect(configurationChangedHandler).toBeCalled();
       expect(staleHandler).not.toBeCalled();
+      expect(configurationChangedHandler.mock.calls[0][0]).toEqual({
+        clientName: 'test-provider',
+        message: 'flag configuration have changed',
+        flagsChanged: ['deleted-flag-1', 'deleted-flag-2', 'updated-flag-1', 'updated-flag-2', 'added-flag-1', 'added-flag-2']
+      })
     });
 
     it('should call client handler with ProviderEvents.Stale when websocket is unreachable', async () => {
@@ -352,7 +371,7 @@ describe('GoFeatureFlagWebProvider', () => {
         endpoint,
         websocketMaxRetries: 1,
         websocketRetryInitialDelay: 10,
-      }, console);
+      }, logger);
       OpenFeature.setProvider('test-provider', provider);
       const client = await OpenFeature.getClient('test-provider');
       client.addHandler(ProviderEvents.Ready, readyHandler);

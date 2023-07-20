@@ -2,7 +2,7 @@ import {
   ErrorCode,
   EvaluationContextValue,
 } from '@openfeature/js-sdk';
-import {FlagValue} from "@openfeature/web-sdk";
+import {FlagValue, ResolutionDetails} from "@openfeature/web-sdk";
 
 /**
  * GoFeatureFlagEvaluationContext is the representation of a user for GO Feature Flag
@@ -79,4 +79,13 @@ export interface FlagState<T extends FlagValue> {
 export interface GOFeatureFlagAllFlagsResponse {
   valid: boolean
   flags: Record<string, FlagState<FlagValue>>
+}
+
+/**
+ * Format of the websocket event we can receive.
+ */
+export interface GOFeatureFlagWebsocketResponse {
+  deleted?: { [key: string]: any }
+  added?: { [key: string]: any }
+  updated?: { [key: string]: any }
 }

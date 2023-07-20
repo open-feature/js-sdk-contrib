@@ -1,5 +1,5 @@
 import {
-  EvaluationContext, FlagMetadata,
+  EvaluationContext,
   FlagNotFoundError,
   FlagValue,
   Logger,
@@ -7,11 +7,16 @@ import {
   OpenFeatureEventEmitter,
   Provider,
   ProviderEvents,
-  ResolutionDetails, ResolutionReason,
+  ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
 } from "@openfeature/web-sdk";
-import {GoFeatureFlagAllFlagRequest, GOFeatureFlagAllFlagsResponse, GoFeatureFlagWebProviderOptions,} from "./model";
+import {
+  GoFeatureFlagAllFlagRequest,
+  GOFeatureFlagAllFlagsResponse,
+  GoFeatureFlagWebProviderOptions,
+  GOFeatureFlagWebsocketResponse,
+} from "./model";
 import axios from "axios";
 import {transformContext} from "./context-transformer";
 
@@ -79,9 +84,11 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._websocket.onopen = (event) => {
       this._logger?.info(`Websocket to go-feature-flag open: ${event}`);
     };
-    this._websocket.onmessage = async () => {
+    this._websocket.onmessage = async ({data}) => {
       this._logger?.info(`Change in your configuration flag`);
-      await this.fetchAll(OpenFeature.getContext());
+      const t: GOFeatureFlagWebsocketResponse = JSON.parse(data);
+      const flagsChanged = this.extractFlagNamesFromWebsocket(t);
+      await this.fetchAll(OpenFeature.getContext(), flagsChanged);
     }
     this._websocket.onclose = async () => {
       this._logger?.info(`Websocket closed, trying to reconnect`);
@@ -113,6 +120,23 @@ export class GoFeatureFlagWebProvider implements Provider {
 
 
   /**
+   * extract flag names from the websocket answer
+   */
+  private extractFlagNamesFromWebsocket(wsResp: GOFeatureFlagWebsocketResponse): string[] {
+    let flags: string[] = [];
+    if (wsResp.deleted) {
+      flags = [...flags, ...Object.keys(wsResp.deleted)];
+    }
+    if (wsResp.updated) {
+      flags = [...flags, ...Object.keys(wsResp.updated)];
+    }
+    if (wsResp.added) {
+      flags = [...flags, ...Object.keys(wsResp.added)];
+    }
+    return flags;
+  }
+
+  /**
    * reconnectWebsocket is using an exponential backoff pattern to try to restart the connection
    * to the websocket.
    */
@@ -130,7 +154,9 @@ export class GoFeatureFlagWebProvider implements Provider {
       delay *= this._websocketRetryDelayMultiplier;
       this._logger?.info(`error while reconnecting the websocket, next try in ${delay} ms (${attempt}/${this._websocketMaxRetries}).`)
     }
-    this.events.emit(ProviderEvents.Stale)
+    this.events.emit(ProviderEvents.Stale, {
+      message: 'impossible to get status from GO Feature Flag (websocket connection stoppe'
+    });
   }
 
   onClose(): Promise<void> {
@@ -178,7 +204,7 @@ export class GoFeatureFlagWebProvider implements Provider {
     };
   }
 
-  private async fetchAll(context: EvaluationContext) {
+  private async fetchAll(context: EvaluationContext, flagsChanged: string[] = []) {
     const endpointURL = new URL(this._endpoint);
     const path = 'v1/allflags';
     endpointURL.pathname = endpointURL.pathname.endsWith('/') ? endpointURL.pathname + path : endpointURL.pathname + '/' + path;
@@ -209,15 +235,20 @@ export class GoFeatureFlagWebProvider implements Provider {
           [currentValue]: resolutionDetails
         };
       });
-
       const hasFlagsLoaded = this._flags !== undefined && Object.keys(this._flags).length !== 0
       this._flags = flags;
       if (hasFlagsLoaded) {
-        this.events.emit(ProviderEvents.ConfigurationChanged)
+
+        this.events.emit(ProviderEvents.ConfigurationChanged, {
+          message: 'flag configuration have changed',
+          flagsChanged: flagsChanged,
+        });
       }
     } catch (error) {
-      this.events.emit(ProviderEvents.Error)
       if (axios.isAxiosError(error)) {
+        this.events.emit(ProviderEvents.Error, {
+          message: error.message,
+        });
         if (error.response?.status == 401) {
           this._logger?.error(`invalid token used to contact GO Feature Flag instance: ${error}`);
         } else if (error.code === 'ECONNREFUSED' || error.response?.status === 404) {
@@ -229,6 +260,9 @@ export class GoFeatureFlagWebProvider implements Provider {
         }
       } else {
         this._logger?.error(`unknown error while retrieving flags: ${error}`);
+        this.events.emit(ProviderEvents.Error, {
+          message: 'unknown error while retrieving flags',
+        });
       }
     }
   }
