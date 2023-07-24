@@ -194,7 +194,7 @@ export class GRPCService implements Service {
   }
 
   private handleError(
-    reject: (reason?: any) => void,
+    reject: (reason?: Error) => void,
     connectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
@@ -253,7 +253,7 @@ export class GRPCService implements Service {
     return 0;
   };
 
-  private async resolve<T extends FlagValue, Rq extends AnyRequest, Rs extends AnyResponse>(
+  private async resolve<T extends FlagValue>(
     promise: (
       request: AnyRequest,
       callback: (error: ServiceError | null, response: AnyResponse) => void,
