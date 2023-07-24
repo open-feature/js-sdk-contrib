@@ -1,4 +1,4 @@
-import { EvaluationContext, JsonValue, Logger, Provider, ResolutionDetails } from '@openfeature/js-sdk';
+import { EvaluationContext, JsonValue, Logger, OpenFeatureEventEmitter, Provider, ProviderEvents, ProviderStatus, ResolutionDetails } from '@openfeature/js-sdk';
 import { FlagdProviderOptions, getConfig } from './configuration';
 import { GRPCService } from './service/grpc/service';
 import { Service } from './service/service';
@@ -8,22 +8,36 @@ export class FlagdProvider implements Provider {
     name: 'flagd Provider',
   };
 
-  private readonly _service: Service;
-
-  /**
-   * Promise indicating the gRPC stream is connected.
-   *
-   * Can be used in instances where the provider being connected to the event stream is a prerequisite
-   * to execution (e.g. testing). Not necessary for standard usage.
-   *
-   * @returns true if stream connected successfully, false if connection not enabled.
-   */
-  get streamConnection() {
-    return this._service.streamConnection;
+  get status() {
+    return this._status;
   }
+
+  get events() {
+    return this._events;
+  }
+
+  private readonly _service: Service;
+  private _status = ProviderStatus.NOT_READY; 
+  private _events = new OpenFeatureEventEmitter();
 
   constructor(options?: FlagdProviderOptions, service?: Service, private logger?: Logger) {
     this._service = service ? service : new GRPCService(getConfig(options), undefined, logger);
+  }
+
+  initialize(): Promise<void> {
+    return this._service.connect(this.setReady.bind(this), this.emitChanged.bind(this), this.setError.bind(this)).then(() => {
+      this.logger?.debug(`${this.metadata.name}: ready`);
+      this._status = ProviderStatus.READY;
+    }).catch((err) => {
+      this._status = ProviderStatus.ERROR;
+      this.logger?.error(`${this.metadata.name}: error during initialization: ${err.message}, ${err.stack}`);
+      throw err;
+    });
+  }
+
+  onClose(): Promise<void> {
+    this.logger?.debug(`${this.metadata.name}: shutting down`)
+    return this._service.disconnect();  
   }
 
   resolveBooleanEvaluation(
@@ -75,4 +89,16 @@ export class FlagdProvider implements Provider {
     logger.error(err?.stack);
     throw err;
   };
+
+  private setReady(): void {
+    this._status = ProviderStatus.READY;
+  }
+
+  private setError(): void {
+    this._status = ProviderStatus.ERROR;
+  }
+
+  private emitChanged(flagsChanged: string[]): void {
+    this._events.emit(ProviderEvents.ConfigurationChanged, { flagsChanged });
+  }
 }
