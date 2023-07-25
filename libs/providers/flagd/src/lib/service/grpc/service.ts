@@ -97,7 +97,6 @@ export class GRPCService implements Service {
           tls ? credentials.createSsl() : credentials.createInsecure(),
         );
 
-    // for now, we only need streaming if the cache is enabled (will need to be pulled out once we support events)
     if (config.cache === 'lru') {
       this._cacheEnabled = true;
       this._cache = new LRUCache({ maxSize: config.maxCacheSize || DEFAULT_MAX_CACHE_SIZE, sizeCalculation: () => 1 });
@@ -112,9 +111,8 @@ export class GRPCService implements Service {
     return this.connectStream(connectCallback, changedCallback, disconnectCallback);
   }
 
-  disconnect(): Promise<void> {
+  async disconnect(): Promise<void> {
     this._stream?.destroy();
-    return Promise.resolve();
   }
 
   async resolveBoolean(
@@ -225,11 +223,11 @@ export class GRPCService implements Service {
     this._streamAlive = false;
   }
 
-  private objectParser = (struct: unknown): unknown => {
+  private objectParser = <T extends JsonValue>(struct: T): T => {
     if (struct) {
       return struct;
     }
-    return {};
+    return {} as T;
   };
 
   private booleanParser = (value: boolean): boolean => {
@@ -261,7 +259,7 @@ export class GRPCService implements Service {
     flagKey: string,
     context: EvaluationContext,
     logger: Logger,
-    parser?: (value: any) => any,
+    parser: (value: T) => T,
   ): Promise<ResolutionDetails<T>> {
     const resolver = promisify(promise);
     if (this._cacheActive) {
@@ -278,10 +276,14 @@ export class GRPCService implements Service {
 
     const resolved = {
       // invoke the parser method if passed
-      value: parser ? parser.call(this, response.value) : response.value,
+      value: parser.call(this, response.value as T),
       reason: response.reason,
       variant: response.variant,
     };
+
+    logger.debug(
+      `${FlagdProvider.name}: resolved flag with key: ${resolved.value}, variant: ${response.variant}, reason: ${response.reason}`,
+    );
 
     if (this._cacheActive && response.reason === StandardResolutionReasons.STATIC) {
       // cache this static value
