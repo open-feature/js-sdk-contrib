@@ -66,7 +66,7 @@ describe(FlagdProvider.name, () => {
     const basicServiceClientMock: ServiceClient = {
       eventStream: jest.fn(() => {
         return {
-          on: jest.fn((event: string, callback: (message: any) => void) => {
+          on: jest.fn((event: string, callback: (message: unknown) => void) => {
             if (event === 'data') {
               callback({ type: EVENT_PROVIDER_READY });
             }
