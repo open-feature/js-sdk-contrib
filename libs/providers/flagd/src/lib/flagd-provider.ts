@@ -29,10 +29,17 @@ export class FlagdProvider implements Provider {
   private _status = ProviderStatus.NOT_READY;
   private _events = new OpenFeatureEventEmitter();
 
+  /**
+   * Construct a new flagd provider.
+   * 
+   * @param options options, see {@link FlagdProviderOptions}
+   * @param logger optional logger, see {@link Logger}
+   * @param service optional internal service implementation, should not be needed for production
+   */
   constructor(
     options?: FlagdProviderOptions,
-    service?: Service,
     private logger?: Logger,
+    service?: Service,
   ) {
     this._service = service ? service : new GRPCService(getConfig(options), undefined, logger);
   }
