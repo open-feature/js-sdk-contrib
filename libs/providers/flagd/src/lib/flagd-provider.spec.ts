@@ -114,7 +114,7 @@ describe(FlagdProvider.name, () => {
     beforeEach(() => {
       // inject our mock GRPCService and ServiceClient
       OpenFeature.setProvider('basic test',
-        new FlagdProvider(undefined, new GRPCService({ host: '', port: 123, tls: false }, basicServiceClientMock))
+        new FlagdProvider(undefined, undefined, new GRPCService({ host: '', port: 123, tls: false }, basicServiceClientMock))
       );
       client = OpenFeature.getClient('basic test');
     });
@@ -237,7 +237,7 @@ describe(FlagdProvider.name, () => {
     beforeEach(() => {
       // inject our mock GRPCService and ServiceClient
       OpenFeature.setProvider('zero test',
-        new FlagdProvider(undefined, new GRPCService({ host: '', port: 123, tls: false }, basicServiceClientMock))
+        new FlagdProvider(undefined, undefined, new GRPCService({ host: '', port: 123, tls: false }, basicServiceClientMock))
       );
       client = OpenFeature.getClient('zero test');
     });
@@ -341,6 +341,7 @@ describe(FlagdProvider.name, () => {
       it(`should call ${ServiceClient.prototype.eventStream} and register onMessageHandler`, (done) => {
         new FlagdProvider(
           undefined,
+          undefined,
           new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
         ).initialize().then(() => {
           try {
@@ -361,6 +362,7 @@ describe(FlagdProvider.name, () => {
       beforeAll(() => {
         OpenFeature.setProvider('change events test',
           new FlagdProvider(
+            undefined,
             undefined,
             new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
           )
@@ -409,6 +411,7 @@ describe(FlagdProvider.name, () => {
         OpenFeature.setProvider('streaming test',
           new FlagdProvider(
             undefined,
+            undefined,
             new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
           )
         );
@@ -438,6 +441,7 @@ describe(FlagdProvider.name, () => {
       beforeAll(() => {
         OpenFeature.setProvider('cache invalidation',
           new FlagdProvider(
+            undefined,
             undefined,
             new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
           )
@@ -527,6 +531,7 @@ describe(FlagdProvider.name, () => {
       it('should attempt to inital connection multiple times', (done) => {
         const provider = new FlagdProvider(
           undefined,
+          undefined,
           new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
         );
         provider.initialize();
@@ -556,6 +561,7 @@ describe(FlagdProvider.name, () => {
 
       it('should attempt re-connection multiple times', (done) => {
         const provider = new FlagdProvider(
+          undefined,
           undefined,
           new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
         );
@@ -628,7 +634,7 @@ describe(FlagdProvider.name, () => {
     beforeEach(() => {
       // inject our mock GRPCService and ServiceClient
       OpenFeature.setProvider('errors test',
-        new FlagdProvider(undefined, new GRPCService({ host: '', port: 123, tls: false }, errServiceClientMock))
+        new FlagdProvider(undefined, undefined, new GRPCService({ host: '', port: 123, tls: false }, errServiceClientMock))
       );
       client = OpenFeature.getClient('errors test');
     });
@@ -706,7 +712,7 @@ describe(FlagdProvider.name, () => {
 
     beforeEach(() => {
       OpenFeature.setProvider('shutdown test',
-        new FlagdProvider(undefined, new GRPCService({ host: '', port: 123, tls: false }, errServiceClientMock))
+        new FlagdProvider(undefined, undefined, new GRPCService({ host: '', port: 123, tls: false }, errServiceClientMock))
       );
     });
 
