@@ -66,11 +66,13 @@ If the connection to the GO Feature Flag instance fails, the provider will attem
 The `websocketMaxRetries` can be specified to customize reconnect behavior.
 
 ### Event streaming
-The `FlagdWebProvider` receives events from flagd with changes. Combined with the event API in the web SDK, this allows for subscription to flag value changes in clients.
+The `GoFeatureFlagWebProvider` receives events from GO Feature Flag with changes.
+Combined with the event API in the web SDK, this allows for subscription to flag value changes in clients.
 
 ```typescript
-client.addHandler(ProviderEvents.Ready, () => {
+client.addHandler(ProviderEvents.ConfigurationChanged, (ctx: EventDetails) => {
   // do something when the configuration has changed.
+  // ctx.flagsChanged contains the list of changed flags.
 });
 ```
 
