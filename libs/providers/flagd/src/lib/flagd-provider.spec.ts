@@ -193,7 +193,7 @@ describe(FlagdProvider.name, () => {
     const basicServiceClientMock: ServiceClient = {
       eventStream: jest.fn(() => {
         return {
-          on: jest.fn((event: string, callback: (message: any) => void) => {
+          on: jest.fn((event: string, callback: (message: unknown) => void) => {
             if (event === 'data') {
               callback({ type: EVENT_PROVIDER_READY });
             }
@@ -305,7 +305,7 @@ describe(FlagdProvider.name, () => {
     // ref to callback to fire to fake messages to flagd
     let registeredOnMessageCallback: (message: EventStreamResponse) => void;
     const streamMock = {
-      on: jest.fn((event: string, callback: (message?: any) => void) => {
+      on: jest.fn((event: string, callback: (message?: unknown) => void) => {
         if (event === 'data') {
           registeredOnMessageCallback = callback;
         } else if (event === 'error') {
@@ -603,7 +603,7 @@ describe(FlagdProvider.name, () => {
     const errServiceClientMock: ServiceClient = {
       eventStream: jest.fn(() => {
         return {
-          on: jest.fn((event: string, callback: (message: any) => void) => {
+          on: jest.fn((event: string, callback: (message: unknown) => void) => {
             if (event === 'data') {
               callback({ type: EVENT_PROVIDER_READY });
             }
@@ -692,14 +692,13 @@ describe(FlagdProvider.name, () => {
   });
 
   describe('shutdown', () => {
-    let client: Client;
     const closeMock = jest.fn();
 
     // mock ServiceClient to inject
     const errServiceClientMock: ServiceClient = {
       eventStream: jest.fn(() => {
         return {
-          on: jest.fn((event: string, callback: (message: any) => void) => {
+          on: jest.fn((event: string, callback: (message: unknown) => void) => {
             if (event === 'data') {
               callback({ type: EVENT_PROVIDER_READY });
             }
