@@ -16,6 +16,8 @@ components:
     - toddbaert
   libs/providers/go-feature-flag:
     - thomaspoignant
+  libs/providers/go-feature-flag-web:
+    - thomaspoignant
   libs/providers/in-memory:
     - moredip
     - beeme1mr
