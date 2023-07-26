@@ -1,5 +1,5 @@
 import { ConfigCatProvider } from './config-cat-provider';
-import { ParseError, ProviderEvents, TypeMismatchError } from '@openfeature/js-sdk';
+import { ParseError, ProviderEvents, ProviderStatus, TypeMismatchError } from '@openfeature/js-sdk';
 import {
   createConsoleLogger,
   createFlagOverridesFromMap,
@@ -42,8 +42,8 @@ describe('ConfigCatProvider', () => {
     configCatEmitter = (provider.configCatClient as any).options.hooks;
   });
 
-  afterAll(() => {
-    provider.onClose();
+  afterAll(async () => {
+    await provider.onClose();
   });
 
   it('should be an instance of ConfigCatProvider', () => {
@@ -67,6 +67,31 @@ describe('ConfigCatProvider', () => {
     await newProvider.onClose();
 
     expect(clientDisposeSpy).toHaveBeenCalled();
+  });
+
+  describe('status', () => {
+    it('should be NOT_READY before initialization and READY after successful initialization', async () => {
+      const newProvider = ConfigCatProvider.create('key', PollingMode.ManualPoll, {
+        logger: createConsoleLogger(LogLevel.Off),
+        offline: true,
+      });
+
+      expect(newProvider.status).toEqual(ProviderStatus.NOT_READY);
+      await newProvider.initialize();
+      expect(newProvider.status).toEqual(ProviderStatus.READY);
+    });
+
+    it('should set status to ERROR if an error occurs', async () => {
+      configCatEmitter.emit('clientError', 'Error');
+      expect(provider.status).toEqual(ProviderStatus.ERROR);
+    });
+
+    it('should set status back to READY if client switches back to ready after an error occured', async () => {
+      configCatEmitter.emit('clientError', 'Error');
+      expect(provider.status).toEqual(ProviderStatus.ERROR);
+      configCatEmitter.emit('clientReady');
+      expect(provider.status).toEqual(ProviderStatus.READY);
+    });
   });
 
   describe('events', () => {
