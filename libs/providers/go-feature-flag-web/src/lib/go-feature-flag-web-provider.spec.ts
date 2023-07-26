@@ -1,16 +1,14 @@
 import {GoFeatureFlagWebProvider} from './go-feature-flag-web-provider';
 import {EvaluationContext, OpenFeature, ProviderEvents, StandardResolutionReasons} from "@openfeature/web-sdk";
-import MockAdapter from "axios-mock-adapter";
-import axios from "axios";
 import WS from "jest-websocket-mock";
 import TestLogger from "./test-logger";
 import {ErrorCode, EvaluationDetails, JsonValue} from "@openfeature/js-sdk";
 import {GOFeatureFlagWebsocketResponse} from "./model";
+import fetchMock from "fetch-mock-jest";
 
 describe('GoFeatureFlagWebProvider', () => {
   let websocketMockServer: WS;
   const endpoint = 'http://localhost:1031/';
-  const axiosMock = new MockAdapter(axios);
   const allFlagsEndpoint = `${endpoint}v1/allflags`;
   const websocketEndpoint = 'ws://localhost:1031/ws/v1/flag/change';
   const defaultAllFlagResponse = {
@@ -85,11 +83,11 @@ describe('GoFeatureFlagWebProvider', () => {
   beforeEach(async () => {
     await WS.clean();
     await OpenFeature.close();
-    await axiosMock.reset();
-    await axiosMock.resetHistory();
+    fetchMock.mockClear();
+    fetchMock.mockReset();
     await jest.resetAllMocks();
     websocketMockServer = new WS(websocketEndpoint, {jsonProtocol: true});
-    axiosMock.onPost(allFlagsEndpoint).reply(200, defaultAllFlagResponse);
+    fetchMock.post(allFlagsEndpoint,defaultAllFlagResponse);
     defaultProvider = new GoFeatureFlagWebProvider({
       endpoint: endpoint,
       apiTimeout: 1000,
@@ -101,8 +99,8 @@ describe('GoFeatureFlagWebProvider', () => {
     await WS.clean();
     websocketMockServer.close()
     await OpenFeature.close();
-    await axiosMock.reset();
-    await axiosMock.resetHistory();
+    fetchMock.mockClear();
+    fetchMock.mockReset();
     await defaultProvider?.onClose();
     await jest.resetAllMocks();
     readyHandler.mockReset();
@@ -131,7 +129,7 @@ describe('GoFeatureFlagWebProvider', () => {
     //   await new Promise((resolve) => setTimeout(resolve, 5));
     //
     //   const got1 = client.getBooleanDetails('bool_flag', false);
-    //   axiosMock.onPost(allFlagsEndpoint).reply(200, alternativeAllFlagResponse);
+    //   fetchMock.post(allFlagsEndpoint, alternativeAllFlagResponse, {overwriteRoutes: true});
     //   await OpenFeature.setContext({targetingKey: "1234"});
     //   const got2 = client.getBooleanDetails('bool_flag', false);
     //
@@ -158,7 +156,7 @@ describe('GoFeatureFlagWebProvider', () => {
     });
 
     it('should emit an error if we have the wrong credentials', async () => {
-      axiosMock.onPost(allFlagsEndpoint).reply(401, {error: 'random error'});
+      fetchMock.post(allFlagsEndpoint,401, {overwriteRoutes: true});
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');
@@ -174,7 +172,7 @@ describe('GoFeatureFlagWebProvider', () => {
     });
 
     it('should emit an error if we receive a 404 from GO Feature Flag', async () => {
-      axiosMock.onPost(allFlagsEndpoint).reply(404, {error: 'random error'});
+      fetchMock.post(allFlagsEndpoint,404, {overwriteRoutes: true});
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');

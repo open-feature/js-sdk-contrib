@@ -12,6 +12,7 @@ import {
   TypeMismatchError,
 } from "@openfeature/web-sdk";
 import {
+  FlagState,
   GoFeatureFlagAllFlagRequest,
   GOFeatureFlagAllFlagsResponse,
   GoFeatureFlagWebProviderOptions,
@@ -19,6 +20,7 @@ import {
 } from "./model";
 import axios from "axios";
 import {transformContext} from "./context-transformer";
+import {FetchError} from "./fetch-error";
 
 export class GoFeatureFlagWebProvider implements Provider {
   private readonly _websocketPath = "ws/v1/flag/change"
@@ -34,6 +36,8 @@ export class GoFeatureFlagWebProvider implements Provider {
   private readonly _endpoint: string;
   // timeout in millisecond before we consider the http request as a failure
   private readonly _apiTimeout: number;
+  // apiKey is the key used to identify your request in GO Feature Flag
+  private readonly _apiKey: string | undefined;
 
   // initial delay in millisecond to wait before retrying to connect the websocket
   private readonly _websocketRetryInitialDelay;
@@ -55,6 +59,8 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._websocketRetryInitialDelay = options.websocketRetryInitialDelay || 100;
     this._websocketRetryDelayMultiplier = options.websocketRetryDelayMultiplier || 2;
     this._websocketMaxRetries = options.websocketMaxRetries || 10;
+    this._apiKey = options.apiKey;
+
     // Add API key to the headers
     if (options.apiKey) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${options.apiKey}`;
@@ -62,8 +68,7 @@ export class GoFeatureFlagWebProvider implements Provider {
   }
 
   async initialize(context: EvaluationContext): Promise<void> {
-    await this.fetchAll(context);
-    await this.connectWebsocket();
+    await Promise.all([this.fetchAll(context), this.connectWebsocket()]);
     this._logger?.debug("go-feature-flag provider initialized")
   }
 
@@ -91,7 +96,7 @@ export class GoFeatureFlagWebProvider implements Provider {
       await this.fetchAll(OpenFeature.getContext(), flagsChanged);
     }
     this._websocket.onclose = async () => {
-      this._logger?.info(`Websocket closed, trying to reconnect`);
+      this._logger?.warn(`Websocket closed, trying to reconnect`);
       await this.reconnectWebsocket();
     };
     this._websocket.onerror = async (event: Event) => {
@@ -161,12 +166,12 @@ export class GoFeatureFlagWebProvider implements Provider {
 
   onClose(): Promise<void> {
     this._websocket?.close(1000, "Closing GO Feature Flag provider");
-    return Promise.resolve(undefined);
+    return Promise.resolve();
   }
 
-  async onContextChange(_: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+  onContextChange(_: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     this._logger?.debug(`new context provided: ${newContext}`);
-    await this.fetchAll(newContext);
+    return this.fetchAll(newContext);
   }
 
   resolveNumberEvaluation(flagKey: string): ResolutionDetails<number> {
@@ -211,18 +216,33 @@ export class GoFeatureFlagWebProvider implements Provider {
 
     try {
       const request: GoFeatureFlagAllFlagRequest = {evaluationContext: transformContext(context)};
-      const response = await axios.post<GOFeatureFlagAllFlagsResponse>(endpointURL.toString(), request, {
+      const headers = new Headers({
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      });
+      if(this._apiKey){
+        headers.set('Authorization', `Bearer ${this._apiKey}`);
+      }
+
+      const init: RequestInit = {
+        method: "POST",
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        timeout: this._apiTimeout,
-      });
+        body: JSON.stringify(request)
+      };
+      const response = await fetch(endpointURL.toString(), init);
 
+      if(!response?.ok){
+        throw new FetchError(response.status);
+      }
+
+      const data = await response.json() as GOFeatureFlagAllFlagsResponse;
       // In case we are in success
       let flags = {};
-      Object.keys(response.data.flags).forEach(currentValue => {
-        const resolved = response.data.flags[currentValue];
+      Object.keys(data.flags).forEach(currentValue => {
+        const resolved: FlagState<FlagValue> = data.flags[currentValue];
         const resolutionDetails: ResolutionDetails<FlagValue> = {
           value: resolved.value,
           variant: resolved.variationType,
@@ -245,16 +265,14 @@ export class GoFeatureFlagWebProvider implements Provider {
         });
       }
     } catch (error) {
-      if (axios.isAxiosError(error)) {
+      if (error instanceof FetchError) {
         this.events.emit(ProviderEvents.Error, {
           message: error.message,
         });
-        if (error.response?.status == 401) {
+        if (error.status == 401) {
           this._logger?.error(`invalid token used to contact GO Feature Flag instance: ${error}`);
-        } else if (error.code === 'ECONNREFUSED' || error.response?.status === 404) {
+        } else if (error.status === 404) {
           this._logger?.error(`impossible to call go-feature-flag relay proxy on ${endpointURL}: ${error}`);
-        } else if (error.code === 'ECONNABORTED') {
-          this._logger?.error(`impossible to retrieve the flags on time: ${error}`);
         } else {
           this._logger?.error(`unknown error while retrieving flags: ${error}`);
         }
