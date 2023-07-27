@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.8.0...flagd-provider-v0.8.1) (2023-07-27)
+
+
+### 🐛 Bug Fixes
+
+* issue with flagd not disconnecting ([#495](https://github.com/open-feature/js-sdk-contrib/issues/495)) ([ff61206](https://github.com/open-feature/js-sdk-contrib/commit/ff61206f7f51fd5ec30fc85ea2742c0933384330))
+
 ## [0.8.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.7...flagd-provider-v0.8.0) (2023-07-27)
 
 
