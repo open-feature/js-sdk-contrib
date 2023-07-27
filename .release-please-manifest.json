@@ -5,6 +5,6 @@
   "libs/providers/flagd-web": "0.3.4",
   "libs/providers/env-var": "0.1.1",
   "libs/providers/in-memory": "0.2.0",
-  "libs/providers/config-cat": "0.2.0",
+  "libs/providers/config-cat": "0.3.0",
   "libs/providers/launchdarkly-client": "0.1.2"
 }
