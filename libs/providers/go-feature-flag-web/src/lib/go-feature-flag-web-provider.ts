@@ -187,9 +187,11 @@ export class GoFeatureFlagWebProvider implements Provider {
     return Promise.resolve();
   }
 
-  onContextChange(_: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+  async onContextChange(_: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     this._logger?.debug(`new context provided: ${newContext}`);
-    return this.retryFetchAll(newContext);
+    this.events.emit(ProviderEvents.Stale, {message: 'context has changed'});
+    await this.retryFetchAll(newContext);
+    this.events.emit(ProviderEvents.Ready, {message: ''});
   }
 
   resolveNumberEvaluation(flagKey: string): ResolutionDetails<number> {
@@ -302,7 +304,6 @@ export class GoFeatureFlagWebProvider implements Provider {
     const hasFlagsLoaded = this._flags !== undefined && Object.keys(this._flags).length !== 0
     this._flags = flags;
     if (hasFlagsLoaded) {
-
       this.events.emit(ProviderEvents.ConfigurationChanged, {
         message: 'flag configuration have changed',
         flagsChanged: flagsChanged,
