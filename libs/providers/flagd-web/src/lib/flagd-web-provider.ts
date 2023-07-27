@@ -11,6 +11,7 @@ import {
   OpenFeatureEventEmitter,
   Provider,
   ProviderEvents,
+  ProviderStatus,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
@@ -33,6 +34,7 @@ export class FlagdWebProvider implements Provider {
     name: 'flagd-web',
   };
 
+  private _status = ProviderStatus.NOT_READY;
   private _connected = false;
   private _promiseClient: PromiseClient<typeof Service>;
   private _callbackClient: CallbackClient<typeof Service>;
@@ -59,6 +61,10 @@ export class FlagdWebProvider implements Provider {
     this._maxRetries = maxRetries === 0 ? Infinity : maxRetries;
     this._maxDelay = maxDelay;
     this._logger = logger;
+  }
+
+  get status() {
+    return this._status;
   }
 
   events = new OpenFeatureEventEmitter();
@@ -122,6 +128,7 @@ export class FlagdWebProvider implements Provider {
             case EVENT_PROVIDER_READY:
               this.fetchAll(currentContext).then(() => {
                 this.resetConnectionState();
+                this._status = ProviderStatus.READY;
                 resolve();
               });
               return;
@@ -134,6 +141,7 @@ export class FlagdWebProvider implements Provider {
           }
         },
         (err) => {
+          this._status = ProviderStatus.ERROR;
           this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd, ${err?.message}`);
           this._logger?.debug(err?.stack);
           if (this._retry < this._maxRetries) {

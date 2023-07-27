@@ -1,6 +1,14 @@
 import { CallbackClient, Code, ConnectError, PromiseClient } from '@bufbuild/connect';
 import { Struct } from '@bufbuild/protobuf';
-import { Client, ErrorCode, JsonValue, OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/web-sdk';
+import {
+  Client,
+  ErrorCode,
+  JsonValue,
+  OpenFeature,
+  ProviderEvents,
+  ProviderStatus,
+  StandardResolutionReasons,
+} from '@openfeature/web-sdk';
 import fetchMock from 'jest-fetch-mock';
 import { Service } from '../proto/ts/schema/v1/schema_connect';
 import { AnyFlag, EventStreamResponse, ResolveAllResponse } from '../proto/ts/schema/v1/schema_pb';
@@ -52,7 +60,7 @@ class MockCallbackClient implements Partial<CallbackClient<typeof Service>> {
     (
       _,
       messageCallback: (response: EventStreamResponse) => void,
-      closeCallback: (error: ConnectError) => void
+      closeCallback: (error: ConnectError) => void,
     ): (() => void) => {
       this.messageCallback = messageCallback;
       this.closeCallback = closeCallback;
@@ -63,7 +71,7 @@ class MockCallbackClient implements Partial<CallbackClient<typeof Service>> {
       }
 
       return this.cancelFunction;
-    }
+    },
   );
 }
 
@@ -122,9 +130,9 @@ describe(FlagdWebProvider.name, () => {
         { host: 'fake.com' },
         console,
         new MockPromiseClient() as unknown as PromiseClient<typeof Service>,
-        mockCallbackClient as unknown as CallbackClient<typeof Service>
+        mockCallbackClient as unknown as CallbackClient<typeof Service>,
       );
-      OpenFeature.setProvider(provider);
+      OpenFeature.setProvider('resolution functionality test', provider);
       client = OpenFeature.getClient('resolution functionality test');
 
       client.addHandler(ProviderEvents.Ready, () => {
@@ -165,6 +173,7 @@ describe(FlagdWebProvider.name, () => {
   });
 
   describe('events', () => {
+    let provider: FlagdWebProvider;
     let client: Client;
     let mockCallbackClient: MockCallbackClient;
     const mockPromiseClient = new MockPromiseClient() as unknown as PromiseClient<typeof Service>;
@@ -172,31 +181,40 @@ describe(FlagdWebProvider.name, () => {
 
     beforeEach(() => {
       mockCallbackClient = new MockCallbackClient();
-      OpenFeature.setProvider(
-        new FlagdWebProvider(
-          { host: 'fake.com', maxRetries: -1 },
-          console,
-          mockPromiseClient,
-          mockCallbackClient as unknown as CallbackClient<typeof Service>
-        )
+      provider = new FlagdWebProvider(
+        { host: 'fake.com', maxRetries: -1 },
+        console,
+        mockPromiseClient,
+        mockCallbackClient as unknown as CallbackClient<typeof Service>,
       );
+      OpenFeature.setProvider('events-test', provider);
       client = OpenFeature.getClient('events-test');
     });
 
     describe(ProviderEvents.Ready, () => {
-      it('should be fired as soon as client subscribes, if ready', (done) => {
+      it('should fire as soon as client subscribes, if ready', (done) => {
         mockCallbackClient.mockMessage({
           type: EVENT_PROVIDER_READY,
         });
 
         client.addHandler(ProviderEvents.Ready, () => {
-          done();
+          try {
+            expect(provider.status).toEqual(ProviderStatus.READY);
+            done();
+          } catch (err) {
+            done(err);
+          }
         });
       });
 
-      it('should fire if message received', (done) => {
+      it('should fire and be ready if message received', (done) => {
         client.addHandler(ProviderEvents.Ready, () => {
-          done();
+          try {
+            expect(provider.status).toEqual(ProviderStatus.READY);
+            done();
+          } catch (err) {
+            done(err);
+          }
         });
         mockCallbackClient.mockMessage({
           type: EVENT_PROVIDER_READY,
@@ -215,12 +233,13 @@ describe(FlagdWebProvider.name, () => {
       });
 
       it('should trigger call to resolveAll with current context', (done) => {
-
         client.addHandler(ProviderEvents.ConfigurationChanged, () => {
           try {
-            expect(mockPromiseClient.resolveAll).toHaveBeenLastCalledWith({context: Struct.fromJson(context as JsonValue)});
+            expect(mockPromiseClient.resolveAll).toHaveBeenLastCalledWith({
+              context: Struct.fromJson(context as JsonValue),
+            });
             done();
-          } catch(err) {
+          } catch (err) {
             done(err);
           }
         });
@@ -235,7 +254,12 @@ describe(FlagdWebProvider.name, () => {
     describe(ProviderEvents.Error, () => {
       it('should fire if message received', (done) => {
         client.addHandler(ProviderEvents.Error, () => {
-          done();
+          try {
+            expect(provider.status).toEqual(ProviderStatus.ERROR);
+            done();
+          } catch (err) {
+            done(err);
+          }
         });
         mockCallbackClient.mockClose({
           code: Code.Unavailable,
@@ -251,19 +275,20 @@ describe(FlagdWebProvider.name, () => {
     beforeEach(() => {
       mockCallbackClient = new MockCallbackClient();
       OpenFeature.setProvider(
+        'shutdown test',
         new FlagdWebProvider(
           { host: 'fake.com', maxRetries: -1 },
           console,
           mockPromiseClient,
-          mockCallbackClient as unknown as CallbackClient<typeof Service>
-        )
+          mockCallbackClient as unknown as CallbackClient<typeof Service>,
+        ),
       );
     });
 
     describe('API close', () => {
-      it('should call cancel function on provider', () => {
+      it('should call cancel function on provider', async () => {
         expect(mockCallbackClient.cancelFunction).not.toHaveBeenCalled();
-        OpenFeature.close();
+        await OpenFeature.close();
         expect(mockCallbackClient.cancelFunction).toHaveBeenCalled();
       });
     });
@@ -274,12 +299,13 @@ describe(FlagdWebProvider.name, () => {
       it('should attempt reconnect many times', (done) => {
         const mockCallbackClient = new MockCallbackClient();
         OpenFeature.setProvider(
+          'should attempt many reconnect test',
           new FlagdWebProvider(
             { host: 'fake.com' },
             console,
             undefined,
-            mockCallbackClient as unknown as CallbackClient<typeof Service>
-          )
+            mockCallbackClient as unknown as CallbackClient<typeof Service>,
+          ),
         );
         mockCallbackClient.fail = true;
         mockCallbackClient.mockClose({
@@ -300,12 +326,13 @@ describe(FlagdWebProvider.name, () => {
       it('should attempt reconnect if maxRetries (1) times', (done) => {
         const mockCallbackClient = new MockCallbackClient();
         OpenFeature.setProvider(
+          'should connect test',
           new FlagdWebProvider(
             { host: 'fake.com', maxRetries: 1 },
             console,
             undefined,
-            mockCallbackClient as unknown as CallbackClient<typeof Service>
-          )
+            mockCallbackClient as unknown as CallbackClient<typeof Service>,
+          ),
         );
 
         mockCallbackClient.fail = true;
@@ -325,12 +352,13 @@ describe(FlagdWebProvider.name, () => {
       it('should NOT attempt reconnect if maxRetries (-1) times', (done) => {
         const mockCallbackClient = new MockCallbackClient();
         OpenFeature.setProvider(
+          'should not reconnect test',
           new FlagdWebProvider(
             { host: 'fake.com', maxRetries: -1 },
             console,
             undefined,
-            mockCallbackClient as unknown as CallbackClient<typeof Service>
-          )
+            mockCallbackClient as unknown as CallbackClient<typeof Service>,
+          ),
         );
 
         mockCallbackClient.fail = true;
@@ -357,9 +385,9 @@ describe(FlagdWebProvider.name, () => {
         { host: 'fake.com' },
         console,
         new MockPromiseClient() as unknown as PromiseClient<typeof Service>,
-        mockCallbackClient as unknown as CallbackClient<typeof Service>
+        mockCallbackClient as unknown as CallbackClient<typeof Service>,
       );
-      OpenFeature.setProvider(provider);
+      OpenFeature.setProvider('resolution functionality test', provider);
       client = OpenFeature.getClient('resolution functionality test');
 
       client.addHandler(ProviderEvents.Ready, () => {
