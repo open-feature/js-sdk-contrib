@@ -193,6 +193,14 @@ describe(FlagdWebProvider.name, () => {
 
     describe(ProviderEvents.Ready, () => {
       it('should fire as soon as client subscribes, if ready', (done) => {
+        try {
+          // should start NOT_READY
+          expect(provider.status).toEqual(ProviderStatus.NOT_READY);
+          done();
+        } catch (err) {
+          done(err);
+        }
+
         mockCallbackClient.mockMessage({
           type: EVENT_PROVIDER_READY,
         });
@@ -208,6 +216,14 @@ describe(FlagdWebProvider.name, () => {
       });
 
       it('should fire and be ready if message received', (done) => {
+        try {
+          // should start NOT_READY
+          expect(provider.status).toEqual(ProviderStatus.NOT_READY);
+          done();
+        } catch (err) {
+          done(err);
+        }
+
         client.addHandler(ProviderEvents.Ready, () => {
           try {
             expect(provider.status).toEqual(ProviderStatus.READY);
