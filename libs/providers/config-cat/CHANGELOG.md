@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.2.0...config-cat-provider-v0.3.0) (2023-07-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove configcat 7 peer dependency ([#435](https://github.com/open-feature/js-sdk-contrib/issues/435))
+
+### 🐛 Bug Fixes
+
+* **config-cat:** add status flag to provider ([#491](https://github.com/open-feature/js-sdk-contrib/issues/491)) ([f599c31](https://github.com/open-feature/js-sdk-contrib/commit/f599c3145881b81107c9a65b2c4cfe2a8b4111f1))
+* remove configcat 7 peer dependency ([#435](https://github.com/open-feature/js-sdk-contrib/issues/435)) ([da5d212](https://github.com/open-feature/js-sdk-contrib/commit/da5d21208e8929f7cdfc805e256cb892968bcd95))
+
 ## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.1.1...config-cat-provider-v0.2.0) (2023-06-27)
 
 

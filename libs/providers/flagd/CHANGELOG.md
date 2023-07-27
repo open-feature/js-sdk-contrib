@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.8.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.7...flagd-provider-v0.8.0) (2023-07-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* events, init, shutdown ([#484](https://github.com/open-feature/js-sdk-contrib/issues/484))
+  * constructor arg order changed
+  * 1.3.0 minimum js-sdk version
+
+### ✨ New Features
+
+* events, init, shutdown ([#484](https://github.com/open-feature/js-sdk-contrib/issues/484)) ([a73fc76](https://github.com/open-feature/js-sdk-contrib/commit/a73fc7670c66b2108cef8132a94433d75dea3622))
+
+
+### 🧹 Chore
+
+* migrate buf ([#456](https://github.com/open-feature/js-sdk-contrib/issues/456)) ([8568af1](https://github.com/open-feature/js-sdk-contrib/commit/8568af1e26f92f4d0e9a942b9fc3e001d919ef03))
+
 ## [0.7.7](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.7.6...flagd-provider-v0.7.7) (2023-07-03)
 
 
