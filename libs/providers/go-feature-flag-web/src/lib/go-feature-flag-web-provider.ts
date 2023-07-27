@@ -142,7 +142,6 @@ export class GoFeatureFlagWebProvider implements Provider {
     });
   }
 
-
   /**
    * extract flag names from the websocket answer
    */

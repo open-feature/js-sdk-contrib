@@ -1,7 +1,4 @@
 # go-feature-flag-web Provider for OpenFeature
-![Experimental](https://img.shields.io/badge/experimental-breaking%20changes%20allowed-yellow)  
-:warning: This provider requires the use of the experimental `@openfeature/web-sdk`.
-
 ## About this provider
 [GO Feature Flag](https://gofeatureflag.org) provider allows you to connect to your GO Feature Flag instance with the `@openfeature/web-sdk`.
 
