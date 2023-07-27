@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.13](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.12...go-feature-flag-provider-v0.5.13) (2023-07-27)
+
+
+### 🐛 Bug Fixes
+
+* [GO Feature Flag server] Implement ProviderStatus ([#493](https://github.com/open-feature/js-sdk-contrib/issues/493)) ([e11269d](https://github.com/open-feature/js-sdk-contrib/commit/e11269dec877a14b91a3721c9449dbd62dd069c1))
+
 ## [0.5.12](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.11...go-feature-flag-provider-v0.5.12) (2023-06-28)
 
 
