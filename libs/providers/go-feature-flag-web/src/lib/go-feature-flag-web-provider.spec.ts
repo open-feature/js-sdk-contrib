@@ -168,7 +168,7 @@ describe('GoFeatureFlagWebProvider', () => {
       await new Promise((resolve) => setTimeout(resolve, 5));
       expect(errorHandler).toBeCalled()
       expect(logger.inMemoryLogger['error'][0])
-        .toEqual('invalid token used to contact GO Feature Flag instance: Error: Request failed with status code 401');
+        .toEqual('initialization failed, provider is on error, we will try to reconnect: Error: Request failed with status code 401');
     });
 
     it('should emit an error if we receive a 404 from GO Feature Flag', async () => {
@@ -184,7 +184,7 @@ describe('GoFeatureFlagWebProvider', () => {
       await new Promise((resolve) => setTimeout(resolve, 5));
       expect(errorHandler).toBeCalled()
       expect(logger.inMemoryLogger['error'][0])
-        .toEqual('impossible to call go-feature-flag relay proxy on http://localhost:1031/v1/allflags: Error: Request failed with status code 404');
+        .toEqual('initialization failed, provider is on error, we will try to reconnect: Error: Request failed with status code 404');
     });
 
     it('should get a valid boolean flag evaluation', async () => {
@@ -367,8 +367,8 @@ describe('GoFeatureFlagWebProvider', () => {
       await OpenFeature.setContext(defaultContext);
       const provider = new GoFeatureFlagWebProvider({
         endpoint,
-        websocketMaxRetries: 1,
-        websocketRetryInitialDelay: 10,
+        maxRetries: 1,
+        retryInitialDelay: 10,
       }, logger);
       OpenFeature.setProvider('test-provider', provider);
       const client = await OpenFeature.getClient('test-provider');

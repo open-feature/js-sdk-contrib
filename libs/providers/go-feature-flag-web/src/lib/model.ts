@@ -42,18 +42,18 @@ export interface GoFeatureFlagWebProviderOptions {
   // Default: null
   apiKey?: string;
 
-  // initial delay in millisecond to wait before retrying to connect the websocket
+  // initial delay in millisecond to wait before retrying to connect to GO Feature Flag (websocket and API)
   // Default: 100 ms
-  websocketRetryInitialDelay?: number;
+  retryInitialDelay?: number;
 
-  // multiplier of websocketRetryInitialDelay after each failure
+  // multiplier of retryInitialDelay after each failure
   // (example: 1st connection retry will be after 100ms, second after 200ms, third after 400ms ...)
   // Default: 2
-  websocketRetryDelayMultiplier?: number;
+  retryDelayMultiplier?: number;
 
-  // maximum number of retries before considering the websocket unreachable
+  // maximum number of retries before considering GO Feature Flag is unreachable
   // Default: 10
-  websocketMaxRetries?: number;
+  maxRetries?: number;
 }
 
 
