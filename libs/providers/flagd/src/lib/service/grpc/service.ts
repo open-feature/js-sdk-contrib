@@ -112,7 +112,9 @@ export class GRPCService implements Service {
   }
 
   async disconnect(): Promise<void> {
-    this._stream?.destroy();
+    // cancel the stream and close the connection
+    this._stream?.cancel();
+    this._client.close();
   }
 
   async resolveBoolean(
@@ -146,9 +148,13 @@ export class GRPCService implements Service {
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       this.logger?.debug(`${FlagdProvider.name}: connecting stream, attempt ${this._streamConnectAttempt}...`);
-      const stream = this._client.eventStream({});
-      stream.on('error', () => {
-        this.handleError(reject, connectCallback, changedCallback, disconnectCallback);
+      const stream = this._client.eventStream({}, {});
+      stream.on('error', (err: ServiceError | undefined) => {
+        if (err?.code === status.CANCELLED) {
+          this.logger?.debug(`${FlagdProvider.name}: stream cancelled, will not be re-established`);
+        } else {
+          this.handleError(reject, connectCallback, changedCallback, disconnectCallback);
+        }
       });
       stream.on('close', () => {
         this.handleClose();
