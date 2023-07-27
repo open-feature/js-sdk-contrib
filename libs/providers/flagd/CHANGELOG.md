@@ -6,6 +6,8 @@
 ### ⚠ BREAKING CHANGES
 
 * events, init, shutdown ([#484](https://github.com/open-feature/js-sdk-contrib/issues/484))
+  * constructor arg order changed
+  * 1.3.0 minimum js-sdk version
 
 ### ✨ New Features
 
