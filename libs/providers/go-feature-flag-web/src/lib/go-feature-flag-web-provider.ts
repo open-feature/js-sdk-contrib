@@ -19,7 +19,6 @@ import {
   GoFeatureFlagWebProviderOptions,
   GOFeatureFlagWebsocketResponse,
 } from "./model";
-import axios from "axios";
 import {transformContext} from "./context-transformer";
 import {FetchError} from "./fetch-error";
 
@@ -62,11 +61,6 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._retryDelayMultiplier = options.retryDelayMultiplier || 2;
     this._maxRetries = options.maxRetries || 10;
     this._apiKey = options.apiKey;
-
-    // Add API key to the headers
-    if (options.apiKey) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${options.apiKey}`;
-    }
   }
 
   get status(): ProviderStatus {
