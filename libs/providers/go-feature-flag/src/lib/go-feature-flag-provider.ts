@@ -69,7 +69,6 @@ export class GoFeatureFlagProvider implements Provider {
   // logger is the Open Feature logger to use
   private logger?: Logger;
 
-  // status of the provider
   private _status: ProviderStatus = ProviderStatus.NOT_READY;
 
   constructor(options: GoFeatureFlagProviderOptions, logger?: Logger) {
