@@ -4,7 +4,8 @@
 import {
   ErrorCode,
   FlagNotFoundError,
-  OpenFeature, ProviderStatus,
+  OpenFeature,
+  ProviderStatus,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError
