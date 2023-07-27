@@ -5,6 +5,7 @@ import {
   ErrorCode,
   FlagNotFoundError,
   OpenFeature,
+  ProviderStatus,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError
@@ -59,7 +60,6 @@ describe('GoFeatureFlagProvider', () => {
       const goff = new GoFeatureFlagProvider({endpoint});
       expect(goff).toBeInstanceOf(GoFeatureFlagProvider);
     });
-
     it('should throw an error if proxy not ready', async () => {
       const flagName = 'random-flag';
       const targetingKey = 'user-key';
@@ -74,7 +74,6 @@ describe('GoFeatureFlagProvider', () => {
           );
         });
     });
-
     it('should throw an error if the call timeout', async () => {
       const flagName = 'random-flag';
       const targetingKey = 'user-key';
@@ -89,7 +88,6 @@ describe('GoFeatureFlagProvider', () => {
           );
         });
     });
-
     describe('error codes in HTTP response', () => {
       it('SDK error codes should return correct code', async () => {
         const flagName = 'random-other-flag';
@@ -106,7 +104,6 @@ describe('GoFeatureFlagProvider', () => {
             expect(result.errorCode).toEqual(ErrorCode.PARSE_ERROR)
           })
       });
-
       it('unknown error codes should return GENERAL code', async () => {
         const flagName = 'random-other-other-flag';
         const targetingKey = 'user-key';
@@ -123,7 +120,6 @@ describe('GoFeatureFlagProvider', () => {
           })
       });
     });
-
     it('should throw an error if we fail in other network errors case', async () => {
       const flagName = 'random-flag';
       const targetingKey = 'user-key';
@@ -176,7 +172,6 @@ describe('GoFeatureFlagProvider', () => {
           );
         });
     });
-
     it('should be valid with an API key provided', async () => {
       const flagName = 'random-flag';
       const targetingKey = 'user-key';
@@ -202,6 +197,14 @@ describe('GoFeatureFlagProvider', () => {
             variant: 'trueVariation',
           } as ResolutionDetails<boolean>);
         });
+    });
+    it('provider should start not ready', async () => {
+      const goff = new GoFeatureFlagProvider({endpoint});
+      expect(goff.status).toEqual(ProviderStatus.NOT_READY);
+    });
+    it('provider should be ready after after setting the provider to Open Feature', async () => {
+      OpenFeature.setProvider( 'goff', goff);
+      expect(goff.status).toEqual(ProviderStatus.READY);
     });
   });
 
@@ -298,7 +301,6 @@ describe('GoFeatureFlagProvider', () => {
         });
     });
   });
-
   describe('resolveStringEvaluation', () => {
     it('should throw an error if we expect a string and got another type', async () => {
       const flagName = 'random-flag';
@@ -393,7 +395,6 @@ describe('GoFeatureFlagProvider', () => {
         });
     });
   });
-
   describe('resolveNumberEvaluation', () => {
     it('should throw an error if we expect a number and got another type', async () => {
       const flagName = 'random-flag';
@@ -486,7 +487,6 @@ describe('GoFeatureFlagProvider', () => {
         });
     });
   });
-
   describe('resolveObjectEvaluation', () => {
     it('should throw an error if we expect a json array and got another type', async () => {
       const flagName = 'random-flag';
