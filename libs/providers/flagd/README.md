@@ -50,6 +50,18 @@ Options can be defined in the constructor or as environment variables, with cons
   }))
 ```
 
+### Supported events
+
+The flagd provider emits `PROVIDER_READY`, `PROVIDER_ERROR` and `PROVIDER_CONFIGURATION_CHANGED` events.
+
+| SDK event                        | Originating action in flagd                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------- |
+| `PROVIDER_READY`                 | The streaming connection with flagd has been established.                       |
+| `PROVIDER_ERROR`                 | The streaming connection with flagd has been broken.                            |
+| `PROVIDER_CONFIGURATION_CHANGED` | A flag configuration (default value, targeting rule, etc) in flagd has changed. |
+
+For general information on events, see the [official documentation](https://openfeature.dev/docs/reference/concepts/events).
+
 ## Building
 
 Run `nx package providers-flagd` to build the library.
