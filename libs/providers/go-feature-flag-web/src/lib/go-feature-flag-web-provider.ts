@@ -100,6 +100,12 @@ export class GoFeatureFlagWebProvider implements Provider {
     wsURL.pathname =
       wsURL.pathname.endsWith('/') ? wsURL.pathname + this._websocketPath : wsURL.pathname + '/' + this._websocketPath;
     wsURL.protocol = "ws"
+
+    // adding API Key if GO Feature Flag use api keys.
+    if(this._apiKey){
+      wsURL.searchParams.set('apiKey', this._apiKey);
+    }
+
     this._logger?.debug(`Trying to connect the websocket at ${wsURL}`)
 
     this._websocket = new WebSocket(wsURL, ["ws", "http", "https"]);
