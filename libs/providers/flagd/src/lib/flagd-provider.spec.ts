@@ -3,6 +3,7 @@ import {
   Client,
   ErrorCode,
   EvaluationContext,
+  FlagMetadata,
   OpenFeature,
   ProviderEvents,
   ProviderStatus,
@@ -25,7 +26,7 @@ import {
 } from '../proto/ts/schema/v1/schema';
 import { EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from './constants';
 import { FlagdProvider } from './flagd-provider';
-import { FlagChangeMessage, GRPCService } from './service/grpc/service';
+import { FlagChangeMessage, GRPCService } from './service/grpc/grpc-service';
 
 const REASON = StandardResolutionReasons.STATIC;
 const ERROR_REASON = StandardResolutionReasons.ERROR;
@@ -54,6 +55,12 @@ const TEST_CONTEXT_KEY = 'context-key';
 const TEST_CONTEXT_VALUE = 'context-value';
 const TEST_CONTEXT = { [TEST_CONTEXT_KEY]: TEST_CONTEXT_VALUE };
 
+const METADATA: FlagMetadata = {
+  metadataKey1: 'value1',
+  metadataKey2: 2,
+  metadataKey3: true,
+};
+
 describe(FlagdProvider.name, () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -80,7 +87,7 @@ describe(FlagdProvider.name, () => {
           value: BOOLEAN_VALUE,
           variant: BOOLEAN_VARIANT,
           reason: REASON,
-          metadata: {}
+          metadata: METADATA,
         });
       }),
       resolveString: jest.fn((request: ResolveStringRequest, callback: (error: ServiceError | null, response: ResolveStringResponse) => void) => {
@@ -88,7 +95,7 @@ describe(FlagdProvider.name, () => {
           value: STRING_VALUE,
           variant: STRING_VARIANT,
           reason: REASON,
-          metadata: {}
+          metadata: METADATA,
         });
       }),
       resolveFloat: jest.fn((request: ResolveFloatRequest, callback: (error: ServiceError | null, response: ResolveFloatResponse) => void) => {
@@ -96,7 +103,7 @@ describe(FlagdProvider.name, () => {
           value: NUMBER_VALUE,
           variant: NUMBER_VARIANT,
           reason: REASON,
-          metadata: {}
+          metadata: METADATA,
         });
       }),
       resolveInt: jest.fn((): UnaryCall<ResolveIntRequest, ResolveIntResponse> => {
@@ -107,7 +114,7 @@ describe(FlagdProvider.name, () => {
           value: OBJECT_VALUE,
           variant: OBJECT_VARIANT,
           reason: REASON,
-          metadata: {}
+          metadata: METADATA,
         });
       }),
     } as unknown as ServiceClient;
@@ -130,6 +137,7 @@ describe(FlagdProvider.name, () => {
         expect(val.value).toEqual(BOOLEAN_VALUE);
         expect(val.variant).toEqual(BOOLEAN_VARIANT);
         expect(val.reason).toEqual(REASON);
+        expect(val.flagMetadata).toEqual(METADATA);
       });
     });
 
@@ -143,6 +151,7 @@ describe(FlagdProvider.name, () => {
         expect(val.value).toEqual(STRING_VALUE);
         expect(val.variant).toEqual(STRING_VARIANT);
         expect(val.reason).toEqual(REASON);
+        expect(val.flagMetadata).toEqual(METADATA);
       });
     });
 
@@ -156,6 +165,7 @@ describe(FlagdProvider.name, () => {
         expect(val.value).toEqual(NUMBER_VALUE);
         expect(val.variant).toEqual(NUMBER_VARIANT);
         expect(val.reason).toEqual(REASON);
+        expect(val.flagMetadata).toEqual(METADATA);
       });
     });
 
@@ -169,6 +179,7 @@ describe(FlagdProvider.name, () => {
         expect(val.value).toEqual({ [OBJECT_INNER_KEY]: OBJECT_INNER_VALUE });
         expect(val.variant).toEqual(OBJECT_VARIANT);
         expect(val.reason).toEqual(REASON);
+        expect(val.flagMetadata).toEqual(METADATA);
       });
     });
 
@@ -184,6 +195,7 @@ describe(FlagdProvider.name, () => {
         expect(val.value).toEqual(BOOLEAN_VALUE);
         expect(val.variant).toEqual(BOOLEAN_VARIANT);
         expect(val.reason).toEqual(REASON);
+        expect(val.flagMetadata).toEqual(METADATA);
       });
     });
   });
@@ -206,22 +218,16 @@ describe(FlagdProvider.name, () => {
       resolveBoolean: jest.fn((request: ResolveBooleanRequest, callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void) => {
         callback(null, {
           variant: BOOLEAN_VARIANT,
-          reason: REASON,
-          metadata: {}
         } as ResolveBooleanResponse);
       }),
       resolveString: jest.fn((request: ResolveStringRequest, callback: (error: ServiceError | null, response: ResolveStringResponse) => void) => {
         callback(null, {
           variant: STRING_VARIANT,
-          reason: REASON,
-          metadata: {}
         } as ResolveStringResponse);
       }),
       resolveFloat: jest.fn((request: ResolveFloatRequest, callback: (error: ServiceError | null, response: ResolveFloatResponse) => void) => {
         callback(null, {
           variant: NUMBER_VARIANT,
-          reason: REASON,
-          metadata: {}
         } as ResolveFloatResponse);
       }),
       resolveInt: jest.fn((): UnaryCall<ResolveIntRequest, ResolveIntResponse> => {
@@ -230,8 +236,6 @@ describe(FlagdProvider.name, () => {
       resolveObject: jest.fn((request: ResolveObjectRequest, callback: (error: ServiceError | null, response: ResolveObjectResponse) => void) => {
         callback(null, {
           variant: OBJECT_VARIANT,
-          reason: REASON,
-          metadata: {}
         } as ResolveObjectResponse);
       }),
     } as unknown as ServiceClient;
@@ -245,54 +249,46 @@ describe(FlagdProvider.name, () => {
     });
 
     describe(FlagdProvider.prototype.resolveBooleanEvaluation.name, () => {
-      it(`should call ${ServiceClient.prototype.resolveBoolean} with key and context and return details`, async () => {
+      it(`should call ${ServiceClient.prototype.resolveBoolean} with key and context and return falsy value`, async () => {
         const val = await client.getBooleanDetails(BOOLEAN_KEY, false, TEST_CONTEXT);
         expect(basicServiceClientMock.resolveBoolean).toHaveBeenCalledWith({
           flagKey: BOOLEAN_KEY,
           context: TEST_CONTEXT,
         }, expect.any(Function));
         expect(val.value).toEqual(false);
-        expect(val.variant).toEqual(BOOLEAN_VARIANT);
-        expect(val.reason).toEqual(REASON);
       });
     });
 
     describe(FlagdProvider.prototype.resolveStringEvaluation.name, () => {
-      it(`should call ${ServiceClient.prototype.resolveString} with key and context and return details`, async () => {
+      it(`should call ${ServiceClient.prototype.resolveString} with key and context and return falsy value`, async () => {
         const val = await client.getStringDetails(STRING_KEY, '', TEST_CONTEXT);
         expect(basicServiceClientMock.resolveString).toHaveBeenCalledWith({
           flagKey: STRING_KEY,
           context: TEST_CONTEXT,
         }, expect.any(Function));
         expect(val.value).toEqual('');
-        expect(val.variant).toEqual(STRING_VARIANT);
-        expect(val.reason).toEqual(REASON);
       });
     });
 
     describe(FlagdProvider.prototype.resolveNumberEvaluation.name, () => {
-      it(`should call ${ServiceClient.prototype.resolveFloat} with key and context and return details`, async () => {
+      it(`should call ${ServiceClient.prototype.resolveFloat} with key and context and return falsy value`, async () => {
         const val = await client.getNumberDetails(NUMBER_KEY, 0, TEST_CONTEXT);
         expect(basicServiceClientMock.resolveFloat).toHaveBeenCalledWith({
           flagKey: NUMBER_KEY,
           context: TEST_CONTEXT,
         }, expect.any(Function));
         expect(val.value).toEqual(0);
-        expect(val.variant).toEqual(NUMBER_VARIANT);
-        expect(val.reason).toEqual(REASON);
       });
     });
 
     describe(FlagdProvider.prototype.resolveObjectEvaluation.name, () => {
-      it(`should call ${ServiceClient.prototype.resolveObject} with key and context and return details`, async () => {
+      it(`should call ${ServiceClient.prototype.resolveObject} with key and context and return falsy value`, async () => {
         const val = await client.getObjectDetails(OBJECT_KEY, {}, TEST_CONTEXT);
         expect(basicServiceClientMock.resolveObject).toHaveBeenCalledWith({
           flagKey: OBJECT_KEY,
           context: TEST_CONTEXT,
         }, expect.any(Function));
         expect(val.value).toEqual({});
-        expect(val.variant).toEqual(OBJECT_VARIANT);
-        expect(val.reason).toEqual(REASON);
       });
     });
   });
