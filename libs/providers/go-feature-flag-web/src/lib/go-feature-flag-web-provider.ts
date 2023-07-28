@@ -243,7 +243,7 @@ export class GoFeatureFlagWebProvider implements Provider {
         this.handleFetchErrors(err)
         await new Promise((resolve) => setTimeout(resolve, delay));
         delay *= this._retryDelayMultiplier;
-        this._logger?.info(`xxx ${delay} ms (${attempt}/${this._maxRetries}).`)
+        this._logger?.info(`Waiting ${delay} ms before trying to evaluate the flags (${attempt}/${this._maxRetries}).`)
       }
     }
   }
