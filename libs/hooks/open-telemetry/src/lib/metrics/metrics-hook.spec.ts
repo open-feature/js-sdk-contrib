@@ -215,7 +215,7 @@ describe(MetricsHook.name, () => {
           reason: StandardResolutionReasons.STATIC,
         } as EvaluationDetails<number>;
 
-        // configure a mapper for our custom properties
+        // configure a mapper that throws
         const attributeMapper: AttributeMapper = (flagMetadata) => { 
           throw new Error('fake error');
         };
