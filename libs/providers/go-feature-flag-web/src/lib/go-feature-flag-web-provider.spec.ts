@@ -168,7 +168,7 @@ describe('GoFeatureFlagWebProvider', () => {
       await new Promise((resolve) => setTimeout(resolve, 5));
       expect(errorHandler).toBeCalled()
       expect(logger.inMemoryLogger['error'][0])
-        .toEqual('initialization failed, provider is on error, we will try to reconnect: Error: Request failed with status code 401');
+        .toEqual('GoFeatureFlagWebProvider: initialization failed, provider is on error, we will try to reconnect: Error: Request failed with status code 401');
     });
 
     it('should emit an error if we receive a 404 from GO Feature Flag', async () => {
@@ -184,7 +184,7 @@ describe('GoFeatureFlagWebProvider', () => {
       await new Promise((resolve) => setTimeout(resolve, 5));
       expect(errorHandler).toBeCalled()
       expect(logger.inMemoryLogger['error'][0])
-        .toEqual('initialization failed, provider is on error, we will try to reconnect: Error: Request failed with status code 404');
+        .toEqual('GoFeatureFlagWebProvider: initialization failed, provider is on error, we will try to reconnect: Error: Request failed with status code 404');
     });
 
     it('should get a valid boolean flag evaluation', async () => {

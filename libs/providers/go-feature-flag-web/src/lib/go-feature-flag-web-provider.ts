@@ -71,10 +71,10 @@ export class GoFeatureFlagWebProvider implements Provider {
     return Promise.all([this.fetchAll(context), this.connectWebsocket()])
       .then(() => {
         this._status = ProviderStatus.READY;
-        this._logger?.debug("go-feature-flag provider initialized");
+        this._logger?.debug(`${GoFeatureFlagWebProvider.name}: go-feature-flag provider initialized`);
       })
       .catch((error) => {
-        this._logger?.error(`initialization failed, provider is on error, we will try to reconnect: ${error}`);
+        this._logger?.error(`${GoFeatureFlagWebProvider.name}: initialization failed, provider is on error, we will try to reconnect: ${error}`);
         this._status = ProviderStatus.ERROR;
         this.handleFetchErrors(error);
 
@@ -100,26 +100,26 @@ export class GoFeatureFlagWebProvider implements Provider {
       wsURL.searchParams.set('apiKey', this._apiKey);
     }
 
-    this._logger?.debug(`Trying to connect the websocket at ${wsURL}`)
+    this._logger?.debug(`${GoFeatureFlagWebProvider.name}: Trying to connect the websocket at ${wsURL}`)
 
     this._websocket = new WebSocket(wsURL, ["ws", "http", "https"]);
     await this.waitWebsocketFinalStatus(this._websocket);
 
     this._websocket.onopen = (event) => {
-      this._logger?.info(`Websocket to go-feature-flag open: ${event}`);
+      this._logger?.info(`${GoFeatureFlagWebProvider.name}: Websocket to go-feature-flag open: ${event}`);
     };
     this._websocket.onmessage = async ({data}) => {
-      this._logger?.info(`Change in your configuration flag`);
+      this._logger?.info(`${GoFeatureFlagWebProvider.name}: Change in your configuration flag`);
       const t: GOFeatureFlagWebsocketResponse = JSON.parse(data);
       const flagsChanged = this.extractFlagNamesFromWebsocket(t);
       await this.retryFetchAll(OpenFeature.getContext(), flagsChanged);
     }
     this._websocket.onclose = async () => {
-      this._logger?.warn(`Websocket closed, trying to reconnect`);
+      this._logger?.warn(`${GoFeatureFlagWebProvider.name}: Websocket closed, trying to reconnect`);
       await this.reconnectWebsocket();
     };
     this._websocket.onerror = async (event: Event) => {
-      this._logger?.error(`Error while connecting the websocket: ${event}`);
+      this._logger?.error(`${GoFeatureFlagWebProvider.name}: Error while connecting the websocket: ${event}`);
       await this.reconnectWebsocket();
     };
   }
@@ -175,7 +175,7 @@ export class GoFeatureFlagWebProvider implements Provider {
 
       await new Promise((resolve) => setTimeout(resolve, delay));
       delay *= this._retryDelayMultiplier;
-      this._logger?.info(`error while reconnecting the websocket, next try in ${delay} ms (${attempt}/${this._maxRetries}).`)
+      this._logger?.info(`${GoFeatureFlagWebProvider.name}: error while reconnecting the websocket, next try in ${delay} ms (${attempt}/${this._maxRetries}).`)
     }
     this.events.emit(ProviderEvents.Stale, {
       message: 'impossible to get status from GO Feature Flag (websocket connection stopped)'
@@ -188,7 +188,7 @@ export class GoFeatureFlagWebProvider implements Provider {
   }
 
   async onContextChange(_: EvaluationContext, newContext: EvaluationContext): Promise<void> {
-    this._logger?.debug(`new context provided: ${newContext}`);
+    this._logger?.debug(`${GoFeatureFlagWebProvider.name}: new context provided: ${newContext}`);
     this.events.emit(ProviderEvents.Stale, {message: 'context has changed'});
     await this.retryFetchAll(newContext);
     this.events.emit(ProviderEvents.Ready, {message: ''});
@@ -243,7 +243,7 @@ export class GoFeatureFlagWebProvider implements Provider {
         this.handleFetchErrors(err)
         await new Promise((resolve) => setTimeout(resolve, delay));
         delay *= this._retryDelayMultiplier;
-        this._logger?.info(`Waiting ${delay} ms before trying to evaluate the flags (${attempt}/${this._maxRetries}).`)
+        this._logger?.info(`${GoFeatureFlagWebProvider.name}: Waiting ${delay} ms before trying to evaluate the flags (${attempt}/${this._maxRetries}).`)
       }
     }
   }
@@ -324,14 +324,14 @@ export class GoFeatureFlagWebProvider implements Provider {
         message: error.message,
       });
       if (error.status == 401) {
-        this._logger?.error(`invalid token used to contact GO Feature Flag instance: ${error}`);
+        this._logger?.error(`${GoFeatureFlagWebProvider.name}: invalid token used to contact GO Feature Flag instance: ${error}`);
       } else if (error.status === 404) {
-        this._logger?.error(`impossible to call go-feature-flag relay proxy ${error}`);
+        this._logger?.error(`${GoFeatureFlagWebProvider.name}: impossible to call go-feature-flag relay proxy ${error}`);
       } else {
-        this._logger?.error(`unknown error while retrieving flags: ${error}`);
+        this._logger?.error(`${GoFeatureFlagWebProvider.name}: unknown error while retrieving flags: ${error}`);
       }
     } else {
-      this._logger?.error(`unknown error while retrieving flags: ${error}`);
+      this._logger?.error(`${GoFeatureFlagWebProvider.name}: unknown error while retrieving flags: ${error}`);
       this.events.emit(ProviderEvents.Error, {
         message: 'unknown error while retrieving flags',
       });
