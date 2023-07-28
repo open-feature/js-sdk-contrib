@@ -69,7 +69,7 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["coverage/libs/hooks/open-telemetry"],
+      "outputs": ["{workspaceRoot}/coverage/libs/hooks/open-telemetry"],
       "options": {
         "jestConfig": "libs/hooks/open-telemetry/jest.config.ts",
         "passWithNoTests": true,

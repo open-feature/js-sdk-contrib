@@ -25,7 +25,7 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["coverage/libs/providers/go-feature-flag"],
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/go-feature-flag"],
       "options": {
         "jestConfig": "libs/providers/go-feature-flag/jest.config.ts",
         "passWithNoTests": true

@@ -43,7 +43,7 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["coverage/libs/providers/flagd-web"],
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/flagd-web"],
       "options": {
         "jestConfig": "libs/providers/flagd-web/jest.config.ts",
         "passWithNoTests": true
