@@ -33,7 +33,7 @@ describe(MetricsHook.name, () => {
     expect(successful).toBeTruthy();
   });
 
-  describe(MetricsHook.prototype.before, () => {
+  describe('before stage', () => {
     it('should increment evaluation_active_count and evaluation_requests_total and set attrs', async () => {
       const FLAG_KEY = 'before-test-key';
       const PROVIDER_NAME = 'before-provider-name';
@@ -68,7 +68,7 @@ describe(MetricsHook.name, () => {
     });
   });
 
-  describe(MetricsHook.prototype.after, () => {
+  describe('after stage', () => {
     describe('variant set', () => {
       it('should increment evaluation_success_total and set attrs with variant = variant', async () => {
         const FLAG_KEY = 'after-test-key';
@@ -240,7 +240,7 @@ describe(MetricsHook.name, () => {
     });
   });
 
-  describe(MetricsHook.prototype.finally, () => {
+  describe('finally stage', () => {
     it('should decrement evaluation_success_total and set attrs', async () => {
       const FLAG_KEY = 'finally-test-key';
       const PROVIDER_NAME = 'finally-provider-name';
@@ -266,7 +266,7 @@ describe(MetricsHook.name, () => {
     });
   });
 
-  describe(MetricsHook.prototype.error, () => {
+  describe('error stage', () => {
     it('should decrement evaluation_success_total and set attrs', async () => {
       const FLAG_KEY = 'error-test-key';
       const PROVIDER_NAME = 'error-provider-name';

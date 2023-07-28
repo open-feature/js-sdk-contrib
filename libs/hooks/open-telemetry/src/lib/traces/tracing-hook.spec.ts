@@ -42,7 +42,7 @@ describe('OpenTelemetry Hooks', () => {
     jest.clearAllMocks();
   });
 
-  describe('after hook', () => {
+  describe('after stage', () => {
     it('should use the variant value on the span event', () => {
       const evaluationDetails: EvaluationDetails<boolean> = {
         flagKey: hookContext.flagKey,
@@ -105,7 +105,7 @@ describe('OpenTelemetry Hooks', () => {
     });
   });
 
-  describe('error hook', () => {
+  describe('error stage', () => {
     const testError = new Error();
 
     it('should call recordException with a test error', () => {
