@@ -66,6 +66,21 @@ const client = OpenFeature.getClient('my-app');
 client.addHooks(new MetricsHook());
 ```
 
+### Custom Metric Attributes
+
+Custom attributes can be extracted from [flag metadata](https://openfeature.dev/specification/types#flag-metadata) by supplying a `attributeMapper` in the `MetricsHookOptions`.
+These will be added to the `feature_flag.evaluation_success_total` metric.
+
+```typescript
+// configure an attributeMapper function for a custom property
+const attributeMapper: AttributeMapper = (flagMetadata) => { 
+    return {
+        myCustomAttribute: flagMetadata.someFlagMetadataField,
+    };
+};
+const hook = new MetricsHook({ attributeMapper });
+```
+
 ## Development
 
 ### Building
