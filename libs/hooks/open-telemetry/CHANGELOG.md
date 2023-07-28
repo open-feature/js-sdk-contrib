@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.2.2...open-telemetry-hooks-v0.2.3) (2023-07-28)
+
+
+### ✨ New Features
+
+* custom attribute support ([#499](https://github.com/open-feature/js-sdk-contrib/issues/499)) ([c2deddf](https://github.com/open-feature/js-sdk-contrib/commit/c2deddf288e1eb9e55d56ea58eba5f8afb8cccc5))
+
 ## [0.2.2](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.2.1...open-telemetry-hooks-v0.2.2) (2023-07-19)
 
 
