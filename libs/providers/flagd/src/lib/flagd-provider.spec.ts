@@ -71,9 +71,10 @@ describe(FlagdProvider.name, () => {
               callback({ type: EVENT_PROVIDER_READY });
             }
           }),
-          destroy: jest.fn(),
+          cancel: jest.fn(),
         };
       }),
+      close: jest.fn(),
       resolveBoolean: jest.fn((request: ResolveBooleanRequest, callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void) => {
         callback(null, {
           value: BOOLEAN_VALUE,
@@ -198,9 +199,10 @@ describe(FlagdProvider.name, () => {
               callback({ type: EVENT_PROVIDER_READY });
             }
           }),
-          destroy: jest.fn(),
+          cancel: jest.fn(),
         };
       }),
+      close: jest.fn(),
       resolveBoolean: jest.fn((request: ResolveBooleanRequest, callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void) => {
         callback(null, {
           variant: BOOLEAN_VARIANT,
@@ -312,7 +314,7 @@ describe(FlagdProvider.name, () => {
           registeredOnErrorCallback = callback;
         }
       }),
-      destroy: jest.fn(),
+      cancel: jest.fn(),
     };
 
     // mock ServiceClient to inject
@@ -320,6 +322,7 @@ describe(FlagdProvider.name, () => {
       eventStream: jest.fn(() => {
         return streamMock;
       }),
+      close: jest.fn(),
       resolveBoolean: jest.fn((req: ResolveBooleanRequest, callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void) => {
         const response = {
           variant: BOOLEAN_VARIANT,
@@ -608,9 +611,10 @@ describe(FlagdProvider.name, () => {
               callback({ type: EVENT_PROVIDER_READY });
             }
           }),
-          destroy: jest.fn(),
+          cancel: jest.fn(),
         };
       }),
+      close: jest.fn(),
       resolveBoolean: jest.fn((request: ResolveBooleanRequest, callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void) => {
         callback({ code: status.DATA_LOSS, details } as ServiceError, {} as ResolveBooleanResponse);
       }),
@@ -692,6 +696,7 @@ describe(FlagdProvider.name, () => {
   });
 
   describe('shutdown', () => {
+    const cancelMock = jest.fn();
     const closeMock = jest.fn();
 
     // mock ServiceClient to inject
@@ -703,10 +708,10 @@ describe(FlagdProvider.name, () => {
               callback({ type: EVENT_PROVIDER_READY });
             }
           }),
-          destroy: closeMock,
+          cancel: cancelMock,
         };
       }),
-      
+      close: closeMock,
     } as unknown as ServiceClient;
 
     beforeEach(() => {
@@ -718,6 +723,7 @@ describe(FlagdProvider.name, () => {
     describe(FlagdProvider.prototype.onClose.name, () => {
       it('should call service disconnect', async () => {
         await OpenFeature.close();
+        expect(cancelMock).toHaveBeenCalled();
         expect(closeMock).toHaveBeenCalled();
       });
     });

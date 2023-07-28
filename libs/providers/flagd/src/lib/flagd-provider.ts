@@ -38,7 +38,7 @@ export class FlagdProvider implements Provider {
    */
   constructor(
     options?: FlagdProviderOptions,
-    private logger?: Logger,
+    private readonly logger?: Logger,
     service?: Service,
   ) {
     this._service = service ? service : new GRPCService(getConfig(options), undefined, logger);
