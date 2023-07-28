@@ -280,11 +280,12 @@ export class GRPCService implements Service {
       .call(this._client, { flagKey, context })
       .then((resolved) => resolved, this.onRejected);
 
-    const resolved = {
+    const resolved: ResolutionDetails<T>  = {
       // invoke the parser method if passed
       value: parser.call(this, response.value as T),
       reason: response.reason,
       variant: response.variant,
+      flagMetadata: response.metadata,
     };
 
     logger.debug(

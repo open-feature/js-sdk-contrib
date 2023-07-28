@@ -9,7 +9,7 @@ import {
   ResolutionDetails,
 } from '@openfeature/js-sdk';
 import { FlagdProviderOptions, getConfig } from './configuration';
-import { GRPCService } from './service/grpc/service';
+import { GRPCService } from './service/grpc/grpc-service';
 import { Service } from './service/service';
 
 export class FlagdProvider implements Provider {
