@@ -1,16 +1,18 @@
 import {
   BeforeHookContext,
+  FlagMetadata,
+  Logger,
   StandardResolutionReasons,
   type EvaluationDetails,
   type FlagValue,
   type Hook,
   type HookContext,
 } from '@openfeature/js-sdk';
-import { Counter, UpDownCounter, ValueType, metrics } from '@opentelemetry/api';
+import { Attributes, Counter, UpDownCounter, ValueType, metrics } from '@opentelemetry/api';
 import {
   ACTIVE_COUNT_NAME,
-  EXCEPTION_ATTR,
   ERROR_TOTAL_NAME,
+  EXCEPTION_ATTR,
   EvaluationAttributes,
   ExceptionAttributes,
   KEY_ATTR,
@@ -22,6 +24,11 @@ import {
 } from '../conventions';
 
 type ErrorEvaluationAttributes = EvaluationAttributes & ExceptionAttributes;
+export type AttributeMapper = (flagMetadata: FlagMetadata) => Attributes;
+
+type MetricsHookOptions = {
+  attributeMapper?: AttributeMapper;
+};
 
 const METER_NAME = 'js.openfeature.dev';
 
@@ -33,10 +40,11 @@ const ERROR_DESCRIPTION = 'feature flag evaluation error counter';
 export class MetricsHook implements Hook {
   private readonly evaluationActiveUpDownCounter: UpDownCounter<EvaluationAttributes>;
   private readonly evaluationRequestCounter: Counter<EvaluationAttributes>;
-  private readonly evaluationSuccessCounter: Counter<EvaluationAttributes>;
+  private readonly evaluationSuccessCounter: Counter<EvaluationAttributes | Attributes>;
   private readonly evaluationErrorCounter: Counter<ErrorEvaluationAttributes>;
+  private readonly safeAttributeMapper: AttributeMapper;
 
-  constructor() {
+  constructor(options?: MetricsHookOptions, private readonly logger?: Logger) {
     const meter = metrics.getMeter(METER_NAME);
     this.evaluationActiveUpDownCounter = meter.createUpDownCounter(ACTIVE_COUNT_NAME, {
       description: ACTIVE_DESCRIPTION,
@@ -54,6 +62,14 @@ export class MetricsHook implements Hook {
       description: ERROR_DESCRIPTION,
       valueType: ValueType.INT,
     });
+    this.safeAttributeMapper = (flagMetadata: FlagMetadata) => {
+      try {
+        return options?.attributeMapper?.(flagMetadata) || {};
+      } catch (err) {
+        logger?.debug(`${MetricsHook.name}: error in attributeMapper, ${err.message}, ${err.stack}`);
+        return {};
+      }
+    };
   }
 
   before(hookContext: BeforeHookContext) {
@@ -71,6 +87,7 @@ export class MetricsHook implements Hook {
       [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
       [VARIANT_ATTR]: evaluationDetails.variant ?? evaluationDetails.value?.toString(),
       [REASON_ATTR]: evaluationDetails.reason ?? StandardResolutionReasons.UNKNOWN,
+      ...this.safeAttributeMapper(evaluationDetails?.flagMetadata || {}),
     });
   }
 
