@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.8.1...flagd-provider-v0.8.2) (2023-07-28)
+
+
+### ✨ New Features
+
+* add flag metadata ([#502](https://github.com/open-feature/js-sdk-contrib/issues/502)) ([c8a80c6](https://github.com/open-feature/js-sdk-contrib/commit/c8a80c6317779d61808adb75088d6d6710c6d8ea))
+
 ## [0.8.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.8.0...flagd-provider-v0.8.1) (2023-07-27)
 
 
