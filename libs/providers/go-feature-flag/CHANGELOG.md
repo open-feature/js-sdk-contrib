@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.14](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.13...go-feature-flag-provider-v0.5.14) (2023-07-31)
+
+
+### 🐛 Bug Fixes
+
+* [GO Feature Flag server] handle PROVIDER_NOT_READY from the spec ([#505](https://github.com/open-feature/js-sdk-contrib/issues/505)) ([adc2c5a](https://github.com/open-feature/js-sdk-contrib/commit/adc2c5a0c317c17ee1aa00ceb7581ea4529089bc))
+
 ## [0.5.13](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.12...go-feature-flag-provider-v0.5.13) (2023-07-27)
 
 
