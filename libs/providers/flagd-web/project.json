@@ -20,7 +20,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "git submodule update --init --recursive",
+          "git submodule update --init schemas",
           "rm -f -r ./src/proto",
           "cd schemas && buf generate buf.build/open-feature/flagd --template protobuf/buf.gen.ts-connect.yaml",
           "mv -v ./proto ./src"
