@@ -64,7 +64,7 @@
     "jest-websocket-mock": "^2.4.0",
     "jsonc-eslint-parser": "^2.1.0",
     "nx": "16.5.5",
-    "nx-cloud": "16.1.0",
+    "nx-cloud": "16.1.1",
     "prettier": "3.0.0",
     "ts-jest": "29.1.1",
     "ts-node": "10.9.1",
