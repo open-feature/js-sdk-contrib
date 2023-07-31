@@ -35,6 +35,9 @@
       "@openfeature/go-feature-flag-provider": [
         "libs/providers/go-feature-flag/src/index.ts"
       ],
+      "@openfeature/go-feature-flag-web-provider": [
+        "libs/providers/go-feature-flag-web/src/index.ts"
+      ],
       "@openfeature/hooks-open-telemetry": [
         "libs/hooks/open-telemetry/src/index.ts"
       ],
