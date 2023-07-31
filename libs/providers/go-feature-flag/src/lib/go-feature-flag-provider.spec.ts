@@ -190,7 +190,6 @@ describe('GoFeatureFlagProvider', () => {
       const flagName = 'random-flag';
       const targetingKey = 'user-key';
       const dns = `${endpoint}v1/feature/${flagName}/eval`;
-      const apiKey = 'valid-api-key';
 
       axiosMock.onPost(dns).reply(200, {
         value: true,
