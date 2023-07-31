@@ -91,6 +91,7 @@ describe('GoFeatureFlagWebProvider', () => {
     defaultProvider = new GoFeatureFlagWebProvider({
       endpoint: endpoint,
       apiTimeout: 1000,
+      maxRetries: 1,
     }, logger);
     defaultContext = {targetingKey: 'user-key'};
   });
@@ -99,6 +100,7 @@ describe('GoFeatureFlagWebProvider', () => {
     await WS.clean();
     websocketMockServer.close()
     await OpenFeature.close();
+    await OpenFeature.clearHooks();
     fetchMock.mockClear();
     fetchMock.mockReset();
     await defaultProvider?.onClose();
@@ -109,6 +111,14 @@ describe('GoFeatureFlagWebProvider', () => {
     staleHandler.mockReset();
     logger.reset();
   });
+
+  function newDefaultProvider(): GoFeatureFlagWebProvider {
+    return new GoFeatureFlagWebProvider({
+      endpoint: endpoint,
+      apiTimeout: 1000,
+      maxRetries: 1,
+    }, logger);
+  }
 
   describe('provider metadata', () => {
     it('should be and instance of GoFeatureFlagWebProvider', () => {
@@ -121,31 +131,32 @@ describe('GoFeatureFlagWebProvider', () => {
      * TODO: reactivate this test when the issue "web-sdk: onContextChange not called for named provider" is solved.\
      * Issue link: https://github.com/open-feature/js-sdk/issues/488
      */
-    // it('should change evaluation value if context has changed', async () => {
-    //   await OpenFeature.setContext(defaultContext);
-    //   OpenFeature.setProvider('test-provider', defaultProvider);
-    //   const client = await OpenFeature.getClient('test-provider');
-    //   await websocketMockServer.connected;
-    //   await new Promise((resolve) => setTimeout(resolve, 5));
-    //
-    //   const got1 = client.getBooleanDetails('bool_flag', false);
-    //   fetchMock.post(allFlagsEndpoint, alternativeAllFlagResponse, {overwriteRoutes: true});
-    //   await OpenFeature.setContext({targetingKey: "1234"});
-    //   const got2 = client.getBooleanDetails('bool_flag', false);
-    //
-    //   expect(got1.value).toEqual(defaultAllFlagResponse.flags.bool_flag.value);
-    //   expect(got1.variant).toEqual(defaultAllFlagResponse.flags.bool_flag.variationType);
-    //   expect(got1.reason).toEqual(defaultAllFlagResponse.flags.bool_flag.reason);
-    //
-    //   expect(got2.value).toEqual(alternativeAllFlagResponse.flags.bool_flag.value);
-    //   expect(got2.variant).toEqual(alternativeAllFlagResponse.flags.bool_flag.variationType);
-    //   expect(got2.reason).toEqual(alternativeAllFlagResponse.flags.bool_flag.reason);
-    // });
-
-    it('should return CACHED as a reason is websocket is not connected', async () => {
+    it('should change evaluation value if context has changed', async () => {
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      const got1 = client.getBooleanDetails('bool_flag', false);
+      fetchMock.post(allFlagsEndpoint, alternativeAllFlagResponse, {overwriteRoutes: true});
+      await OpenFeature.setContext({targetingKey: "1234"});
+      const got2 = client.getBooleanDetails('bool_flag', false);
+
+      expect(got1.value).toEqual(defaultAllFlagResponse.flags.bool_flag.value);
+      expect(got1.variant).toEqual(defaultAllFlagResponse.flags.bool_flag.variationType);
+      expect(got1.reason).toEqual(defaultAllFlagResponse.flags.bool_flag.reason);
+
+      expect(got2.value).toEqual(alternativeAllFlagResponse.flags.bool_flag.value);
+      expect(got2.variant).toEqual(alternativeAllFlagResponse.flags.bool_flag.variationType);
+      expect(got2.reason).toEqual(alternativeAllFlagResponse.flags.bool_flag.reason);
+    });
+
+    it('should return CACHED as a reason is websocket is not connected', async () => {
+      await OpenFeature.setContext(defaultContext);
+      const providerName = expect.getState().currentTestName || 'test';
+      OpenFeature.setProvider(providerName, newDefaultProvider());
+      const client = await OpenFeature.getClient(providerName);
       await websocketMockServer.connected;
       // Need to wait before using the mock
       await new Promise((resolve) => setTimeout(resolve, 5));
@@ -157,18 +168,16 @@ describe('GoFeatureFlagWebProvider', () => {
 
     it('should emit an error if we have the wrong credentials', async () => {
       fetchMock.post(allFlagsEndpoint,401, {overwriteRoutes: true});
+      const providerName = expect.getState().currentTestName || 'test';
       await OpenFeature.setContext(defaultContext);
-      OpenFeature.setProvider('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
-      client.addHandler(ProviderEvents.Ready, readyHandler);
+      OpenFeature.setProvider(providerName, newDefaultProvider());
+      const client = await OpenFeature.getClient(providerName);
       client.addHandler(ProviderEvents.Error, errorHandler);
-      client.addHandler(ProviderEvents.Stale, staleHandler);
-      client.addHandler(ProviderEvents.ConfigurationChanged, configurationChangedHandler);
       // wait the event to be triggered
       await new Promise((resolve) => setTimeout(resolve, 5));
       expect(errorHandler).toBeCalled()
       expect(logger.inMemoryLogger['error'][0])
-        .toEqual('GoFeatureFlagWebProvider: initialization failed, provider is on error, we will try to reconnect: Error: Request failed with status code 401');
+        .toEqual('GoFeatureFlagWebProvider: invalid token used to contact GO Feature Flag instance: Error: Request failed with status code 401');
     });
 
     it('should emit an error if we receive a 404 from GO Feature Flag', async () => {
@@ -184,7 +193,7 @@ describe('GoFeatureFlagWebProvider', () => {
       await new Promise((resolve) => setTimeout(resolve, 5));
       expect(errorHandler).toBeCalled()
       expect(logger.inMemoryLogger['error'][0])
-        .toEqual('GoFeatureFlagWebProvider: initialization failed, provider is on error, we will try to reconnect: Error: Request failed with status code 404');
+        .toEqual('GoFeatureFlagWebProvider: impossible to call go-feature-flag relay proxy Error: Request failed with status code 404');
     });
 
     it('should get a valid boolean flag evaluation', async () => {
@@ -302,7 +311,7 @@ describe('GoFeatureFlagWebProvider', () => {
 
   describe('eventing', () => {
     it('should call client handler with ProviderEvents.Ready when websocket is connected', async () => {
-      await OpenFeature.setContext(defaultContext);
+      // await OpenFeature.setContext(defaultContext); // we deactivate this call because the context is already set, and we want to avoid calling contextChanged function
       OpenFeature.setProvider('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');
       client.addHandler(ProviderEvents.Ready, readyHandler);
@@ -321,7 +330,7 @@ describe('GoFeatureFlagWebProvider', () => {
     });
 
     it('should call client handler with ProviderEvents.ConfigurationChanged when websocket is sending update', async () => {
-      await OpenFeature.setContext(defaultContext);
+      // await OpenFeature.setContext(defaultContext); // we deactivate this call because the context is already set, and we want to avoid calling contextChanged function
       OpenFeature.setProvider('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');
 
@@ -364,7 +373,7 @@ describe('GoFeatureFlagWebProvider', () => {
     });
 
     it('should call client handler with ProviderEvents.Stale when websocket is unreachable', async () => {
-      await OpenFeature.setContext(defaultContext);
+      // await OpenFeature.setContext(defaultContext); // we deactivate this call because the context is already set, and we want to avoid calling contextChanged function
       const provider = new GoFeatureFlagWebProvider({
         endpoint,
         maxRetries: 1,
