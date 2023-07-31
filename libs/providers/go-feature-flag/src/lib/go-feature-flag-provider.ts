@@ -272,6 +272,16 @@ export class GoFeatureFlagProvider implements Provider {
     user: GoFeatureFlagUser,
     expectedType: string
   ): Promise<ResolutionDetails<T>> {
+    // Check if the provider is ready to serve
+    if(this._status === ProviderStatus.NOT_READY){
+      return {
+        value: defaultValue,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.PROVIDER_NOT_READY,
+        errorMessage: `Provider in a status that does not allow to serve flag: ${this.status}`,
+      };
+    }
+
     const cacheKey = `${flagKey}-${user.key}`;
     // check if flag is available in the cache
     if (this.cache !== undefined) {
