@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.3.5...flagd-web-provider-v0.4.0) (2023-07-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* update required web-sdk peer ([#514](https://github.com/open-feature/js-sdk-contrib/issues/514))
+
+### 🧹 Chore
+
+* fix submodule race ([#509](https://github.com/open-feature/js-sdk-contrib/issues/509)) ([a427a00](https://github.com/open-feature/js-sdk-contrib/commit/a427a0006ada4d54f5d83ae2d3167a87f6635e81))
+* update required web-sdk peer ([#514](https://github.com/open-feature/js-sdk-contrib/issues/514)) ([8d45c02](https://github.com/open-feature/js-sdk-contrib/commit/8d45c0245472ddb196ef846a14829d18131d23d0))
+
 ## [0.3.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.3.4...flagd-web-provider-v0.3.5) (2023-07-27)
 
 
