@@ -150,7 +150,7 @@ describe('OpenTelemetry Hooks', () => {
 
         beforeEach(() => {
           tracingHook = new TracingHook({
-            attributeMapper: (flagMetadata) => {
+            attributeMapper: (_) => {
               throw new Error('fake error');
             },
           });
