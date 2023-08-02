@@ -225,7 +225,7 @@ describe(MetricsHook.name, () => {
         } as EvaluationDetails<number>;
 
         // configure a mapper that throws
-        const attributeMapper: AttributeMapper = (flagMetadata) => {
+        const attributeMapper: AttributeMapper = (_) => {
           throw new Error('fake error');
         };
         const hook = new MetricsHook({ attributeMapper });
