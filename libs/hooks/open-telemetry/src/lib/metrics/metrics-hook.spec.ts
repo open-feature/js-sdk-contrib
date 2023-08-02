@@ -1,13 +1,18 @@
 import { BeforeHookContext, EvaluationDetails, HookContext, StandardResolutionReasons } from '@openfeature/js-sdk';
 import opentelemetry from '@opentelemetry/api';
+import { DataPoint, MeterProvider, MetricReader, ScopeMetrics } from '@opentelemetry/sdk-metrics';
 import {
-  DataPoint,
-  MeterProvider,
-  MetricReader,
-  ScopeMetrics,
-} from '@opentelemetry/sdk-metrics';
-import { ACTIVE_COUNT_NAME, ERROR_TOTAL_NAME, KEY_ATTR, PROVIDER_NAME_ATTR, REASON_ATTR, REQUESTS_TOTAL_NAME, SUCCESS_TOTAL_NAME, VARIANT_ATTR } from '../conventions';
-import { AttributeMapper, MetricsHook } from './metrics-hook';
+  ACTIVE_COUNT_NAME,
+  ERROR_TOTAL_NAME,
+  KEY_ATTR,
+  PROVIDER_NAME_ATTR,
+  REASON_ATTR,
+  REQUESTS_TOTAL_NAME,
+  SUCCESS_TOTAL_NAME,
+  VARIANT_ATTR,
+} from '../conventions';
+import { MetricsHook } from './metrics-hook';
+import { AttributeMapper } from '../otel-hook';
 
 // no-op "in-memory" reader
 class InMemoryMetricReader extends MetricReader {
@@ -53,8 +58,10 @@ describe(MetricsHook.name, () => {
           ACTIVE_COUNT_NAME,
           0,
           (point) =>
-            point.value === 1 && point.attributes[KEY_ATTR] === FLAG_KEY && point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME
-        )
+            point.value === 1 &&
+            point.attributes[KEY_ATTR] === FLAG_KEY &&
+            point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME,
+        ),
       ).toBeTruthy();
       expect(
         hasDataPointMatching(
@@ -62,8 +69,10 @@ describe(MetricsHook.name, () => {
           REQUESTS_TOTAL_NAME,
           0,
           (point) =>
-            point.value === 1 && point.attributes[KEY_ATTR] === FLAG_KEY && point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME
-        )
+            point.value === 1 &&
+            point.attributes[KEY_ATTR] === FLAG_KEY &&
+            point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME,
+        ),
       ).toBeTruthy();
     });
   });
@@ -100,8 +109,8 @@ describe(MetricsHook.name, () => {
               point.attributes[KEY_ATTR] === FLAG_KEY &&
               point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
               point.attributes[VARIANT_ATTR] === VARIANT &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC
-          )
+              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC,
+          ),
         ).toBeTruthy();
       });
 
@@ -133,8 +142,8 @@ describe(MetricsHook.name, () => {
               point.attributes[KEY_ATTR] === FLAG_KEY &&
               point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
               point.attributes[VARIANT_ATTR] === VALUE.toString() &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC
-          )
+              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC,
+          ),
         ).toBeTruthy();
       });
     });
@@ -161,20 +170,20 @@ describe(MetricsHook.name, () => {
           value: VALUE,
           reason: StandardResolutionReasons.STATIC,
           flagMetadata: {
-            [CUSTOM_ATTR_KEY_1]: CUSTOM_ATTR_VALUE_1, 
-            [CUSTOM_ATTR_KEY_2]: CUSTOM_ATTR_VALUE_2, 
-          }
+            [CUSTOM_ATTR_KEY_1]: CUSTOM_ATTR_VALUE_1,
+            [CUSTOM_ATTR_KEY_2]: CUSTOM_ATTR_VALUE_2,
+          },
         } as EvaluationDetails<number>;
 
         // configure a mapper for our custom properties
-        const attributeMapper: AttributeMapper = (flagMetadata) => { 
+        const attributeMapper: AttributeMapper = (flagMetadata) => {
           return {
             [CUSTOM_ATTR_KEY_1]: flagMetadata[CUSTOM_ATTR_KEY_1],
-            [CUSTOM_ATTR_KEY_2]: flagMetadata[CUSTOM_ATTR_KEY_2]
+            [CUSTOM_ATTR_KEY_2]: flagMetadata[CUSTOM_ATTR_KEY_2],
           };
         };
         const hook = new MetricsHook({ attributeMapper });
-        
+
         hook.after(mockHookContext, evaluationDetails);
         const result = await reader.collect();
         expect(
@@ -190,8 +199,8 @@ describe(MetricsHook.name, () => {
               point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC &&
               // custom attributes should be present
               point.attributes[CUSTOM_ATTR_KEY_1] === CUSTOM_ATTR_VALUE_1 &&
-              point.attributes[CUSTOM_ATTR_KEY_2] === CUSTOM_ATTR_VALUE_2
-          )
+              point.attributes[CUSTOM_ATTR_KEY_2] === CUSTOM_ATTR_VALUE_2,
+          ),
         ).toBeTruthy();
       });
     });
@@ -216,11 +225,11 @@ describe(MetricsHook.name, () => {
         } as EvaluationDetails<number>;
 
         // configure a mapper that throws
-        const attributeMapper: AttributeMapper = (flagMetadata) => { 
+        const attributeMapper: AttributeMapper = (flagMetadata) => {
           throw new Error('fake error');
         };
         const hook = new MetricsHook({ attributeMapper });
-        
+
         hook.after(mockHookContext, evaluationDetails);
         const result = await reader.collect();
         expect(
@@ -233,8 +242,8 @@ describe(MetricsHook.name, () => {
               point.attributes[KEY_ATTR] === FLAG_KEY &&
               point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
               point.attributes[VARIANT_ATTR] === VARIANT &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC
-          )
+              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC,
+          ),
         ).toBeTruthy();
       });
     });
@@ -260,8 +269,10 @@ describe(MetricsHook.name, () => {
           ACTIVE_COUNT_NAME,
           1,
           (point) =>
-            point.value === -1 && point.attributes[KEY_ATTR] === FLAG_KEY && point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME
-        )
+            point.value === -1 &&
+            point.attributes[KEY_ATTR] === FLAG_KEY &&
+            point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME,
+        ),
       ).toBeTruthy();
     });
   });
@@ -288,8 +299,10 @@ describe(MetricsHook.name, () => {
           ERROR_TOTAL_NAME,
           0,
           (point) =>
-            point.value === 1 && point.attributes[KEY_ATTR] === FLAG_KEY && point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME
-        )
+            point.value === 1 &&
+            point.attributes[KEY_ATTR] === FLAG_KEY &&
+            point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME,
+        ),
       ).toBeTruthy();
     });
   });
@@ -299,7 +312,7 @@ const hasDataPointMatching = (
   scopeMetrics: ScopeMetrics[],
   metricName: string,
   dataPointIndex: number,
-  dataPointMatcher: (dataPoint: DataPoint<number>) => boolean
+  dataPointMatcher: (dataPoint: DataPoint<number>) => boolean,
 ) => {
   const found = scopeMetrics.find((sm) =>
     sm.metrics.find((m) => {
@@ -307,7 +320,7 @@ const hasDataPointMatching = (
       if (point) {
         return m.descriptor.name === metricName && dataPointMatcher(point);
       }
-    })
+    }),
   );
   if (!found) {
     throw Error('Unable to find matching datapoint');
