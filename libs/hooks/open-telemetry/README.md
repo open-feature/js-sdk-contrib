@@ -66,10 +66,12 @@ const client = OpenFeature.getClient('my-app');
 client.addHooks(new MetricsHook());
 ```
 
-### Custom Metric Attributes
+### Custom Attributes
 
-Custom attributes can be extracted from [flag metadata](https://openfeature.dev/specification/types#flag-metadata) by supplying a `attributeMapper` in the `MetricsHookOptions`.
-These will be added to the `feature_flag.evaluation_success_total` metric.
+Custom attributes can be extracted from [flag metadata](https://openfeature.dev/specification/types#flag-metadata) by supplying a `attributeMapper` in the `MetricsHookOptions` or `TracingHookOptions`.
+
+In the case of the `MetricsHook`, these will be added to the `feature_flag.evaluation_success_total` metric.
+The `TracingHook` adds them as [span event attributes](https://opentelemetry.io/docs/instrumentation/js/manual/#span-events).
 
 ```typescript
 // configure an attributeMapper function for a custom property
@@ -78,7 +80,8 @@ const attributeMapper: AttributeMapper = (flagMetadata) => {
         myCustomAttribute: flagMetadata.someFlagMetadataField,
     };
 };
-const hook = new MetricsHook({ attributeMapper });
+const metricsHook = new MetricsHook({ attributeMapper });
+const tracingHook = new TracingHook({ attributeMapper });
 ```
 
 ## Development

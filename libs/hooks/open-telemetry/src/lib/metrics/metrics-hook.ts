@@ -1,12 +1,11 @@
 import {
   BeforeHookContext,
-  FlagMetadata,
   Logger,
   StandardResolutionReasons,
   type EvaluationDetails,
   type FlagValue,
   type Hook,
-  type HookContext,
+  type HookContext
 } from '@openfeature/js-sdk';
 import { Attributes, Counter, UpDownCounter, ValueType, metrics } from '@opentelemetry/api';
 import {
@@ -22,13 +21,11 @@ import {
   SUCCESS_TOTAL_NAME,
   VARIANT_ATTR
 } from '../conventions';
+import { OpenTelemetryHook, OpenTelemetryHookOptions } from '../otel-hook';
 
 type ErrorEvaluationAttributes = EvaluationAttributes & ExceptionAttributes;
-export type AttributeMapper = (flagMetadata: FlagMetadata) => Attributes;
 
-type MetricsHookOptions = {
-  attributeMapper?: AttributeMapper;
-};
+export type MetricsHookOptions = OpenTelemetryHookOptions;
 
 const METER_NAME = 'js.openfeature.dev';
 
@@ -37,14 +34,20 @@ const REQUESTS_DESCRIPTION = 'feature flag evaluation request counter';
 const SUCCESS_DESCRIPTION = 'feature flag evaluation success counter';
 const ERROR_DESCRIPTION = 'feature flag evaluation error counter';
 
-export class MetricsHook implements Hook {
+/**
+ * A hook that adds conventionally-compliant metrics to feature flag evaluations.
+ * 
+ * See {@link https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/feature-flags/}
+ */
+export class MetricsHook extends OpenTelemetryHook implements Hook {
+  protected name = MetricsHook.name;
   private readonly evaluationActiveUpDownCounter: UpDownCounter<EvaluationAttributes>;
   private readonly evaluationRequestCounter: Counter<EvaluationAttributes>;
   private readonly evaluationSuccessCounter: Counter<EvaluationAttributes | Attributes>;
   private readonly evaluationErrorCounter: Counter<ErrorEvaluationAttributes>;
-  private readonly safeAttributeMapper: AttributeMapper;
 
   constructor(options?: MetricsHookOptions, private readonly logger?: Logger) {
+    super(options, logger);
     const meter = metrics.getMeter(METER_NAME);
     this.evaluationActiveUpDownCounter = meter.createUpDownCounter(ACTIVE_COUNT_NAME, {
       description: ACTIVE_DESCRIPTION,
@@ -62,14 +65,6 @@ export class MetricsHook implements Hook {
       description: ERROR_DESCRIPTION,
       valueType: ValueType.INT,
     });
-    this.safeAttributeMapper = (flagMetadata: FlagMetadata) => {
-      try {
-        return options?.attributeMapper?.(flagMetadata) || {};
-      } catch (err) {
-        logger?.debug(`${MetricsHook.name}: error in attributeMapper, ${err.message}, ${err.stack}`);
-        return {};
-      }
-    };
   }
 
   before(hookContext: BeforeHookContext) {
