@@ -1,6 +1,6 @@
 # In-Memory Provider
 
-An *extremely* simple OpenFeature provider, intended for simple demos and as a test stub. This package has providers for both `web-sdk` (client-side) and `js-sdk` (server-side).
+An *extremely* simple OpenFeature provider, intended for simple demos and as a test stub. This package has providers for both `web-sdk` (client-side) and `js-sdk` (server-side) - `WebInMemoryProvider` and `NodeInMemoryProvider` respectively.
 
 Flagging decisions are static - evaluation context is ignored. The only way to change a flag value is 
 to replace the entire configuration (with `replaceConfiguration`), and this is only intended to be used
@@ -18,14 +18,14 @@ $ npm install @openfeature/in-memory-provider
 
 ### set up the provider with some flag values
 ```
-import { InMemoryProvider } from '@openfeature/in-memory-provider'
+import { NodeInMemoryProvider } from '@openfeature/in-memory-provider'
 import { OpenFeature } from '@openfeature/js-sdk'
 
 const flags = {
   'a-boolean-flag': true,
   'a-string-flag': 'the flag value',
 }
-const provider = new InMemoryProvider(flags)
+const provider = new NodeInMemoryProvider(flags)
 OpenFeature.setProvider(provider)
 ```
 
