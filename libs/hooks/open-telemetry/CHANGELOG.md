@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.2.3...open-telemetry-hooks-v0.2.4) (2023-08-03)
+
+
+### ✨ New Features
+
+* add custom attrs to traces ([#520](https://github.com/open-feature/js-sdk-contrib/issues/520)) ([28fbd12](https://github.com/open-feature/js-sdk-contrib/commit/28fbd12f206202ab626d30bdfbbe5b04e75626af))
+
 ## [0.2.3](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.2.2...open-telemetry-hooks-v0.2.3) (2023-07-28)
 
 
