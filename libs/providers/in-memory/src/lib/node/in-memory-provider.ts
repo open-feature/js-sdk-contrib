@@ -10,7 +10,7 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/js-sdk';
-import { FlagConfiguration } from './flag-configuration';
+import { FlagConfiguration } from '../flag-configuration';
 
 export class InMemoryProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();

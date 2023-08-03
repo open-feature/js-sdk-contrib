@@ -1,6 +1,6 @@
 # In-Memory Provider
 
-An *extremely* simple OpenFeature provider, intended for simple demos and as a test stub.
+An *extremely* simple OpenFeature provider, intended for simple demos and as a test stub. This package has providers for both `web-sdk` (client-side) and `js-sdk` (server-side).
 
 Flagging decisions are static - evaluation context is ignored. The only way to change a flag value is 
 to replace the entire configuration (with `replaceConfiguration`), and this is only intended to be used
