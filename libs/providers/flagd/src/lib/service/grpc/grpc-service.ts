@@ -213,7 +213,9 @@ export class GRPCService implements Service {
       this._streamConnectAttempt++;
       setTimeout(() => {
         this._streamConnectBackoff = this._streamConnectBackoff * 2;
-        this.connectStream(connectCallback, changedCallback, disconnectCallback);
+        this.connectStream(connectCallback, changedCallback, disconnectCallback).catch(() => {
+          // empty catch to avoid unhandled promise rejection
+        });
       }, this._streamConnectBackoff);
     } else {
       // after max attempts, give up
@@ -224,7 +226,7 @@ export class GRPCService implements Service {
   }
 
   private handleClose() {
-    this.logger?.info(`${FlagdProvider.name}: streaming connection closed gracefully`);
+    this.logger?.info(`${FlagdProvider.name}: streaming connection closed`);
     this._cache?.clear();
     this._streamAlive = false;
   }
