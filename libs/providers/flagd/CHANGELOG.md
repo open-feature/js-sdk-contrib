@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.8.2...flagd-provider-v0.8.3) (2023-08-12)
+
+
+### 🐛 Bug Fixes
+
+* unhandled rejection on init ([#534](https://github.com/open-feature/js-sdk-contrib/issues/534)) ([b24b580](https://github.com/open-feature/js-sdk-contrib/commit/b24b580b20f942f192e7bbd68cc8baf3147d8137))
+
+
+### 🧹 Chore
+
+* fix submodule race ([#509](https://github.com/open-feature/js-sdk-contrib/issues/509)) ([a427a00](https://github.com/open-feature/js-sdk-contrib/commit/a427a0006ada4d54f5d83ae2d3167a87f6635e81))
+
 ## [0.8.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.8.1...flagd-provider-v0.8.2) (2023-07-28)
 
 
