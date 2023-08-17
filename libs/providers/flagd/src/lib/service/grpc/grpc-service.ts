@@ -122,15 +122,15 @@ export class GRPCService implements Service {
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
-    return this.resolve(this._client.resolveBoolean, flagKey, context, logger, this.booleanParser);
+    return this.resolve(this._client.resolveBoolean, flagKey, context, logger);
   }
 
   async resolveString(flagKey: string, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<string>> {
-    return this.resolve(this._client.resolveString, flagKey, context, logger, this.stringParser);
+    return this.resolve(this._client.resolveString, flagKey, context, logger);
   }
 
   async resolveNumber(flagKey: string, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<number>> {
-    return this.resolve(this._client.resolveFloat, flagKey, context, logger, this.numberParser);
+    return this.resolve(this._client.resolveFloat, flagKey, context, logger);
   }
 
   async resolveObject<T extends JsonValue>(
@@ -138,7 +138,7 @@ export class GRPCService implements Service {
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
-    return this.resolve(this._client.resolveObject, flagKey, context, logger, this.objectParser);
+    return this.resolve(this._client.resolveObject, flagKey, context, logger);
   }
 
   private connectStream(
@@ -231,34 +231,6 @@ export class GRPCService implements Service {
     this._streamAlive = false;
   }
 
-  private objectParser = <T extends JsonValue>(struct: T): T => {
-    if (struct) {
-      return struct;
-    }
-    return {} as T;
-  };
-
-  private booleanParser = (value: boolean): boolean => {
-    if (value) {
-      return value;
-    }
-    return false;
-  };
-
-  private stringParser = (value: string): string => {
-    if (value) {
-      return value;
-    }
-    return '';
-  };
-
-  private numberParser = (value: number): number => {
-    if (value) {
-      return value;
-    }
-    return 0;
-  };
-
   private async resolve<T extends FlagValue>(
     promise: (
       request: AnyRequest,
@@ -267,7 +239,6 @@ export class GRPCService implements Service {
     flagKey: string,
     context: EvaluationContext,
     logger: Logger,
-    parser: (value: T) => T,
   ): Promise<ResolutionDetails<T>> {
     const resolver = promisify(promise);
     if (this._cacheActive) {
@@ -283,8 +254,7 @@ export class GRPCService implements Service {
       .then((resolved) => resolved, this.onRejected);
 
     const resolved: ResolutionDetails<T>  = {
-      // invoke the parser method if passed
-      value: parser.call(this, response.value as T),
+      value: response.value as T,
       reason: response.reason,
       variant: response.variant,
       flagMetadata: response.metadata,
