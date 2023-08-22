@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - uses: bufbuild/buf-setup-action@v1.25.0
+      - uses: bufbuild/buf-setup-action@v1.26.1
         with:
           github_token: ${{ github.token }}
       - uses: nrwl/nx-set-shas@v3
