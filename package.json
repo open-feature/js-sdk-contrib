@@ -6,7 +6,7 @@
     "generate-hook": "nx generate open-feature hook",
     "generate-provider": "nx generate open-feature provider",
     "test": "nx run-many --all --target=test",
-    "e2e": "nx run-many --all --target=e2e --skip-nx-cache --output-style=stream",
+    "e2e": "nx run-many --all --target=e2e --skip-nx-cache --output-style=stream --parallel=false",
     "lint": "nx run-many --all --target=lint",
     "package": "npx nx run-many --all --target=package",
     "publish": "npx nx run-many --all --target=publish"
