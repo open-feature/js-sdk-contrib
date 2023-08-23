@@ -61,7 +61,8 @@
             "input": "./libs/providers/go-feature-flag",
             "output": "./"
           }
-        ]
+        ],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     }
   },

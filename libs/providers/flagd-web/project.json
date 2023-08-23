@@ -114,7 +114,8 @@
             "input": "./libs/providers/flagd-web",
             "output": "./"
           }
-        ]
+        ],
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "dependsOn": [
         {
