@@ -54,6 +54,36 @@
         }
       ]
     },
+    "pullTestHarness": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "git submodule update --init test-harness",
+          "rm -f -r ./src/e2e/features/*",
+          "cp -v ./test-harness/features/evaluation.feature ./src/e2e/features/"
+        ],
+        "cwd": "libs/providers/flagd",
+        "parallel": false
+      }
+    },
+    "e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "npx jest"
+        ],
+        "cwd": "libs/providers/flagd/src/e2e",
+        "parallel": false
+      },
+      "dependsOn": [
+        {
+          "target": "generate"
+        },
+        {
+          "target": "pullTestHarness"
+        }
+      ]
+    },
     "package": {
       "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],

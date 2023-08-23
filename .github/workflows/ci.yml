@@ -6,7 +6,7 @@ on:
     branches: ['main']
 
 jobs:
-  main:
+  lint-test-build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -32,3 +32,26 @@ jobs:
       - run: npx nx affected --target=lint --parallel=3
       - run: npx nx affected --target=test --parallel=3 --ci --code-coverage
       - run: npx nx affected --target=build --parallel=3
+
+  e2e:
+      runs-on: ubuntu-latest
+
+      services:
+        flagd:
+          image: ghcr.io/open-feature/flagd-testbed:latest
+          ports:
+            - 8013:8013
+
+      steps:
+        - uses: actions/checkout@v3
+        - uses: actions/setup-node@v3
+          with:
+            # we need 'fetch' for this test, which is only in 18+
+            node-version: 18
+            cache: 'npm'
+
+        - name: Install
+          run: npm ci
+
+        - name: SDK e2e tests
+          run: npm run e2e
