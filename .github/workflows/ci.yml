@@ -53,8 +53,9 @@ jobs:
         - name: Install
           run: npm ci
 
-        - name: SDK e2e tests
-          uses: bufbuild/buf-setup-action@v1.26.1
+        - uses: bufbuild/buf-setup-action@v1.26.1
           with:
             github_token: ${{ github.token }}
+
+        - name: e2e
           run: npm run e2e
