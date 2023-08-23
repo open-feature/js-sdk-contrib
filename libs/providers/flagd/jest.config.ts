@@ -11,5 +11,7 @@ export default {
     '^.+\\.[tj]s$': 'ts-jest',
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
+  // ignore e2e path
+  testPathIgnorePatterns: ["/e2e/"],
   coverageDirectory: '../../../coverage/libs/providers/flagd',
 };

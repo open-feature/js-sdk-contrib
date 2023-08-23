@@ -12,5 +12,7 @@ export default {
   },
   testEnvironment: 'jsdom',
   moduleFileExtensions: ['ts', 'js', 'html'],
+  // ignore e2e path
+  testPathIgnorePatterns: ["/e2e/"],
   coverageDirectory: '../../../coverage/libs/providers/flagd-web',
 };
