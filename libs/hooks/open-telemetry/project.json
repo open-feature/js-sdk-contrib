@@ -33,7 +33,8 @@
             "input": "./libs/hooks/open-telemetry",
             "output": "./"
           }
-        ]
+        ],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     },
     "build": {
@@ -43,7 +44,8 @@
         "outputPath": "dist/libs/hooks/open-telemetry",
         "main": "libs/hooks/open-telemetry/src/index.ts",
         "tsConfig": "libs/hooks/open-telemetry/tsconfig.lib.json",
-        "assets": ["libs/hooks/open-telemetry/*.md"]
+        "assets": ["libs/hooks/open-telemetry/*.md"],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     },
     "publish": {

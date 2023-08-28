@@ -67,7 +67,8 @@
             "input": "./libs/providers/env-var",
             "output": "./"
           }
-        ]
+        ],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     }
   },

@@ -114,7 +114,8 @@
             "input": "./libs/providers/flagd",
             "output": "./"
           }
-        ]
+        ],
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "dependsOn": [
         {

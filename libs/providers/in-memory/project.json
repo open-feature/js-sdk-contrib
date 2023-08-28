@@ -67,7 +67,8 @@
             "input": "./libs/providers/in-memory",
             "output": "./"
           }
-        ]
+        ],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     }
   },

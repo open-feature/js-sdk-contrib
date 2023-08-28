@@ -67,7 +67,8 @@
             "input": "./libs/providers/config-cat",
             "output": "./"
           }
-        ]
+        ],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     }
   },
