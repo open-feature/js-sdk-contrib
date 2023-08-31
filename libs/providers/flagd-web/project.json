@@ -58,9 +58,9 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "git submodule update --init test-harness",
+          "git submodule update --init spec",
           "rm -f -r ./src/e2e/features/*",
-          "cp -v ./test-harness/features/evaluation.feature ./src/e2e/features/"
+          "cp -v ./spec/specification/assets/gherkin/evaluation.feature ./src/e2e/features/"
         ],
         "cwd": "libs/providers/flagd-web",
         "parallel": false
