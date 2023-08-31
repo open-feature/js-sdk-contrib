@@ -24,8 +24,8 @@ $ npm install @openfeature/js-sdk configcat-js
 
 The ConfigCat provider uses the [ConfigCat Javascript SDK](https://configcat.com/docs/sdk-reference/js/).
 
-It can either be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create``` or
-the ```ConfigCatProvider``` constructor.
+It can either be created by passing the ConfigCat SDK options to `ConfigCatProvider.create` or
+the `ConfigCatProvider` constructor.
 
 The available options can be found in the [ConfigCat Javascript SDK docs](https://configcat.com/docs/sdk-reference/js/).
 
@@ -62,7 +62,7 @@ ConfigCat has three known attributes, and allows for additional attributes.
 The following shows how the attributes are mapped:
 
 | OpenFeature EvaluationContext Field | ConfigCat User Field | Required |
-|-------------------------------------|----------------------|----------|
+| ----------------------------------- | -------------------- | -------- |
 | targetingKey                        | identifier           | yes      |
 | email                               | email                | no       |
 | country                             | country              | no       |
@@ -85,11 +85,7 @@ User:
     "prop1": "1",
     "prop2": 2
   },
-  "customArray": [
-    1,
-    "2",
-    false
-  ]
+  "customArray": [1, "2", false]
 }
 ```
 

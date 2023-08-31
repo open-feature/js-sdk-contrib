@@ -11,13 +11,13 @@ import {
   TypeMismatchError,
 } from '@openfeature/js-sdk';
 import axios from 'axios';
-import {copy} from 'copy-anything';
-import {transformContext} from './context-transformer';
-import {ProxyNotReady} from './errors/proxyNotReady';
-import {ProxyTimeout} from './errors/proxyTimeout';
-import {UnknownError} from './errors/unknownError';
-import {Unauthorized} from './errors/unauthorized';
-import {LRUCache} from 'lru-cache';
+import { copy } from 'copy-anything';
+import { transformContext } from './context-transformer';
+import { ProxyNotReady } from './errors/proxyNotReady';
+import { ProxyTimeout } from './errors/proxyTimeout';
+import { UnknownError } from './errors/unknownError';
+import { Unauthorized } from './errors/unauthorized';
+import { LRUCache } from 'lru-cache';
 import {
   DataCollectorRequest,
   DataCollectorResponse,
@@ -85,8 +85,9 @@ export class GoFeatureFlagProvider implements Provider {
     }
 
     if (!options.disableCache) {
-      const cacheSize = options.flagCacheSize !== undefined && options.flagCacheSize !== 0 ? options.flagCacheSize : 10000;
-      this.cache = new LRUCache({maxSize: cacheSize, sizeCalculation: () => 1});
+      const cacheSize =
+        options.flagCacheSize !== undefined && options.flagCacheSize !== 0 ? options.flagCacheSize : 10000;
+      this.cache = new LRUCache({ maxSize: cacheSize, sizeCalculation: () => 1 });
     }
   }
 
@@ -96,13 +97,13 @@ export class GoFeatureFlagProvider implements Provider {
    */
   async initialize() {
     if (!this.disableDataCollection) {
-      this.bgScheduler = setInterval(async () => await this.callGoffDataCollection(), this.dataFlushInterval)
-      this.dataCollectorBuffer = []
+      this.bgScheduler = setInterval(async () => await this.callGoffDataCollection(), this.dataFlushInterval);
+      this.dataCollectorBuffer = [];
     }
     this._status = ProviderStatus.READY;
   }
 
-  get status(){
+  get status() {
     return this._status;
   }
 
@@ -115,10 +116,9 @@ export class GoFeatureFlagProvider implements Provider {
       // we stop the background task to call the data collector endpoint
       clearInterval(this.bgScheduler);
       // We call the data collector with what is still in the buffer.
-      await this.callGoffDataCollection()
+      await this.callGoffDataCollection();
     }
   }
-
 
   /**
    * callGoffDataCollection is a function called periodically to send the usage of the flag to the
@@ -132,7 +132,7 @@ export class GoFeatureFlagProvider implements Provider {
     const dataToSend = copy(this.dataCollectorBuffer) || [];
     this.dataCollectorBuffer = [];
 
-    const request: DataCollectorRequest<boolean> = {events: dataToSend, meta: this.dataCollectorMetadata,}
+    const request: DataCollectorRequest<boolean> = { events: dataToSend, meta: this.dataCollectorMetadata };
     const endpointURL = new URL(this.endpoint);
     endpointURL.pathname = 'v1/data/collector';
 
@@ -145,7 +145,7 @@ export class GoFeatureFlagProvider implements Provider {
         timeout: this.timeout,
       });
     } catch (e) {
-      this.logger?.error(`impossible to send the data to the collector: ${e}`)
+      this.logger?.error(`impossible to send the data to the collector: ${e}`);
       // if we have an issue calling the collector we put the data back in the buffer
       this.dataCollectorBuffer = [...this.dataCollectorBuffer, ...dataToSend];
     }
@@ -166,13 +166,13 @@ export class GoFeatureFlagProvider implements Provider {
   async resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,
-    context: EvaluationContext
+    context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
     return this.resolveEvaluationGoFeatureFlagProxy<boolean>(
       flagKey,
       defaultValue,
       transformContext(context),
-      'boolean'
+      'boolean',
     );
   }
 
@@ -191,14 +191,9 @@ export class GoFeatureFlagProvider implements Provider {
   async resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
-    context: EvaluationContext
+    context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
-    return this.resolveEvaluationGoFeatureFlagProxy<string>(
-      flagKey,
-      defaultValue,
-      transformContext(context),
-      'string'
-    );
+    return this.resolveEvaluationGoFeatureFlagProxy<string>(flagKey, defaultValue, transformContext(context), 'string');
   }
 
   /**
@@ -216,14 +211,9 @@ export class GoFeatureFlagProvider implements Provider {
   async resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
-    context: EvaluationContext
+    context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
-    return this.resolveEvaluationGoFeatureFlagProxy<number>(
-      flagKey,
-      defaultValue,
-      transformContext(context),
-      'number'
-    );
+    return this.resolveEvaluationGoFeatureFlagProxy<number>(flagKey, defaultValue, transformContext(context), 'number');
   }
 
   /**
@@ -241,14 +231,9 @@ export class GoFeatureFlagProvider implements Provider {
   async resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
     defaultValue: U,
-    context: EvaluationContext
+    context: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
-    return this.resolveEvaluationGoFeatureFlagProxy<U>(
-      flagKey,
-      defaultValue,
-      transformContext(context),
-      'object'
-    );
+    return this.resolveEvaluationGoFeatureFlagProxy<U>(flagKey, defaultValue, transformContext(context), 'object');
   }
 
   /**
@@ -270,10 +255,10 @@ export class GoFeatureFlagProvider implements Provider {
     flagKey: string,
     defaultValue: T,
     user: GoFeatureFlagUser,
-    expectedType: string
+    expectedType: string,
   ): Promise<ResolutionDetails<T>> {
     // Check if the provider is ready to serve
-    if(this._status === ProviderStatus.NOT_READY){
+    if (this._status === ProviderStatus.NOT_READY) {
       return {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
@@ -298,14 +283,14 @@ export class GoFeatureFlagProvider implements Provider {
           value: cacheValue.value,
           variation: cacheValue.variant || 'SdkDefault',
           userKey: user.key,
-        }
+        };
         this.dataCollectorBuffer?.push(dataCollectorEvent);
         cacheValue.reason = StandardResolutionReasons.CACHED;
         return cacheValue;
       }
     }
 
-    const request: GoFeatureFlagProxyRequest<T> = {user, defaultValue};
+    const request: GoFeatureFlagProxyRequest<T> = { user, defaultValue };
     // build URL to access to the endpoint
     const endpointURL = new URL(this.endpoint);
     endpointURL.pathname = `v1/feature/${flagKey}/eval`;
@@ -325,49 +310,35 @@ export class GoFeatureFlagProvider implements Provider {
         throw new Unauthorized('invalid token used to contact GO Feature Flag relay proxy instance');
       }
       // Impossible to contact the relay-proxy
-      if (
-        axios.isAxiosError(error) &&
-        (error.code === 'ECONNREFUSED' || error.response?.status === 404)
-      ) {
-        throw new ProxyNotReady(
-          `impossible to call go-feature-flag relay proxy on ${endpointURL}`,
-          error
-        );
+      if (axios.isAxiosError(error) && (error.code === 'ECONNREFUSED' || error.response?.status === 404)) {
+        throw new ProxyNotReady(`impossible to call go-feature-flag relay proxy on ${endpointURL}`, error);
       }
 
       // Timeout when calling the API
       if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
-        throw new ProxyTimeout(
-          `impossible to retrieve the ${flagKey} on time`,
-          error
-        );
+        throw new ProxyTimeout(`impossible to retrieve the ${flagKey} on time`, error);
       }
 
-      throw new UnknownError(
-        `unknown error while retrieving flag ${flagKey} for user ${user.key}`,
-        error
-      );
+      throw new UnknownError(`unknown error while retrieving flag ${flagKey} for user ${user.key}`, error);
     }
 
     // Check that we received the expectedType
     if (typeof apiResponseData.value !== expectedType) {
       throw new TypeMismatchError(
-        `Flag value ${flagKey} had unexpected type ${typeof apiResponseData.value}, expected ${expectedType}.`
+        `Flag value ${flagKey} had unexpected type ${typeof apiResponseData.value}, expected ${expectedType}.`,
       );
     }
 
     // Case of the flag is not found
     if (apiResponseData.errorCode === ErrorCode.FLAG_NOT_FOUND) {
-      throw new FlagNotFoundError(
-        `Flag ${flagKey} was not found in your configuration`
-      );
+      throw new FlagNotFoundError(`Flag ${flagKey} was not found in your configuration`);
     }
 
     // Case of the flag is disabled
     if (apiResponseData.reason === StandardResolutionReasons.DISABLED) {
       // we don't set a variant since we are using the default value, and we are not able to know
       // which variant it is.
-      return {value: defaultValue, reason: apiResponseData.reason};
+      return { value: defaultValue, reason: apiResponseData.reason };
     }
 
     const sdkResponse: ResolutionDetails<T> = {
@@ -384,9 +355,9 @@ export class GoFeatureFlagProvider implements Provider {
 
     if (this.cache !== undefined && apiResponseData.cacheable) {
       if (this.cacheTTL === -1) {
-        this.cache.set(cacheKey, sdkResponse)
+        this.cache.set(cacheKey, sdkResponse);
       } else {
-        this.cache.set(cacheKey, sdkResponse, {ttl: this.cacheTTL})
+        this.cache.set(cacheKey, sdkResponse, { ttl: this.cacheTTL });
       }
     }
     return sdkResponse;

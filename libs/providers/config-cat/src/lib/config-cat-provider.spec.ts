@@ -165,7 +165,7 @@ describe('ConfigCatProvider', () => {
 
     it('should throw TypeMismatchError if type is different than expected', async () => {
       await expect(provider.resolveBooleanEvaluation('number1', false, { targetingKey })).rejects.toThrow(
-        TypeMismatchError
+        TypeMismatchError,
       );
     });
   });
@@ -183,7 +183,7 @@ describe('ConfigCatProvider', () => {
 
     it('should throw TypeMismatchError if type is different than expected', async () => {
       await expect(provider.resolveStringEvaluation('number1', 'default', { targetingKey })).rejects.toThrow(
-        TypeMismatchError
+        TypeMismatchError,
       );
     });
   });
@@ -201,7 +201,7 @@ describe('ConfigCatProvider', () => {
 
     it('should throw TypeMismatchError if type is different than expected', async () => {
       await expect(provider.resolveNumberEvaluation('stringTest', 0, { targetingKey })).rejects.toThrow(
-        TypeMismatchError
+        TypeMismatchError,
       );
     });
   });
@@ -223,7 +223,7 @@ describe('ConfigCatProvider', () => {
 
     it('should throw TypeMismatchError if string is only a JSON primitive', async () => {
       await expect(provider.resolveObjectEvaluation('jsonPrimitive', {}, { targetingKey })).rejects.toThrow(
-        TypeMismatchError
+        TypeMismatchError,
       );
     });
   });

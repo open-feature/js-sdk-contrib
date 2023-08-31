@@ -4,7 +4,6 @@ about: Add provider template
 title: Add {my-system} provider
 labels: enhancement
 assignees: ''
-
 ---
 
 # Add {my-system} provider

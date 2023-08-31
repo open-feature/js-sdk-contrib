@@ -1,9 +1,8 @@
-import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from "./constants";
+import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from './constants';
 
 export type CacheOption = 'lru' | 'disabled';
 
 export interface Config {
-  
   /**
    * The domain name or IP address of flagd.
    *
@@ -92,7 +91,7 @@ const getEnvVarConfig = (): Partial<Config> => ({
     cache: process.env[ENV_VAR.FLAGD_CACHE],
   }),
   ...(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE] && {
-    maxCacheSize:  Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
+    maxCacheSize: Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
   }),
   ...(process.env[ENV_VAR.FLAGD_MAX_EVENT_STREAM_RETRIES] && {
     maxEventStreamRetries: Number(process.env[ENV_VAR.FLAGD_MAX_EVENT_STREAM_RETRIES]),

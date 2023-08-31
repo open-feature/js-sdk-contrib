@@ -63,7 +63,7 @@ export class ConfigCatProvider implements Provider {
         hooks.on('configChanged', (projectConfig: IConfig | undefined) =>
           this.events.emit(ProviderEvents.ConfigurationChanged, {
             flagsChanged: projectConfig ? Object.keys(projectConfig.settings) : undefined,
-          })
+          }),
         );
 
         hooks.on('clientError', (message: string, error) => {
@@ -90,7 +90,7 @@ export class ConfigCatProvider implements Provider {
   async resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,
-    context: EvaluationContext
+    context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
     if (!this._client) {
       throw new GeneralError('Provider is not initialized');
@@ -99,7 +99,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
-      transformContext(context)
+      transformContext(context),
     );
 
     const validatedValue = validateFlagType('boolean', value);
@@ -112,7 +112,7 @@ export class ConfigCatProvider implements Provider {
   public async resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
-    context: EvaluationContext
+    context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
     if (!this._client) {
       throw new GeneralError('Provider is not initialized');
@@ -121,7 +121,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
-      transformContext(context)
+      transformContext(context),
     );
 
     const validatedValue = validateFlagType('string', value);
@@ -134,7 +134,7 @@ export class ConfigCatProvider implements Provider {
   public async resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
-    context: EvaluationContext
+    context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
     if (!this._client) {
       throw new GeneralError('Provider is not initialized');
@@ -143,7 +143,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
-      transformContext(context)
+      transformContext(context),
     );
 
     const validatedValue = validateFlagType('number', value);
@@ -156,7 +156,7 @@ export class ConfigCatProvider implements Provider {
   public async resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
     defaultValue: U,
-    context: EvaluationContext
+    context: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
     if (!this._client) {
       throw new GeneralError('Provider is not initialized');
@@ -165,7 +165,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync(
       flagKey,
       undefined,
-      transformContext(context)
+      transformContext(context),
     );
 
     if (typeof value === 'undefined') {
@@ -197,7 +197,7 @@ export class ConfigCatProvider implements Provider {
 function toResolutionDetails<U extends JsonValue>(
   value: U,
   data: Omit<IEvaluationDetails, 'value'>,
-  reason?: ResolutionReason
+  reason?: ResolutionReason,
 ): ResolutionDetails<U> {
   const matchedRule = Boolean(data.matchedEvaluationRule || data.matchedEvaluationPercentageRule);
   const evaluatedReason = matchedRule ? StandardResolutionReasons.TARGETING_MATCH : StandardResolutionReasons.STATIC;

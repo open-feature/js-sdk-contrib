@@ -35,7 +35,7 @@ Use `npx nx test {MODULE NAME}` to test just a single module.
 ## Releases
 
 This repo uses _Release Please_ to release packages.
-Release Please sets up a running PR that tracks all changes for the library components, and maintains the versions according to [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/), generated when [PRs are merged](https://github.com/amannn/action-semantic-pull-request). 
+Release Please sets up a running PR that tracks all changes for the library components, and maintains the versions according to [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/), generated when [PRs are merged](https://github.com/amannn/action-semantic-pull-request).
 When Release Please's running PR is merged, any changed artifacts are published.
 Breaking changes should be identified by using a semantic PR title.
 

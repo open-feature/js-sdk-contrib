@@ -55,8 +55,8 @@ OpenFeature.addHooks(new TracingHook());
 
 ### Register Per Client
 
- The `TracingHook` and `MetricsHook` can both be set on an individual client. This should only be done if it wasn't set globally and other clients shouldn't use this hook.
- Setting the hook on the client will ensure that every flag evaluation performed by this client will always generate the applicable telemetry signals.
+The `TracingHook` and `MetricsHook` can both be set on an individual client. This should only be done if it wasn't set globally and other clients shouldn't use this hook.
+Setting the hook on the client will ensure that every flag evaluation performed by this client will always generate the applicable telemetry signals.
 
 ```typescript
 import { OpenFeature } from '@openfeature/js-sdk';
@@ -75,10 +75,10 @@ The `TracingHook` adds them as [span event attributes](https://opentelemetry.io/
 
 ```typescript
 // configure an attributeMapper function for a custom property
-const attributeMapper: AttributeMapper = (flagMetadata) => { 
-    return {
-        myCustomAttribute: flagMetadata.someFlagMetadataField,
-    };
+const attributeMapper: AttributeMapper = (flagMetadata) => {
+  return {
+    myCustomAttribute: flagMetadata.someFlagMetadataField,
+  };
 };
 const metricsHook = new MetricsHook({ attributeMapper });
 const tracingHook = new TracingHook({ attributeMapper });

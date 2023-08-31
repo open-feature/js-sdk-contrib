@@ -75,7 +75,7 @@ export class EnvVarProvider implements Provider {
 
   private evaluateEnvironmentVariable<T extends JsonValue>(
     key: string,
-    parse: (value: string) => T
+    parse: (value: string) => T,
   ): ResolutionDetails<T> {
     const envVarKey = this.options.disableConstantCase ? key : constantCase(key);
     const value = process.env[envVarKey];

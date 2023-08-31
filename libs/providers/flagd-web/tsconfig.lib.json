@@ -5,9 +5,8 @@
     "outDir": "../../../dist/out-tsc",
     "declaration": true,
     "types": [],
-    "allowSyntheticDefaultImports": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": ["**/*.ts"],
   "exclude": ["jest.config.ts", "**/*.spec.ts", "**/*.test.ts"]
-
 }

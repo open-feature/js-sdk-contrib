@@ -26,10 +26,7 @@ describe('translateContext', () => {
 
   it('gives targetingKey precedence over key', () => {
     const logger = new TestLogger();
-    expect(translateContext(
-      logger,
-      { targetingKey: 'target-key', key: 'key-key' },
-    )).toEqual({
+    expect(translateContext(logger, { targetingKey: 'target-key', key: 'key-key' })).toEqual({
       key: 'target-key',
       kind: 'user',
     });
@@ -49,10 +46,7 @@ describe('translateContext', () => {
   ])('given correct built-in attributes', (key, value) => {
     const logger = new TestLogger();
     it('translates the key correctly', () => {
-      expect(translateContext(
-        logger,
-        { targetingKey: 'the-key', [key]: value },
-      )).toEqual({
+      expect(translateContext(logger, { targetingKey: 'the-key', [key]: value })).toEqual({
         key: 'the-key',
         [key]: value,
         kind: 'user',
@@ -63,10 +57,7 @@ describe('translateContext', () => {
 
   it.each(['key', 'targetingKey'])('handles key or targetingKey', (key) => {
     const logger = new TestLogger();
-    expect(translateContext(
-      logger,
-      { [key]: 'the-key' },
-    )).toEqual({
+    expect(translateContext(logger, { [key]: 'the-key' })).toEqual({
       key: 'the-key',
       kind: 'user',
     });
@@ -79,10 +70,7 @@ describe('translateContext', () => {
   ])('given incorrect built-in attributes', (key, value) => {
     it('the bad key is omitted', () => {
       const logger = new TestLogger();
-      expect(translateContext(
-        logger,
-        { targetingKey: 'the-key', [key]: value },
-      )).toEqual({
+      expect(translateContext(logger, { targetingKey: 'the-key', [key]: value })).toEqual({
         key: 'the-key',
         kind: 'user',
       });
@@ -102,12 +90,14 @@ describe('translateContext', () => {
 
   it('accepts string/boolean/number arrays', () => {
     const logger = new TestLogger();
-    expect(translateContext(logger, {
-      targetingKey: 'the-key',
-      strings: ['a', 'b', 'c'],
-      numbers: [1, 2, 3],
-      booleans: [true, false],
-    })).toEqual({
+    expect(
+      translateContext(logger, {
+        targetingKey: 'the-key',
+        strings: ['a', 'b', 'c'],
+        numbers: [1, 2, 3],
+        booleans: [true, false],
+      }),
+    ).toEqual({
       key: 'the-key',
       kind: 'user',
       strings: ['a', 'b', 'c'],
@@ -120,10 +110,7 @@ describe('translateContext', () => {
   it('converts date to ISO strings', () => {
     const date = new Date();
     const logger = new TestLogger();
-    expect(translateContext(
-      logger,
-      { targetingKey: 'the-key', date },
-    )).toEqual({
+    expect(translateContext(logger, { targetingKey: 'the-key', date })).toEqual({
       key: 'the-key',
       kind: 'user',
       date: date.toISOString(),

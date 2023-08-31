@@ -7,7 +7,7 @@ import {
   OpenFeature,
   ProviderEvents,
   ProviderStatus,
-  StandardResolutionReasons
+  StandardResolutionReasons,
 } from '@openfeature/js-sdk';
 import type { UnaryCall } from '@protobuf-ts/runtime-rpc';
 import {
@@ -82,47 +82,72 @@ describe(FlagdProvider.name, () => {
         };
       }),
       close: jest.fn(),
-      resolveBoolean: jest.fn((request: ResolveBooleanRequest, callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void) => {
-        callback(null, {
-          value: BOOLEAN_VALUE,
-          variant: BOOLEAN_VARIANT,
-          reason: REASON,
-          metadata: METADATA,
-        });
-      }),
-      resolveString: jest.fn((request: ResolveStringRequest, callback: (error: ServiceError | null, response: ResolveStringResponse) => void) => {
-        callback(null, {
-          value: STRING_VALUE,
-          variant: STRING_VARIANT,
-          reason: REASON,
-          metadata: METADATA,
-        });
-      }),
-      resolveFloat: jest.fn((request: ResolveFloatRequest, callback: (error: ServiceError | null, response: ResolveFloatResponse) => void) => {
-        callback(null, {
-          value: NUMBER_VALUE,
-          variant: NUMBER_VARIANT,
-          reason: REASON,
-          metadata: METADATA,
-        });
-      }),
+      resolveBoolean: jest.fn(
+        (
+          request: ResolveBooleanRequest,
+          callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void,
+        ) => {
+          callback(null, {
+            value: BOOLEAN_VALUE,
+            variant: BOOLEAN_VARIANT,
+            reason: REASON,
+            metadata: METADATA,
+          });
+        },
+      ),
+      resolveString: jest.fn(
+        (
+          request: ResolveStringRequest,
+          callback: (error: ServiceError | null, response: ResolveStringResponse) => void,
+        ) => {
+          callback(null, {
+            value: STRING_VALUE,
+            variant: STRING_VARIANT,
+            reason: REASON,
+            metadata: METADATA,
+          });
+        },
+      ),
+      resolveFloat: jest.fn(
+        (
+          request: ResolveFloatRequest,
+          callback: (error: ServiceError | null, response: ResolveFloatResponse) => void,
+        ) => {
+          callback(null, {
+            value: NUMBER_VALUE,
+            variant: NUMBER_VARIANT,
+            reason: REASON,
+            metadata: METADATA,
+          });
+        },
+      ),
       resolveInt: jest.fn((): UnaryCall<ResolveIntRequest, ResolveIntResponse> => {
         throw new Error('resolveInt should not be called'); // we never call this method, we resolveFloat for all numbers.
       }),
-      resolveObject: jest.fn((request: ResolveObjectRequest, callback: (error: ServiceError | null, response: ResolveObjectResponse) => void) => {
-        callback(null, {
-          value: OBJECT_VALUE,
-          variant: OBJECT_VARIANT,
-          reason: REASON,
-          metadata: METADATA,
-        });
-      }),
+      resolveObject: jest.fn(
+        (
+          request: ResolveObjectRequest,
+          callback: (error: ServiceError | null, response: ResolveObjectResponse) => void,
+        ) => {
+          callback(null, {
+            value: OBJECT_VALUE,
+            variant: OBJECT_VARIANT,
+            reason: REASON,
+            metadata: METADATA,
+          });
+        },
+      ),
     } as unknown as ServiceClient;
 
     beforeEach(() => {
       // inject our mock GRPCService and ServiceClient
-      OpenFeature.setProvider('basic test',
-        new FlagdProvider(undefined, undefined, new GRPCService({ host: '', port: 123, tls: false }, basicServiceClientMock))
+      OpenFeature.setProvider(
+        'basic test',
+        new FlagdProvider(
+          undefined,
+          undefined,
+          new GRPCService({ host: '', port: 123, tls: false }, basicServiceClientMock),
+        ),
       );
       client = OpenFeature.getClient('basic test');
     });
@@ -130,10 +155,13 @@ describe(FlagdProvider.name, () => {
     describe(FlagdProvider.prototype.resolveBooleanEvaluation.name, () => {
       it(`should call ${ServiceClient.prototype.resolveBoolean} with key and context and return details`, async () => {
         const val = await client.getBooleanDetails(BOOLEAN_KEY, false, TEST_CONTEXT);
-        expect(basicServiceClientMock.resolveBoolean).toHaveBeenCalledWith({
-          flagKey: BOOLEAN_KEY,
-          context: TEST_CONTEXT,
-        }, expect.any(Function));
+        expect(basicServiceClientMock.resolveBoolean).toHaveBeenCalledWith(
+          {
+            flagKey: BOOLEAN_KEY,
+            context: TEST_CONTEXT,
+          },
+          expect.any(Function),
+        );
         expect(val.value).toEqual(BOOLEAN_VALUE);
         expect(val.variant).toEqual(BOOLEAN_VARIANT);
         expect(val.reason).toEqual(REASON);
@@ -144,10 +172,13 @@ describe(FlagdProvider.name, () => {
     describe(FlagdProvider.prototype.resolveStringEvaluation.name, () => {
       it(`should call ${ServiceClient.prototype.resolveString} with key and context and return details`, async () => {
         const val = await client.getStringDetails(STRING_KEY, 'nope', TEST_CONTEXT);
-        expect(basicServiceClientMock.resolveString).toHaveBeenCalledWith({
-          flagKey: STRING_KEY,
-          context: TEST_CONTEXT,
-        }, expect.any(Function));
+        expect(basicServiceClientMock.resolveString).toHaveBeenCalledWith(
+          {
+            flagKey: STRING_KEY,
+            context: TEST_CONTEXT,
+          },
+          expect.any(Function),
+        );
         expect(val.value).toEqual(STRING_VALUE);
         expect(val.variant).toEqual(STRING_VARIANT);
         expect(val.reason).toEqual(REASON);
@@ -158,10 +189,13 @@ describe(FlagdProvider.name, () => {
     describe(FlagdProvider.prototype.resolveNumberEvaluation.name, () => {
       it(`should call ${ServiceClient.prototype.resolveFloat} with key and context and return details`, async () => {
         const val = await client.getNumberDetails(NUMBER_KEY, 0, TEST_CONTEXT);
-        expect(basicServiceClientMock.resolveFloat).toHaveBeenCalledWith({
-          flagKey: NUMBER_KEY,
-          context: TEST_CONTEXT,
-        }, expect.any(Function));
+        expect(basicServiceClientMock.resolveFloat).toHaveBeenCalledWith(
+          {
+            flagKey: NUMBER_KEY,
+            context: TEST_CONTEXT,
+          },
+          expect.any(Function),
+        );
         expect(val.value).toEqual(NUMBER_VALUE);
         expect(val.variant).toEqual(NUMBER_VARIANT);
         expect(val.reason).toEqual(REASON);
@@ -172,10 +206,13 @@ describe(FlagdProvider.name, () => {
     describe(FlagdProvider.prototype.resolveObjectEvaluation.name, () => {
       it(`should call ${ServiceClient.prototype.resolveObject} with key and context and return details`, async () => {
         const val = await client.getObjectDetails(OBJECT_KEY, {}, TEST_CONTEXT);
-        expect(basicServiceClientMock.resolveObject).toHaveBeenCalledWith({
-          flagKey: OBJECT_KEY,
-          context: TEST_CONTEXT,
-        }, expect.any(Function));
+        expect(basicServiceClientMock.resolveObject).toHaveBeenCalledWith(
+          {
+            flagKey: OBJECT_KEY,
+            context: TEST_CONTEXT,
+          },
+          expect.any(Function),
+        );
         expect(val.value).toEqual({ [OBJECT_INNER_KEY]: OBJECT_INNER_VALUE });
         expect(val.variant).toEqual(OBJECT_VARIANT);
         expect(val.reason).toEqual(REASON);
@@ -188,10 +225,13 @@ describe(FlagdProvider.name, () => {
         const val = await client.getBooleanDetails(BOOLEAN_KEY, false, {
           it: undefined,
         } as unknown as EvaluationContext);
-        expect(basicServiceClientMock.resolveBoolean).toHaveBeenCalledWith({
-          flagKey: BOOLEAN_KEY,
-          context: {},
-        }, expect.any(Function));
+        expect(basicServiceClientMock.resolveBoolean).toHaveBeenCalledWith(
+          {
+            flagKey: BOOLEAN_KEY,
+            context: {},
+          },
+          expect.any(Function),
+        );
         expect(val.value).toEqual(BOOLEAN_VALUE);
         expect(val.variant).toEqual(BOOLEAN_VARIANT);
         expect(val.reason).toEqual(REASON);
@@ -226,21 +266,26 @@ describe(FlagdProvider.name, () => {
         return streamMock;
       }),
       close: jest.fn(),
-      resolveBoolean: jest.fn((req: ResolveBooleanRequest, callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void) => {
-        const response = {
-          variant: BOOLEAN_VARIANT,
-          value: true,
-        } as ResolveBooleanResponse;
+      resolveBoolean: jest.fn(
+        (
+          req: ResolveBooleanRequest,
+          callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void,
+        ) => {
+          const response = {
+            variant: BOOLEAN_VARIANT,
+            value: true,
+          } as ResolveBooleanResponse;
 
-        // mock static vs targeting keys
-        if (req.flagKey === STATIC_BOOLEAN_KEY_1 || req.flagKey === STATIC_BOOLEAN_KEY_2) {
-          response.reason = StandardResolutionReasons.STATIC;
-        } else {
-          response.reason = StandardResolutionReasons.TARGETING_MATCH;
-        }
-        
-        callback(null, response);
-      }),
+          // mock static vs targeting keys
+          if (req.flagKey === STATIC_BOOLEAN_KEY_1 || req.flagKey === STATIC_BOOLEAN_KEY_2) {
+            response.reason = StandardResolutionReasons.STATIC;
+          } else {
+            response.reason = StandardResolutionReasons.TARGETING_MATCH;
+          }
+
+          callback(null, response);
+        },
+      ),
     } as unknown as ServiceClient;
 
     describe(FlagdProvider.prototype.initialize, () => {
@@ -248,15 +293,17 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
-        ).initialize().then(() => {
-          try {
-            expect(streamingServiceClientMock.eventStream).toHaveBeenCalled();
-            done();
-          } catch (err) {
-            done(err);
-          }
-        });
+          new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
+        )
+          .initialize()
+          .then(() => {
+            try {
+              expect(streamingServiceClientMock.eventStream).toHaveBeenCalled();
+              done();
+            } catch (err) {
+              done(err);
+            }
+          });
         // fire message saying provider is ready
         registeredOnMessageCallback({ type: EVENT_PROVIDER_READY, data: {} });
       });
@@ -266,12 +313,13 @@ describe(FlagdProvider.name, () => {
       let client: Client;
 
       beforeAll(() => {
-        OpenFeature.setProvider('change events test',
+        OpenFeature.setProvider(
+          'change events test',
           new FlagdProvider(
             undefined,
             undefined,
-            new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
-          )
+            new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
+          ),
         );
         // fire message saying provider is ready
         registeredOnMessageCallback({ type: EVENT_PROVIDER_READY, data: {} });
@@ -295,16 +343,16 @@ describe(FlagdProvider.name, () => {
             [flag1]: {
               type: 'update',
               source: 'some-source',
-              flagKey: flag1
+              flagKey: flag1,
             },
             [flag2]: {
               type: 'update',
               source: 'some-other-source',
-              flagKey: flag2
+              flagKey: flag2,
             },
-          }
+          },
         };
-        
+
         // mock change event from flagd
         registeredOnMessageCallback({ type: EVENT_CONFIGURATION_CHANGE, data });
       });
@@ -314,12 +362,13 @@ describe(FlagdProvider.name, () => {
       let client: Client;
 
       beforeAll(() => {
-        OpenFeature.setProvider('streaming test',
+        OpenFeature.setProvider(
+          'streaming test',
           new FlagdProvider(
             undefined,
             undefined,
-            new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
-          )
+            new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
+          ),
         );
         // fire message saying provider is ready
         registeredOnMessageCallback({ type: EVENT_PROVIDER_READY, data: {} });
@@ -345,12 +394,13 @@ describe(FlagdProvider.name, () => {
       let client: Client;
 
       beforeAll(() => {
-        OpenFeature.setProvider('cache invalidation',
+        OpenFeature.setProvider(
+          'cache invalidation',
           new FlagdProvider(
             undefined,
             undefined,
-            new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
-          )
+            new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
+          ),
         );
         // fire message saying provider is ready
         registeredOnMessageCallback({ type: EVENT_PROVIDER_READY, data: {} });
@@ -438,7 +488,7 @@ describe(FlagdProvider.name, () => {
         const provider = new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
+          new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
         );
         provider.initialize();
 
@@ -456,7 +506,9 @@ describe(FlagdProvider.name, () => {
         new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
           try {
             // within 3 seconds, we should have seen at least 3 connect attempts, and provider should be READY.
-            expect((streamingServiceClientMock.eventStream as jest.MockedFn<any>).mock.calls.length).toBeGreaterThanOrEqual(3);
+            expect(
+              (streamingServiceClientMock.eventStream as jest.MockedFn<any>).mock.calls.length,
+            ).toBeGreaterThanOrEqual(3);
             expect(provider.status).toEqual(ProviderStatus.READY);
             done();
           } catch (err) {
@@ -469,7 +521,7 @@ describe(FlagdProvider.name, () => {
         const provider = new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock)
+          new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
         );
         provider.initialize();
 
@@ -490,7 +542,9 @@ describe(FlagdProvider.name, () => {
         new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
           try {
             // within 4 seconds, we should have seen at least 3 connect attempts and status should be READY.
-            expect((streamingServiceClientMock.eventStream as jest.MockedFn<any>).mock.calls.length).toBeGreaterThanOrEqual(3);
+            expect(
+              (streamingServiceClientMock.eventStream as jest.MockedFn<any>).mock.calls.length,
+            ).toBeGreaterThanOrEqual(3);
             expect(provider.status).toEqual(ProviderStatus.READY);
             done();
           } catch (err) {
@@ -518,30 +572,52 @@ describe(FlagdProvider.name, () => {
         };
       }),
       close: jest.fn(),
-      resolveBoolean: jest.fn((request: ResolveBooleanRequest, callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void) => {
-        callback({ code: status.DATA_LOSS, details } as ServiceError, {} as ResolveBooleanResponse);
-      }),
-      resolveString: jest.fn((request: ResolveStringRequest, callback: (error: ServiceError | null, response: ResolveStringResponse) => void) => {
-        callback({ code: status.INVALID_ARGUMENT, details } as ServiceError, {} as ResolveStringResponse);
-
-      }),
-      resolveFloat: jest.fn((request: ResolveFloatRequest, callback: (error: ServiceError | null, response: ResolveFloatResponse) => void) => {
-        callback({ code: status.NOT_FOUND, details } as ServiceError, {} as ResolveFloatResponse);
-
-      }),
+      resolveBoolean: jest.fn(
+        (
+          request: ResolveBooleanRequest,
+          callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void,
+        ) => {
+          callback({ code: status.DATA_LOSS, details } as ServiceError, {} as ResolveBooleanResponse);
+        },
+      ),
+      resolveString: jest.fn(
+        (
+          request: ResolveStringRequest,
+          callback: (error: ServiceError | null, response: ResolveStringResponse) => void,
+        ) => {
+          callback({ code: status.INVALID_ARGUMENT, details } as ServiceError, {} as ResolveStringResponse);
+        },
+      ),
+      resolveFloat: jest.fn(
+        (
+          request: ResolveFloatRequest,
+          callback: (error: ServiceError | null, response: ResolveFloatResponse) => void,
+        ) => {
+          callback({ code: status.NOT_FOUND, details } as ServiceError, {} as ResolveFloatResponse);
+        },
+      ),
       resolveInt: jest.fn((): UnaryCall<ResolveIntRequest, ResolveIntResponse> => {
         throw new Error('resolveInt should not be called'); // we never call this method, we resolveFloat for all numbers.
       }),
-      resolveObject: jest.fn((request: ResolveObjectRequest, callback: (error: ServiceError | null, response: ResolveObjectResponse) => void) => {
-        callback({ code: status.UNAVAILABLE, details } as ServiceError, {} as ResolveObjectResponse);
-
-      }),
+      resolveObject: jest.fn(
+        (
+          request: ResolveObjectRequest,
+          callback: (error: ServiceError | null, response: ResolveObjectResponse) => void,
+        ) => {
+          callback({ code: status.UNAVAILABLE, details } as ServiceError, {} as ResolveObjectResponse);
+        },
+      ),
     } as unknown as ServiceClient;
 
     beforeEach(() => {
       // inject our mock GRPCService and ServiceClient
-      OpenFeature.setProvider('errors test',
-        new FlagdProvider(undefined, undefined, new GRPCService({ host: '', port: 123, tls: false }, errServiceClientMock))
+      OpenFeature.setProvider(
+        'errors test',
+        new FlagdProvider(
+          undefined,
+          undefined,
+          new GRPCService({ host: '', port: 123, tls: false }, errServiceClientMock),
+        ),
       );
       client = OpenFeature.getClient('errors test');
     });
@@ -618,8 +694,13 @@ describe(FlagdProvider.name, () => {
     } as unknown as ServiceClient;
 
     beforeEach(() => {
-      OpenFeature.setProvider('shutdown test',
-        new FlagdProvider(undefined, undefined, new GRPCService({ host: '', port: 123, tls: false }, errServiceClientMock))
+      OpenFeature.setProvider(
+        'shutdown test',
+        new FlagdProvider(
+          undefined,
+          undefined,
+          new GRPCService({ host: '', port: 123, tls: false }, errServiceClientMock),
+        ),
       );
     });
 

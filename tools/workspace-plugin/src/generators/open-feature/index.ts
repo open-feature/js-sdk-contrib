@@ -52,7 +52,7 @@ export default async function (tree: Tree, schema: SchemaOptions) {
   ['spec.ts', 'ts'].forEach((suffix) => {
     tree.rename(
       joinPathFragments(projectLibDir, `${directory}-${fileName}.${suffix}`),
-      joinPathFragments(projectLibDir, `${libFileName}.${suffix}`)
+      joinPathFragments(projectLibDir, `${libFileName}.${suffix}`),
     );
   });
 

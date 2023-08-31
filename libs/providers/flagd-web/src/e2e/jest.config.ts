@@ -1,7 +1,7 @@
 export default {
   displayName: 'providers-flagd-web-e2e',
   transform: {
-    '^.+\\.[tj]s$': ['ts-jest', { tsConfig: './tsconfig.lib.json'}],
+    '^.+\\.[tj]s$': ['ts-jest', { tsConfig: './tsconfig.lib.json' }],
   },
   testEnvironment: 'node',
   preset: 'ts-jest',

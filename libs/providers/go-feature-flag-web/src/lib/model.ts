@@ -1,8 +1,5 @@
-import {
-  ErrorCode,
-  EvaluationContextValue,
-} from '@openfeature/js-sdk';
-import {FlagValue} from "@openfeature/web-sdk";
+import { ErrorCode, EvaluationContextValue } from '@openfeature/js-sdk';
+import { FlagValue } from '@openfeature/web-sdk';
 
 /**
  * GoFeatureFlagEvaluationContext is the representation of a user for GO Feature Flag
@@ -23,7 +20,6 @@ export interface GoFeatureFlagEvaluationContext {
 export interface GoFeatureFlagAllFlagRequest {
   evaluationContext: GoFeatureFlagEvaluationContext;
 }
-
 
 /**
  * GoFeatureFlagProviderOptions is the object containing all the provider options
@@ -56,7 +52,6 @@ export interface GoFeatureFlagWebProviderOptions {
   maxRetries?: number;
 }
 
-
 /**
  * FlagState is the object used to get the value return by GO Feature Flag.
  */
@@ -77,15 +72,15 @@ export interface FlagState<T extends FlagValue> {
  * by GO Feature Flag.
  */
 export interface GOFeatureFlagAllFlagsResponse {
-  valid: boolean
-  flags: Record<string, FlagState<FlagValue>>
+  valid: boolean;
+  flags: Record<string, FlagState<FlagValue>>;
 }
 
 /**
  * Format of the websocket event we can receive.
  */
 export interface GOFeatureFlagWebsocketResponse {
-  deleted?: { [key: string]: any }
-  added?: { [key: string]: any }
-  updated?: { [key: string]: any }
+  deleted?: { [key: string]: any };
+  added?: { [key: string]: any };
+  updated?: { [key: string]: any };
 }

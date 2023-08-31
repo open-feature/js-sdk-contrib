@@ -1,8 +1,8 @@
 # In-Memory Provider
 
-An *extremely* simple OpenFeature provider, intended for simple demos and as a test stub.
+An _extremely_ simple OpenFeature provider, intended for simple demos and as a test stub.
 
-Flagging decisions are static - evaluation context is ignored. The only way to change a flag value is 
+Flagging decisions are static - evaluation context is ignored. The only way to change a flag value is
 to replace the entire configuration (with `replaceConfiguration`), and this is only intended to be used
 when the provider is acting as a test stub.
 
@@ -17,6 +17,7 @@ $ npm install @openfeature/in-memory-provider
 ## Usage
 
 ### set up the provider with some flag values
+
 ```
 import { InMemoryProvider } from '@openfeature/in-memory-provider'
 import { OpenFeature } from '@openfeature/js-sdk'
@@ -30,6 +31,7 @@ OpenFeature.setProvider(provider)
 ```
 
 ### check a flag's value
+
 ```
 // create a client
 const client = OpenFeature.getClient('my-app');
@@ -39,7 +41,8 @@ const boolValue = await client.getBooleanValue('a-boolean-flag', false);
 ```
 
 ### replace the flag configuration
-*a crude facility for when the provider is being used as a test stub*
+
+_a crude facility for when the provider is being used as a test stub_
 
 ```
 provider.replaceConfiguration({
@@ -49,7 +52,6 @@ provider.replaceConfiguration({
 
 Note that this entirely replaces the previous configuration - no merging is
 performed and all previous values are lost.
-
 
 ## Development
 

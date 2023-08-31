@@ -253,7 +253,7 @@ export class GRPCService implements Service {
       .call(this._client, { flagKey, context })
       .then((resolved) => resolved, this.onRejected);
 
-    const resolved: ResolutionDetails<T>  = {
+    const resolved: ResolutionDetails<T> = {
       value: response.value as T,
       reason: response.reason,
       variant: response.variant,

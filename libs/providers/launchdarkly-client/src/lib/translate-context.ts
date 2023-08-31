@@ -30,19 +30,15 @@ const LDContextBuiltIns = {
  * @param object Object to place the value in.
  * @param visited Carry visited keys of the object
  */
-function convertAttributes(
-  logger: LDLogger,
-  key: string,
-  value: any,
-  object: any,
-  visited: any[],
-): any {
+function convertAttributes(logger: LDLogger, key: string, value: any, object: any, visited: any[]): any {
   if (visited.includes(value)) {
     // Prevent cycles by not visiting the same object
     // with in the same branch. Different branches
     // may contain the same object.
-    logger.error('Detected a cycle within the evaluation context. The '
-      + 'affected part of the context will not be included in evaluation.');
+    logger.error(
+      'Detected a cycle within the evaluation context. The ' +
+        'affected part of the context will not be included in evaluation.',
+    );
     return;
   }
   // This method is recursively populating objects, so we are intentionally
@@ -81,13 +77,16 @@ function translateContextCommon(
   const finalKey = inTargetingKey ?? keyAttr;
 
   if (keyAttr != null && inTargetingKey != null) {
-    logger.warn("The EvaluationContext contained both a 'targetingKey' and a 'key' attribute. The"
-      + " 'key' attribute will be discarded.");
+    logger.warn(
+      "The EvaluationContext contained both a 'targetingKey' and a 'key' attribute. The" +
+        " 'key' attribute will be discarded.",
+    );
   }
 
   if (finalKey == null) {
-    logger.error("The EvaluationContext must contain either a 'targetingKey' or a 'key' and the "
-      + 'type must be a string.');
+    logger.error(
+      "The EvaluationContext must contain either a 'targetingKey' or a 'key' and the " + 'type must be a string.',
+    );
   }
 
   const convertedContext: LDContextCommon = { key: finalKey };
@@ -101,7 +100,7 @@ function translateContextCommon(
         privateAttributes: value as string[],
       };
     } else if (key in LDContextBuiltIns) {
-      const typedKey = key as 'name'| 'anonymous';
+      const typedKey = key as 'name' | 'anonymous';
       if (typeof value === LDContextBuiltIns[typedKey]) {
         convertedContext[key] = value;
       } else {
@@ -124,31 +123,24 @@ function translateContextCommon(
  *
  * @internal
  */
-export default function translateContext(
-  logger: LDLogger,
-  evalContext: EvaluationContext,
-): LDContext {
+export default function translateContext(logger: LDLogger, evalContext: EvaluationContext): LDContext {
   let finalKind = 'user';
 
   // A multi-context.
   if (evalContext['kind'] === 'multi') {
-    return Object.entries(evalContext)
-      .reduce((acc: any, [key, value]: [string, EvaluationContextValue]) => {
-        if (key === 'kind') {
-          acc.kind = value;
-        } else if (typeof value === 'object' && !Array.isArray(value)) {
-          const valueRecord = value as Record<string, EvaluationContextValue>;
-          acc[key] = translateContextCommon(
-            logger,
-            valueRecord,
-            valueRecord['targetingKey'] as string,
-          );
-        } else {
-          logger.error('Top level attributes in a multi-kind context should be Structure types.');
-        }
-        return acc;
-      }, {});
-  } if (evalContext['kind'] !== undefined && typeof evalContext['kind'] === 'string') {
+    return Object.entries(evalContext).reduce((acc: any, [key, value]: [string, EvaluationContextValue]) => {
+      if (key === 'kind') {
+        acc.kind = value;
+      } else if (typeof value === 'object' && !Array.isArray(value)) {
+        const valueRecord = value as Record<string, EvaluationContextValue>;
+        acc[key] = translateContextCommon(logger, valueRecord, valueRecord['targetingKey'] as string);
+      } else {
+        logger.error('Top level attributes in a multi-kind context should be Structure types.');
+      }
+      return acc;
+    }, {});
+  }
+  if (evalContext['kind'] !== undefined && typeof evalContext['kind'] === 'string') {
     // Single context with specified kind.
     finalKind = evalContext['kind'];
   } else if (evalContext['kind'] !== undefined && typeof evalContext['kind'] !== 'string') {

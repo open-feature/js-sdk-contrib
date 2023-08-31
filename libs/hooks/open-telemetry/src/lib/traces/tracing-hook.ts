@@ -7,7 +7,7 @@ export type TracingHookOptions = OpenTelemetryHookOptions;
 
 /**
  * A hook that adds conventionally-compliant span events to feature flag evaluations.
- * 
+ *
  * See {@link https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/feature-flags/}
  */
 export class TracingHook extends OpenTelemetryHook implements Hook {

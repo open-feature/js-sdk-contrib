@@ -69,9 +69,7 @@
     "e2e": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": [
-          "npx jest"
-        ],
+        "commands": ["npx jest"],
         "cwd": "libs/providers/flagd-web/src/e2e",
         "parallel": false
       },
