@@ -4,9 +4,9 @@
 [submodule "libs/providers/flagd-web/schemas"]
 	path = libs/providers/flagd-web/schemas
 	url = https://github.com/open-feature/schemas
-[submodule "libs/providers/flagd/test-harness"]
-	path = libs/providers/flagd/test-harness
-	url = https://github.com/open-feature/test-harness
-[submodule "libs/providers/flagd-web/test-harness"]
-	path = libs/providers/flagd-web/test-harness
-	url = https://github.com/open-feature/test-harness
+[submodule "libs/providers/flagd/spec"]
+	path = libs/providers/flagd/spec
+	url = https://github.com/open-feature/spec.git
+[submodule "libs/providers/flagd-web/spec"]
+	path = libs/providers/flagd-web/spec
+	url = https://github.com/open-feature/spec.git
