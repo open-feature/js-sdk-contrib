@@ -12,7 +12,7 @@ jobs:
       matrix:
         node-version: [16.x, 18.x, 20.x]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
@@ -43,7 +43,7 @@ jobs:
             - 8013:8013
 
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - uses: actions/setup-node@v3
           with:
             # we need 'fetch' for this test, which is only in 18+
