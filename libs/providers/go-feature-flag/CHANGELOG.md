@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.15](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.14...go-feature-flag-provider-v0.5.15) (2023-09-12)
+
+
+### 🧹 Chore
+
+* GO Feature Flag move datacollector to hook + change cache key ([#580](https://github.com/open-feature/js-sdk-contrib/issues/580)) ([c5dd7fc](https://github.com/open-feature/js-sdk-contrib/commit/c5dd7fcdd8521fce73daf4212adff755e2930eef))
+* update nx, run migrations ([#552](https://github.com/open-feature/js-sdk-contrib/issues/552)) ([a88d8fc](https://github.com/open-feature/js-sdk-contrib/commit/a88d8fc097789fd7f56011e6ebb66070f52c6e56))
+
 ## [0.5.14](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.13...go-feature-flag-provider-v0.5.14) (2023-07-31)
 
 
