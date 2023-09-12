@@ -2,6 +2,7 @@ import {
   ErrorCode,
   EvaluationContext,
   FlagNotFoundError,
+  Hook,
   JsonValue,
   Logger,
   Provider,
@@ -11,7 +12,6 @@ import {
   TypeMismatchError,
 } from '@openfeature/js-sdk';
 import axios from 'axios';
-import {copy} from 'copy-anything';
 import {transformContext} from './context-transformer';
 import {ProxyNotReady} from './errors/proxyNotReady';
 import {ProxyTimeout} from './errors/proxyTimeout';
@@ -19,14 +19,13 @@ import {UnknownError} from './errors/unknownError';
 import {Unauthorized} from './errors/unauthorized';
 import {LRUCache} from 'lru-cache';
 import {
-  DataCollectorRequest,
-  DataCollectorResponse,
-  FeatureEvent,
   GoFeatureFlagProviderOptions,
   GoFeatureFlagProxyRequest,
   GoFeatureFlagProxyResponse,
   GoFeatureFlagUser,
 } from './model';
+import {GoFeatureFlagDataCollectorHook} from './data-collector-hook';
+import hash from 'object-hash';
 
 // GoFeatureFlagProvider is the official Open-feature provider for GO Feature Flag.
 export class GoFeatureFlagProvider implements Provider {
@@ -43,39 +42,38 @@ export class GoFeatureFlagProvider implements Provider {
   // cache contains the local cache used in the provider to avoid calling the relay-proxy for every evaluation
   private readonly cache?: LRUCache<string, ResolutionDetails<any>>;
 
-  // bgSchedulerId contains the id of the setInterval that is running.
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  private bgScheduler?: NodeJS.Timer;
-
-  // dataCollectorBuffer contains all the FeatureEvents that we need to send to the relay-proxy for data collection.
-  private dataCollectorBuffer?: FeatureEvent<any>[];
-
-  // dataCollectorMetadata are the metadata used when calling the data collector endpoint
-  private readonly dataCollectorMetadata: Record<string, string> = {
-    provider: 'open-feature-js-sdk',
-  };
-
   // cacheTTL is the time we keep the evaluation in the cache before we consider it as obsolete.
   // If you want to keep the value forever you can set the FlagCacheTTL field to -1
   private readonly cacheTTL?: number;
 
-  // dataFlushInterval interval time (in millisecond) we use to call the relay proxy to collect data.
-  private readonly dataFlushInterval: number;
-
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
   private readonly disableDataCollection: boolean;
+
+  // dataCollectorHook is the hook used to send the data to the GO Feature Flag data collector API.
+  private readonly dataCollectorHook?: GoFeatureFlagDataCollectorHook;
 
   // logger is the Open Feature logger to use
   private logger?: Logger;
 
+  // _status is the variable keeping the status of the provider internally.
   private _status: ProviderStatus = ProviderStatus.NOT_READY;
 
+  readonly hooks?: Hook[];
   constructor(options: GoFeatureFlagProviderOptions, logger?: Logger) {
     this.timeout = options.timeout || 0; // default is 0 = no timeout
     this.endpoint = options.endpoint;
+
+    if (!options.disableDataCollection){
+      this.dataCollectorHook = new GoFeatureFlagDataCollectorHook({
+        endpoint: this.endpoint,
+        timeout: this.timeout,
+        dataFlushInterval: options.dataFlushInterval
+      }, logger);
+      this.hooks = [this.dataCollectorHook];
+    }
+
     this.cacheTTL = options.flagCacheTTL !== undefined && options.flagCacheTTL !== 0 ? options.flagCacheTTL : 1000 * 60;
-    this.dataFlushInterval = options.dataFlushInterval || 1000 * 60;
+
     this.disableDataCollection = options.disableDataCollection || false;
     this.logger = logger;
 
@@ -96,8 +94,7 @@ export class GoFeatureFlagProvider implements Provider {
    */
   async initialize() {
     if (!this.disableDataCollection) {
-      this.bgScheduler = setInterval(async () => await this.callGoffDataCollection(), this.dataFlushInterval)
-      this.dataCollectorBuffer = []
+      this.dataCollectorHook?.init()
     }
     this._status = ProviderStatus.READY;
   }
@@ -111,44 +108,7 @@ export class GoFeatureFlagProvider implements Provider {
    * It will terminate gracefully the provider and ensure that all the data are send to the relay-proxy.
    */
   async onClose() {
-    if (this.cache !== undefined && this.bgScheduler !== undefined) {
-      // we stop the background task to call the data collector endpoint
-      clearInterval(this.bgScheduler);
-      // We call the data collector with what is still in the buffer.
-      await this.callGoffDataCollection()
-    }
-  }
-
-
-  /**
-   * callGoffDataCollection is a function called periodically to send the usage of the flag to the
-   * central service in charge of collecting the data.
-   */
-  async callGoffDataCollection() {
-    if (this.dataCollectorBuffer?.length === 0) {
-      return;
-    }
-
-    const dataToSend = copy(this.dataCollectorBuffer) || [];
-    this.dataCollectorBuffer = [];
-
-    const request: DataCollectorRequest<boolean> = {events: dataToSend, meta: this.dataCollectorMetadata,}
-    const endpointURL = new URL(this.endpoint);
-    endpointURL.pathname = 'v1/data/collector';
-
-    try {
-      await axios.post<DataCollectorResponse>(endpointURL.toString(), request, {
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        timeout: this.timeout,
-      });
-    } catch (e) {
-      this.logger?.error(`impossible to send the data to the collector: ${e}`)
-      // if we have an issue calling the collector we put the data back in the buffer
-      this.dataCollectorBuffer = [...this.dataCollectorBuffer, ...dataToSend];
-    }
+    await this.dataCollectorHook?.close();
   }
 
   /**
@@ -282,24 +242,11 @@ export class GoFeatureFlagProvider implements Provider {
       };
     }
 
-    const cacheKey = `${flagKey}-${user.key}`;
+    const cacheKey = `${flagKey}-${hash(user)}`;
     // check if flag is available in the cache
     if (this.cache !== undefined) {
       const cacheValue = this.cache.get(cacheKey);
       if (cacheValue !== undefined) {
-        // Building and inserting an event to the data collector buffer,
-        // so we will be able to bulk send these events to GO Feature Flag.
-        const dataCollectorEvent: FeatureEvent<T> = {
-          contextKind: user.anonymous ? 'anonymousUser' : 'user',
-          kind: 'feature',
-          creationDate: Math.round(Date.now() / 1000),
-          default: false,
-          key: flagKey,
-          value: cacheValue.value,
-          variation: cacheValue.variant || 'SdkDefault',
-          userKey: user.key,
-        }
-        this.dataCollectorBuffer?.push(dataCollectorEvent);
         cacheValue.reason = StandardResolutionReasons.CACHED;
         return cacheValue;
       }
