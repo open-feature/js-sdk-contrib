@@ -105,3 +105,17 @@ export interface FeatureEvent<T> {
 export interface DataCollectorResponse {
   ingestedContentCount: number;
 }
+
+export interface DataCollectorHookOptions {
+  endpoint: string;
+  timeout?: number; // in millisecond
+
+  // dataFlushInterval (optional) interval time (in millisecond) we use to call the relay proxy to collect data.
+  // The parameter is used only if the cache is enabled, otherwise the collection of the data is done directly
+  // when calling the evaluation API.
+  // default: 1 minute
+  dataFlushInterval?: number;
+
+  // collectUnCachedEvent (optional) set to true if you want to send all events not only the cached evaluations.
+  collectUnCachedEvaluation?: boolean;
+}

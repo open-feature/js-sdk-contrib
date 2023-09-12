@@ -38,16 +38,16 @@ describe('GoFeatureFlagProvider', () => {
 
   afterEach(async () => {
     await OpenFeature.close();
-    await axiosMock.reset();
-    await axiosMock.resetHistory();
+    axiosMock.reset();
+    axiosMock.resetHistory();
     testLogger.reset();
     await OpenFeature.close();
   });
 
   beforeEach(async () => {
     await OpenFeature.close();
-    await axiosMock.reset();
-    await axiosMock.resetHistory();
+    axiosMock.reset();
+    axiosMock.resetHistory();
     goff = new GoFeatureFlagProvider({endpoint});
     OpenFeature.setProvider('test-provider', goff);
     cli = OpenFeature.getClient('test-provider');
@@ -837,6 +837,22 @@ describe('GoFeatureFlagProvider', () => {
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName1, false, {targetingKey});
       await cli.getBooleanDetails(flagName2, false, {targetingKey});
+      expect(axiosMock.history['post'].length).toBe(2);
+    });
+    it('should not retrieve from the cache if context properties are different but same targeting key', async () => {
+      const flagName1 = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns1 = `${endpoint}v1/feature/${flagName1}/eval`;
+      axiosMock.onPost(dns1).reply(200, validBoolResponse);
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        flagCacheSize: 1,
+        disableDataCollection: true,
+      })
+      OpenFeature.setProvider('test-provider-cache', goff);
+      const cli = OpenFeature.getClient('test-provider-cache');
+      await cli.getBooleanDetails(flagName1, false, {targetingKey, email: 'foo.bar@gofeatureflag.org'});
+      await cli.getBooleanDetails(flagName1, false, {targetingKey, email: 'bar.foo@gofeatureflag.org'});
       expect(axiosMock.history['post'].length).toBe(2);
     });
   });
