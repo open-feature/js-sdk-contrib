@@ -242,7 +242,7 @@ export class GoFeatureFlagProvider implements Provider {
       };
     }
 
-    const cacheKey = `${flagKey}-${user.key}`;
+    const cacheKey = `${flagKey}-${hash(user)}`;
     // check if flag is available in the cache
     if (this.cache !== undefined) {
       const cacheValue = this.cache.get(cacheKey);
