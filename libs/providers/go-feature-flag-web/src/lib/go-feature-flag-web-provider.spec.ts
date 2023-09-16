@@ -1,8 +1,15 @@
 import {GoFeatureFlagWebProvider} from './go-feature-flag-web-provider';
-import {EvaluationContext, OpenFeature, ProviderEvents, StandardResolutionReasons} from "@openfeature/web-sdk";
+import {
+  EvaluationContext,
+  OpenFeature,
+  ProviderEvents,
+  StandardResolutionReasons,
+  ErrorCode,
+  EvaluationDetails,
+  JsonValue}
+  from "@openfeature/web-sdk";
 import WS from "jest-websocket-mock";
 import TestLogger from "./test-logger";
-import {ErrorCode, EvaluationDetails, JsonValue} from "@openfeature/js-sdk";
 import {GOFeatureFlagWebsocketResponse} from "./model";
 import fetchMock from "fetch-mock-jest";
 
