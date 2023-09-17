@@ -43,12 +43,15 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
   // logger is the Open Feature logger to use
   private logger?: Logger;
 
+  // collectUnCachedEvent (optional) set to true if you want to send all events not only the cached evaluations.
+  collectUnCachedEvaluation?: boolean;
 
   constructor(options: DataCollectorHookOptions, logger?: Logger) {
     this.dataFlushInterval = options.dataFlushInterval || 1000 * 60;
     this.endpoint = options.endpoint;
     this.timeout = options.timeout || 0; // default is 0 = no timeout
     this.logger = logger;
+    this.collectUnCachedEvaluation = options.collectUnCachedEvaluation;
   }
 
 
@@ -100,7 +103,7 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
     evaluationDetails: EvaluationDetails<FlagValue>,
     hookHints?: HookHints
   ) {
-    if (evaluationDetails.reason !== StandardResolutionReasons.CACHED){
+    if (!this.collectUnCachedEvaluation && evaluationDetails.reason !== StandardResolutionReasons.CACHED){
       return;
     }
 
