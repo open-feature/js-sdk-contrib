@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.16](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.15...go-feature-flag-provider-v0.5.16) (2023-09-18)
+
+
+### 🐛 Bug Fixes
+
+* GOFF fix issues in hook ([#585](https://github.com/open-feature/js-sdk-contrib/issues/585)) ([6ca6463](https://github.com/open-feature/js-sdk-contrib/commit/6ca64638c0530f35bac0184bf11a2334d7c3e5d5))
+
 ## [0.5.15](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.14...go-feature-flag-provider-v0.5.15) (2023-09-12)
 
 
