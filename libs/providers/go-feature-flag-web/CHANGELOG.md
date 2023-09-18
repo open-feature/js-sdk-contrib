@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.2...go-feature-flag-web-provider-v0.1.3) (2023-09-18)
+
+
+### 🐛 Bug Fixes
+
+* GO Feature Flag web provider was using js-sdk import ([#583](https://github.com/open-feature/js-sdk-contrib/issues/583)) ([8666ecd](https://github.com/open-feature/js-sdk-contrib/commit/8666ecdb5d32ed1051cccfd7f32ba958ec9a6736))
+
 ## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.1...go-feature-flag-web-provider-v0.1.2) (2023-09-11)
 
 
