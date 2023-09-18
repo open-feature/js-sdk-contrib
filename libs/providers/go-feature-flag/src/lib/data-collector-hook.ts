@@ -125,7 +125,7 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
       contextKind: hookContext.context['anonymous'] ? 'anonymousUser' : 'user',
       kind: 'feature',
       creationDate: Math.round(Date.now() / 1000),
-      default: false,
+      default: true,
       key: hookContext.flagKey,
       value: hookContext.defaultValue,
       variation: 'SdkDefault',
