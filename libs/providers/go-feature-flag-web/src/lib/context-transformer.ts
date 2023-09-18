@@ -1,6 +1,5 @@
-import {EvaluationContext} from '@openfeature/js-sdk';
 import {GoFeatureFlagEvaluationContext} from './model';
-import {TargetingKeyMissingError} from "@openfeature/web-sdk";
+import {TargetingKeyMissingError, EvaluationContext} from "@openfeature/web-sdk";
 
 /**
  * transformContext takes the raw OpenFeature context returns a GoFeatureFlagEvaluationContext.
