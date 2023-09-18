@@ -1,8 +1,4 @@
-import {
-  ErrorCode,
-  EvaluationContextValue,
-} from '@openfeature/js-sdk';
-import {FlagValue} from "@openfeature/web-sdk";
+import {FlagValue, ErrorCode, EvaluationContextValue} from "@openfeature/web-sdk";
 
 /**
  * GoFeatureFlagEvaluationContext is the representation of a user for GO Feature Flag
