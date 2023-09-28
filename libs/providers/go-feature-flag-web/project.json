@@ -12,21 +12,26 @@
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "package"
         }
       ]
     },
     "lint": {
       "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["libs/providers/go-feature-flag-web/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/providers/go-feature-flag-web/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "libs/providers/go-feature-flag-web/jest.config.ts",
         "passWithNoTests": true
@@ -40,7 +45,9 @@
     },
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "project": "libs/providers/go-feature-flag-web/package.json",
         "outputPath": "dist/libs/providers/go-feature-flag-web",
@@ -51,7 +58,10 @@
         "generateExportsField": true,
         "umdName": "go-feature-flag-web",
         "external": "all",
-        "format": ["cjs", "esm"],
+        "format": [
+          "cjs",
+          "esm"
+        ],
         "assets": [
           {
             "glob": "package.json",

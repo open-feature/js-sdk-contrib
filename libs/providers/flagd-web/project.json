@@ -31,9 +31,13 @@
     },
     "lint": {
       "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["libs/providers/flagd-web/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/providers/flagd-web/**/*.ts"
+        ]
       },
       "dependsOn": [
         {
@@ -43,7 +47,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["coverage/libs/providers/flagd-web"],
+      "outputs": [
+        "{workspaceRoot}/coverage/libs/providers/flagd-web"
+      ],
       "options": {
         "jestConfig": "libs/providers/flagd-web/jest.config.ts",
         "passWithNoTests": true
@@ -86,7 +92,9 @@
     },
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "project": "libs/providers/flagd-web/package.json",
         "outputPath": "dist/libs/providers/flagd-web",
@@ -97,7 +105,10 @@
         "buildableProjectDepsInPackageJsonType": "dependencies",
         "umdName": "flagd-web",
         "external": "all",
-        "format": ["cjs", "esm"],
+        "format": [
+          "cjs",
+          "esm"
+        ],
         "assets": [
           {
             "glob": "package.json",
