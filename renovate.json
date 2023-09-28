@@ -9,9 +9,8 @@
   ],
   "packageRules": [
     {
-      "matchPackagePatterns": ["^@nrwl/"],
-      "matchPackageNames": ["nx"],
-      "groupName": "NX"
+      "matchPackagePatterns": ["^@nx/", "nx"],
+      "enabled": false
     },
     {
       "matchPackagePatterns": [
