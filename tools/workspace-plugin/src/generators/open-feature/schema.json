@@ -35,6 +35,28 @@
         "index": 1
       },
       "x-prompt": "What name should be used?"
+    },
+    "category": {
+      "type": "string",
+      "description": "Library name",
+      "$default": {
+        "$source": "argv",
+        "index": 1
+      },
+      "x-prompt": {
+        "message": "Is this library for client (web) or server(node)?",
+        "type": "list",
+        "items": [
+          {
+            "value": "client",
+            "label": "Client"
+          },
+          {
+            "value": "server",
+            "label": "Server"
+          }
+        ]
+      }
     }
   },
   "required": ["type", "name"]

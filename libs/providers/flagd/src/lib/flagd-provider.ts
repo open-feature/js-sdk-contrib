@@ -17,6 +17,8 @@ export class FlagdProvider implements Provider {
     name: 'flagd Provider',
   };
 
+  readonly runsOn = 'server';
+
   get status() {
     return this._status;
   }
@@ -31,7 +33,7 @@ export class FlagdProvider implements Provider {
 
   /**
    * Construct a new flagd provider.
-   * 
+   *
    * @param options options, see {@link FlagdProviderOptions}
    * @param logger optional logger, see {@link Logger}
    * @param service optional internal service implementation, should not be needed for production

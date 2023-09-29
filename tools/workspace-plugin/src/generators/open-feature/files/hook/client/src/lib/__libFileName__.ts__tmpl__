@@ -1,0 +1,21 @@
+import {
+  EvaluationDetails,
+  FlagValue,
+  Hook,
+  HookContext,
+  HookHints,
+} from '@openfeature/web-sdk';
+
+export class <%= libClassName %> implements Hook {
+  before(hookContext: HookContext, hookHints?: HookHints) {}
+
+  after(
+    hookContext: HookContext,
+    evaluationDetails: EvaluationDetails<FlagValue>,
+    hookHints?: HookHints
+  ) {}
+
+  error(hookContext: HookContext, err: unknown, hookHints?: HookHints) {}
+
+  finally(hookContext: HookContext, hookHints?: HookHints) {}
+}

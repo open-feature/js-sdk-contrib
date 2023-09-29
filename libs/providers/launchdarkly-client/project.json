@@ -18,14 +18,20 @@
     },
     "lint": {
       "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["libs/providers/launchdarkly-client/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/providers/launchdarkly-client/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "libs/providers/launchdarkly-client/jest.config.ts",
         "passWithNoTests": true
@@ -39,7 +45,9 @@
     },
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "project": "libs/providers/launchdarkly-client/package.json",
         "outputPath": "dist/libs/providers/launchdarkly-client",
@@ -50,7 +58,10 @@
         "generateExportsField": true,
         "umdName": "launchdarkly-client",
         "external": "all",
-        "format": ["cjs", "esm"],
+        "format": [
+          "cjs",
+          "esm"
+        ],
         "assets": [
           {
             "glob": "package.json",

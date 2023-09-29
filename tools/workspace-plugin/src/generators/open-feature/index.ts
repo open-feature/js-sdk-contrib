@@ -17,6 +17,7 @@ import { Linter } from '@nx/linter';
 interface SchemaOptions {
   name: string;
   type: 'hook' | 'provider';
+  category: 'server' | 'client';
 }
 
 export default async function (tree: Tree, schema: SchemaOptions) {
@@ -59,7 +60,7 @@ export default async function (tree: Tree, schema: SchemaOptions) {
   /**
    * Creates files using the shared and type specific templates
    */
-  ['shared', schema.type].forEach((folder) => {
+  ['shared', `${schema.type}/${schema.category}`].forEach((folder) => {
     generateFiles(tree, joinPathFragments(__dirname, 'files', folder), projectRoot, {
       name,
       libFileName,
@@ -72,7 +73,7 @@ export default async function (tree: Tree, schema: SchemaOptions) {
 
   updateProject(tree, projectRoot, name);
   updateTsConfig(tree, projectRoot);
-  updatePackage(tree, projectRoot);
+  updatePackage(tree, projectRoot, schema);
   updateReleasePleaseConfig(tree, projectRoot);
   updateReleasePleaseManifest(tree, projectRoot);
   await formatFiles(tree);
@@ -170,16 +171,23 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
   });
 }
 
-function updatePackage(tree: Tree, projectRoot: string) {
+function updatePackage(tree: Tree, projectRoot: string, schema: SchemaOptions) {
   updateJson(tree, joinPathFragments(projectRoot, 'package.json'), (json) => {
     json.scripts = {
       'publish-if-not-exists':
         'cp $NPM_CONFIG_USERCONFIG .npmrc && if [ "$(npm show $npm_package_name@$npm_package_version version)" = "$(npm run current-version -s)" ]; then echo \'already published, skipping\'; else npm publish --access public; fi',
       'current-version': 'echo $npm_package_version',
     };
-    json.peerDependencies = {
+
+    // use undefined or this defaults to "commonjs", which breaks things: https://github.com/open-feature/js-sdk-contrib/pull/596
+    json.type = undefined
+
+    // client packages have a web-sdk dep, server js-sdk
+    json.peerDependencies = schema.category === 'client' ? {
+      '@openfeature/web-sdk': '>=0.4.0',
+    } : {
       '@openfeature/js-sdk': '^1.0.0',
-    };
+    }
 
     return json;
   });
