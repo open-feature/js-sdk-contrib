@@ -60,7 +60,7 @@ export default async function (tree: Tree, schema: SchemaOptions) {
   /**
    * Creates files using the shared and type specific templates
    */
-  ['shared', schema.type].forEach((folder) => {
+  ['shared', `${schema.type}/${schema.category}`].forEach((folder) => {
     generateFiles(tree, joinPathFragments(__dirname, 'files', folder), projectRoot, {
       name,
       libFileName,
