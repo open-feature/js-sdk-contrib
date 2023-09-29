@@ -179,6 +179,9 @@ function updatePackage(tree: Tree, projectRoot: string, schema: SchemaOptions) {
       'current-version': 'echo $npm_package_version',
     };
 
+    // use undefined or this defaults to "commonjs", which breaks things: https://github.com/open-feature/js-sdk-contrib/pull/596
+    json.type = undefined
+
     // client packages have a web-sdk dep, server js-sdk
     json.peerDependencies = schema.category === 'client' ? {
       '@openfeature/web-sdk': '>=0.4.0',
