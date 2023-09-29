@@ -10,6 +10,8 @@ export class <%= libClassName %> implements Provider {
     name: <%= libClassName %>.name
   };
 
+  readonly runsOn = 'server';
+
   hooks = [];
 
   resolveBooleanEvaluation(
