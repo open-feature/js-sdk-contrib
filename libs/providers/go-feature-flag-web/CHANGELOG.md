@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.3...go-feature-flag-web-provider-v0.1.4) (2023-09-29)
+
+
+### 🐛 Bug Fixes
+
+* packaging issues impacting babel/react ([#596](https://github.com/open-feature/js-sdk-contrib/issues/596)) ([0446eab](https://github.com/open-feature/js-sdk-contrib/commit/0446eab5cf9b45ce7de251b4f5feb8df1d499b9d))
+
 ## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.2...go-feature-flag-web-provider-v0.1.3) (2023-09-18)
 
 
