@@ -1,7 +1,5 @@
 import {
   FlagNotFoundError,
-  FlagValue,
-  GeneralError,
   JsonValue,
   OpenFeatureEventEmitter,
   Provider,
@@ -9,8 +7,12 @@ import {
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
+  Logger,
+  EvaluationContext,
+  TargetingKeyMissingError,
+  FlagValueType,
 } from '@openfeature/js-sdk';
-import { FlagConfiguration } from './flag-configuration';
+import { FlagConfiguration, Flag } from './flag-configuration';
 
 export class InMemoryProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
@@ -32,51 +34,70 @@ export class InMemoryProvider implements Provider {
     this.events.emit(ProviderEvents.ConfigurationChanged, { flagsChanged });
   }
 
-  async resolveBooleanEvaluation(flagKey: string): Promise<ResolutionDetails<boolean>> {
-    const flagValue = this.lookupFlagValueOrThrow(flagKey);
+  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, context?: EvaluationContext, logger?: Logger): Promise<ResolutionDetails<boolean>> {
+    return Promise.resolve(this.resolveFlagWithReason<boolean>(flagKey, defaultValue, context, logger));
+  }
 
-    if (typeof flagValue !== 'boolean') {
-      throw new TypeMismatchError();
+  resolveNumberEvaluation(flagKey: string, defaultValue: number, context?: EvaluationContext, logger?: Logger): Promise<ResolutionDetails<number>> {
+    return Promise.resolve(this.resolveFlagWithReason<number>(flagKey, defaultValue, context, logger));
+  }
+
+  async resolveStringEvaluation(flagKey: string, defaultValue: string, context?: EvaluationContext, logger?: Logger): Promise<ResolutionDetails<string>> {
+    return Promise.resolve(this.resolveFlagWithReason<string>(flagKey, defaultValue, context, logger));
+  }
+
+  async resolveObjectEvaluation(flagKey: string, defaultValue: JsonValue, context?: EvaluationContext, logger?: Logger): Promise<ResolutionDetails<any>> {
+    return Promise.resolve(this.resolveFlagWithReason<JsonValue>(flagKey, defaultValue, context, logger));
+  }
+
+  private resolveFlagWithReason<T extends JsonValue | FlagValueType>(flagKey: string, defaultValue: T, ctx?: EvaluationContext, logger?: unknown): ResolutionDetails<any>{
+    try {
+      const resolutionResult = this.lookupFlagValueOrThrow(flagKey, ctx, logger)
+
+      if (typeof resolutionResult?.value != typeof defaultValue) {
+        throw new TypeMismatchError();
+      }
+
+      return resolutionResult;
+    } catch (error: unknown) {
+      return {
+        value: defaultValue, reason: error instanceof DisabledError ?
+          StandardResolutionReasons.DISABLED
+          : StandardResolutionReasons.DEFAULT
+      }
     }
-
-    return staticResolution(flagValue);
   }
 
-  async resolveStringEvaluation(flagKey: string): Promise<ResolutionDetails<string>> {
-    const flagValue = this.lookupFlagValueOrThrow(flagKey);
-
-    if (typeof flagValue !== 'string') {
-      throw new TypeMismatchError();
-    }
-
-    return staticResolution(flagValue);
-  }
-
-  async resolveNumberEvaluation(flagKey: string): Promise<ResolutionDetails<number>> {
-    const flagValue = this.lookupFlagValueOrThrow(flagKey);
-
-    if (typeof flagValue !== 'number') {
-      throw new TypeMismatchError();
-    }
-
-    return staticResolution(flagValue);
-  }
-
-  async resolveObjectEvaluation<U extends JsonValue>(flagKey: string): Promise<ResolutionDetails<U>> {
-    throw new GeneralError('support for object flags has not been implemented');
-  }
-
-  private lookupFlagValueOrThrow(flagKey: string): FlagValue {
+  private lookupFlagValueOrThrow(flagKey: string, ctx?: EvaluationContext, logger?: unknown): ResolutionDetails<any>{
     if (!(flagKey in this._flagConfiguration)) {
       throw new FlagNotFoundError();
     }
-    return this._flagConfiguration[flagKey];
+    const flagSpec: Flag = this._flagConfiguration[flagKey];
+
+    this.throwIfFlagDisabled(flagSpec);
+
+    const isContextEval = ctx && flagSpec?.contextEvaluator;
+    const variant = isContextEval ? flagSpec.contextEvaluator?.(ctx) : flagSpec.defaultVariant;
+
+    const value = variant && flagSpec?.variants[variant];
+
+    if (value === undefined) {
+      throw new TargetingKeyMissingError();
+    }
+
+    return { value, ...(variant && { variant }), reason: isContextEval ? StandardResolutionReasons.TARGETING_MATCH : StandardResolutionReasons.STATIC, };
+  }
+
+  private throwIfFlagDisabled(flagSpec: Flag) {
+    if (flagSpec.disabled) {
+      throw new DisabledError();
+    }
   }
 }
 
-function staticResolution<U>(value: U): ResolutionDetails<U> {
-  return {
-    value,
-    reason: StandardResolutionReasons.STATIC,
-  };
+class DisabledError extends Error {
+  constructor() {
+    super("Flag is disabled!");
+    this.name = "DisabledError";
+  }
 }
