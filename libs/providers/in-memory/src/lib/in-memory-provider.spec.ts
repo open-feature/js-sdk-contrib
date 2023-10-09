@@ -1,4 +1,6 @@
 import {
+  ErrorCode,
+  EvaluationContext,
   ProviderEvents,
   StandardResolutionReasons,
 } from '@openfeature/js-sdk';
@@ -59,11 +61,11 @@ describe(InMemoryProvider, () => {
 
       const resolution = await provider.resolveBooleanEvaluation('a-boolean-flag', false);
 
-      expect(resolution).toEqual({ value: false, reason: StandardResolutionReasons.DEFAULT })
+      expect(resolution).toEqual({ value: false, reason: StandardResolutionReasons.ERROR, errorCode: ErrorCode.PARSE_ERROR })
     });
 
-    it('resolves to default value with reason default if variant does not match with accessors', async () => {
-      const booleanFlagDisabledSpec = {
+    it('resolves to default value with reason default if variant type does not match with accessors', async () => {
+      const booleanFlagSpec = {
         'a-boolean-flag': {
           variants: {
             on: "yes",
@@ -73,11 +75,11 @@ describe(InMemoryProvider, () => {
           defaultVariant: "on"
         }
       };
-      provider.replaceConfiguration(booleanFlagDisabledSpec);
+      provider.replaceConfiguration(booleanFlagSpec);
 
       const resolution = await provider.resolveBooleanEvaluation('a-boolean-flag', false);
 
-      expect(resolution).toEqual({ value: false, reason: StandardResolutionReasons.DEFAULT })
+      expect(resolution).toEqual({ value: false, reason: StandardResolutionReasons.ERROR, errorCode: ErrorCode.TYPE_MISMATCH })
     });
 
     it('resolves to variant value with reason target match if context is provided and flag spec has context evaluator', async () => {
@@ -89,7 +91,7 @@ describe(InMemoryProvider, () => {
           },
           disabled: false,
           defaultVariant: "on",
-          contextEvaluator: (_context: unknown) => "off"
+          contextEvaluator: (_: EvaluationContext) => "off"
         }
       };
       provider.replaceConfiguration(booleanFlagCtxSpec);
@@ -143,7 +145,7 @@ describe(InMemoryProvider, () => {
     });
 
     it('resolves to default value with reason default if variant does not exist', async () => {
-      const StringFlagDisabledSpec = {
+      const StringFlagSpec = {
         'a-string-flag': {
           variants: {
             on: itsOn,
@@ -153,15 +155,15 @@ describe(InMemoryProvider, () => {
           defaultVariant: "dummy"
         }
       };
-      provider.replaceConfiguration(StringFlagDisabledSpec);
+      provider.replaceConfiguration(StringFlagSpec);
 
       const resolution = await provider.resolveStringEvaluation('a-string-flag', itsDefault);
 
-      expect(resolution).toEqual({ value: itsDefault, reason: StandardResolutionReasons.DEFAULT })
+      expect(resolution).toEqual({ value: itsDefault, reason: StandardResolutionReasons.ERROR, errorCode: ErrorCode.PARSE_ERROR })
     });
 
-    it('resolves to default value with reason default if variant does not match with accessor method type', async () => {
-      const StringFlagDisabledSpec = {
+    it('resolves to default value with reason error if variant does not match with accessor method type', async () => {
+      const StringFlagSpec = {
         'a-string-flag': {
           variants: {
             on: true,
@@ -172,11 +174,11 @@ describe(InMemoryProvider, () => {
         }
       };
 
-      provider.replaceConfiguration(StringFlagDisabledSpec);
+      provider.replaceConfiguration(StringFlagSpec);
 
       const resolution = await provider.resolveStringEvaluation('a-string-flag', itsDefault);
 
-      expect(resolution).toEqual({ value: itsDefault, reason: StandardResolutionReasons.DEFAULT })
+      expect(resolution).toEqual({ value: itsDefault, reason: StandardResolutionReasons.ERROR, errorCode: ErrorCode.TYPE_MISMATCH })
     });
 
     it('resolves to variant value with reason target match if context is provided and flag spec has context evaluator', async () => {
@@ -188,7 +190,7 @@ describe(InMemoryProvider, () => {
           },
           disabled: false,
           defaultVariant: "on",
-          contextEvaluator: (_context: unknown) => "off"
+          contextEvaluator: (_: EvaluationContext) => "off"
         }
       };
       provider.replaceConfiguration(StringFlagCtxSpec);
@@ -241,8 +243,8 @@ describe(InMemoryProvider, () => {
       expect(resolution).toEqual({ value: defaultNumber, reason: StandardResolutionReasons.DISABLED })
     });
 
-    it('resolves to default value with reason default if variant does not exist', async () => {
-      const numberFlagDisabledSpec = {
+    it('resolves to default value with reason error if variant does not exist', async () => {
+      const numberFlagSpec = {
         'a-number-flag': {
           variants: {
             on: onNumber,
@@ -252,15 +254,15 @@ describe(InMemoryProvider, () => {
           defaultVariant: "dummy"
         }
       };
-      provider.replaceConfiguration(numberFlagDisabledSpec);
+      provider.replaceConfiguration(numberFlagSpec);
 
       const resolution = await provider.resolveNumberEvaluation('a-number-flag', defaultNumber);
 
-      expect(resolution).toEqual({ value: defaultNumber, reason: StandardResolutionReasons.DEFAULT })
+      expect(resolution).toEqual({ value: defaultNumber, reason: StandardResolutionReasons.ERROR, errorCode: ErrorCode.PARSE_ERROR})
     });
 
-    it('resolves to default value with reason default if variant does not match with accessor method type', async () => {
-      const numberFlagDisabledSpec = {
+    it('resolves to default value with reason error if variant does not match with accessor method type', async () => {
+      const numberFlagSpec = {
         'a-number-flag': {
           variants: {
             on: true,
@@ -271,11 +273,11 @@ describe(InMemoryProvider, () => {
         }
       };
 
-      provider.replaceConfiguration(numberFlagDisabledSpec);
+      provider.replaceConfiguration(numberFlagSpec);
 
       const resolution = await provider.resolveNumberEvaluation('a-number-flag', defaultNumber);
 
-      expect(resolution).toEqual({ value: defaultNumber, reason: StandardResolutionReasons.DEFAULT })
+      expect(resolution).toEqual({ value: defaultNumber, reason: StandardResolutionReasons.ERROR, errorCode: ErrorCode.TYPE_MISMATCH})
     });
 
     it('resolves to variant value with reason target match if context is provided and flag spec has context evaluator', async () => {
@@ -287,7 +289,7 @@ describe(InMemoryProvider, () => {
           },
           disabled: false,
           defaultVariant: "on",
-          contextEvaluator: (_context: unknown) => "off"
+          contextEvaluator: (_: EvaluationContext) => "off"
         }
       };
       provider.replaceConfiguration(numberFlagCtxSpec);
@@ -340,7 +342,7 @@ describe(InMemoryProvider, () => {
       expect(resolution).toEqual({ value: defaultObject, reason: StandardResolutionReasons.DISABLED })
     });
 
-    it('resolves to default value with reason default if variant does not exist', async () => {
+    it('resolves to default value with reason error if variant does not exist', async () => {
       const ObjectFlagSpec = {
         'a-Object-flag': {
           variants: {
@@ -355,10 +357,10 @@ describe(InMemoryProvider, () => {
 
       const resolution = await provider.resolveObjectEvaluation('a-Object-flag', defaultObject);
 
-      expect(resolution).toEqual({ value: defaultObject, reason: StandardResolutionReasons.DEFAULT })
+      expect(resolution).toEqual({ value: defaultObject, reason: StandardResolutionReasons.ERROR, errorCode: ErrorCode.PARSE_ERROR})
     });
 
-    it('resolves to default value with reason default if variant does not match with accessor method type', async () => {
+    it('resolves to default value with reason error if variant does not match with accessor method type', async () => {
       const ObjectFlagSpec = {
         'a-object-flag': {
           variants: {
@@ -374,7 +376,7 @@ describe(InMemoryProvider, () => {
 
       const resolution = await provider.resolveObjectEvaluation('a-object-flag', defaultObject);
 
-      expect(resolution).toEqual({ value: defaultObject, reason: StandardResolutionReasons.DEFAULT })
+      expect(resolution).toEqual({ value: defaultObject, reason: StandardResolutionReasons.ERROR, errorCode: ErrorCode.TYPE_MISMATCH})
     });
 
     it('resolves to variant value with reason target match if context is provided and flag spec has context evaluator', async () => {
@@ -386,7 +388,7 @@ describe(InMemoryProvider, () => {
           },
           disabled: false,
           defaultVariant: "on",
-          contextEvaluator: (_context: unknown) => "off"
+          contextEvaluator: (_: EvaluationContext) => "off"
         }
       };
       provider.replaceConfiguration(ObjectFlagCtxSpec);

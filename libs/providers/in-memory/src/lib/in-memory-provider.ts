@@ -11,6 +11,8 @@ import {
   EvaluationContext,
   TargetingKeyMissingError,
   FlagValueType,
+  GeneralError,
+  ErrorCode,
 } from '@openfeature/js-sdk';
 import { FlagConfiguration, Flag } from './flag-configuration';
 
@@ -53,7 +55,7 @@ export class InMemoryProvider implements Provider {
 
   private resolveFlagWithReason<T extends JsonValue | FlagValueType>(flagKey: string, defaultValue: T, ctx?: EvaluationContext, logger?: unknown): ResolutionDetails<any>{
     try {
-      const resolutionResult = this.lookupFlagValueOrThrow(flagKey, ctx, logger)
+      const resolutionResult = this.lookupFlagValue(flagKey, defaultValue, ctx, logger)
 
       if (typeof resolutionResult?.value != typeof defaultValue) {
         throw new TypeMismatchError();
@@ -61,21 +63,35 @@ export class InMemoryProvider implements Provider {
 
       return resolutionResult;
     } catch (error: unknown) {
+
+      let errorCode;
+      switch (true) {
+        case error instanceof TypeMismatchError:
+          errorCode = ErrorCode.TYPE_MISMATCH;
+          break;
+        case error instanceof FlagNotFoundError:
+          errorCode = ErrorCode.FLAG_NOT_FOUND;
+          break;
+        case error instanceof GeneralError:
+          errorCode = ErrorCode.PARSE_ERROR
+          break;
+      }
+
       return {
-        value: defaultValue, reason: error instanceof DisabledError ?
-          StandardResolutionReasons.DISABLED
-          : StandardResolutionReasons.DEFAULT
+        value: defaultValue, reason: StandardResolutionReasons.ERROR, errorCode
       }
     }
   }
 
-  private lookupFlagValue(flagKey: string, ctx?: EvaluationContext, logger?: unknown): ResolutionDetails<any>{
+  private lookupFlagValue<T>(flagKey: string, defaultValue:T, ctx?: EvaluationContext, logger?: unknown): ResolutionDetails<any>{
     if (!(flagKey in this._flagConfiguration)) {
       throw new FlagNotFoundError();
     }
     const flagSpec: Flag = this._flagConfiguration[flagKey];
 
-    this.throwIfFlagDisabled(flagSpec);
+    if (flagSpec.disabled) {
+      return { value: defaultValue, reason: StandardResolutionReasons.DISABLED }
+    }
 
     const isContextEval = ctx && flagSpec?.contextEvaluator;
     const variant = isContextEval ? flagSpec.contextEvaluator?.(ctx) : flagSpec.defaultVariant;
@@ -83,22 +99,10 @@ export class InMemoryProvider implements Provider {
     const value = variant && flagSpec?.variants[variant];
 
     if (value === undefined) {
-      throw new TargetingKeyMissingError();
+      throw new GeneralError();
     }
 
     return { value, ...(variant && { variant }), reason: isContextEval ? StandardResolutionReasons.TARGETING_MATCH : StandardResolutionReasons.STATIC, };
   }
 
-  private throwIfFlagDisabled(flagSpec: Flag) {
-    if (flagSpec.disabled) {
-      throw new DisabledError();
-    }
-  }
-}
-
-class DisabledError extends Error {
-  constructor() {
-    super("Flag is disabled!");
-    this.name = "DisabledError";
-  }
 }
