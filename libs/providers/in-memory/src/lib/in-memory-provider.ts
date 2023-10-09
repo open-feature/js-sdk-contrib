@@ -69,7 +69,7 @@ export class InMemoryProvider implements Provider {
     }
   }
 
-  private lookupFlagValueOrThrow(flagKey: string, ctx?: EvaluationContext, logger?: unknown): ResolutionDetails<any>{
+  private lookupFlagValue(flagKey: string, ctx?: EvaluationContext, logger?: unknown): ResolutionDetails<any>{
     if (!(flagKey in this._flagConfiguration)) {
       throw new FlagNotFoundError();
     }
