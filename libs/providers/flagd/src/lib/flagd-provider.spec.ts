@@ -8,7 +8,7 @@ import {
   ProviderEvents,
   ProviderStatus,
   StandardResolutionReasons
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 import type { UnaryCall } from '@protobuf-ts/runtime-rpc';
 import {
   EventStreamResponse,

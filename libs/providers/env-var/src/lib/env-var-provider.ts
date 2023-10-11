@@ -5,7 +5,7 @@ import {
   Provider,
   ResolutionDetails,
   StandardResolutionReasons,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 import { constantCase } from './constant-case';
 
 export type Config = {

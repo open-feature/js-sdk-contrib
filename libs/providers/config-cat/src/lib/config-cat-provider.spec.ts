@@ -1,5 +1,5 @@
 import { ConfigCatProvider } from './config-cat-provider';
-import { ParseError, ProviderEvents, ProviderStatus, TypeMismatchError } from '@openfeature/js-sdk';
+import { ParseError, ProviderEvents, ProviderStatus, TypeMismatchError } from '@openfeature/server-sdk';
 import {
   createConsoleLogger,
   createFlagOverridesFromMap,

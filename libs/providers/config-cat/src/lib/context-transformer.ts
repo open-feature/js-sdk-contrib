@@ -1,4 +1,4 @@
-import { EvaluationContext, EvaluationContextValue, TargetingKeyMissingError } from '@openfeature/js-sdk';
+import { EvaluationContext, EvaluationContextValue, TargetingKeyMissingError } from '@openfeature/server-sdk';
 import { User as ConfigCatUser } from 'configcat-common/lib/RolloutEvaluator';
 
 function contextValueToString(contextValue: EvaluationContextValue): string | undefined {

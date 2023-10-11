@@ -1,4 +1,4 @@
-import { BeforeHookContext, EvaluationDetails, HookContext, StandardResolutionReasons } from '@openfeature/js-sdk';
+import { BeforeHookContext, EvaluationDetails, HookContext, StandardResolutionReasons } from '@openfeature/server-sdk';
 import opentelemetry from '@opentelemetry/api';
 import { DataPoint, MeterProvider, MetricReader, ScopeMetrics } from '@opentelemetry/sdk-metrics';
 import {

@@ -15,7 +15,7 @@ $ npm install @openfeature/env-var-provider
 Required peer dependencies
 
 ```
-$ npm install @openfeature/js-sdk
+$ npm install @openfeature/server-sdk
 ```
 
 ## Usage

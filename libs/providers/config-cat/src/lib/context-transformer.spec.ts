@@ -1,4 +1,4 @@
-import { EvaluationContext, TargetingKeyMissingError } from '@openfeature/js-sdk';
+import { EvaluationContext, TargetingKeyMissingError } from '@openfeature/server-sdk';
 import { transformContext } from './context-transformer';
 
 describe('context-transformer', () => {

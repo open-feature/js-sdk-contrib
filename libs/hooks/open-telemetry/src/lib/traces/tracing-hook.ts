@@ -1,4 +1,4 @@
-import { Hook, HookContext, EvaluationDetails, FlagValue, Logger } from '@openfeature/js-sdk';
+import { Hook, HookContext, EvaluationDetails, FlagValue, Logger } from '@openfeature/server-sdk';
 import { trace } from '@opentelemetry/api';
 import { FEATURE_FLAG, KEY_ATTR, PROVIDER_NAME_ATTR, VARIANT_ATTR } from '../conventions';
 import { OpenTelemetryHook, OpenTelemetryHookOptions } from '../otel-hook';

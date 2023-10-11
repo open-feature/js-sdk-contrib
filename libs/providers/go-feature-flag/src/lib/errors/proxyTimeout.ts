@@ -1,4 +1,4 @@
-import { ErrorCode, OpenFeatureError } from '@openfeature/js-sdk'
+import { ErrorCode, OpenFeatureError } from '@openfeature/server-sdk'
 
 // ProxyTimeout is an error send when we try to call the relay proxy and he his not responding
 // in the appropriate time.

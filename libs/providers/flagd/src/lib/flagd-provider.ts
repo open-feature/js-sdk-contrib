@@ -7,7 +7,7 @@ import {
   ProviderEvents,
   ProviderStatus,
   ResolutionDetails,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 import { FlagdProviderOptions, getConfig } from './configuration';
 import { GRPCService } from './service/grpc/grpc-service';
 import { Service } from './service/service';

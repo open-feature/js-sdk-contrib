@@ -10,7 +10,7 @@ import {
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 import { LRUCache } from 'lru-cache';
 import { promisify } from 'util';
 import {

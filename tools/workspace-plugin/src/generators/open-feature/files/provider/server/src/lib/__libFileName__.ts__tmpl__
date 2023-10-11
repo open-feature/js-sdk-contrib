@@ -3,7 +3,7 @@ import {
   Provider,
   JsonValue,
   ResolutionDetails,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 
 export class <%= libClassName %> implements Provider {
   metadata = {

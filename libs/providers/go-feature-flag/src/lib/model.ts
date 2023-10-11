@@ -1,7 +1,7 @@
 import {
   ErrorCode,
   EvaluationContextValue,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 
 /**
  * GoFeatureFlagUser is the representation of a user for GO Feature Flag

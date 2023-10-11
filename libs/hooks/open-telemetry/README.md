@@ -15,7 +15,7 @@ $ npm install @openfeature/open-telemetry-hooks
 Confirm that the following peer dependencies are installed.
 
 ```
-$ npm install @openfeature/js-sdk @opentelemetry/api
+$ npm install @openfeature/server-sdk @opentelemetry/api
 ```
 
 ## Hooks
@@ -47,7 +47,7 @@ The `TracingHook` and `MetricsHook` can both be set on the OpenFeature singleton
 This will ensure that every flag evaluation will always generate the applicable telemetry signals.
 
 ```typescript
-import { OpenFeature } from '@openfeature/js-sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
 import { TracingHook } from '@openfeature/open-telemetry-hooks';
 
 OpenFeature.addHooks(new TracingHook());
@@ -59,7 +59,7 @@ OpenFeature.addHooks(new TracingHook());
  Setting the hook on the client will ensure that every flag evaluation performed by this client will always generate the applicable telemetry signals.
 
 ```typescript
-import { OpenFeature } from '@openfeature/js-sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
 import { MetricsHook } from '@openfeature/open-telemetry-hooks';
 
 const client = OpenFeature.getClient('my-app');

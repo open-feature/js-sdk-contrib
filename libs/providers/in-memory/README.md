@@ -19,7 +19,7 @@ $ npm install @openfeature/in-memory-provider
 ### set up the provider with some flag values
 ```
 import { InMemoryProvider } from '@openfeature/in-memory-provider'
-import { OpenFeature } from '@openfeature/js-sdk'
+import { OpenFeature } from '@openfeature/server-sdk'
 
 const flags = {
   'a-boolean-flag': true,

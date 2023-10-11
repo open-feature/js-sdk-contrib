@@ -5,7 +5,7 @@ import {
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 import { InMemoryProvider } from './in-memory-provider';
 
 describe(InMemoryProvider, () => {
