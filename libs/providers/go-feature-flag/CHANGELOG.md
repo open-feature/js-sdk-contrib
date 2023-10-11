@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.16...go-feature-flag-provider-v0.6.0) (2023-10-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* use @openfeature/server-sdk peer ([#608](https://github.com/open-feature/js-sdk-contrib/issues/608))
+
+### 🐛 Bug Fixes
+
+* packaging issues impacting babel/react ([#596](https://github.com/open-feature/js-sdk-contrib/issues/596)) ([0446eab](https://github.com/open-feature/js-sdk-contrib/commit/0446eab5cf9b45ce7de251b4f5feb8df1d499b9d))
+
+
+### 🧹 Chore
+
+* **deps:** update dependency eslint to v8.50.0 ([#600](https://github.com/open-feature/js-sdk-contrib/issues/600)) ([9732127](https://github.com/open-feature/js-sdk-contrib/commit/9732127d81746bd31898b7272821bdaeced1dab4))
+* revert bad goff release ([affd7af](https://github.com/open-feature/js-sdk-contrib/commit/affd7af00803fb93057be05fc5922eb2b117e605))
+* use @openfeature/server-sdk peer ([#608](https://github.com/open-feature/js-sdk-contrib/issues/608)) ([ae3732a](https://github.com/open-feature/js-sdk-contrib/commit/ae3732a9068f684517db28ea1ae27b29a35e6b16))
+
 ## [0.5.16](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.15...go-feature-flag-provider-v0.5.16) (2023-09-18)
 
 
