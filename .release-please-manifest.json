@@ -3,7 +3,7 @@
   "libs/providers/go-feature-flag": "0.6.0",
   "libs/providers/flagd": "0.8.3",
   "libs/providers/flagd-web": "0.4.0",
-  "libs/providers/env-var": "0.1.1",
+  "libs/providers/env-var": "0.2.0",
   "libs/providers/in-memory": "0.2.0",
   "libs/providers/config-cat": "0.3.0",
   "libs/providers/launchdarkly-client": "0.2.0",
