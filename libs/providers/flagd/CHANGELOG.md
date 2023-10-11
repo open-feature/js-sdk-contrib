@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.9.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.8.3...flagd-provider-v0.9.0) (2023-10-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* use @openfeature/server-sdk peer ([#608](https://github.com/open-feature/js-sdk-contrib/issues/608))
+
+### 🐛 Bug Fixes
+
+* packaging issues impacting babel/react ([#596](https://github.com/open-feature/js-sdk-contrib/issues/596)) ([0446eab](https://github.com/open-feature/js-sdk-contrib/commit/0446eab5cf9b45ce7de251b4f5feb8df1d499b9d))
+
+
+### 🧹 Chore
+
+* add e2e tests for flagd ([#554](https://github.com/open-feature/js-sdk-contrib/issues/554)) ([9ecdcdf](https://github.com/open-feature/js-sdk-contrib/commit/9ecdcdf1660fe27afb4b0c58160c7ba687e29be2))
+* remove un-needed zero-value handling ([#539](https://github.com/open-feature/js-sdk-contrib/issues/539)) ([552be83](https://github.com/open-feature/js-sdk-contrib/commit/552be8303892c027623ccbb43548568e00c315a6))
+* update nx, run migrations ([#552](https://github.com/open-feature/js-sdk-contrib/issues/552)) ([a88d8fc](https://github.com/open-feature/js-sdk-contrib/commit/a88d8fc097789fd7f56011e6ebb66070f52c6e56))
+* use @openfeature/server-sdk peer ([#608](https://github.com/open-feature/js-sdk-contrib/issues/608)) ([ae3732a](https://github.com/open-feature/js-sdk-contrib/commit/ae3732a9068f684517db28ea1ae27b29a35e6b16))
+* use spec submodule ([#568](https://github.com/open-feature/js-sdk-contrib/issues/568)) ([3feb18e](https://github.com/open-feature/js-sdk-contrib/commit/3feb18e0ffa77b87e799a2b5250413f03a4c69e9))
+
 ## [0.8.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.8.2...flagd-provider-v0.8.3) (2023-08-12)
 
 
