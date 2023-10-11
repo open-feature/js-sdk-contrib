@@ -4,7 +4,7 @@ import {
   Hook,
   HookContext,
   HookHints, Logger, StandardResolutionReasons,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 import {
   DataCollectorHookOptions,
   DataCollectorRequest,

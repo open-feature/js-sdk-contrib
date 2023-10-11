@@ -9,7 +9,7 @@ import {
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 import { FlagConfiguration } from './flag-configuration';
 
 export class InMemoryProvider implements Provider {

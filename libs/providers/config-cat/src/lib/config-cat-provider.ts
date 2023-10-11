@@ -11,7 +11,7 @@ import {
   ResolutionReason,
   StandardResolutionReasons,
   TypeMismatchError,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 import { getClient, IConfig, IConfigCatClient, IEvaluationDetails, SettingValue } from 'configcat-js';
 import { transformContext } from './context-transformer';
 

@@ -1,4 +1,4 @@
-import { EvaluationContext, EvaluationDetails, JsonObject, JsonValue, OpenFeature, ProviderEvents, ResolutionDetails, StandardResolutionReasons } from '@openfeature/js-sdk';
+import { EvaluationContext, EvaluationDetails, JsonObject, JsonValue, OpenFeature, ProviderEvents, ResolutionDetails, StandardResolutionReasons } from '@openfeature/server-sdk';
 import { defineFeature, loadFeature } from 'jest-cucumber';
 
 // load the feature file.

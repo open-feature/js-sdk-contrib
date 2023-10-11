@@ -1,4 +1,4 @@
-import { FlagNotFoundError, ParseError } from '@openfeature/js-sdk';
+import { FlagNotFoundError, ParseError } from '@openfeature/server-sdk';
 import { EnvVarProvider } from './env-var-provider';
 
 describe('Environment Variable Provider', () => {

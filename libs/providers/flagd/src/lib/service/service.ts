@@ -1,4 +1,4 @@
-import { EvaluationContext, JsonValue, Logger, ResolutionDetails } from '@openfeature/js-sdk';
+import { EvaluationContext, JsonValue, Logger, ResolutionDetails } from '@openfeature/server-sdk';
 
 export interface Service {
   connect(

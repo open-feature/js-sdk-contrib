@@ -1,4 +1,4 @@
-import { ErrorCode, OpenFeatureError } from '@openfeature/js-sdk'
+import { ErrorCode, OpenFeatureError } from '@openfeature/server-sdk'
 
 // UnknownError is an error send when something unexpected happened.
 export class UnknownError extends OpenFeatureError {

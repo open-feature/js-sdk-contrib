@@ -10,7 +10,7 @@ import {
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 import axios from 'axios';
 import {transformContext} from './context-transformer';
 import {ProxyNotReady} from './errors/proxyNotReady';

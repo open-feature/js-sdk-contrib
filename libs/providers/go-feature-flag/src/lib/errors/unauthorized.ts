@@ -1,4 +1,4 @@
-import { ErrorCode, OpenFeatureError } from '@openfeature/js-sdk'
+import { ErrorCode, OpenFeatureError } from '@openfeature/server-sdk'
 
 // Unauthorized is an error sent when the provider makes an unauthorized call to the relay proxy.
 export class Unauthorized extends OpenFeatureError {

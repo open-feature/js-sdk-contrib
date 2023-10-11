@@ -1,4 +1,4 @@
-import { EvaluationContext } from '@openfeature/js-sdk';
+import { EvaluationContext } from '@openfeature/server-sdk';
 import { sha1 } from 'object-hash';
 import { GoFeatureFlagUser } from './model';
 

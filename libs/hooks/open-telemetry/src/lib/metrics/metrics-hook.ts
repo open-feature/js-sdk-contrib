@@ -6,7 +6,7 @@ import {
   type FlagValue,
   type Hook,
   type HookContext
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 import { Attributes, Counter, UpDownCounter, ValueType, metrics } from '@opentelemetry/api';
 import {
   ACTIVE_COUNT_NAME,

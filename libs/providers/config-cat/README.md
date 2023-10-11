@@ -12,12 +12,12 @@ $ npm install @openfeature/config-cat-provider
 
 The OpenFeature SDK is required as peer dependency.
 
-The minimum required version of `@openfeature/js-sdk` currently is `1.3.0`.
+The minimum required version of `@openfeature/server-sdk` currently is `1.6.0`.
 
 The minimum required version of `configcat-js` currently is `8.0.0`.
 
 ```
-$ npm install @openfeature/js-sdk configcat-js
+$ npm install @openfeature/server-sdk configcat-js
 ```
 
 ## Usage
