@@ -18,10 +18,6 @@ components:
     - thomaspoignant
   libs/providers/go-feature-flag-web:
     - thomaspoignant
-  libs/providers/in-memory:
-    - moredip
-    - beeme1mr
-    - toddbaert
   libs/providers/launchdarkly-client:
     - kinyoklion
     - mateoc
