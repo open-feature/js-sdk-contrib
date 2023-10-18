@@ -41,9 +41,6 @@
       "@openfeature/hooks-open-telemetry": [
         "libs/hooks/open-telemetry/src/index.ts"
       ],
-      "@openfeature/in-memory-provider": [
-        "libs/providers/in-memory/src/index.ts"
-      ],
       "@openfeature/launchdarkly-client-provider": [
         "libs/providers/launchdarkly-client/src/index.ts"
       ]
