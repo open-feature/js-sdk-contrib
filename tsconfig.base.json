@@ -29,6 +29,9 @@
       "@openfeature/env-var-provider": [
         "libs/providers/env-var/src/index.ts"
       ],
+      "@openfeature/flagd-in-process-provider": [
+        "libs/providers/flagd-in-process/src/index.ts"
+      ],
       "@openfeature/flagd-core": [
         "libs/shared/flagd-core/src/index.ts"
       ],

@@ -1,0 +1,44 @@
+{
+  "name": "flagd-in-process",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/providers/flagd-in-process/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/providers/flagd-in-process",
+        "main": "libs/providers/flagd-in-process/src/index.ts",
+        "tsConfig": "libs/providers/flagd-in-process/tsconfig.lib.json",
+        "assets": ["libs/providers/flagd-in-process/*.md"]
+      }
+    },
+    "publish": {
+      "command": "node tools/scripts/publish.mjs flagd-in-process {args.ver} {args.tag}",
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/providers/flagd-in-process/**/*.ts", "libs/providers/flagd-in-process/package.json"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/providers/flagd-in-process/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  },
+  "tags": []
+}
