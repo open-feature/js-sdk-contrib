@@ -1,2 +1,3 @@
 export * from './lib/flagd-js-core';
-export * from './lib/model/feature-flag';
+export * from './lib/feature-flag';
+export * from './lib/storage';

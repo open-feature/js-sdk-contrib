@@ -1,6 +1,9 @@
-import {FeatureFlag} from "./model/feature-flag";
-import {parse} from "./model/parser";
+import {FeatureFlag} from "./feature-flag";
+import {parse} from "./parser";
 
+/**
+ * The simple contract of the core logics storage layer.
+ */
 export interface Storage {
   setConfigurations(cfg: string): void;
 
@@ -20,6 +23,6 @@ export class StorageImpl implements Storage {
   }
 
   setConfigurations(cfg: string): void {
-    this._flags =  parse(cfg)
+    this._flags = parse(cfg)
   }
 }
