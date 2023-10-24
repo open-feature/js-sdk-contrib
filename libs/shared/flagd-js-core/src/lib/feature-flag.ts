@@ -1,4 +1,6 @@
-import { FlagValue } from '@openfeature/server-sdk';
+import {FlagValue} from '@openfeature/server-sdk';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
  * Flagd flag configuration structure.
@@ -9,7 +11,7 @@ export class FeatureFlag {
   private readonly _variants: Map<string, FlagValue>;
   private readonly _targetingString: string;
 
-  constructor(flag: never) {
+  constructor(flag: any) {
     this._state = flag['state'];
     this._defaultVariant = flag['defaultVariant'];
     this._variants = new Map<string, FlagValue>(Object.entries(flag['variants']));
