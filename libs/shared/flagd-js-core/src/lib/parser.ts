@@ -15,7 +15,7 @@ export function parse(flagCfg: string): Map<string, FeatureFlag> {
     throw new Error('invalid flagd flag configurations');
   }
 
-  const flags: { flags: { [key: string]: any } } = JSON.parse(transform(flagCfg));
+  const flags: { flags: { [key: string]: never } } = JSON.parse(transform(flagCfg));
   const flagMap = new Map<string, FeatureFlag>();
 
   for (const flagsKey in flags.flags) {
@@ -46,7 +46,7 @@ function transform(flagCfg: string): string {
 }
 
 // Validate provided configuration against flagd schema
-function isValid(cfg: any): boolean {
+function isValid(cfg: unknown): boolean {
   const result = matcher(cfg);
 
   if (result) {

@@ -2,6 +2,8 @@
   "name": "@openfeature/flagd-js-core",
   "version": "0.0.1-alpha",
   "dependencies": {
+    "@openfeature/server-sdk": ">=1.6.0",
+    "ajv": "^8.12.0",
     "tslib": "^2.3.0"
   },
   "type": "commonjs",
