@@ -1,5 +1,5 @@
 import Ajv from "ajv"
-import {FlagdFlag, flagdSchema} from "./flagd-flag";
+import {FeatureFlag, flagdSchema} from "./feature-flag";
 
 const ajv = new Ajv()
 const matcher = ajv.compile(flagdSchema)
@@ -10,16 +10,16 @@ const bracketReplacer = new RegExp('^[^{]*\\{|}[^}]*$', 'g')
 /**
  * Validate and parse flag configurations.
  */
-export function parse(flagCfg: string): Map<string, FlagdFlag> {
+export function parse(flagCfg: string): Map<string, FeatureFlag> {
   if (!isValid(JSON.parse(flagCfg))) {
     throw new Error("invalid flagd flag configurations")
   }
 
-  const flags: { flags: { [key: string]: FlagdFlag } } = JSON.parse(transform(flagCfg))
-  const flagMap = new Map<string, FlagdFlag>();
+  const flags: { flags: { [key: string]: any } } = JSON.parse(transform(flagCfg))
+  const flagMap = new Map<string, FeatureFlag>();
 
   for (const flagsKey in flags.flags) {
-    flagMap.set(flagsKey, flags.flags[flagsKey])
+    flagMap.set(flagsKey, new FeatureFlag(flags.flags[flagsKey]))
   }
 
   return flagMap;

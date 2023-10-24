@@ -49,45 +49,14 @@ describe('Flag configurations', () => {
   })
 
   it('should parse flag configurations with references', () => {
-    const flagWithRef = '{\n' +
-      '  "flags": {\n' +
-      '    "fibAlgo": {\n' +
-      '      "variants": {\n' +
-      '        "recursive": "recursive",\n' +
-      '        "memo": "memo",\n' +
-      '        "loop": "loop",\n' +
-      '        "binet": "binet"\n' +
-      '      },\n' +
-      '      "defaultVariant": "recursive",\n' +
-      '      "state": "ENABLED",\n' +
-      '      "targeting": {\n' +
-      '        "if": [\n' +
-      '          {\n' +
-      '            "$ref": "emailWithFaas"\n' +
-      '          },\n' +
-      '          "binet",\n' +
-      '          null\n' +
-      '        ]\n' +
-      '      }\n' +
-      '    }\n' +
-      '  },\n' +
-      '  "$evaluators": {\n' +
-      '    "emailWithFaas": {\n' +
-      '      "in": [\n' +
-      '        "@faas.com",\n' +
-      '        {\n' +
-      '          "var": [\n' +
-      '            "email"\n' +
-      '          ]\n' +
-      '        }\n' +
-      '      ]\n' +
-      '    }\n' +
-      '  }\n' +
-      '}\n'
+    const flagWithRef = '{"flags":{"fibAlgo":{"variants":{"recursive":"recursive","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailSuffixFaas"},"binet",null]}}},"$evaluators":{"emailSuffixFaas":{"in":["@faas.com",{"var":["email"]}]}}}'
 
     const flags = parse(flagWithRef);
     expect(flags).toBeTruthy()
-    expect(flags.get("fibAlgo")).toBeTruthy()
+
+    const fibAlgo = flags.get("fibAlgo");
+    expect(fibAlgo).toBeTruthy()
+    expect(fibAlgo?.targetingString).toBe('{"if":[{"in":["@faas.com",{"var":["email"]}]},"binet",null]}')
   });
 
 });

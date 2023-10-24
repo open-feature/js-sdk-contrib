@@ -3,17 +3,17 @@ import {FlagValue} from "@openfeature/server-sdk";
 /**
  * Flagd flag configuration structure.
  */
-export class FlagdFlag {
+export class FeatureFlag {
   private readonly _state: string
   private readonly _defaultVariant: string
   private readonly _variants: Map<string, FlagValue>
   private readonly _targetingString: string
 
-  constructor(state: string, defaultValue: string, variants: Map<string, FlagValue>, targetingString: string) {
-    this._state = state;
-    this._defaultVariant = defaultValue
-    this._variants = variants;
-    this._targetingString = targetingString;
+  constructor(flag:any) {
+    this._state = flag['state'];
+    this._defaultVariant = flag['defaultVariant']
+    this._variants = new Map<string, FlagValue>(Object.entries(flag['variants']));
+    this._targetingString = JSON.stringify(flag['targeting'])
   }
 
   get state(): string {
