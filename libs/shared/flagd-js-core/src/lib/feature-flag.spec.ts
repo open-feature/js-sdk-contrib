@@ -1,7 +1,6 @@
-import {FeatureFlag} from './feature-flag';
+import { FeatureFlag } from './feature-flag';
 
-describe("Flagd flag structure", () => {
-
+describe('Flagd flag structure', () => {
   it('should be constructed with valid input - boolean', () => {
     const input = {
       state: 'ENABLED',
@@ -10,17 +9,17 @@ describe("Flagd flag structure", () => {
         on: true,
         off: false,
       },
-      targeting: ''
-    }
+      targeting: '',
+    };
 
-    const ff = new FeatureFlag(input)
+    const ff = new FeatureFlag(input);
 
-    expect(ff).toBeTruthy()
-    expect(ff.state).toBe('ENABLED')
-    expect(ff.defaultVariant).toBe('off')
-    expect(ff.targetingString).toBe('""')
-    expect(ff.variants.get('on')).toBeTruthy()
-    expect(ff.variants.get('off')).toBeFalsy()
+    expect(ff).toBeTruthy();
+    expect(ff.state).toBe('ENABLED');
+    expect(ff.defaultVariant).toBe('off');
+    expect(ff.targetingString).toBe('""');
+    expect(ff.variants.get('on')).toBeTruthy();
+    expect(ff.variants.get('off')).toBeFalsy();
   });
 
   it('should be constructed with valid input - number', () => {
@@ -31,17 +30,17 @@ describe("Flagd flag structure", () => {
         one: 1.0,
         two: 2.0,
       },
-      targeting: ''
-    }
+      targeting: '',
+    };
 
-    const ff = new FeatureFlag(input)
+    const ff = new FeatureFlag(input);
 
-    expect(ff).toBeTruthy()
-    expect(ff.state).toBe('ENABLED')
-    expect(ff.defaultVariant).toBe('one')
-    expect(ff.targetingString).toBe('""')
-    expect(ff.variants.get('one')).toBe(1.0)
-    expect(ff.variants.get('two')).toBe(2.0)
+    expect(ff).toBeTruthy();
+    expect(ff.state).toBe('ENABLED');
+    expect(ff.defaultVariant).toBe('one');
+    expect(ff.targetingString).toBe('""');
+    expect(ff.variants.get('one')).toBe(1.0);
+    expect(ff.variants.get('two')).toBe(2.0);
   });
 
   it('should be constructed with valid input - object', () => {
@@ -51,24 +50,23 @@ describe("Flagd flag structure", () => {
       variants: {
         pi2: {
           value: 3.14,
-          accuracy: 2
+          accuracy: 2,
         },
         pi5: {
           value: 3.14159,
-          accuracy: 5
+          accuracy: 5,
         },
       },
-      targeting: ''
-    }
+      targeting: '',
+    };
 
-    const ff = new FeatureFlag(input)
+    const ff = new FeatureFlag(input);
 
-    expect(ff).toBeTruthy()
-    expect(ff.state).toBe('ENABLED')
-    expect(ff.defaultVariant).toBe('pi2')
-    expect(ff.targetingString).toBe('""')
-    expect(ff.variants.get('pi2')).toStrictEqual({value: 3.14, accuracy: 2})
-    expect(ff.variants.get('pi5')).toStrictEqual({value: 3.14159, accuracy: 5})
+    expect(ff).toBeTruthy();
+    expect(ff.state).toBe('ENABLED');
+    expect(ff.defaultVariant).toBe('pi2');
+    expect(ff.targetingString).toBe('""');
+    expect(ff.variants.get('pi2')).toStrictEqual({ value: 3.14, accuracy: 2 });
+    expect(ff.variants.get('pi5')).toStrictEqual({ value: 3.14159, accuracy: 5 });
   });
-
 });

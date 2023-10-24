@@ -10,12 +10,12 @@ This package is intended to be used by concrete implementations of flagd in-proc
 To use this implementation, instantiate a `FlagdJSCore` and provider valid flagd flag configurations.
 
 ```typescript
-const core = new FlagdJSCore()
-core.setConfigurations(FLAG_CONFIGURATION_STRING)
+const core = new FlagdJSCore();
+core.setConfigurations(FLAG_CONFIGURATION_STRING);
 ```
 
 Once initialization is complete, use matching flag resolving call.
 
 ```typescript
-const resolution = core.resolveBooleanEvaluation("myBoolFlag", false, {})
+const resolution = core.resolveBooleanEvaluation('myBoolFlag', false, {});
 ```
