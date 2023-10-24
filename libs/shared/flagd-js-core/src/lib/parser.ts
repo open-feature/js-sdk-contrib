@@ -25,6 +25,7 @@ export function parse(flagCfg: string): Map<string, FeatureFlag> {
   return flagMap;
 }
 
+// Transform $ref references of flagd configuration
 function transform(flagCfg: string): string {
   const evaluators: { [key: string]: string } = JSON.parse(flagCfg)[evaluatorKey]
 
@@ -44,6 +45,7 @@ function transform(flagCfg: string): string {
   return transformed
 }
 
+// Validate provided configuration against flagd schema
 function isValid(cfg: any): boolean {
   const result = matcher(cfg)
 

@@ -1,16 +1,21 @@
 import {Storage, StorageImpl} from "./storage";
 import {
   ErrorCode,
-  EvaluationContext,
+  EvaluationContext, FlagValue,
   JsonValue,
   ResolutionDetails,
   StandardResolutionReasons
 } from "@openfeature/server-sdk";
-import {FlagValue} from "@openfeature/web-sdk";
 
+/**
+ * Expose flag configuration setter and flag resolving methods.
+ */
 export class FlagdJSCore {
   private _storage: Storage
 
+  /**
+   * Construct with optional your own storage layer.
+   */
   constructor(storage?: Storage) {
     this._storage = storage ? storage : new StorageImpl()
   }
@@ -75,6 +80,9 @@ export class FlagdJSCore {
       reason = StandardResolutionReasons.STATIC
     } else {
       // todo - targeting evaluation
+      // till targeting is handled, return the static result
+      variant = flag.variants.get(defaultVariant)
+      reason = StandardResolutionReasons.STATIC
     }
 
     if (variant === undefined) {
@@ -90,8 +98,8 @@ export class FlagdJSCore {
       return {
         value: defaultValue,
         errorCode: ErrorCode.TYPE_MISMATCH,
-        errorMessage: `flag: ${flagKey} is disabled`,
-        reason: StandardResolutionReasons.DISABLED
+        errorMessage: `returning default variant for flagKey: ${flagKey}, type not valid`,
+        reason: StandardResolutionReasons.ERROR
       }
     }
 
