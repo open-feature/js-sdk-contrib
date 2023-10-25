@@ -1,7 +1,7 @@
 {
-  "name": "flagd-js-core",
+  "name": "flagd-core",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/shared/flagd-js-core/src",
+  "sourceRoot": "libs/shared/flagd-core/src",
   "projectType": "library",
   "targets": {
     "publish": {
@@ -21,7 +21,7 @@
       ],
       "options": {
         "lintFilePatterns": [
-          "libs/shared/flagd-js-core/**/*.ts"
+          "libs/shared/flagd-core/**/*.ts"
         ]
       }
     },
@@ -31,7 +31,7 @@
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
-        "jestConfig": "libs/shared/flagd-js-core/jest.config.ts",
+        "jestConfig": "libs/shared/flagd-core/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
@@ -47,14 +47,14 @@
         "{options.outputPath}"
       ],
       "options": {
-        "project": "libs/shared/flagd-js-core/package.json",
-        "outputPath": "dist/libs/shared/flagd-js-core",
-        "entryFile": "libs/shared/flagd-js-core/src/index.ts",
-        "tsConfig": "libs/shared/flagd-js-core/tsconfig.lib.json",
+        "project": "libs/shared/flagd-core/package.json",
+        "outputPath": "dist/libs/shared/flagd-core",
+        "entryFile": "libs/shared/flagd-core/src/index.ts",
+        "tsConfig": "libs/shared/flagd-core/tsconfig.lib.json",
         "compiler": "tsc",
         "generateExportsField": true,
         "buildableProjectDepsInPackageJsonType": "dependencies",
-        "umdName": "flagd-js-core",
+        "umdName": "flagd-core",
         "external": "all",
         "format": [
           "cjs",
@@ -73,7 +73,7 @@
           },
           {
             "glob": "README.md",
-            "input": "./libs/shared/flagd-js-core",
+            "input": "./libs/shared/flagd-core",
             "output": "./"
           }
         ],
