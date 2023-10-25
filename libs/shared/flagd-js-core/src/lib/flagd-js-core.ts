@@ -1,4 +1,4 @@
-import { Storage, StorageImpl } from './storage';
+import {Storage, MemoryStorage} from './storage';
 import {
   ErrorCode,
   EvaluationContext,
@@ -18,9 +18,12 @@ export class FlagdJSCore {
    * Construct with optional your own storage layer.
    */
   constructor(storage?: Storage) {
-    this._storage = storage ? storage : new StorageImpl();
+    this._storage = storage ? storage : new MemoryStorage();
   }
 
+  /**
+   * Add flag configurations to the storage.
+   */
   setConfigurations(cfg: string): void {
     this._storage.setConfigurations(cfg);
   }
@@ -83,7 +86,7 @@ export class FlagdJSCore {
     }
 
     // flag status
-    if (flag.state == 'DISABLED') {
+    if (flag.state === 'DISABLED') {
       return {
         value: defaultValue,
         errorCode: ErrorCode.GENERAL,

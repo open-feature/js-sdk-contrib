@@ -1,8 +1,8 @@
-import { FeatureFlag } from './feature-flag';
+import {FeatureFlag, Flag} from './feature-flag';
 
 describe('Flagd flag structure', () => {
   it('should be constructed with valid input - boolean', () => {
-    const input = {
+    const input: Flag = {
       state: 'ENABLED',
       defaultVariant: 'off',
       variants: {

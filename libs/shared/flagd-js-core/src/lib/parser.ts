@@ -1,8 +1,9 @@
 import Ajv from 'ajv';
-import { FeatureFlag, flagdSchema } from './feature-flag';
+import {FeatureFlag, Flag} from './feature-flag';
+import mydata from '../../flagd-schemas/json/flagd-definitions.json';
 
 const ajv = new Ajv();
-const matcher = ajv.compile(flagdSchema);
+const matcher = ajv.compile(mydata);
 
 const evaluatorKey = '$evaluators';
 const bracketReplacer = new RegExp('^[^{]*\\{|}[^}]*$', 'g');
@@ -15,7 +16,7 @@ export function parse(flagCfg: string): Map<string, FeatureFlag> {
     throw new Error('invalid flagd flag configurations');
   }
 
-  const flags: { flags: { [key: string]: never } } = JSON.parse(transform(flagCfg));
+  const flags: { flags: { [key: string]: Flag } } = JSON.parse(transform(flagCfg));
   const flagMap = new Map<string, FeatureFlag>();
 
   for (const flagsKey in flags.flags) {

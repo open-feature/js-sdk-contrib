@@ -1,12 +1,13 @@
 {
   "name": "@openfeature/flagd-js-core",
   "version": "0.0.1-alpha",
+  "scripts": {
+    "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
+    "current-version": "echo $npm_package_version"
+  },
   "dependencies": {
     "@openfeature/server-sdk": ">=1.6.0",
     "ajv": "^8.12.0",
     "tslib": "^2.3.0"
-  },
-  "type": "commonjs",
-  "main": "./src/index.js",
-  "typings": "./src/index.d.ts"
+  }
 }

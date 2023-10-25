@@ -10,3 +10,6 @@
 [submodule "libs/providers/flagd-web/spec"]
 	path = libs/providers/flagd-web/spec
 	url = https://github.com/open-feature/spec.git
+[submodule "libs/shared/flagd-js-core/flagd-schemas"]
+	path = libs/shared/flagd-js-core/flagd-schemas
+	url = git@github.com:open-feature/flagd-schemas.git

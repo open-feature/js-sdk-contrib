@@ -1,8 +1,8 @@
-import { FeatureFlag } from './feature-flag';
-import { parse } from './parser';
+import {FeatureFlag} from './feature-flag';
+import {parse} from './parser';
 
 /**
- * The simple contract of the core logics storage layer.
+ * The simple contract of the storage layer.
  */
 export interface Storage {
   setConfigurations(cfg: string): void;
@@ -10,7 +10,10 @@ export interface Storage {
   getFlag(key: string): FeatureFlag | undefined;
 }
 
-export class StorageImpl implements Storage {
+/**
+ * An implementation of storage contract backed by maps.
+ */
+export class MemoryStorage implements Storage {
   private _flags: Map<string, FeatureFlag>;
 
   constructor() {
@@ -22,6 +25,10 @@ export class StorageImpl implements Storage {
   }
 
   setConfigurations(cfg: string): void {
-    this._flags = parse(cfg);
+    try {
+      this._flags = parse(cfg);
+    } catch (e) {
+      console.error(e)
+    }
   }
 }
