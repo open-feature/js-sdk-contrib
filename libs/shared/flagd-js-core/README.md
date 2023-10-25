@@ -7,7 +7,7 @@ This package is intended to be used by concrete implementations of flagd in-proc
 
 `flagd-js-core` wraps a simple flagd feature flag storage and flag evaluation logic.
 
-To use this implementation, instantiate a `FlagdJSCore` and provider valid flagd flag configurations.
+To use this implementation, instantiate a `FlagdJSCore` and provide valid flagd flag configurations.
 
 ```typescript
 const core = new FlagdJSCore();
