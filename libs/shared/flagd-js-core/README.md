@@ -1,6 +1,6 @@
 # flagd-js-core
 
-`flagd-js-core` contains the core logic of flagd in-process evaluation provider.
+`flagd-js-core` contains the core logic of a flagd [in-process evaluation](https://flagd.dev/architecture/#in-process-evaluation) provider.
 This package is intended to be used by concrete implementations of flagd in-process provider.
 
 ## Usage
