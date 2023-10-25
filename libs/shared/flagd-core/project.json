@@ -8,7 +8,7 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "npm run publish-if-not-exists",
-        "cwd": "dist/libs/shared/flad-js-core"
+        "cwd": "dist/libs/shared/flagd-core"
       },
       "dependsOn": [
         "build"
