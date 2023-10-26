@@ -6,7 +6,7 @@ import {FlagValue} from '@openfeature/server-sdk';
 export interface Flag {
   state: string,
   defaultVariant: string,
-  variants: any,
+  variants: {[key: string]: FlagValue},
   targeting: string
 }
 

@@ -85,7 +85,10 @@ export class FlagdCore {
 
     // flag status check
     if (flag.state === 'DISABLED') {
-      throw new GeneralError(`flag: ${flagKey} is disabled`);
+      return {
+        value: defaultValue,
+        reason: StandardResolutionReasons.DISABLED,
+      }
     }
 
     const defaultVariant = flag.defaultVariant;

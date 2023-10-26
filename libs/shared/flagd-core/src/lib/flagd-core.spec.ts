@@ -1,5 +1,5 @@
 import {FlagdCore} from './flagd-core';
-import {GeneralError, StandardResolutionReasons, TypeMismatchError} from '@openfeature/server-sdk';
+import {StandardResolutionReasons, TypeMismatchError} from '@openfeature/server-sdk';
 
 const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"key1":"val1","key2":"val2"},"defaultVariant":"key1"},"myFloatFlag":{"state":"ENABLED","variants":{"one":1.23,"two":2.34},"defaultVariant":"one"},"myIntFlag":{"state":"ENABLED","variants":{"one":1,"two":2},"defaultVariant":"one"},"myObjectFlag":{"state":"ENABLED","variants":{"object1":{"key":"val"},"object2":{"key":true}},"defaultVariant":"object1"},"fibAlgo":{"variants":{"recursive":"recursive","memo":"memo","loop":"loop","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},"binet",null]}},"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",{"in":["Chrome",{"var":"userAgent"}]},"third",null]}}},"$evaluators":{"emailWithFaas":{"in":["@faas.com",{"var":["email"]}]}}}`;
 
@@ -58,8 +58,11 @@ describe('flagdJsCore validations', () => {
   });
 
   it('should validate flag status', () => {
-    expect(() => core.resolveStringEvaluation('myBoolFlag', 'false', {}))
-      .toThrow(GeneralError)
+    const evaluation = core.resolveBooleanEvaluation('myBoolFlag', false, {});
+
+    expect(evaluation).toBeTruthy()
+    expect(evaluation.value).toBe(false)
+    expect(evaluation.reason).toBe(StandardResolutionReasons.DISABLED)
   });
 
   it('should validate variant', () => {
