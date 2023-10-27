@@ -8,12 +8,14 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/server-sdk';
+import {Targeting} from "./targeting/targeting";
 
 /**
  * Expose flag configuration setter and flag resolving methods.
  */
 export class FlagdCore {
   private _storage: Storage;
+  private _targeting = new Targeting()
 
   /**
    * Optionally construct with your own storage layer.
@@ -101,6 +103,8 @@ export class FlagdCore {
     } else {
       // todo - targeting evaluation
       // till targeting is handled, return the static result
+      this._targeting.applyTargeting(flagKey, flag.targetingString, evalCtx)
+
       resolvedVariant = flag.variants.get(defaultVariant);
       reason = StandardResolutionReasons.STATIC;
     }

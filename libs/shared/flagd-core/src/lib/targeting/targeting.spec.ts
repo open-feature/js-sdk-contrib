@@ -9,27 +9,27 @@ describe("String comparison operator", () => {
 
   it("should evaluate starts with calls", () => {
     const input = {"starts_with": [{"var": "email"}, "admin"]}
-    expect(targeting.applyTargeting(input, {email: "admin@abc.com"})).toBeTruthy()
+    expect(targeting.applyTargeting("flag", input, {email: "admin@abc.com"})).toBeTruthy()
   });
 
   it("should evaluate ends with calls", () => {
     const input = {"ends_with": [{"var": "email"}, "abc.com"]}
-    expect(targeting.applyTargeting(input, {email: "admin@abc.com"})).toBeTruthy()
+    expect(targeting.applyTargeting("flag", input, {email: "admin@abc.com"})).toBeTruthy()
   });
 
   it("should fail with invalid data - missing input", () => {
     const input = {"starts_with": [{"var": "email"}]}
-    expect(targeting.applyTargeting(input, {email: "admin@abc.com"})).toBeFalsy()
+    expect(targeting.applyTargeting("flag", input, {email: "admin@abc.com"})).toBeFalsy()
   });
 
   it("should fail with invalid data - non string variable", () => {
     const input = {"starts_with": [{"var": "someNumber"}, "abc.com"]}
-    expect(targeting.applyTargeting(input, {someNumber: 123456})).toBeFalsy()
+    expect(targeting.applyTargeting("flag", input, {someNumber: 123456})).toBeFalsy()
   });
 
   it("should fail with invalid data - non string comparator", () => {
     const input = {"starts_with": [{"var": "email"}, 123456]}
-    expect(targeting.applyTargeting(input, {email: "admin@abc.com"})).toBeFalsy()
+    expect(targeting.applyTargeting("flag", input, {email: "admin@abc.com"})).toBeFalsy()
   });
 });
 
@@ -43,56 +43,87 @@ describe("Sem ver operator", () => {
 
   it('should support equal operator', () => {
     const input = {"sem_ver": ['v1.2.3', "=", "1.2.3"]}
-    expect(targeting.applyTargeting(input, {})).toBeTruthy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeTruthy()
   });
 
   it('should support neq operator', () => {
     const input = {"sem_ver": ['v1.2.3', "!=", "1.2.4"]}
-    expect(targeting.applyTargeting(input, {})).toBeTruthy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeTruthy()
   });
 
   it('should support lt operator', () => {
     const input = {"sem_ver": ['v1.2.3', "<", "1.2.4"]}
-    expect(targeting.applyTargeting(input, {})).toBeTruthy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeTruthy()
   });
 
   it('should support lte operator', () => {
     const input = {"sem_ver": ['v1.2.3', "<=", "1.2.3"]}
-    expect(targeting.applyTargeting(input, {})).toBeTruthy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeTruthy()
   });
 
   it('should support gte operator', () => {
     const input = {"sem_ver": ['v1.2.3', ">=", "1.2.3"]}
-    expect(targeting.applyTargeting(input, {})).toBeTruthy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeTruthy()
   });
 
   it('should support gt operator', () => {
     const input = {"sem_ver": ['v1.2.4', ">", "1.2.3"]}
-    expect(targeting.applyTargeting(input, {})).toBeTruthy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeTruthy()
   });
 
   it('should support major comparison operator', () => {
     const input = {"sem_ver": ["v1.2.3", "^", "v1.0.0"]}
-    expect(targeting.applyTargeting(input, {})).toBeTruthy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeTruthy()
   });
 
   it('should support minor comparison operator', () => {
     const input = {"sem_ver": ["v5.0.3", "~", "v5.0.8"]}
-    expect(targeting.applyTargeting(input, {})).toBeTruthy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeTruthy()
   });
 
   it('should handle unknown operator', () => {
     const input = {"sem_ver": ["v1.0.0", "-", "v1.0.0"]}
-    expect(targeting.applyTargeting(input, {})).toBeFalsy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeFalsy()
   });
 
   it('should handle invalid inputs', () => {
     const input = {"sem_ver": ["myVersion_1", "=", "myVersion_1"]}
-    expect(targeting.applyTargeting(input, {})).toBeFalsy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeFalsy()
   });
 
   it('should validate inputs', () => {
     const input = {"sem_ver": ["myVersion_2", "+", "myVersion_1", "myVersion_1"]}
-    expect(targeting.applyTargeting(input, {})).toBeFalsy()
+    expect(targeting.applyTargeting("flag", input, {})).toBeFalsy()
   });
+})
+
+describe("fractional operator", () => {
+  let targeting: Targeting;
+
+  beforeAll(() => {
+    targeting = new Targeting();
+  })
+
+  it("should evaluate valid rule", () => {
+    const input = {
+      fractional: [
+        {"var": "key"},
+        ["red", 50],
+        ["blue", 50]
+      ]
+    }
+
+    expect(targeting.applyTargeting("flag", input, {key: "bucketKeyA"})).toBe("blue")
+  })
+
+  it("should evaluate valid rule with targeting key", () => {
+    const input = {
+      fractional: [
+        ["red", 50],
+        ["blue", 50]
+      ]
+    }
+
+    expect(targeting.applyTargeting("flag", input, {targetingKey: "bucketKeyA"})).toBe("blue")
+  })
 })
