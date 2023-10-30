@@ -1,7 +1,6 @@
 import {flagdPropertyKey, flagKeyPropertyKey, targetingPropertyKey} from "./common";
 import MurmurHash3 from "imurmurhash";
 
-
 export const fractionalRule = "fractional";
 
 export function fractional(data: any, context: any): string | null {
@@ -43,8 +42,9 @@ export function fractional(data: any, context: any): string | null {
   }
 
   const hashKey = flagdProperties[flagKeyPropertyKey] + bucketBy;
-  const hash = new MurmurHash3(hashKey).result();
-  const bucket = (Math.abs(hash) / 0xffffffff) * 100;
+  // hash in signed 32 format. Bitwise operation here works in signed 32 hence the conversion
+  const hash = new MurmurHash3(hashKey).result() | 0;
+  const bucket = (Math.abs(hash) / 2147483648) * 100;
 
   let sum = 0;
   for (let i = 0; i < bucketingList.length; i++) {
