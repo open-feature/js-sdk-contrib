@@ -10,6 +10,7 @@ export function fractional(data: any, context: any): string | null {
 
   const args = Array.from(data);
   if (args.length < 2) {
+    console.error('Invalid targeting rule. Require at least two buckets.')
     return null;
   }
 
@@ -38,6 +39,7 @@ export function fractional(data: any, context: any): string | null {
   try {
     bucketingList = toBucketingList(buckets)
   } catch (e) {
+    console.error('Error parsing targeting rule', e)
     return null
   }
 
@@ -76,7 +78,7 @@ function toBucketingList(from: unknown[]): { variant: string, fraction: number }
     }
 
     if (typeof entry[0] != 'string') {
-      throw new Error("Bucketing require variant to be present");
+      throw new Error("Bucketing require variant to be present in string format");
     }
 
     if (typeof entry[1] != 'number') {

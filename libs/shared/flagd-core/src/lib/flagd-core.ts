@@ -97,25 +97,33 @@ export class FlagdCore {
 
     if (flag.targetingString == undefined) {
       variant = flag.defaultVariant;
-      reason = StandardResolutionReasons.DEFAULT;
+      reason = StandardResolutionReasons.STATIC;
     } else {
+      let targetingResolution;
       try {
-        variant = this._targeting.applyTargeting(flagKey, flag.targetingString, evalCtx);
-        reason = StandardResolutionReasons.TARGETING_MATCH;
+        targetingResolution = this._targeting.applyTargeting(flagKey, flag.targetingString, evalCtx);
       } catch (e) {
-        const errorMessage = `error evaluating targeting rule for flag ${flagKey}"`;
+        const errorMessage = `Error evaluating targeting rule for flag ${flagKey}"`;
         console.error(errorMessage, e);
         throw new ParseError(errorMessage);
+      }
+
+      if (targetingResolution == null) {
+        variant = flag.defaultVariant;
+        reason = StandardResolutionReasons.DEFAULT;
+      } else {
+        variant = targetingResolution;
+        reason = StandardResolutionReasons.TARGETING_MATCH;
       }
     }
 
     const resolvedVariant = flag.variants.get(variant)
     if (resolvedVariant === undefined) {
-      throw new TypeMismatchError(`variant ${variant} not found in flag with key ${flagKey}`);
+      throw new TypeMismatchError(`Variant ${variant} not found in flag with key ${flagKey}`);
     }
 
     if (!guard(resolvedVariant)) {
-      throw new TypeMismatchError('evaluated type does not match the flag type');
+      throw new TypeMismatchError('Evaluated type does not match the flag type');
     }
 
     return {
