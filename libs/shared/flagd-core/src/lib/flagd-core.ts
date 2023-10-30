@@ -95,17 +95,16 @@ export class FlagdCore {
     let variant;
     let reason;
 
-    if (flag.targetingString == undefined) {
+    if (flag.targeting == undefined) {
       variant = flag.defaultVariant;
       reason = StandardResolutionReasons.STATIC;
     } else {
       let targetingResolution;
       try {
-        targetingResolution = this._targeting.applyTargeting(flagKey, flag.targetingString, evalCtx);
+        targetingResolution = this._targeting.applyTargeting(flagKey, flag.targeting, evalCtx);
       } catch (e) {
-        const errorMessage = `Error evaluating targeting rule for flag ${flagKey}"`;
-        console.error(errorMessage, e);
-        throw new ParseError(errorMessage);
+        console.error(`Error evaluating targeting rule for flag ${flagKey}, falling back to default`, e);
+        targetingResolution = null;
       }
 
       if (targetingResolution == null) {
