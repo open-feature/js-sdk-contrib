@@ -52,7 +52,6 @@ export class GoFeatureFlagWebProvider implements Provider {
   // _flags is the in memory representation of all the flags.
   private _flags: { [key: string]: ResolutionDetails<FlagValue> } = {};
 
-
   constructor(options: GoFeatureFlagWebProviderOptions, logger?: Logger) {
     this._logger = logger;
     this._apiTimeout = options.apiTimeout || 0; // default is 0 = no timeout
@@ -93,7 +92,7 @@ export class GoFeatureFlagWebProvider implements Provider {
     const wsURL = new URL(this._endpoint);
     wsURL.pathname =
       wsURL.pathname.endsWith('/') ? wsURL.pathname + this._websocketPath : wsURL.pathname + '/' + this._websocketPath;
-    wsURL.protocol = "ws"
+    wsURL.protocol = wsURL.protocol === 'https:' ? 'wss' : 'ws';
 
     // adding API Key if GO Feature Flag use api keys.
     if(this._apiKey){
@@ -102,7 +101,7 @@ export class GoFeatureFlagWebProvider implements Provider {
 
     this._logger?.debug(`${GoFeatureFlagWebProvider.name}: Trying to connect the websocket at ${wsURL}`)
 
-    this._websocket = new WebSocket(wsURL, ["ws", "http", "https"]);
+    this._websocket = new WebSocket(wsURL);
     await this.waitWebsocketFinalStatus(this._websocket);
 
     this._websocket.onopen = (event) => {
