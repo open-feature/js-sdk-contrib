@@ -17,7 +17,7 @@ describe('Flagd flag structure', () => {
     expect(ff).toBeTruthy();
     expect(ff.state).toBe('ENABLED');
     expect(ff.defaultVariant).toBe('off');
-    expect(ff.targetingString).toBe('""');
+    expect(ff.targeting).toBe('');
     expect(ff.variants.get('on')).toBeTruthy();
     expect(ff.variants.get('off')).toBeFalsy();
   });
@@ -38,7 +38,7 @@ describe('Flagd flag structure', () => {
     expect(ff).toBeTruthy();
     expect(ff.state).toBe('ENABLED');
     expect(ff.defaultVariant).toBe('one');
-    expect(ff.targetingString).toBe('""');
+    expect(ff.targeting).toBe('');
     expect(ff.variants.get('one')).toBe(1.0);
     expect(ff.variants.get('two')).toBe(2.0);
   });
@@ -65,7 +65,7 @@ describe('Flagd flag structure', () => {
     expect(ff).toBeTruthy();
     expect(ff.state).toBe('ENABLED');
     expect(ff.defaultVariant).toBe('pi2');
-    expect(ff.targetingString).toBe('""');
+    expect(ff.targeting).toBe('');
     expect(ff.variants.get('pi2')).toStrictEqual({ value: 3.14, accuracy: 2 });
     expect(ff.variants.get('pi5')).toStrictEqual({ value: 3.14159, accuracy: 5 });
   });

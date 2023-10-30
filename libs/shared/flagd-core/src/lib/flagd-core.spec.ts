@@ -1,9 +1,8 @@
 import {FlagdCore} from './flagd-core';
 import {StandardResolutionReasons, TypeMismatchError} from '@openfeature/server-sdk';
 
-const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"key1":"val1","key2":"val2"},"defaultVariant":"key1"},"myFloatFlag":{"state":"ENABLED","variants":{"one":1.23,"two":2.34},"defaultVariant":"one"},"myIntFlag":{"state":"ENABLED","variants":{"one":1,"two":2},"defaultVariant":"one"},"myObjectFlag":{"state":"ENABLED","variants":{"object1":{"key":"val"},"object2":{"key":true}},"defaultVariant":"object1"},"fibAlgo":{"variants":{"recursive":"recursive","memo":"memo","loop":"loop","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},"binet",null]}},"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",{"in":["Chrome",{"var":"userAgent"}]},"third",null]}}},"$evaluators":{"emailWithFaas":{"in":["@faas.com",{"var":["email"]}]}}}`;
-
-describe('flagdJsCore resolving', () => {
+describe('flagd-core resolving', () => {
+  const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"key1":"val1","key2":"val2"},"defaultVariant":"key1"},"myFloatFlag":{"state":"ENABLED","variants":{"one":1.23,"two":2.34},"defaultVariant":"one"},"myIntFlag":{"state":"ENABLED","variants":{"one":1,"two":2},"defaultVariant":"one"},"myObjectFlag":{"state":"ENABLED","variants":{"object1":{"key":"val"},"object2":{"key":true}},"defaultVariant":"object1"},"fibAlgo":{"variants":{"recursive":"recursive","memo":"memo","loop":"loop","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},"binet",null]}},"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",{"in":["Chrome",{"var":"userAgent"}]},"third",null]}}},"$evaluators":{"emailWithFaas":{"in":["@faas.com",{"var":["email"]}]}}}`;
   let core: FlagdCore;
 
   beforeAll(() => {
@@ -41,7 +40,33 @@ describe('flagdJsCore resolving', () => {
 
 });
 
-describe('flagdJsCore validations', () => {
+describe('flagd-core targeting evaluations', () => {
+
+  const targetingFlag = '{"flags":{"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",null]}}}}';
+  let core: FlagdCore;
+
+  beforeAll(() => {
+    core = new FlagdCore();
+    core.setConfigurations(targetingFlag)
+  });
+
+  it('should resolve for correct inputs', () => {
+    const resolved = core.resolveStringEvaluation("targetedFlag", "none", {email: "admin@openfeature.dev"});
+    expect(resolved.value).toBe("BBB")
+    expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH)
+    expect(resolved.variant).toBe("second")
+  });
+
+  it('should fallback to default - missing targeting context data', () => {
+    const resolved = core.resolveStringEvaluation("targetedFlag", "none", {});
+    expect(resolved.value).toBe("AAA")
+    expect(resolved.reason).toBe(StandardResolutionReasons.DEFAULT)
+    expect(resolved.variant).toBe("first")
+  });
+
+});
+
+describe('flagd-core validations', () => {
   // flags of disabled, invalid variants and missing variant
   const mixFlags =
     '{"flags":{"myBoolFlag":{"state":"DISABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myIntFlag":{"state":"ENABLED","variants":{"two":2},"defaultVariant":"one"}}}';
