@@ -126,4 +126,36 @@ describe("fractional operator", () => {
 
     expect(targeting.applyTargeting("flagA", input, {targetingKey: "bucketKeyB"})).toBe("blue")
   })
+
+  it("should validate rule - need at least two buckets", () => {
+    const input = {
+      fractional: [
+        ["red", 100],
+      ]
+    }
+
+    expect(targeting.applyTargeting("flagA", input, {targetingKey: "key"})).toBe(null)
+  })
+
+  it("should validate rule - buckets should add to 100", () => {
+    const input = {
+      fractional: [
+        ["red", 55],
+        ["blue", 55]
+      ]
+    }
+
+    expect(targeting.applyTargeting("flagA", input, {targetingKey: "key"})).toBe(null)
+  })
+
+  it("should validate rule - buckets should be variant and fraction", () => {
+    const input = {
+      fractional: [
+        ["red", 50],
+        [100, 50]
+      ]
+    }
+
+    expect(targeting.applyTargeting("flagA", input, {targetingKey: "key"})).toBe(null)
+  })
 })
