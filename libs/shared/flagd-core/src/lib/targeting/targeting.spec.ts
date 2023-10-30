@@ -113,7 +113,7 @@ describe("fractional operator", () => {
       ]
     }
 
-    expect(targeting.applyTargeting("flag", input, {key: "bucketKeyA"})).toBe("blue")
+    expect(targeting.applyTargeting("flagA", input, {key: "bucketKeyA"})).toBe("red")
   })
 
   it("should evaluate valid rule with targeting key", () => {
@@ -124,6 +124,6 @@ describe("fractional operator", () => {
       ]
     }
 
-    expect(targeting.applyTargeting("flag", input, {targetingKey: "bucketKeyA"})).toBe("blue")
+    expect(targeting.applyTargeting("flagA", input, {targetingKey: "bucketKeyB"})).toBe("blue")
   })
 })
