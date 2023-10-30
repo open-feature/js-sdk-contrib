@@ -3,7 +3,7 @@ import {
   EvaluationContext,
   FlagNotFoundError,
   FlagValue,
-  JsonValue,
+  JsonValue, ParseError,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
@@ -92,37 +92,36 @@ export class FlagdCore {
       }
     }
 
-    const defaultVariant = flag.defaultVariant;
-
-    let resolvedVariant;
+    let variant;
     let reason;
 
     if (flag.targetingString == undefined) {
-      resolvedVariant = flag.variants.get(defaultVariant);
-      reason = StandardResolutionReasons.STATIC;
+      variant = flag.defaultVariant;
+      reason = StandardResolutionReasons.DEFAULT;
     } else {
-      // todo - targeting evaluation
-      // till targeting is handled, return the static result
-      this._targeting.applyTargeting(flagKey, flag.targetingString, evalCtx)
-
-      resolvedVariant = flag.variants.get(defaultVariant);
-      reason = StandardResolutionReasons.STATIC;
+      try {
+        variant = this._targeting.applyTargeting(flagKey, flag.targetingString, evalCtx);
+        reason = StandardResolutionReasons.TARGETING_MATCH;
+      } catch (e) {
+        const errorMessage = `error evaluating targeting rule for flag ${flagKey}"`;
+        console.error(errorMessage, e);
+        throw new ParseError(errorMessage);
+      }
     }
 
-    // todo improve this error condition when targeting evaluation is ready
+    const resolvedVariant = flag.variants.get(variant)
     if (resolvedVariant === undefined) {
-      throw new TypeMismatchError(`variant ${defaultVariant} not found in flag with key ${flagKey}`);
+      throw new TypeMismatchError(`variant ${variant} not found in flag with key ${flagKey}`);
     }
 
     if (!guard(resolvedVariant)) {
       throw new TypeMismatchError('evaluated type does not match the flag type');
     }
 
-    // todo check variant updates from targeting
     return {
       value: resolvedVariant as T,
       reason: reason,
-      variant: defaultVariant
+      variant: variant
     };
   }
 }
