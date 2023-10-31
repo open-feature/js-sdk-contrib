@@ -3,11 +3,11 @@ import {
   EvaluationContext,
   FlagNotFoundError,
   FlagValue,
-  JsonValue, ParseError,
+  JsonValue,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
-} from '@openfeature/server-sdk';
+} from '@openfeature/core';
 import {Targeting} from "./targeting/targeting";
 
 /**
