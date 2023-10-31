@@ -16,18 +16,26 @@ describe("String comparison operator", () => {
     const input = {"ends_with": [{"var": "email"}, "abc.com"]}
     expect(targeting.applyTargeting("flag", input, {email: "admin@abc.com"})).toBeTruthy()
   });
+});
 
-  it("should fail with invalid data - missing input", () => {
+describe("String comparison operator should validate", () => {
+  let targeting: Targeting;
+
+  beforeAll(() => {
+    targeting = new Targeting();
+  })
+
+  it("missing input", () => {
     const input = {"starts_with": [{"var": "email"}]}
     expect(targeting.applyTargeting("flag", input, {email: "admin@abc.com"})).toBeFalsy()
   });
 
-  it("should fail with invalid data - non string variable", () => {
+  it("non string variable", () => {
     const input = {"starts_with": [{"var": "someNumber"}, "abc.com"]}
     expect(targeting.applyTargeting("flag", input, {someNumber: 123456})).toBeFalsy()
   });
 
-  it("should fail with invalid data - non string comparator", () => {
+  it("non string comparator", () => {
     const input = {"starts_with": [{"var": "email"}, 123456]}
     expect(targeting.applyTargeting("flag", input, {email: "admin@abc.com"})).toBeFalsy()
   });
@@ -116,6 +124,18 @@ describe("fractional operator", () => {
     expect(targeting.applyTargeting("flagA", input, {key: "bucketKeyA"})).toBe("red")
   })
 
+  it("should evaluate valid rule", () => {
+    const input = {
+      fractional: [
+        {"var": "key"},
+        ["red", 50],
+        ["blue", 50]
+      ]
+    }
+
+    expect(targeting.applyTargeting("flagA", input, {key: "bucketKeyB"})).toBe("blue")
+  })
+
   it("should evaluate valid rule with targeting key", () => {
     const input = {
       fractional: [
@@ -126,18 +146,16 @@ describe("fractional operator", () => {
 
     expect(targeting.applyTargeting("flagA", input, {targetingKey: "bucketKeyB"})).toBe("blue")
   })
+})
 
-  it("should validate rule - need at least two buckets", () => {
-    const input = {
-      fractional: [
-        ["red", 100],
-      ]
-    }
+describe("fractional operator should validate", () => {
+  let targeting: Targeting;
 
-    expect(targeting.applyTargeting("flagA", input, {targetingKey: "key"})).toBe(null)
+  beforeAll(() => {
+    targeting = new Targeting();
   })
 
-  it("should validate rule - buckets should add to 100", () => {
+  it("bucket sum to be 100", () => {
     const input = {
       fractional: [
         ["red", 55],
@@ -148,7 +166,7 @@ describe("fractional operator", () => {
     expect(targeting.applyTargeting("flagA", input, {targetingKey: "key"})).toBe(null)
   })
 
-  it("should validate rule - buckets should be variant and fraction", () => {
+  it("buckets properties to have variant and fraction", () => {
     const input = {
       fractional: [
         ["red", 50],

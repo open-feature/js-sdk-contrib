@@ -6,7 +6,7 @@ import {FlagValue} from '@openfeature/server-sdk';
 export interface Flag {
   state: string,
   defaultVariant: string,
-  variants: {[key: string]: FlagValue},
+  variants: { [key: string]: FlagValue },
   targeting: string
 }
 
@@ -17,7 +17,7 @@ export class FeatureFlag {
   private readonly _state: string;
   private readonly _defaultVariant: string;
   private readonly _variants: Map<string, FlagValue>;
-  private readonly _targeting: any;
+  private readonly _targeting: unknown;
 
   constructor(flag: Flag) {
     this._state = flag['state'];
@@ -34,11 +34,11 @@ export class FeatureFlag {
     return this._defaultVariant;
   }
 
-  get targeting(): any {
+  get targeting(): unknown {
     return this._targeting;
   }
 
   get variants(): Map<string, FlagValue> {
-    return this._variants
+    return this._variants;
   }
 }

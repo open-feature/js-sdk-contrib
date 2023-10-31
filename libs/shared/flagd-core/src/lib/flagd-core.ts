@@ -15,7 +15,7 @@ import {Targeting} from "./targeting/targeting";
  */
 export class FlagdCore {
   private _storage: Storage;
-  private _targeting = new Targeting()
+  private _targeting = new Targeting();
 
   /**
    * Optionally construct with your own storage layer.
@@ -37,7 +37,7 @@ export class FlagdCore {
     evalCtx: EvaluationContext,
   ): ResolutionDetails<boolean> {
     return this.resolve(flagKey, defaultValue, evalCtx, (v) => {
-      return typeof v == 'boolean';
+      return typeof v === 'boolean';
     });
   }
 
@@ -47,7 +47,7 @@ export class FlagdCore {
     evalCtx: EvaluationContext,
   ): ResolutionDetails<string> {
     return this.resolve(flagKey, defaultValue, evalCtx, (v) => {
-      return typeof v == 'string';
+      return typeof v === 'string';
     });
   }
 
@@ -57,7 +57,7 @@ export class FlagdCore {
     evalCtx: EvaluationContext,
   ): ResolutionDetails<number> {
     return this.resolve(flagKey, defaultValue, evalCtx, (v) => {
-      return typeof v == 'number';
+      return typeof v === 'number';
     });
   }
 
@@ -67,7 +67,7 @@ export class FlagdCore {
     evalCtx: EvaluationContext,
   ): ResolutionDetails<T> {
     return this.resolve(flagKey, defaultValue, evalCtx, (v) => {
-      return typeof v == 'object';
+      return typeof v === 'object';
     });
   }
 
@@ -80,7 +80,7 @@ export class FlagdCore {
 
     // flag exist check
     const flag = this._storage.getFlag(flagKey);
-    if (flag === undefined) {
+    if (!flag) {
       throw new FlagNotFoundError(`flag: ${flagKey} not found`);
     }
 
@@ -95,7 +95,7 @@ export class FlagdCore {
     let variant;
     let reason;
 
-    if (flag.targeting == undefined) {
+    if (!flag.targeting) {
       variant = flag.defaultVariant;
       reason = StandardResolutionReasons.STATIC;
     } else {
@@ -107,7 +107,7 @@ export class FlagdCore {
         targetingResolution = null;
       }
 
-      if (targetingResolution == null) {
+      if (!targetingResolution) {
         variant = flag.defaultVariant;
         reason = StandardResolutionReasons.DEFAULT;
       } else {
@@ -116,8 +116,12 @@ export class FlagdCore {
       }
     }
 
+    if (typeof variant !== 'string') {
+      throw new TypeMismatchError('Variant must be a string, but found ' + typeof variant)
+    }
+
     const resolvedVariant = flag.variants.get(variant)
-    if (resolvedVariant === undefined) {
+    if (!resolvedVariant) {
       throw new TypeMismatchError(`Variant ${variant} not found in flag with key ${flagKey}`);
     }
 
@@ -128,7 +132,7 @@ export class FlagdCore {
     return {
       value: resolvedVariant as T,
       reason: reason,
-      variant: variant
+      variant,
     };
   }
 }
