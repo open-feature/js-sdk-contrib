@@ -375,7 +375,8 @@ describe('GoFeatureFlagWebProvider', () => {
       expect(configurationChangedHandler.mock.calls[0][0]).toEqual({
         clientName: 'test-provider',
         message: 'flag configuration have changed',
-        flagsChanged: ['deleted-flag-1', 'deleted-flag-2', 'updated-flag-1', 'updated-flag-2', 'added-flag-1', 'added-flag-2']
+        flagsChanged: ['deleted-flag-1', 'deleted-flag-2', 'updated-flag-1', 'updated-flag-2', 'added-flag-1', 'added-flag-2'],
+        providerName: 'GoFeatureFlagWebProvider',
       })
     });
 
