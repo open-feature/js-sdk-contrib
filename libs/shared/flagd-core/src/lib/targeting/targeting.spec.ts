@@ -182,18 +182,16 @@ describe("fractional operator", () => {
 
     expect(targeting.applyTargeting("flagA", input, {targetingKey: "bucketKeyB"})).toBe("blue")
   })
+})
 
-  it("should validate rule - need at least two buckets", () => {
-    const input = {
-      fractional: [
-        ["red", 100],
-      ]
-    }
+describe("fractional operator should validate", () => {
+  let targeting: Targeting;
 
-    expect(targeting.applyTargeting("flagA", input, {targetingKey: "key"})).toBe(null)
+  beforeAll(() => {
+    targeting = new Targeting();
   })
 
-  it("should validate rule - buckets should add to 100", () => {
+  it("bucket sum to be 100", () => {
     const input = {
       fractional: [
         ["red", 55],
@@ -204,7 +202,7 @@ describe("fractional operator", () => {
     expect(targeting.applyTargeting("flagA", input, {targetingKey: "key"})).toBe(null)
   })
 
-  it("should validate rule - buckets should be variant and fraction", () => {
+  it("buckets properties to have variant and fraction", () => {
     const input = {
       fractional: [
         ["red", 50],
