@@ -1,11 +1,12 @@
-import {EvaluationContext, JsonValue, Logger, Provider, ResolutionDetails} from "@openfeature/server-sdk";
-import {FlagdJSCore} from "@openfeature/flagd-js-core";
+import {EvaluationContext, JsonValue, Logger, ResolutionDetails} from "@openfeature/core";
+import {FlagdCore} from "@openfeature/flagd-core";
+import {Provider} from "@openfeature/server-sdk";
 
 export class FlagdInProcess implements Provider {
-  private _core: FlagdJSCore;
+  private _core: FlagdCore;
 
   constructor() {
-    this._core = new FlagdJSCore()
+    this._core = new FlagdCore()
 
     // todo initialize flags from outbound connection
   }

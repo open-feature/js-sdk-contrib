@@ -5,10 +5,11 @@
   "main": "./src/index.js",
   "typings": "./src/index.d.ts",
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@openfeature/flagd-js-core": "0.0.1-alpha"
+    "tslib": "^2.3.0"
   },
   "peerDependencies": {
-    "@openfeature/server-sdk": ">=1.6.0"
+    "@openfeature/core": ">=1.6.0",
+    "@openfeature/server-sdk": "^1.6.2",
+    "@openfeature/flagd-core": "0.1.0"
   }
 }
