@@ -1,4 +1,4 @@
-import {FlagValue} from '@openfeature/server-sdk';
+import {FlagValue} from '@openfeature/core';
 
 /**
  * Flagd flag configuration structure mapping to schema definition.
