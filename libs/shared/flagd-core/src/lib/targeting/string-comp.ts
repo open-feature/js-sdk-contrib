@@ -20,7 +20,7 @@ function compare(method: string, data: unknown): boolean {
     return false
   }
 
-  if (typeof params[0] != 'string' || typeof params[1] != 'string') {
+  if (typeof params[0] !== 'string' || typeof params[1] !== 'string') {
     return false
   }
 

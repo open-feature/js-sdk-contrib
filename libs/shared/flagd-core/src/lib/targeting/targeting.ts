@@ -17,13 +17,13 @@ export class Targeting {
     this._logicEngine = engine;
   }
 
-  applyTargeting(flagKey: string, logic: any, data: Record<any, any>): any {
+  applyTargeting(flagKey: string, logic: unknown, data: object): unknown {
     const ctxData = {
+      ...data,
       [flagdPropertyKey]: {
         [flagKeyPropertyKey]: flagKey,
-        [timestampPropertyKey]: Date.now(),
+        [timestampPropertyKey]: Math.floor(Date.now() / 1000),
       },
-      ...data
     }
 
     return this._logicEngine.run(logic, ctxData);

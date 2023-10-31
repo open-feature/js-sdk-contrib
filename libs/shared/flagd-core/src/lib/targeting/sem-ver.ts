@@ -16,7 +16,7 @@ export function semVer(data: unknown): boolean {
   const semVer1 = parse(args[0]);
   const semVer2 = parse(args[2]);
 
-  if (semVer1 == null || semVer2 == null) {
+  if (!semVer1 || !semVer2) {
     return false;
   }
 

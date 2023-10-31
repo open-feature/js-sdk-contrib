@@ -3,7 +3,7 @@ import MurmurHash3 from "imurmurhash";
 
 export const fractionalRule = "fractional";
 
-export function fractional(data: any, context: any): string | null {
+export function fractional(data: unknown, context: Record<any, any>): string | null {
   if (!Array.isArray(data)) {
     return null;
   }
@@ -15,7 +15,7 @@ export function fractional(data: any, context: any): string | null {
   }
 
   const flagdProperties = context[flagdPropertyKey];
-  if (flagdProperties == undefined) {
+  if (!flagdProperties) {
     return null;
   }
 
@@ -27,7 +27,7 @@ export function fractional(data: any, context: any): string | null {
     buckets = args.slice(1, args.length)
   } else {
     bucketBy = context[targetingPropertyKey];
-    if (bucketBy == undefined) {
+    if (!bucketBy) {
       return null;
     }
 
@@ -77,11 +77,11 @@ function toBucketingList(from: unknown[]): { variant: string, fraction: number }
       throw new Error("Invalid bucketing entry. Require two values - variant and percentage");
     }
 
-    if (typeof entry[0] != 'string') {
+    if (typeof entry[0] !== 'string') {
       throw new Error("Bucketing require variant to be present in string format");
     }
 
-    if (typeof entry[1] != 'number') {
+    if (typeof entry[1] !== 'number') {
       throw new Error("Bucketing require bucketing percentage to be present");
     }
 
