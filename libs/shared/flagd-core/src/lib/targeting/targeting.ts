@@ -18,6 +18,10 @@ export class Targeting {
   }
 
   applyTargeting(flagKey: string, logic: unknown, data: object): unknown {
+    if (Object.hasOwn(data, flagdPropertyKey)) {
+      console.warn(`overwriting ${flagdPropertyKey} property in the context`)
+    }
+
     const ctxData = {
       ...data,
       [flagdPropertyKey]: {
