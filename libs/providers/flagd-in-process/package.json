@@ -9,7 +9,6 @@
   },
   "peerDependencies": {
     "@openfeature/core": ">=1.6.0",
-    "@openfeature/server-sdk": "^1.6.2",
-    "@openfeature/flagd-core": "0.1.0"
+    "@openfeature/server-sdk": "^1.6.2"
   }
 }
