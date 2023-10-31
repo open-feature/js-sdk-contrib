@@ -1,5 +1,41 @@
 import {Targeting} from "./targeting";
 
+describe("Targeting rule evaluator", () => {
+  let targeting: Targeting;
+
+  beforeAll(() => {
+    targeting = new Targeting();
+  })
+
+  it('should inject flag key as a property', () => {
+    const flagKey = "flagA"
+    const input = {'===': [{var: "$flagd.flagKey"}, flagKey]}
+
+    expect(targeting.applyTargeting(flagKey, input, {})).toBeTruthy()
+  });
+
+  it('should inject current timestamp as a property', () => {
+    const ts = Math.floor(Date.now() / 1000)
+    const input = {'>=': [{var: "$flagd.timestamp"}, ts]}
+
+    expect(targeting.applyTargeting("flag", input, {})).toBeTruthy()
+  });
+
+
+  it('should override injected properties if already present in context', () => {
+    const flagKey = "flagA"
+    const input = {'===': [{var: "$flagd.flagKey"}, flagKey]}
+    const ctx = {
+      $flagd: {
+        flagKey: "someOtherFlag"
+      }
+    }
+
+    expect(targeting.applyTargeting(flagKey, input, ctx)).toBeTruthy()
+  });
+
+});
+
 describe("String comparison operator", () => {
   let targeting: Targeting;
 
