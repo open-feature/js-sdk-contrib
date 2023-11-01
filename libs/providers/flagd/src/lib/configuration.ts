@@ -46,6 +46,11 @@ export interface Config {
   resolverType?: ResolverType;
 
   /**
+   * Selector to be used with flag sync gRPC contract.
+   */
+  selector?: string
+
+  /**
    * Cache implementation to use (or disabled).
    *
    * @default 'lru'
@@ -87,6 +92,7 @@ enum ENV_VAR {
   FLAGD_CACHE = 'FLAGD_CACHE',
   FLAGD_MAX_CACHE_SIZE = 'FLAGD_MAX_CACHE_SIZE',
   FLAGD_MAX_EVENT_STREAM_RETRIES = 'FLAGD_MAX_EVENT_STREAM_RETRIES',
+  FLAGD_SOURCE_SELECTOR = "FLAGD_SOURCE_SELECTOR"
 }
 
 const getEnvVarConfig = (): Partial<Config> => ({
@@ -110,6 +116,9 @@ const getEnvVarConfig = (): Partial<Config> => ({
   }),
   ...(process.env[ENV_VAR.FLAGD_MAX_EVENT_STREAM_RETRIES] && {
     maxEventStreamRetries: Number(process.env[ENV_VAR.FLAGD_MAX_EVENT_STREAM_RETRIES]),
+  }),
+  ...(process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR] && {
+    selector: process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR],
   }),
 });
 

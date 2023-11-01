@@ -47,7 +47,7 @@ export class FlagdProvider implements Provider {
     const config = getConfig(options);
 
     this._service = service ? service :
-      (config.resolverType === 'rpc' ?  new GRPCService(config, undefined, logger): new InProcessService(config));
+      (config.resolverType === 'rpc' ? new GRPCService(config, undefined, logger) : new InProcessService(config));
   }
 
   initialize(): Promise<void> {
@@ -71,45 +71,45 @@ export class FlagdProvider implements Provider {
 
   resolveBooleanEvaluation(
     flagKey: string,
-    _: boolean,
+    defaultValue: boolean,
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
     return this._service
-      .resolveBoolean(flagKey, transformedContext, logger)
+      .resolveBoolean(flagKey, defaultValue, transformedContext, logger)
       .catch((err) => this.logRejected(err, flagKey, logger));
   }
 
   resolveStringEvaluation(
     flagKey: string,
-    _: string,
+    defaultValue: string,
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<string>> {
     return this._service
-      .resolveString(flagKey, transformedContext, logger)
+      .resolveString(flagKey, defaultValue, transformedContext, logger)
       .catch((err) => this.logRejected(err, flagKey, logger));
   }
 
   resolveNumberEvaluation(
     flagKey: string,
-    _: number,
+    defaultValue: number,
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<number>> {
     return this._service
-      .resolveNumber(flagKey, transformedContext, logger)
+      .resolveNumber(flagKey, defaultValue, transformedContext, logger)
       .catch((err) => this.logRejected(err, flagKey, logger));
   }
 
   resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
-    _: T,
+    defaultValue: T,
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
     return this._service
-      .resolveObject<T>(flagKey, transformedContext, logger)
+      .resolveObject<T>(flagKey, defaultValue, transformedContext, logger)
       .catch((err) => this.logRejected(err, flagKey, logger));
   }
 
@@ -128,6 +128,6 @@ export class FlagdProvider implements Provider {
   }
 
   private emitChanged(flagsChanged: string[]): void {
-    this._events.emit(ProviderEvents.ConfigurationChanged, { flagsChanged });
+    this._events.emit(ProviderEvents.ConfigurationChanged, {flagsChanged});
   }
 }
