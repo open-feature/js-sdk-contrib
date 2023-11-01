@@ -4,10 +4,10 @@ import {FlagValue} from '@openfeature/core';
  * Flagd flag configuration structure mapping to schema definition.
  */
 export interface Flag {
-  state: string,
-  defaultVariant: string,
-  variants: { [key: string]: FlagValue },
-  targeting: string
+  state: "ENABLED" | "DISABLED";
+  defaultVariant: string;
+  variants: { [key: string]: FlagValue };
+  targeting?: string;
 }
 
 /**

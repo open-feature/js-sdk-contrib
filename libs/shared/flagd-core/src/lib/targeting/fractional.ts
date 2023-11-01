@@ -3,6 +3,7 @@ import MurmurHash3 from "imurmurhash";
 
 export const fractionalRule = "fractional";
 
+// eslint-disable-next-line  @typescript-eslint/no-explicit-any
 export function fractional(data: unknown, context: Record<any, any>): string | null {
   if (!Array.isArray(data)) {
     return null;
@@ -28,6 +29,7 @@ export function fractional(data: unknown, context: Record<any, any>): string | n
   } else {
     bucketBy = context[targetingPropertyKey];
     if (!bucketBy) {
+      console.error('Missing targetingKey property')
       return null;
     }
 

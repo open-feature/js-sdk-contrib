@@ -3,12 +3,14 @@ import {
   EvaluationContext,
   FlagNotFoundError,
   FlagValue,
+  GeneralError,
   JsonValue,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/core';
 import {Targeting} from "./targeting/targeting";
+import {Logger} from "@openfeature/server-sdk";
 
 /**
  * Expose flag configuration setter and flag resolving methods.
@@ -35,47 +37,44 @@ export class FlagdCore {
     flagKey: string,
     defaultValue: boolean,
     evalCtx: EvaluationContext,
+    logger: Logger,
   ): ResolutionDetails<boolean> {
-    return this.resolve(flagKey, defaultValue, evalCtx, (v) => {
-      return typeof v === 'boolean';
-    });
+    return this.resolve(flagKey, defaultValue, evalCtx, logger, 'boolean');
   }
 
   resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
     evalCtx: EvaluationContext,
+    logger: Logger,
   ): ResolutionDetails<string> {
-    return this.resolve(flagKey, defaultValue, evalCtx, (v) => {
-      return typeof v === 'string';
-    });
+    return this.resolve(flagKey, defaultValue, evalCtx, logger, 'string');
   }
 
   resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
     evalCtx: EvaluationContext,
+    logger: Logger,
   ): ResolutionDetails<number> {
-    return this.resolve(flagKey, defaultValue, evalCtx, (v) => {
-      return typeof v === 'number';
-    });
+    return this.resolve(flagKey, defaultValue, evalCtx, logger, 'number');
   }
 
   resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
     evalCtx: EvaluationContext,
+    logger: Logger,
   ): ResolutionDetails<T> {
-    return this.resolve(flagKey, defaultValue, evalCtx, (v) => {
-      return typeof v === 'object';
-    });
+    return this.resolve(flagKey, defaultValue, evalCtx, logger, 'object');
   }
 
   private resolve<T extends FlagValue>(
     flagKey: string,
     defaultValue: T,
     evalCtx: EvaluationContext,
-    guard: (a: FlagValue) => boolean,
+    logger: Logger,
+    type: string,
   ): ResolutionDetails<T> {
 
     // flag exist check
@@ -103,7 +102,7 @@ export class FlagdCore {
       try {
         targetingResolution = this._targeting.applyTargeting(flagKey, flag.targeting, evalCtx);
       } catch (e) {
-        console.error(`Error evaluating targeting rule for flag ${flagKey}, falling back to default`, e);
+        logger.error(`Error evaluating targeting rule for flag ${flagKey}, falling back to default`, e);
         targetingResolution = null;
       }
 
@@ -111,7 +110,8 @@ export class FlagdCore {
         variant = flag.defaultVariant;
         reason = StandardResolutionReasons.DEFAULT;
       } else {
-        variant = targetingResolution;
+        // Obtain resolution in string. This is useful for short-circuiting json logic
+        variant = targetingResolution.toString();
         reason = StandardResolutionReasons.TARGETING_MATCH;
       }
     }
@@ -122,16 +122,16 @@ export class FlagdCore {
 
     const resolvedVariant = flag.variants.get(variant)
     if (!resolvedVariant) {
-      throw new TypeMismatchError(`Variant ${variant} not found in flag with key ${flagKey}`);
+      throw new GeneralError(`Variant ${variant} not found in flag with key ${flagKey}`);
     }
 
-    if (!guard(resolvedVariant)) {
-      throw new TypeMismatchError('Evaluated type does not match the flag type');
+    if (typeof resolvedVariant !== type) {
+      throw new TypeMismatchError(`Evaluated type of the flag ${flagKey} does not match. Expected ${type}, got ${typeof resolvedVariant}`);
     }
 
     return {
       value: resolvedVariant as T,
-      reason: reason,
+      reason,
       variant,
     };
   }
