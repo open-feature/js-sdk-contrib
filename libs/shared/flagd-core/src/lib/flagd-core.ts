@@ -3,6 +3,7 @@ import {
   EvaluationContext,
   FlagNotFoundError,
   FlagValue,
+  GeneralError,
   JsonValue,
   ResolutionDetails,
   StandardResolutionReasons,
