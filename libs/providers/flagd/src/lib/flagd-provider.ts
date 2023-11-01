@@ -11,6 +11,7 @@ import {
 import { FlagdProviderOptions, getConfig } from './configuration';
 import { GRPCService } from './service/grpc/grpc-service';
 import { Service } from './service/service';
+import {InProcessService} from "./service/in-process/in-process-service";
 
 export class FlagdProvider implements Provider {
   metadata = {
@@ -43,7 +44,10 @@ export class FlagdProvider implements Provider {
     private readonly logger?: Logger,
     service?: Service,
   ) {
-    this._service = service ? service : new GRPCService(getConfig(options), undefined, logger);
+    const config = getConfig(options);
+
+    this._service = service ? service :
+      (config.resolverType === 'rpc' ?  new GRPCService(config, undefined, logger): new InProcessService(config));
   }
 
   initialize(): Promise<void> {

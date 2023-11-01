@@ -1,9 +1,10 @@
-import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from "./constants";
+import {DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES} from "./constants";
 
 export type CacheOption = 'lru' | 'disabled';
+export type ResolverType = 'rpc' | 'in-process'
 
 export interface Config {
-  
+
   /**
    * The domain name or IP address of flagd.
    *
@@ -33,6 +34,18 @@ export interface Config {
   socketPath?: string;
 
   /**
+   * Resolver type to use by the provider.
+   *
+   * Options include rpc & in-process.
+   *
+   * rpc - flag resolving happens remotely over gRPC
+   * in-process - flag resolving happens in-process
+   *
+   * @default 'rpc'
+   */
+  resolverType?: ResolverType;
+
+  /**
    * Cache implementation to use (or disabled).
    *
    * @default 'lru'
@@ -60,6 +73,7 @@ const DEFAULT_CONFIG: Config = {
   host: 'localhost',
   port: 8013,
   tls: false,
+  resolverType: 'rpc',
   cache: 'lru',
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
   maxEventStreamRetries: DEFAULT_MAX_EVENT_STREAM_RETRIES,
