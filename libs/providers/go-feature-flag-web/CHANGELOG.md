@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.4...go-feature-flag-web-provider-v0.1.5) (2023-11-01)
+
+
+### 🐛 Bug Fixes
+
+* GOFF Authorize connecting in a secure way to the websocket ([#625](https://github.com/open-feature/js-sdk-contrib/issues/625)) ([c77f8d8](https://github.com/open-feature/js-sdk-contrib/commit/c77f8d874ded5748ca41108903ffcad242a80e03))
+
 ## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.3...go-feature-flag-web-provider-v0.1.4) (2023-09-29)
 
 
