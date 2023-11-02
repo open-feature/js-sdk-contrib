@@ -17,7 +17,7 @@ jobs:
           fetch-depth: 0
           submodules: recursive
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -44,7 +44,7 @@ jobs:
 
       steps:
         - uses: actions/checkout@v4
-        - uses: actions/setup-node@v3
+        - uses: actions/setup-node@v4
           with:
             # we need 'fetch' for this test, which is only in 18+
             node-version: 18
