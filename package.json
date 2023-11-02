@@ -21,7 +21,7 @@
     "@protobuf-ts/runtime-rpc": "^2.9.0",
     "@swc/helpers": "0.5.3",
     "ajv": "^8.12.0",
-    "axios": "1.5.1",
+    "axios": "1.6.0",
     "configcat-js": "^8.0.0",
     "copy-anything": "^3.0.5",
     "imurmurhash": "^0.1.4",
