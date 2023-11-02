@@ -5,6 +5,17 @@ import {ClientReadableStream, credentials} from "@grpc/grpc-js";
 
 export class GrpcFetch implements DataFetch {
 
+  /**
+   *     private static final int INIT_BACK_OFF = 2 * 1000;
+   *     private static final int MAX_BACK_OFF = 120 * 1000;
+   * */
+
+
+  private readonly _initBackOffMs = 2 * 1000;
+  private readonly _maxBackOffMs = 120 * 1000;
+
+  private _backoff = this._initBackOffMs;
+
   private _syncClient: FlagSyncServiceClient;
   private _syncStream: ClientReadableStream<SyncFlagsResponse>;
 
@@ -18,27 +29,56 @@ export class GrpcFetch implements DataFetch {
   }
 
 
-  connect(dataFillCallback: (flags: string) => void, reconnectCallback: () => void, changedCallback: (flagsChanged: string[]) => void, disconnectCallback: () => void): void {
+  connect(dataFillCallback: (flags: string) => void, connectCallback: () => void, _: (flagsChanged: string[]) => void, disconnectCallback: () => void): Promise<void> {
+    return this.listen(dataFillCallback, connectCallback, disconnectCallback);
   }
 
-
   disconnect() {
+    console.log("Disconnecting gRPC sync connection")
     this._syncStream.cancel();
     this._syncClient.close();
   }
 
-  private syncHandler(dataFillCallback: (flags: string) => void) {
-    this._syncStream.on('data', (data: SyncFlagsResponse) => {
-      dataFillCallback(data.flagConfiguration)
+  private listen(dataFillCallback: (flags: string) => void, connectCallback: () => void, disconnectCallback: () => void): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this._syncStream.on('data', (data: SyncFlagsResponse) => {
+        dataFillCallback(data.flagConfiguration);
+        resolve();
+        connectCallback();
+        this._backoff = this._initBackOffMs;
+      })
+
+      this._syncStream.on('error', (err: Error) => {
+        console.error("Error from grpc sync connection, attempting to reconnect", err);
+        reject("Connection error");
+        disconnectCallback();
+        this.reconnectWithBackoff(dataFillCallback, connectCallback, disconnectCallback);
+      })
+
+      this._syncStream.on('close', () => {
+        console.warn("gRPC sync stream closed, attempting to reconnect");
+        disconnectCallback();
+        this.reconnectWithBackoff(dataFillCallback, connectCallback, disconnectCallback);
+      })
     })
 
-    this._syncStream.on('error', (err: Error) => {
-      console.error(err)
-    })
+  }
 
-    this._syncStream.on('close', () => {
-      console.log("connection closed")
-    })
+  private reconnectWithBackoff(
+    dataFillCallback: (flags: string) => void,
+    reconnectCallback: () => void,
+    disconnectCallback: () => void): void {
+
+    setTimeout(() => {
+      this._backoff = this._backoff * 2;
+      if (this._backoff > this._maxBackOffMs) {
+        this._backoff = this._maxBackOffMs;
+      }
+
+      this.listen(dataFillCallback, reconnectCallback, disconnectCallback)
+        .catch(reason => console.warn(reason))
+    }, this._backoff)
+
   }
 
 }
