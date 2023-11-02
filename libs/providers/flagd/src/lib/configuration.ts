@@ -48,7 +48,7 @@ export interface Config {
   /**
    * Selector to be used with flag sync gRPC contract.
    */
-  selector?: string
+  selector: string
 
   /**
    * Cache implementation to use (or disabled).
@@ -79,6 +79,7 @@ const DEFAULT_CONFIG: Config = {
   port: 8013,
   tls: false,
   resolverType: 'rpc',
+  selector: '',
   cache: 'lru',
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
   maxEventStreamRetries: DEFAULT_MAX_EVENT_STREAM_RETRIES,
