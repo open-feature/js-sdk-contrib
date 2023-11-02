@@ -6,6 +6,7 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
+    "@grpc/grpc-js": "^1.6.0",
     "@openfeature/server-sdk": ">=1.6.0"
   }
 }
