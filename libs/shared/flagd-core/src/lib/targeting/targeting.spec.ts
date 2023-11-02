@@ -213,33 +213,3 @@ describe("fractional operator should validate", () => {
     expect(targeting.applyTargeting("flagA", input, {targetingKey: "key"})).toBe(null)
   })
 })
-
-describe("fractional operator should validate", () => {
-  let targeting: Targeting;
-
-  beforeAll(() => {
-    targeting = new Targeting();
-  })
-
-  it("bucket sum to be 100", () => {
-    const input = {
-      fractional: [
-        ["red", 55],
-        ["blue", 55]
-      ]
-    }
-
-    expect(targeting.applyTargeting("flagA", input, {targetingKey: "key"})).toBe(null)
-  })
-
-  it("buckets properties to have variant and fraction", () => {
-    const input = {
-      fractional: [
-        ["red", 50],
-        [100, 50]
-      ]
-    }
-
-    expect(targeting.applyTargeting("flagA", input, {targetingKey: "key"})).toBe(null)
-  })
-})
