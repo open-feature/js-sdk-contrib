@@ -1,13 +1,13 @@
-import {FlagValue} from '@openfeature/server-sdk';
+import {FlagValue} from '@openfeature/core';
 
 /**
  * Flagd flag configuration structure mapping to schema definition.
  */
 export interface Flag {
-  state: string,
-  defaultVariant: string,
-  variants: {[key: string]: FlagValue},
-  targeting: string
+  state: "ENABLED" | "DISABLED";
+  defaultVariant: string;
+  variants: { [key: string]: FlagValue };
+  targeting?: string;
 }
 
 /**
@@ -17,13 +17,13 @@ export class FeatureFlag {
   private readonly _state: string;
   private readonly _defaultVariant: string;
   private readonly _variants: Map<string, FlagValue>;
-  private readonly _targetingString: string;
+  private readonly _targeting: unknown;
 
   constructor(flag: Flag) {
     this._state = flag['state'];
     this._defaultVariant = flag['defaultVariant'];
     this._variants = new Map<string, FlagValue>(Object.entries(flag['variants']));
-    this._targetingString = JSON.stringify(flag['targeting']);
+    this._targeting = flag['targeting'];
   }
 
   get state(): string {
@@ -34,11 +34,11 @@ export class FeatureFlag {
     return this._defaultVariant;
   }
 
-  get targetingString(): string {
-    return this._targetingString;
+  get targeting(): unknown {
+    return this._targeting;
   }
 
   get variants(): Map<string, FlagValue> {
-    return this._variants
+    return this._variants;
   }
 }

@@ -30,7 +30,7 @@ export function parse(flagCfg: string): Map<string, FeatureFlag> {
 function transform(flagCfg: string): string {
   const evaluators: { [key: string]: string } = JSON.parse(flagCfg)[evaluatorKey];
 
-  if (evaluators == undefined) {
+  if (!evaluators) {
     return flagCfg;
   }
 
