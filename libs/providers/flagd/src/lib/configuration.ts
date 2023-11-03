@@ -48,7 +48,7 @@ export interface Config {
   /**
    * Selector to be used with flag sync gRPC contract.
    */
-  selector: string
+  selector?: string
 
   /**
    * Cache implementation to use (or disabled).

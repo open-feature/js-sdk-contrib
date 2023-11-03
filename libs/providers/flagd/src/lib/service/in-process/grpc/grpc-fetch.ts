@@ -3,13 +3,13 @@ import {Config} from "../../../configuration";
 import {FlagSyncServiceClient, SyncFlagsRequest, SyncFlagsResponse} from "../../../../proto/ts/sync/v1/sync_service";
 import {ClientReadableStream, credentials} from "@grpc/grpc-js";
 
-export class GrpcFetch implements DataFetch {
-  private readonly _maxStartupDeadlineMs = 500;
-  private readonly _initBackOffMs = 2 * 1000;
-  private readonly _maxBackOffMs = 120 * 1000;
+export const initBackOffMs = 2 * 1000;
+const maxStartupDeadlineMs = 500;
+const maxBackOffMs = 120 * 1000;
 
+export class GrpcFetch implements DataFetch {
   private _connecting = false;
-  private _nextBackoff = this._initBackOffMs;
+  private _nextBackoff = initBackOffMs;
   private _syncClient: FlagSyncServiceClient;
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
   private readonly _request: SyncFlagsRequest;
@@ -21,7 +21,7 @@ export class GrpcFetch implements DataFetch {
       socketPath ? `unix://${socketPath}` : `${host}:${port}`,
       tls ? credentials.createSsl() : credentials.createInsecure());
 
-    this._request = {providerId: "", selector: config.selector};
+    this._request = {providerId: "", selector: config.selector ? config.selector : ''};
   }
 
   connect(dataFillCallback: (flags: string) => void, connectCallback: () => void, _: (flagsChanged: string[]) => void, disconnectCallback: () => void): Promise<void> {
@@ -48,7 +48,7 @@ export class GrpcFetch implements DataFetch {
       dataFillCallback(data.flagConfiguration);
       connectCallback();
       resolveConnect();
-      this._nextBackoff = this._initBackOffMs;
+      this._nextBackoff = initBackOffMs;
     })
 
     this._syncStream.on('error', (err: Error) => {
@@ -72,6 +72,7 @@ export class GrpcFetch implements DataFetch {
     disconnectCallback: () => void): void {
 
     // avoid reattempts if already connecting
+    // see - https://github.com/grpc/grpc-node/issues/2377
     if (this._connecting) {
       return;
     }
@@ -79,14 +80,14 @@ export class GrpcFetch implements DataFetch {
     console.debug(`Attempting to reconnection after ${this._nextBackoff}ms`);
     this._connecting = true;
 
-    if (this._nextBackoff > this._maxStartupDeadlineMs) {
+    if (this._nextBackoff > maxStartupDeadlineMs) {
       resolver();
     }
 
     setTimeout(() => {
       this._nextBackoff = this._nextBackoff * 2;
-      if (this._nextBackoff > this._maxBackOffMs) {
-        this._nextBackoff = this._maxBackOffMs;
+      if (this._nextBackoff > maxBackOffMs) {
+        this._nextBackoff = maxBackOffMs;
       }
 
       this.listen(resolver, dataFillCallback, reconnectCallback, disconnectCallback);
