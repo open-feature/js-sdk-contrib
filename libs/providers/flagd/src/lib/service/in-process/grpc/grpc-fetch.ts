@@ -7,6 +7,9 @@ export const initBackOffMs = 2 * 1000;
 const maxStartupDeadlineMs = 500;
 const maxBackOffMs = 120 * 1000;
 
+/**
+ * Implements the gRPC sync contract to fetch flag data.
+ */
 export class GrpcFetch implements DataFetch {
   private _connecting = false;
   private _nextBackoff = initBackOffMs;

@@ -1,12 +1,12 @@
-import { FlagdProviderOptions, getConfig } from './configuration';
-import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from './constants';
+import {FlagdProviderOptions, getConfig} from './configuration';
+import {DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES} from './constants';
 
 describe('Configuration', () => {
   const OLD_ENV = process.env;
 
   beforeEach(() => {
     jest.resetModules(); // Most important - it clears the cache
-    process.env = { ...OLD_ENV }; // Make a copy
+    process.env = {...OLD_ENV}; // Make a copy
   });
 
   it('should return the default values', () => {
@@ -17,6 +17,8 @@ describe('Configuration', () => {
       maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
       maxEventStreamRetries: DEFAULT_MAX_EVENT_STREAM_RETRIES,
       cache: 'lru',
+      resolverType: 'rpc',
+      selector: ''
     });
   });
 
@@ -28,6 +30,8 @@ describe('Configuration', () => {
     const maxCacheSize = 333;
     const maxEventStreamRetries = 10;
     const cache = 'disabled';
+    const resolverType = 'in-process';
+    const selector = 'app=weather';
 
     process.env['FLAGD_HOST'] = host;
     process.env['FLAGD_PORT'] = `${port}`;
@@ -36,6 +40,8 @@ describe('Configuration', () => {
     process.env['FLAGD_CACHE'] = cache;
     process.env['FLAGD_MAX_CACHE_SIZE'] = `${maxCacheSize}`;
     process.env['FLAGD_MAX_EVENT_STREAM_RETRIES'] = `${maxEventStreamRetries}`;
+    process.env['FLAGD_SOURCE_SELECTOR'] = `${selector}`;
+    process.env['FLAGD_RESOLVER'] = `${resolverType}`;
 
     expect(getConfig()).toStrictEqual({
       host,
@@ -45,6 +51,8 @@ describe('Configuration', () => {
       maxCacheSize,
       maxEventStreamRetries,
       cache,
+      resolverType,
+      selector
     });
   });
 
@@ -56,6 +64,8 @@ describe('Configuration', () => {
       maxCacheSize: 1000,
       maxEventStreamRetries: 5,
       cache: 'lru',
+      resolverType: 'rpc',
+      selector: ''
     };
 
     process.env['FLAGD_HOST'] = 'override';
@@ -67,6 +77,6 @@ describe('Configuration', () => {
 
   it('should ignore an valid port set as an environment variable', () => {
     process.env['FLAGD_PORT'] = 'invalid number';
-    expect(getConfig()).toStrictEqual(expect.objectContaining({ port: 8013 }));
+    expect(getConfig()).toStrictEqual(expect.objectContaining({port: 8013}));
   });
 });

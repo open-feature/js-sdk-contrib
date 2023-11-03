@@ -13,27 +13,29 @@ $ npm install @openfeature/flagd-provider
 Required peer dependencies
 
 ```
-$ npm install @openfeature/server-sdk
+$ npm install @openfeature/server-sdk @grpc/grpc-js @openfeature/flagd-core
 ```
 
 ## Usage
 
-The `FlagdProvider` supports multiple configuration options that determine now the SDK communicates with flagd.
+The `FlagdProvider` supports multiple configuration options and has the ability to resolve flags remotely or in-process.
 Options can be defined in the constructor or as environment variables, with constructor options having the highest precedence.
 
 ### Available Options
 
-| Option name           | Environment variable name      | Type    | Default   | Values       |
-| --------------------- | ------------------------------ | ------- | --------- | ------------ |
-| host                  | FLAGD_HOST                     | string  | localhost |              |
-| port                  | FLAGD_PORT                     | number  | 8013      |              |
-| tls                   | FLAGD_TLS                      | boolean | false     |              |
-| socketPath            | FLAGD_SOCKET_PATH              | string  | -         |              |
-| cache                 | FLAGD_CACHE                    | string  | lru       | lru,disabled |
-| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | int     | 1000      |              |
-| maxEventStreamRetries | FLAGD_MAX_EVENT_STREAM_RETRIES | int     | 5         |              |
+| Option name           | Environment variable name      | Type    | Default   | Values          |
+|-----------------------|--------------------------------|---------|-----------|-----------------|
+| host                  | FLAGD_HOST                     | string  | localhost |                 |
+| port                  | FLAGD_PORT                     | number  | 8013      |                 |
+| tls                   | FLAGD_TLS                      | boolean | false     |                 |
+| socketPath            | FLAGD_SOCKET_PATH              | string  | -         |                 |
+| resolverType          | FLAGD_SOURCE_RESOLVER          | string  | rpc       | rpc, in-process |
+| selector              | FLAGD_SOURCE_SELECTOR          | string  | -         |                 |
+| cache                 | FLAGD_CACHE                    | string  | lru       | lru,disabled    |
+| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | int     | 1000      |                 |
+| maxEventStreamRetries | FLAGD_MAX_EVENT_STREAM_RETRIES | int     | 5         |                 |
 
-### Example Using TCP
+### Remote flag resolving using TCP
 
 ```
   OpenFeature.setProvider(new FlagdProvider({
@@ -42,11 +44,21 @@ Options can be defined in the constructor or as environment variables, with cons
   }))
 ```
 
-### Example Using a Unix Socket
+### Remote flag resolving using Unix Socket
 
 ```
   OpenFeature.setProvider(new FlagdProvider({
       socketPath: "/tmp/flagd.socks",
+  }))
+```
+
+### In-process resolver with gRPC sync connectivity
+
+```
+  OpenFeature.setProvider(new FlagdProvider({
+      host: 'localhost',
+      port: 8013,
+      resolverType: 'in-process',
   }))
 ```
 
@@ -55,7 +67,7 @@ Options can be defined in the constructor or as environment variables, with cons
 The flagd provider emits `PROVIDER_READY`, `PROVIDER_ERROR` and `PROVIDER_CONFIGURATION_CHANGED` events.
 
 | SDK event                        | Originating action in flagd                                                     |
-| -------------------------------- | ------------------------------------------------------------------------------- |
+|----------------------------------|---------------------------------------------------------------------------------|
 | `PROVIDER_READY`                 | The streaming connection with flagd has been established.                       |
 | `PROVIDER_ERROR`                 | The streaming connection with flagd has been broken.                            |
 | `PROVIDER_CONFIGURATION_CHANGED` | A flag configuration (default value, targeting rule, etc) in flagd has changed. |
@@ -65,7 +77,7 @@ For general information on events, see the [official documentation](https://open
 ### Flag Metadata
 
 | Field   | Type   | Value                                             |
-| ------- | ------ | ------------------------------------------------- |
+|---------|--------|---------------------------------------------------|
 | `scope` | string | "selector" set for the associated source in flagd |
 
 ## Building

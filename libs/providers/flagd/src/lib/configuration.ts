@@ -1,7 +1,7 @@
 import {DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES} from "./constants";
 
 export type CacheOption = 'lru' | 'disabled';
-export type ResolverType = 'rpc' | 'in-process'
+export type ResolverType = 'rpc' | 'in-process';
 
 export interface Config {
 
@@ -93,7 +93,8 @@ enum ENV_VAR {
   FLAGD_CACHE = 'FLAGD_CACHE',
   FLAGD_MAX_CACHE_SIZE = 'FLAGD_MAX_CACHE_SIZE',
   FLAGD_MAX_EVENT_STREAM_RETRIES = 'FLAGD_MAX_EVENT_STREAM_RETRIES',
-  FLAGD_SOURCE_SELECTOR = "FLAGD_SOURCE_SELECTOR"
+  FLAGD_SOURCE_SELECTOR = "FLAGD_SOURCE_SELECTOR",
+  FLAGD_RESOLVER = "FLAGD_RESOLVER"
 }
 
 const getEnvVarConfig = (): Partial<Config> => ({
@@ -113,13 +114,16 @@ const getEnvVarConfig = (): Partial<Config> => ({
     cache: process.env[ENV_VAR.FLAGD_CACHE],
   }),
   ...(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE] && {
-    maxCacheSize:  Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
+    maxCacheSize: Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
   }),
   ...(process.env[ENV_VAR.FLAGD_MAX_EVENT_STREAM_RETRIES] && {
     maxEventStreamRetries: Number(process.env[ENV_VAR.FLAGD_MAX_EVENT_STREAM_RETRIES]),
   }),
   ...(process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR] && {
     selector: process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR],
+  }),
+  ...((process.env[ENV_VAR.FLAGD_RESOLVER] === 'rpc' || process.env[ENV_VAR.FLAGD_RESOLVER] === 'in-process') && {
+    resolverType: process.env[ENV_VAR.FLAGD_RESOLVER],
   }),
 });
 
