@@ -14,8 +14,8 @@ export class InProcessService implements Service {
     this._dataFetcher = new GrpcFetch(config);
   }
 
-  async connect(reconnectCallback: () => void, changedCallback: (flagsChanged: string[]) => void, disconnectCallback: () => void): Promise<void> {
-    this._dataFetcher.connect(this.fill, reconnectCallback, changedCallback, disconnectCallback);
+  connect(reconnectCallback: () => void, changedCallback: (flagsChanged: string[]) => void, disconnectCallback: () => void): Promise<void> {
+    return this._dataFetcher.connect(this.fill.bind(this), reconnectCallback, changedCallback, disconnectCallback);
   }
 
   async disconnect(): Promise<void> {
