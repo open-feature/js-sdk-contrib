@@ -10,10 +10,10 @@ describe("In-process-service", () => {
   it('should work', async () => {
 
     const provider = new FlagdProvider({resolverType: 'in-process', port: 9090});
-    OpenFeature.setProvider(provider);
+    await OpenFeature.setProviderAndWait(provider);
 
     console.log("provider wait completed")
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 40000));
 
     await OpenFeature.close()
   });
