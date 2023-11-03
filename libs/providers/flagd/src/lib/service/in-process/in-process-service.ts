@@ -9,9 +9,9 @@ export class InProcessService implements Service {
   private _flagdCore: FlagdCore;
   private _dataFetcher: DataFetch
 
-  constructor(config: Config) {
+  constructor(config: Config, dataFetcher?: DataFetch) {
     this._flagdCore = new FlagdCore();
-    this._dataFetcher = new GrpcFetch(config);
+    this._dataFetcher = dataFetcher ? dataFetcher : new GrpcFetch(config);
   }
 
   connect(reconnectCallback: () => void, changedCallback: (flagsChanged: string[]) => void, disconnectCallback: () => void): Promise<void> {

@@ -1,21 +1,27 @@
-import {OpenFeature} from "@openfeature/server-sdk";
-import {FlagdProvider} from "@openfeature/flagd-provider";
-
-// todo fix this
-global.setImmediate = jest.useRealTimers as unknown as typeof setImmediate;
-jest.setTimeout(120 * 1000)
+import {DataFetch} from "./data-fetch";
+import {InProcessService} from "./in-process-service";
 
 describe("In-process-service", () => {
 
+  const dataFetcher: DataFetch = {
+    connect: jest.fn((dataFillCallback: (flags: string) => void) => {
+      dataFillCallback("{\"flags\":{\"booleanFlag\":{\"state\":\"ENABLED\",\"variants\":{\"on\":true,\"off\":false},\"defaultVariant\":\"on\"},\"intFlag\":{\"state\":\"ENABLED\",\"variants\":{\"first\":1,\"second\":2},\"defaultVariant\":\"first\"}}}")
+    }),
+    disconnect: jest.fn()
+  } as unknown as DataFetch;
 
-  it('should work', async () => {
+  it('should sync and allow to resolve flags', async () => {
+    // given
+    const service = new InProcessService({host: "", port: 0, tls: false}, dataFetcher);
 
-    const provider = new FlagdProvider({resolverType: 'in-process', port: 9090});
-    OpenFeature.setProvider(provider);
+    // when
+    await service.connect(jest.fn, jest.fn, jest.fn);
 
-    console.log("provider wait completed")
-    await new Promise((r) => setTimeout(r, 40000));
+    // then
+    const resolveBoolean = await service.resolveBoolean('booleanFlag', false, {}, console);
 
-    await OpenFeature.close()
+    expect(resolveBoolean.value).toBeTruthy();
+    expect(resolveBoolean.variant).toBe('on');
+    expect(resolveBoolean.reason).toBe('STATIC');
   });
 })
