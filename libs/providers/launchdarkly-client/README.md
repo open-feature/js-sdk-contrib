@@ -21,7 +21,7 @@ const clientEnvKey = 'LDEnvironmentID';
  * @see https://launchdarkly.github.io/js-client-sdk/interfaces/LDOptions.html
  */
 const ldOptions = {
-  straming: true,
+  streaming: true,
 };
 
 /*
