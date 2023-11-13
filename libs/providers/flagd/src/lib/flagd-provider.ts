@@ -47,7 +47,7 @@ export class FlagdProvider implements Provider {
     const config = getConfig(options);
 
     this._service = service ? service
-      : (config.resolverType !== 'in-process' ? new InProcessService(config, undefined, logger)
+      : (config.resolverType === 'in-process' ? new InProcessService(config, undefined, logger)
         : new GRPCService(config, undefined, logger));
   }
 
