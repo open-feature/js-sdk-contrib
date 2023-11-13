@@ -16,7 +16,7 @@ $ npm install @openfeature/flagd-provider
 
 ```
 # yarn requires manual installation of peer dependencies
-$ yarn install @openfeature/server-sdk @grpc/grpc-js @openfeature/flagd-core
+$ yarn add @openfeature/server-sdk @grpc/grpc-js @openfeature/flagd-core
 ```
 
 ## Configurations and Usage
