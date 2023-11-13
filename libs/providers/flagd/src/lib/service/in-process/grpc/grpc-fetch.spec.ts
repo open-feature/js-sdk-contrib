@@ -1,18 +1,18 @@
-import {GrpcFetch, initBackOffMs} from "./grpc-fetch";
-import {Config} from "../../../configuration";
+import { GrpcFetch, initBackOffMs } from './grpc-fetch';
+import { Config } from '../../../configuration';
 import {
   FlagSyncServiceClient,
   SyncFlagsRequest,
   SyncFlagsResponse,
   SyncState
-} from "../../../../proto/ts/sync/v1/sync_service";
+} from '../../../../proto/ts/sync/v1/sync_service';
 
 describe('grpc fetch', () => {
-  const cfg: Config = {host: 'localhost', port: 8000, tls: false, socketPath: '',}
+  const cfg: Config = { host: 'localhost', port: 8000, tls: false, socketPath: '' };
 
   it('should handle data sync and emit callbacks', () => {
     // given
-    const flagResponse = '{"flags":{}}'
+    const flagResponse = '{"flags":{}}';
 
     const serviceMock: FlagSyncServiceClient = {
       syncFlags: jest.fn((_: SyncFlagsRequest) => {
@@ -22,17 +22,17 @@ describe('grpc fetch', () => {
             if (event === 'data') {
               callback({
                 flagConfiguration: flagResponse,
-                state: SyncState.SYNC_STATE_ALL,
-              })
+                state: SyncState.SYNC_STATE_ALL
+              });
             }
-            return {}
+            return {};
           })
-        }
-      }),
+        };
+      })
 
-    } as unknown as FlagSyncServiceClient
+    } as unknown as FlagSyncServiceClient;
 
-    let callBackResponse = "";
+    let callBackResponse = '';
 
     const dataFillCallback = jest.fn((flags: string) => {
       callBackResponse = flags;
@@ -41,14 +41,14 @@ describe('grpc fetch', () => {
     const disconnectCallback = jest.fn();
 
     // when
-    const fetch = new GrpcFetch(cfg, serviceMock)
+    const fetch = new GrpcFetch(cfg, serviceMock);
     fetch.connect(dataFillCallback, connectCallback, jest.fn(), disconnectCallback);
 
     // then
-    expect(dataFillCallback).toBeCalledTimes(1)
-    expect(connectCallback).toBeCalledTimes(1)
+    expect(dataFillCallback).toBeCalledTimes(1);
+    expect(connectCallback).toBeCalledTimes(1);
     expect(disconnectCallback).toBeCalledTimes(0);
-    expect(callBackResponse).toBe(flagResponse)
+    expect(callBackResponse).toBe(flagResponse);
   });
 
   it('should handle error and attempt to reconnect', (done) => {
@@ -58,19 +58,19 @@ describe('grpc fetch', () => {
         return {
           on: jest.fn((event: string, callback: (err: Error) => void) => {
             if (event === 'error') {
-              callback(new Error("Some connection error"))
+              callback(new Error('Some connection error'));
             }
-            return {}
+            return {};
           })
-        }
-      }),
+        };
+      })
 
-    } as unknown as FlagSyncServiceClient
+    } as unknown as FlagSyncServiceClient;
 
     const disconnectCallback = jest.fn();
 
     // when
-    const fetch = new GrpcFetch(cfg, serviceMock)
+    const fetch = new GrpcFetch(cfg, serviceMock);
     fetch.connect(jest.fn(), jest.fn(), jest.fn(), disconnectCallback);
 
     // then
@@ -79,7 +79,7 @@ describe('grpc fetch', () => {
     // wait for initial backoff
     setTimeout(() => {
       expect(disconnectCallback).toBeCalledTimes(2);
-      done()
+      done();
     }, initBackOffMs);
   });
 

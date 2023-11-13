@@ -39,7 +39,7 @@ export interface Config {
    * Options include rpc & in-process.
    *
    * rpc - flag resolving happens remotely over gRPC
-   * in-process - flag resolving happens in-process
+   * in-process - flag resolving happens in-process, fetching flag definitions using the {@link https://github.com/open-feature/flagd-schemas/blob/main/protobuf/sync/v1/sync_service.proto|sync.proto}
    *
    * @default 'rpc'
    */
@@ -48,7 +48,7 @@ export interface Config {
   /**
    * Selector to be used with flag sync gRPC contract.
    */
-  selector?: string
+  selector?: string;
 
   /**
    * Cache implementation to use (or disabled).

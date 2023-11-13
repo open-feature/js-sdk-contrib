@@ -1,7 +1,8 @@
-import {DataFetch} from "../data-fetch";
-import {Config} from "../../../configuration";
-import {FlagSyncServiceClient, SyncFlagsRequest, SyncFlagsResponse} from "../../../../proto/ts/sync/v1/sync_service";
-import {ClientReadableStream, credentials} from "@grpc/grpc-js";
+import { DataFetch } from '../data-fetch';
+import { Config } from '../../../configuration';
+import { FlagSyncServiceClient, SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/sync/v1/sync_service';
+import { ClientReadableStream, credentials } from '@grpc/grpc-js';
+import { Logger } from '@openfeature/core';
 
 export const initBackOffMs = 2 * 1000;
 const maxStartupDeadlineMs = 500;
@@ -16,24 +17,28 @@ export class GrpcFetch implements DataFetch {
   private _syncClient: FlagSyncServiceClient;
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
   private readonly _request: SyncFlagsRequest;
+  private _logger: Logger | undefined;
 
-  constructor(config: Config, syncServiceClient ?: FlagSyncServiceClient) {
-    const {host, port, tls, socketPath} = config;
+  constructor(config: Config, syncServiceClient ?: FlagSyncServiceClient, logger?: Logger) {
+    const { host, port, tls, socketPath, selector } = config;
 
     this._syncClient = syncServiceClient ? syncServiceClient : new FlagSyncServiceClient(
       socketPath ? `unix://${socketPath}` : `${host}:${port}`,
       tls ? credentials.createSsl() : credentials.createInsecure());
 
-    this._request = {providerId: "", selector: config.selector ? config.selector : ''};
+    this._logger = logger;
+    this._request = { providerId: '', selector: selector ? selector : '' };
   }
 
-  connect(dataFillCallback: (flags: string) => void, connectCallback: () => void, _: (flagsChanged: string[]) => void, disconnectCallback: () => void): Promise<void> {
+  connect(dataFillCallback: (flags: string) => void,
+          connectCallback: () => void, _: (flagsChanged: string[]) => void,
+          disconnectCallback: () => void): Promise<void> {
     // note that we never reject the promise as sync is a long-running operation
     return new Promise((resolve) => this.listen(resolve, dataFillCallback, connectCallback, disconnectCallback));
   }
 
   disconnect() {
-    console.log("Disconnecting gRPC sync connection")
+    this._logger?.debug('Disconnecting gRPC sync connection');
     this._syncStream?.cancel();
     this._syncClient.close();
   }
@@ -47,24 +52,24 @@ export class GrpcFetch implements DataFetch {
     this._connecting = false;
 
     this._syncStream.on('data', (data: SyncFlagsResponse) => {
-      console.debug("Received sync payload")
+      this._logger?.debug('Received sync payload');
       dataFillCallback(data.flagConfiguration);
       connectCallback();
       resolveConnect();
       this._nextBackoff = initBackOffMs;
-    })
+    });
 
     this._syncStream.on('error', (err: Error) => {
-      console.error("Connection error, attempting to reconnect", err);
+      this._logger?.error('Connection error, attempting to reconnect', err);
       disconnectCallback();
       this.reconnectWithBackoff(resolveConnect, dataFillCallback, connectCallback, disconnectCallback);
-    })
+    });
 
     this._syncStream.on('end', () => {
-      console.error("Stream ended, attempting to reconnect");
+      this._logger?.error('Stream ended, attempting to reconnect');
       disconnectCallback();
       this.reconnectWithBackoff(resolveConnect, dataFillCallback, connectCallback, disconnectCallback);
-    })
+    });
 
   }
 
@@ -80,7 +85,7 @@ export class GrpcFetch implements DataFetch {
       return;
     }
 
-    console.debug(`Attempting to reconnection after ${this._nextBackoff}ms`);
+    this._logger?.debug(`Attempting to reconnection after ${this._nextBackoff}ms`);
     this._connecting = true;
 
     if (this._nextBackoff > maxStartupDeadlineMs) {
@@ -94,6 +99,6 @@ export class GrpcFetch implements DataFetch {
       }
 
       this.listen(resolver, dataFillCallback, reconnectCallback, disconnectCallback);
-    }, this._nextBackoff)
+    }, this._nextBackoff);
   }
 }

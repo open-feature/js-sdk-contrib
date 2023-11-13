@@ -6,45 +6,53 @@ This repository and package provides the client code for interacting with it via
 
 ## Installation
 
+### npm
+
 ```
 $ npm install @openfeature/flagd-provider
 ```
 
-Required peer dependencies
+### yarn
 
 ```
+# yarn require manual installation of peer dependencies
 $ npm install @openfeature/server-sdk @grpc/grpc-js @openfeature/flagd-core
 ```
 
-## Usage
+## Configurations and Usage
 
-The `FlagdProvider` supports multiple configuration options and has the ability to resolve flags remotely or in-process.
-Options can be defined in the constructor or as environment variables, with constructor options having the highest precedence.
+The `FlagdProvider` supports multiple configuration options and has the ability to resolve flags remotely over RPC or in-process.
+Options can be defined in the constructor or as environment variables. Constructor options having the highest precedence.
 
-### Available Options
+### Available Configuration Options
 
-| Option name           | Environment variable name      | Type    | Default   | Values          |
-|-----------------------|--------------------------------|---------|-----------|-----------------|
-| host                  | FLAGD_HOST                     | string  | localhost |                 |
-| port                  | FLAGD_PORT                     | number  | 8013      |                 |
-| tls                   | FLAGD_TLS                      | boolean | false     |                 |
-| socketPath            | FLAGD_SOCKET_PATH              | string  | -         |                 |
-| resolverType          | FLAGD_SOURCE_RESOLVER          | string  | rpc       | rpc, in-process |
-| selector              | FLAGD_SOURCE_SELECTOR          | string  | -         |                 |
-| cache                 | FLAGD_CACHE                    | string  | lru       | lru,disabled    |
-| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | int     | 1000      |                 |
-| maxEventStreamRetries | FLAGD_MAX_EVENT_STREAM_RETRIES | int     | 5         |                 |
+| Option name           | Environment variable name      | Type    | Default   | Supported values |
+|-----------------------|--------------------------------|---------|-----------|------------------|
+| host                  | FLAGD_HOST                     | string  | localhost |                  |
+| port                  | FLAGD_PORT                     | number  | 8013      |                  |
+| tls                   | FLAGD_TLS                      | boolean | false     |                  |
+| socketPath            | FLAGD_SOCKET_PATH              | string  | -         |                  |
+| resolverType          | FLAGD_SOURCE_RESOLVER          | string  | rpc       | rpc, in-process  |
+| selector              | FLAGD_SOURCE_SELECTOR          | string  | -         |                  |
+| cache                 | FLAGD_CACHE                    | string  | lru       | lru,disabled     |
+| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | int     | 1000      |                  |
+| maxEventStreamRetries | FLAGD_MAX_EVENT_STREAM_RETRIES | int     | 5         |                  |
 
-### Remote flag resolving using TCP
+Given below are examples on usage patterns.
+
+### Remote flag resolving over RPC
+
+This is the default mode of operation of the provider.
+In this mode, FlagdProvider communicates with flagd via the gRPC protocol.
+Flag evaluations take place remotely at the connected [flagd](https://flagd.dev/) instance.
 
 ```
-  OpenFeature.setProvider(new FlagdProvider({
-      host: 'localhost',
-      port: 8013,
-  }))
+  OpenFeature.setProvider(new FlagdProvider())
 ```
 
-### Remote flag resolving using Unix Socket
+In the above example, provider expect flagd to be available at `localhost:8013` (default host and port).
+
+Alternatively, you can use socket paths to connect to flagd as given below,
 
 ```
   OpenFeature.setProvider(new FlagdProvider({
@@ -52,15 +60,18 @@ Options can be defined in the constructor or as environment variables, with cons
   }))
 ```
 
-### In-process resolver with gRPC sync connectivity
+### In-process resolver
+
+This mode performs flag evaluations locally (in-process).
+Flag configurations for evaluation are obtained via gRPC protocol using [sync protobuf schema](https://buf.build/open-feature/flagd/file/main:sync/v1/sync_service.proto) service definition.
 
 ```
   OpenFeature.setProvider(new FlagdProvider({
-      host: 'localhost',
-      port: 8013,
       resolverType: 'in-process',
   }))
 ```
+
+In the above example, provider expect flag sync service implementation to be available at `localhost:8013` (default host and port).
 
 ### Supported Events
 
