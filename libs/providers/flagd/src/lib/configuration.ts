@@ -1,9 +1,9 @@
-import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from "./constants";
+import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from './constants';
 
 export type CacheOption = 'lru' | 'disabled';
+export type ResolverType = 'rpc' | 'in-process';
 
 export interface Config {
-  
   /**
    * The domain name or IP address of flagd.
    *
@@ -33,6 +33,23 @@ export interface Config {
   socketPath?: string;
 
   /**
+   * Resolver type to use by the provider.
+   *
+   * Options include rpc & in-process.
+   *
+   * rpc - flag resolving happens remotely over gRPC
+   * in-process - flag resolving happens in-process, fetching flag definitions using the {@link https://github.com/open-feature/flagd-schemas/blob/main/protobuf/sync/v1/sync_service.proto|sync.proto}
+   *
+   * @default 'rpc'
+   */
+  resolverType?: ResolverType;
+
+  /**
+   * Selector to be used with flag sync gRPC contract.
+   */
+  selector?: string;
+
+  /**
    * Cache implementation to use (or disabled).
    *
    * @default 'lru'
@@ -60,6 +77,8 @@ const DEFAULT_CONFIG: Config = {
   host: 'localhost',
   port: 8013,
   tls: false,
+  resolverType: 'rpc',
+  selector: '',
   cache: 'lru',
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
   maxEventStreamRetries: DEFAULT_MAX_EVENT_STREAM_RETRIES,
@@ -73,6 +92,8 @@ enum ENV_VAR {
   FLAGD_CACHE = 'FLAGD_CACHE',
   FLAGD_MAX_CACHE_SIZE = 'FLAGD_MAX_CACHE_SIZE',
   FLAGD_MAX_EVENT_STREAM_RETRIES = 'FLAGD_MAX_EVENT_STREAM_RETRIES',
+  FLAGD_SOURCE_SELECTOR = 'FLAGD_SOURCE_SELECTOR',
+  FLAGD_RESOLVER = 'FLAGD_RESOLVER',
 }
 
 const getEnvVarConfig = (): Partial<Config> => ({
@@ -92,10 +113,16 @@ const getEnvVarConfig = (): Partial<Config> => ({
     cache: process.env[ENV_VAR.FLAGD_CACHE],
   }),
   ...(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE] && {
-    maxCacheSize:  Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
+    maxCacheSize: Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
   }),
   ...(process.env[ENV_VAR.FLAGD_MAX_EVENT_STREAM_RETRIES] && {
     maxEventStreamRetries: Number(process.env[ENV_VAR.FLAGD_MAX_EVENT_STREAM_RETRIES]),
+  }),
+  ...(process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR] && {
+    selector: process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR],
+  }),
+  ...((process.env[ENV_VAR.FLAGD_RESOLVER] === 'rpc' || process.env[ENV_VAR.FLAGD_RESOLVER] === 'in-process') && {
+    resolverType: process.env[ENV_VAR.FLAGD_RESOLVER],
   }),
 });
 

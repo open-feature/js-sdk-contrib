@@ -11,6 +11,7 @@ import {
 import { FlagdProviderOptions, getConfig } from './configuration';
 import { GRPCService } from './service/grpc/grpc-service';
 import { Service } from './service/service';
+import { InProcessService } from './service/in-process/in-process-service';
 
 export class FlagdProvider implements Provider {
   metadata = {
@@ -43,7 +44,13 @@ export class FlagdProvider implements Provider {
     private readonly logger?: Logger,
     service?: Service,
   ) {
-    this._service = service ? service : new GRPCService(getConfig(options), undefined, logger);
+    const config = getConfig(options);
+
+    this._service = service
+      ? service
+      : config.resolverType === 'in-process'
+      ? new InProcessService(config, undefined, logger)
+      : new GRPCService(config, undefined, logger);
   }
 
   initialize(): Promise<void> {
@@ -67,45 +74,45 @@ export class FlagdProvider implements Provider {
 
   resolveBooleanEvaluation(
     flagKey: string,
-    _: boolean,
+    defaultValue: boolean,
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
     return this._service
-      .resolveBoolean(flagKey, transformedContext, logger)
+      .resolveBoolean(flagKey, defaultValue, transformedContext, logger)
       .catch((err) => this.logRejected(err, flagKey, logger));
   }
 
   resolveStringEvaluation(
     flagKey: string,
-    _: string,
+    defaultValue: string,
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<string>> {
     return this._service
-      .resolveString(flagKey, transformedContext, logger)
+      .resolveString(flagKey, defaultValue, transformedContext, logger)
       .catch((err) => this.logRejected(err, flagKey, logger));
   }
 
   resolveNumberEvaluation(
     flagKey: string,
-    _: number,
+    defaultValue: number,
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<number>> {
     return this._service
-      .resolveNumber(flagKey, transformedContext, logger)
+      .resolveNumber(flagKey, defaultValue, transformedContext, logger)
       .catch((err) => this.logRejected(err, flagKey, logger));
   }
 
   resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
-    _: T,
+    defaultValue: T,
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
     return this._service
-      .resolveObject<T>(flagKey, transformedContext, logger)
+      .resolveObject<T>(flagKey, defaultValue, transformedContext, logger)
       .catch((err) => this.logRejected(err, flagKey, logger));
   }
 

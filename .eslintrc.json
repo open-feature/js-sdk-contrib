@@ -2,6 +2,10 @@
   "root": true,
   "ignorePatterns": ["**/*"],
   "plugins": ["@nx"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:prettier/recommended"
+  ],
   "overrides": [
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],

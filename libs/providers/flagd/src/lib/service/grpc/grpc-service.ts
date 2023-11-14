@@ -119,22 +119,34 @@ export class GRPCService implements Service {
 
   async resolveBoolean(
     flagKey: string,
+    _: boolean,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
     return this.resolve(this._client.resolveBoolean, flagKey, context, logger);
   }
 
-  async resolveString(flagKey: string, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<string>> {
+  async resolveString(
+    flagKey: string,
+    _: string,
+    context: EvaluationContext,
+    logger: Logger,
+  ): Promise<ResolutionDetails<string>> {
     return this.resolve(this._client.resolveString, flagKey, context, logger);
   }
 
-  async resolveNumber(flagKey: string, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<number>> {
+  async resolveNumber(
+    flagKey: string,
+    _: number,
+    context: EvaluationContext,
+    logger: Logger,
+  ): Promise<ResolutionDetails<number>> {
     return this.resolve(this._client.resolveFloat, flagKey, context, logger);
   }
 
   async resolveObject<T extends JsonValue>(
     flagKey: string,
+    _: T,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
@@ -253,7 +265,7 @@ export class GRPCService implements Service {
       .call(this._client, { flagKey, context })
       .then((resolved) => resolved, this.onRejected);
 
-    const resolved: ResolutionDetails<T>  = {
+    const resolved: ResolutionDetails<T> = {
       value: response.value as T,
       reason: response.reason,
       variant: response.variant,
