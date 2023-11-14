@@ -120,7 +120,7 @@ export class FlagdCore {
     }
 
     const resolvedVariant = flag.variants.get(variant);
-    if (!resolvedVariant) {
+    if (resolvedVariant === undefined) {
       throw new GeneralError(`Variant ${variant} not found in flag with key ${flagKey}`);
     }
 
