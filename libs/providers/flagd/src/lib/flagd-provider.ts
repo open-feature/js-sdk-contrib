@@ -6,7 +6,7 @@ import {
   Provider,
   ProviderEvents,
   ProviderStatus,
-  ResolutionDetails
+  ResolutionDetails,
 } from '@openfeature/server-sdk';
 import { FlagdProviderOptions, getConfig } from './configuration';
 import { GRPCService } from './service/grpc/grpc-service';
@@ -15,7 +15,7 @@ import { InProcessService } from './service/in-process/in-process-service';
 
 export class FlagdProvider implements Provider {
   metadata = {
-    name: 'flagd Provider'
+    name: 'flagd Provider',
   };
 
   readonly runsOn = 'server';
@@ -42,13 +42,15 @@ export class FlagdProvider implements Provider {
   constructor(
     options?: FlagdProviderOptions,
     private readonly logger?: Logger,
-    service?: Service
+    service?: Service,
   ) {
     const config = getConfig(options);
 
-    this._service = service ? service
-      : (config.resolverType === 'in-process' ? new InProcessService(config, undefined, logger)
-        : new GRPCService(config, undefined, logger));
+    this._service = service
+      ? service
+      : config.resolverType === 'in-process'
+      ? new InProcessService(config, undefined, logger)
+      : new GRPCService(config, undefined, logger);
   }
 
   initialize(): Promise<void> {
@@ -74,7 +76,7 @@ export class FlagdProvider implements Provider {
     flagKey: string,
     defaultValue: boolean,
     transformedContext: EvaluationContext,
-    logger: Logger
+    logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
     return this._service
       .resolveBoolean(flagKey, defaultValue, transformedContext, logger)
@@ -85,7 +87,7 @@ export class FlagdProvider implements Provider {
     flagKey: string,
     defaultValue: string,
     transformedContext: EvaluationContext,
-    logger: Logger
+    logger: Logger,
   ): Promise<ResolutionDetails<string>> {
     return this._service
       .resolveString(flagKey, defaultValue, transformedContext, logger)
@@ -96,7 +98,7 @@ export class FlagdProvider implements Provider {
     flagKey: string,
     defaultValue: number,
     transformedContext: EvaluationContext,
-    logger: Logger
+    logger: Logger,
   ): Promise<ResolutionDetails<number>> {
     return this._service
       .resolveNumber(flagKey, defaultValue, transformedContext, logger)
@@ -107,7 +109,7 @@ export class FlagdProvider implements Provider {
     flagKey: string,
     defaultValue: T,
     transformedContext: EvaluationContext,
-    logger: Logger
+    logger: Logger,
   ): Promise<ResolutionDetails<T>> {
     return this._service
       .resolveObject<T>(flagKey, defaultValue, transformedContext, logger)

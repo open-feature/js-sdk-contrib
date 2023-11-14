@@ -19,20 +19,26 @@ export class GrpcFetch implements DataFetch {
   private readonly _request: SyncFlagsRequest;
   private _logger: Logger | undefined;
 
-  constructor(config: Config, syncServiceClient ?: FlagSyncServiceClient, logger?: Logger) {
+  constructor(config: Config, syncServiceClient?: FlagSyncServiceClient, logger?: Logger) {
     const { host, port, tls, socketPath, selector } = config;
 
-    this._syncClient = syncServiceClient ? syncServiceClient : new FlagSyncServiceClient(
-      socketPath ? `unix://${socketPath}` : `${host}:${port}`,
-      tls ? credentials.createSsl() : credentials.createInsecure());
+    this._syncClient = syncServiceClient
+      ? syncServiceClient
+      : new FlagSyncServiceClient(
+          socketPath ? `unix://${socketPath}` : `${host}:${port}`,
+          tls ? credentials.createSsl() : credentials.createInsecure(),
+        );
 
     this._logger = logger;
     this._request = { providerId: '', selector: selector ? selector : '' };
   }
 
-  connect(dataFillCallback: (flags: string) => void,
-          connectCallback: () => void, _: (flagsChanged: string[]) => void,
-          disconnectCallback: () => void): Promise<void> {
+  connect(
+    dataFillCallback: (flags: string) => void,
+    connectCallback: () => void,
+    _: (flagsChanged: string[]) => void,
+    disconnectCallback: () => void,
+  ): Promise<void> {
     // note that we never reject the promise as sync is a long-running operation
     return new Promise((resolve) => this.listen(resolve, dataFillCallback, connectCallback, disconnectCallback));
   }
@@ -47,7 +53,8 @@ export class GrpcFetch implements DataFetch {
     resolveConnect: () => void,
     dataFillCallback: (flags: string) => void,
     connectCallback: () => void,
-    disconnectCallback: () => void) {
+    disconnectCallback: () => void,
+  ) {
     this._syncStream = this._syncClient.syncFlags(this._request);
     this._connecting = false;
 
@@ -70,15 +77,14 @@ export class GrpcFetch implements DataFetch {
       disconnectCallback();
       this.reconnectWithBackoff(resolveConnect, dataFillCallback, connectCallback, disconnectCallback);
     });
-
   }
 
   private reconnectWithBackoff(
     resolver: () => void,
     dataFillCallback: (flags: string) => void,
     reconnectCallback: () => void,
-    disconnectCallback: () => void): void {
-
+    disconnectCallback: () => void,
+  ): void {
     // avoid reattempts if already connecting
     // see - https://github.com/grpc/grpc-node/issues/2377
     if (this._connecting) {

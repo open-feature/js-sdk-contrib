@@ -4,5 +4,5 @@ export default {
   setupFiles: ['./setup.ts'],
   preset: 'ts-jest',
   verbose: true,
-  silent: false
+  silent: false,
 };

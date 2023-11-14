@@ -2,12 +2,13 @@ import { DataFetch } from './data-fetch';
 import { InProcessService } from './in-process-service';
 
 describe('In-process-service', () => {
-
   const dataFetcher: DataFetch = {
     connect: jest.fn((dataFillCallback: (flags: string) => void) => {
-      dataFillCallback('{"flags":{"booleanFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"intFlag":{"state":"ENABLED","variants":{"first":1,"second":2},"defaultVariant":"first"}}}');
+      dataFillCallback(
+        '{"flags":{"booleanFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"intFlag":{"state":"ENABLED","variants":{"first":1,"second":2},"defaultVariant":"first"}}}',
+      );
     }),
-    disconnect: jest.fn()
+    disconnect: jest.fn(),
   } as unknown as DataFetch;
 
   it('should sync and allow to resolve flags', async () => {

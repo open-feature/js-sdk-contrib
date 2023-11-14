@@ -14,9 +14,11 @@ export class InProcessService implements Service {
     this._dataFetcher = dataFetcher ? dataFetcher : new GrpcFetch(config, undefined, logger);
   }
 
-  connect(reconnectCallback: () => void,
-          changedCallback: (flagsChanged: string[]) => void,
-          disconnectCallback: () => void): Promise<void> {
+  connect(
+    reconnectCallback: () => void,
+    changedCallback: (flagsChanged: string[]) => void,
+    disconnectCallback: () => void,
+  ): Promise<void> {
     return this._dataFetcher.connect(this.fill.bind(this), reconnectCallback, changedCallback, disconnectCallback);
   }
 
@@ -24,28 +26,43 @@ export class InProcessService implements Service {
     this._dataFetcher.disconnect();
   }
 
-  resolveBoolean(flagKey: string, defaultValue: boolean, context: EvaluationContext, logger: Logger)
-    : Promise<ResolutionDetails<boolean>> {
+  resolveBoolean(
+    flagKey: string,
+    defaultValue: boolean,
+    context: EvaluationContext,
+    logger: Logger,
+  ): Promise<ResolutionDetails<boolean>> {
     return Promise.resolve(this._flagdCore.resolveBooleanEvaluation(flagKey, defaultValue, context, logger));
   }
 
-  resolveNumber(flagKey: string, defaultValue: number, context: EvaluationContext, logger: Logger)
-    : Promise<ResolutionDetails<number>> {
+  resolveNumber(
+    flagKey: string,
+    defaultValue: number,
+    context: EvaluationContext,
+    logger: Logger,
+  ): Promise<ResolutionDetails<number>> {
     return Promise.resolve(this._flagdCore.resolveNumberEvaluation(flagKey, defaultValue, context, logger));
   }
 
-  resolveString(flagKey: string, defaultValue: string, context: EvaluationContext, logger: Logger)
-    : Promise<ResolutionDetails<string>> {
+  resolveString(
+    flagKey: string,
+    defaultValue: string,
+    context: EvaluationContext,
+    logger: Logger,
+  ): Promise<ResolutionDetails<string>> {
     return Promise.resolve(this._flagdCore.resolveStringEvaluation(flagKey, defaultValue, context, logger));
   }
 
-  resolveObject<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext, logger: Logger)
-    : Promise<ResolutionDetails<T>> {
+  resolveObject<T extends JsonValue>(
+    flagKey: string,
+    defaultValue: T,
+    context: EvaluationContext,
+    logger: Logger,
+  ): Promise<ResolutionDetails<T>> {
     return Promise.resolve(this._flagdCore.resolveObjectEvaluation(flagKey, defaultValue, context, logger));
   }
 
   private fill(flags: string): void {
     this._flagdCore.setConfigurations(flags);
   }
-
 }

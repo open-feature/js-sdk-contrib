@@ -8,16 +8,18 @@ This repository and package provides the client code for interacting with it via
 
 ### npm
 
-```
-$ npm install @openfeature/flagd-provider
+```sh
+npm install @openfeature/flagd-provider
 ```
 
 ### yarn
 
+```sh
+yarn add @openfeature/server-sdk @grpc/grpc-js @openfeature/flagd-core
 ```
-# yarn requires manual installation of peer dependencies
-$ yarn add @openfeature/server-sdk @grpc/grpc-js @openfeature/flagd-core
-```
+
+> [!NOTE]
+> yarn requires manual installation of peer dependencies
 
 ## Configurations and Usage
 

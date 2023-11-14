@@ -1,10 +1,9 @@
-import {DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES} from "./constants";
+import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from './constants';
 
 export type CacheOption = 'lru' | 'disabled';
 export type ResolverType = 'rpc' | 'in-process';
 
 export interface Config {
-
   /**
    * The domain name or IP address of flagd.
    *
@@ -93,8 +92,8 @@ enum ENV_VAR {
   FLAGD_CACHE = 'FLAGD_CACHE',
   FLAGD_MAX_CACHE_SIZE = 'FLAGD_MAX_CACHE_SIZE',
   FLAGD_MAX_EVENT_STREAM_RETRIES = 'FLAGD_MAX_EVENT_STREAM_RETRIES',
-  FLAGD_SOURCE_SELECTOR = "FLAGD_SOURCE_SELECTOR",
-  FLAGD_RESOLVER = "FLAGD_RESOLVER"
+  FLAGD_SOURCE_SELECTOR = 'FLAGD_SOURCE_SELECTOR',
+  FLAGD_RESOLVER = 'FLAGD_RESOLVER',
 }
 
 const getEnvVarConfig = (): Partial<Config> => ({

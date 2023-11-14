@@ -1,11 +1,6 @@
 import { GrpcFetch, initBackOffMs } from './grpc-fetch';
 import { Config } from '../../../configuration';
-import {
-  FlagSyncServiceClient,
-  SyncFlagsRequest,
-  SyncFlagsResponse,
-  SyncState
-} from '../../../../proto/ts/sync/v1/sync_service';
+import { FlagSyncServiceClient, SyncFlagsResponse, SyncState } from '../../../../proto/ts/sync/v1/sync_service';
 
 describe('grpc fetch', () => {
   const cfg: Config = { host: 'localhost', port: 8000, tls: false, socketPath: '' };
@@ -15,21 +10,20 @@ describe('grpc fetch', () => {
     const flagResponse = '{"flags":{}}';
 
     const serviceMock: FlagSyncServiceClient = {
-      syncFlags: jest.fn((_: SyncFlagsRequest) => {
+      syncFlags: jest.fn(() => {
         return {
           // mock event registration callback response
           on: jest.fn((event: string, callback: (data: SyncFlagsResponse) => void) => {
             if (event === 'data') {
               callback({
                 flagConfiguration: flagResponse,
-                state: SyncState.SYNC_STATE_ALL
+                state: SyncState.SYNC_STATE_ALL,
               });
             }
             return {};
-          })
+          }),
         };
-      })
-
+      }),
     } as unknown as FlagSyncServiceClient;
 
     let callBackResponse = '';
@@ -54,17 +48,16 @@ describe('grpc fetch', () => {
   it('should handle error and attempt to reconnect', (done) => {
     // given
     const serviceMock: FlagSyncServiceClient = {
-      syncFlags: jest.fn((_: SyncFlagsRequest) => {
+      syncFlags: jest.fn(() => {
         return {
           on: jest.fn((event: string, callback: (err: Error) => void) => {
             if (event === 'error') {
               callback(new Error('Some connection error'));
             }
             return {};
-          })
+          }),
         };
-      })
-
+      }),
     } as unknown as FlagSyncServiceClient;
 
     const disconnectCallback = jest.fn();
@@ -82,5 +75,4 @@ describe('grpc fetch', () => {
       done();
     }, initBackOffMs);
   });
-
 });
