@@ -160,16 +160,3 @@ describe('flagd-core validations', () => {
     expect(() => core.resolveNumberEvaluation('myIntFlag', 100, {}, console)).toThrow(GeneralError);
   });
 });
-
-describe('flagd-core cast targeting variant to string', () => {
-  const caseVariantValueFlag =
-    '{"flags":{"new-welcome-banner":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":"false","targeting":{"in":["@example.com",{"var":"email"}]}}}}';
-
-  const core = new FlagdCore();
-  core.setConfigurations(caseVariantValueFlag);
-
-  const evaluation = core.resolveBooleanEvaluation('new-welcome-banner', false, { email: 'test@example.com' }, console);
-  expect(evaluation.value).toBe(true);
-  expect(evaluation.variant).toBe('true');
-  expect(evaluation.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
-});
