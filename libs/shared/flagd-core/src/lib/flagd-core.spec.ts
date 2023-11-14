@@ -2,40 +2,80 @@ import { FlagdCore } from './flagd-core';
 import { GeneralError, StandardResolutionReasons, TypeMismatchError } from '@openfeature/core';
 
 describe('flagd-core resolving', () => {
-  const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"key1":"val1","key2":"val2"},"defaultVariant":"key1"},"myFloatFlag":{"state":"ENABLED","variants":{"one":1.23,"two":2.34},"defaultVariant":"one"},"myIntFlag":{"state":"ENABLED","variants":{"one":1,"two":2},"defaultVariant":"one"},"myObjectFlag":{"state":"ENABLED","variants":{"object1":{"key":"val"},"object2":{"key":true}},"defaultVariant":"object1"},"fibAlgo":{"variants":{"recursive":"recursive","memo":"memo","loop":"loop","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},"binet",null]}},"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",{"in":["Chrome",{"var":"userAgent"}]},"third",null]}}},"$evaluators":{"emailWithFaas":{"in":["@faas.com",{"var":["email"]}]}}}`;
-  let core: FlagdCore;
+  describe('truthy variant values', () => {
+    const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"key1":"val1","key2":"val2"},"defaultVariant":"key1"},"myFloatFlag":{"state":"ENABLED","variants":{"one":1.23,"two":2.34},"defaultVariant":"one"},"myIntFlag":{"state":"ENABLED","variants":{"one":1,"two":2},"defaultVariant":"one"},"myObjectFlag":{"state":"ENABLED","variants":{"object1":{"key":"val"},"object2":{"key":true}},"defaultVariant":"object1"},"fibAlgo":{"variants":{"recursive":"recursive","memo":"memo","loop":"loop","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},"binet",null]}},"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",{"in":["Chrome",{"var":"userAgent"}]},"third",null]}}},"$evaluators":{"emailWithFaas":{"in":["@faas.com",{"var":["email"]}]}}}`;
+    let core: FlagdCore;
 
-  beforeAll(() => {
-    core = new FlagdCore();
-    core.setConfigurations(flagCfg);
+    beforeAll(() => {
+      core = new FlagdCore();
+      core.setConfigurations(flagCfg);
+    });
+
+    it('should resolve boolean flag', () => {
+      const resolved = core.resolveBooleanEvaluation('myBoolFlag', false, {}, console);
+      expect(resolved.value).toBe(true);
+      expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
+      expect(resolved.variant).toBe('on');
+    });
+
+    it('should resolve string flag', () => {
+      const resolved = core.resolveStringEvaluation('myStringFlag', 'key2', {}, console);
+      expect(resolved.value).toBe('val1');
+      expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
+      expect(resolved.variant).toBe('key1');
+    });
+
+    it('should resolve number flag', () => {
+      const resolved = core.resolveNumberEvaluation('myFloatFlag', 2.34, {}, console);
+      expect(resolved.value).toBe(1.23);
+      expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
+      expect(resolved.variant).toBe('one');
+    });
+
+    it('should resolve object flag', () => {
+      const resolved = core.resolveObjectEvaluation('myObjectFlag', { key: true }, {}, console);
+      expect(resolved.value).toStrictEqual({ key: 'val' });
+      expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
+      expect(resolved.variant).toBe('object1');
+    });
   });
 
-  it('should resolve boolean flag', () => {
-    const resolved = core.resolveBooleanEvaluation('myBoolFlag', false, {}, console);
-    expect(resolved.value).toBeTruthy();
-    expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
-    expect(resolved.variant).toBe('on');
-  });
+  describe('falsy variant values', () => {
+    const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"off"},"myStringFlag":{"state":"ENABLED","variants":{"key1":"","key2":""},"defaultVariant":"key1"},"myFloatFlag":{"state":"ENABLED","variants":{"zero":0.0,"one":1.34},"defaultVariant":"zero"},"myIntFlag":{"state":"ENABLED","variants":{"zero":0,"one":1},"defaultVariant":"zero"},"myObjectFlag":{"state":"ENABLED","variants":{"object1":{},"object2":{"key":true}},"defaultVariant":"object1"},"fibAlgo":{"variants":{"recursive":"recursive","memo":"memo","loop":"loop","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},"binet",null]}},"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",{"in":["Chrome",{"var":"userAgent"}]},"third",null]}}},"$evaluators":{"emailWithFaas":{"in":["@faas.com",{"var":["email"]}]}}}`;
+    let core: FlagdCore;
 
-  it('should resolve string flag', () => {
-    const resolved = core.resolveStringEvaluation('myStringFlag', 'key2', {}, console);
-    expect(resolved.value).toBe('val1');
-    expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
-    expect(resolved.variant).toBe('key1');
-  });
+    beforeAll(() => {
+      core = new FlagdCore();
+      core.setConfigurations(flagCfg);
+    });
 
-  it('should resolve number flag', () => {
-    const resolved = core.resolveNumberEvaluation('myFloatFlag', 2.34, {}, console);
-    expect(resolved.value).toBe(1.23);
-    expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
-    expect(resolved.variant).toBe('one');
-  });
+    it('should resolve boolean flag', () => {
+      const resolved = core.resolveBooleanEvaluation('myBoolFlag', false, {}, console);
+      expect(resolved.value).toBe(false);
+      expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
+      expect(resolved.variant).toBe('off');
+    });
 
-  it('should resolve object flag', () => {
-    const resolved = core.resolveObjectEvaluation('myObjectFlag', { key: true }, {}, console);
-    expect(resolved.value).toStrictEqual({ key: 'val' });
-    expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
-    expect(resolved.variant).toBe('object1');
+    it('should resolve string flag', () => {
+      const resolved = core.resolveStringEvaluation('myStringFlag', 'key2', {}, console);
+      expect(resolved.value).toBe('');
+      expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
+      expect(resolved.variant).toBe('key1');
+    });
+
+    it('should resolve number flag', () => {
+      const resolved = core.resolveNumberEvaluation('myFloatFlag', 2.34, {}, console);
+      expect(resolved.value).toBe(0);
+      expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
+      expect(resolved.variant).toBe('zero');
+    });
+
+    it('should resolve object flag', () => {
+      const resolved = core.resolveObjectEvaluation('myObjectFlag', { key: true }, {}, console);
+      expect(resolved.value).toStrictEqual({});
+      expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
+      expect(resolved.variant).toBe('object1');
+    });
   });
 });
 
