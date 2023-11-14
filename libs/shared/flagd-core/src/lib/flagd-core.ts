@@ -1,4 +1,4 @@
-import {MemoryStorage, Storage} from './storage';
+import { MemoryStorage, Storage } from './storage';
 import {
   EvaluationContext,
   FlagNotFoundError,
@@ -9,8 +9,8 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/core';
-import {Targeting} from "./targeting/targeting";
-import {Logger} from "@openfeature/server-sdk";
+import { Targeting } from './targeting/targeting';
+import { Logger } from '@openfeature/server-sdk';
 
 /**
  * Expose flag configuration setter and flag resolving methods.
@@ -76,7 +76,6 @@ export class FlagdCore {
     logger: Logger,
     type: string,
   ): ResolutionDetails<T> {
-
     // flag exist check
     const flag = this._storage.getFlag(flagKey);
     if (!flag) {
@@ -88,7 +87,7 @@ export class FlagdCore {
       return {
         value: defaultValue,
         reason: StandardResolutionReasons.DISABLED,
-      }
+      };
     }
 
     let variant;
@@ -117,16 +116,18 @@ export class FlagdCore {
     }
 
     if (typeof variant !== 'string') {
-      throw new TypeMismatchError('Variant must be a string, but found ' + typeof variant)
+      throw new TypeMismatchError('Variant must be a string, but found ' + typeof variant);
     }
 
-    const resolvedVariant = flag.variants.get(variant)
+    const resolvedVariant = flag.variants.get(variant);
     if (!resolvedVariant) {
       throw new GeneralError(`Variant ${variant} not found in flag with key ${flagKey}`);
     }
 
     if (typeof resolvedVariant !== type) {
-      throw new TypeMismatchError(`Evaluated type of the flag ${flagKey} does not match. Expected ${type}, got ${typeof resolvedVariant}`);
+      throw new TypeMismatchError(
+        `Evaluated type of the flag ${flagKey} does not match. Expected ${type}, got ${typeof resolvedVariant}`,
+      );
     }
 
     return {

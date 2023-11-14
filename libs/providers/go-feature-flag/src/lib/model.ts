@@ -1,7 +1,4 @@
-import {
-  ErrorCode,
-  EvaluationContextValue,
-} from '@openfeature/server-sdk';
+import { ErrorCode, EvaluationContextValue } from '@openfeature/server-sdk';
 
 /**
  * GoFeatureFlagUser is the representation of a user for GO Feature Flag
@@ -57,25 +54,25 @@ export interface GoFeatureFlagProviderOptions {
   apiKey?: string;
 
   // disableCache (optional) set to true if you would like that every flag evaluation goes to the GO Feature Flag directly.
-  disableCache?: boolean
+  disableCache?: boolean;
 
   // flagCacheSize (optional) is the maximum number of flag events we keep in memory to cache your flags.
   // default: 10000
-  flagCacheSize?: number
+  flagCacheSize?: number;
 
   // flagCacheTTL (optional) is the time we keep the evaluation in the cache before we consider it as obsolete.
   // If you want to keep the value forever you can set the FlagCacheTTL field to -1
   // default: 1 minute
-  flagCacheTTL?: number
+  flagCacheTTL?: number;
 
   // dataFlushInterval (optional) interval time (in millisecond) we use to call the relay proxy to collect data.
   // The parameter is used only if the cache is enabled, otherwise the collection of the data is done directly
   // when calling the evaluation API.
   // default: 1 minute
-  dataFlushInterval?: number
+  dataFlushInterval?: number;
 
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
-  disableDataCollection?: boolean
+  disableDataCollection?: boolean;
 }
 
 // GOFeatureFlagResolutionReasons allows to extends resolution reasons
@@ -83,7 +80,6 @@ export declare enum GOFeatureFlagResolutionReasons {}
 
 // GOFeatureFlagErrorCode allows to extends error codes
 export declare enum GOFeatureFlagErrorCode {}
-
 
 export interface DataCollectorRequest<T> {
   events: FeatureEvent<T>[];

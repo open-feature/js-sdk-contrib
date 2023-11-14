@@ -19,21 +19,21 @@ const logger: TestLogger = new TestLogger();
 const testFlagKey = 'a-key';
 
 describe('LaunchDarklyClientProvider', () => {
-  let ldProvider: LaunchDarklyClientProvider
+  let ldProvider: LaunchDarklyClientProvider;
   let ofClient: Client;
   const ldClientMock: jest.Mocked<LDClient> = {
-      variationDetail: jest.fn(),
-      identify: jest.fn(),
-      waitForInitialization: jest.fn(),
-      on: jest.fn(),
-      close: jest.fn(),
-    } as unknown as jest.Mocked<LDClient>;
+    variationDetail: jest.fn(),
+    identify: jest.fn(),
+    waitForInitialization: jest.fn(),
+    on: jest.fn(),
+    close: jest.fn(),
+  } as unknown as jest.Mocked<LDClient>;
 
   beforeAll(() => {
     ldProvider = new LaunchDarklyClientProvider('test-env-key', { logger });
     OpenFeature.setProvider(ldProvider);
     ofClient = OpenFeature.getClient();
-  })
+  });
   beforeEach(() => {
     logger.reset();
     jest.clearAllMocks();
@@ -85,7 +85,7 @@ describe('LaunchDarklyClientProvider', () => {
     it('should set the status to READY if initialization succeeds', async () => {
       ldClientMock.waitForInitialization.mockResolvedValue();
       await provider.initialize();
-      expect( ldClientMock.waitForInitialization).toHaveBeenCalledTimes(1);
+      expect(ldClientMock.waitForInitialization).toHaveBeenCalledTimes(1);
       expect(provider.status).toBe('READY');
     });
 
@@ -94,7 +94,6 @@ describe('LaunchDarklyClientProvider', () => {
       await provider.initialize();
       expect(provider.status).toBe('ERROR');
     });
-
   });
 
   describe('resolveBooleanEvaluation', () => {
@@ -106,12 +105,10 @@ describe('LaunchDarklyClientProvider', () => {
         },
       });
       ofClient.getBooleanDetails(testFlagKey, false);
-      expect(ldClientMock.variationDetail)
-        .toHaveBeenCalledWith(testFlagKey, false);
+      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, false);
       jest.clearAllMocks();
       ofClient.getBooleanValue(testFlagKey, false);
-      expect(ldClientMock.variationDetail)
-        .toHaveBeenCalledWith(testFlagKey, false);
+      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, false);
     });
 
     it('handles correct return types for boolean variations', () => {
@@ -150,7 +147,6 @@ describe('LaunchDarklyClientProvider', () => {
         errorCode: 'TYPE_MISMATCH',
       });
     });
-
   });
 
   describe('resolveNumberEvaluation', () => {
@@ -163,12 +159,10 @@ describe('LaunchDarklyClientProvider', () => {
       });
 
       ofClient.getNumberDetails(testFlagKey, 0);
-      expect(ldClientMock.variationDetail)
-        .toHaveBeenCalledWith(testFlagKey, 0);
+      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, 0);
       jest.clearAllMocks();
       ofClient.getNumberValue(testFlagKey, 0);
-      expect(ldClientMock.variationDetail)
-        .toHaveBeenCalledWith(testFlagKey, 0);
+      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, 0);
     });
 
     it('handles correct return types for numeric variations', () => {
@@ -219,12 +213,10 @@ describe('LaunchDarklyClientProvider', () => {
       });
 
       ofClient.getObjectDetails(testFlagKey, {});
-      expect(ldClientMock.variationDetail)
-        .toHaveBeenCalledWith(testFlagKey, {});
+      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, {});
       jest.clearAllMocks();
       ofClient.getObjectValue(testFlagKey, {});
-      expect(ldClientMock.variationDetail)
-        .toHaveBeenCalledWith(testFlagKey, {});
+      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, {});
     });
 
     it('handles correct return types for object variations', () => {
@@ -263,9 +255,9 @@ describe('LaunchDarklyClientProvider', () => {
         errorCode: 'TYPE_MISMATCH',
       });
     });
-  })
+  });
 
-  describe('resolveStringEvaluation', ( ) => {
+  describe('resolveStringEvaluation', () => {
     it('calls the client correctly for string variations', () => {
       ldClientMock.variationDetail = jest.fn().mockReturnValue({
         value: 'test',
@@ -275,12 +267,10 @@ describe('LaunchDarklyClientProvider', () => {
       });
 
       ofClient.getStringDetails(testFlagKey, 'default');
-      expect(ldClientMock.variationDetail)
-        .toHaveBeenCalledWith(testFlagKey, 'default');
+      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, 'default');
       jest.clearAllMocks();
       ofClient.getStringValue(testFlagKey, 'default');
-      expect(ldClientMock.variationDetail)
-        .toHaveBeenCalledWith(testFlagKey, 'default');
+      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, 'default');
     });
 
     it('handles correct return types for string variations', () => {
@@ -310,7 +300,7 @@ describe('LaunchDarklyClientProvider', () => {
         },
       });
 
-      const res =  ofClient.getStringDetails(testFlagKey, 'default');
+      const res = ofClient.getStringDetails(testFlagKey, 'default');
       expect(res).toEqual({
         flagKey: testFlagKey,
         flagMetadata: {},
@@ -371,17 +361,20 @@ describe('LaunchDarklyClientProvider', () => {
     it('logs information about missing keys', async () => {
       ldClientMock.identify = jest.fn().mockResolvedValue({});
       await OpenFeature.setContext({});
-      expect(ldClientMock.identify).toHaveBeenCalledWith(translateContext(logger, {}))
-      expect(logger.logs[0]).toEqual("The EvaluationContext must contain either a 'targetingKey' "
-        + "or a 'key' and the type must be a string.");
+      expect(ldClientMock.identify).toHaveBeenCalledWith(translateContext(logger, {}));
+      expect(logger.logs[0]).toEqual(
+        "The EvaluationContext must contain either a 'targetingKey' " + "or a 'key' and the type must be a string.",
+      );
     });
 
     it('logs information about double keys', async () => {
       ldClientMock.identify = jest.fn().mockResolvedValue({});
       await OpenFeature.setContext({ targetingKey: '1', key: '2' });
-      expect(ldClientMock.identify).toHaveBeenCalledWith(translateContext(logger, { targetingKey: '1', key: '2' }))
-      expect(logger.logs[0]).toEqual("The EvaluationContext contained both a 'targetingKey' and a"
-        + " 'key' attribute. The 'key' attribute will be discarded.");
+      expect(ldClientMock.identify).toHaveBeenCalledWith(translateContext(logger, { targetingKey: '1', key: '2' }));
+      expect(logger.logs[0]).toEqual(
+        "The EvaluationContext contained both a 'targetingKey' and a" +
+          " 'key' attribute. The 'key' attribute will be discarded.",
+      );
     });
   });
 });

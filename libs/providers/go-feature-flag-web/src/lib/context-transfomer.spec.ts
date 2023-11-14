@@ -1,6 +1,6 @@
-import {GoFeatureFlagEvaluationContext} from './model';
-import {transformContext} from './context-transformer';
-import {TargetingKeyMissingError, EvaluationContext} from "@openfeature/web-sdk";
+import { GoFeatureFlagEvaluationContext } from './model';
+import { transformContext } from './context-transformer';
+import { TargetingKeyMissingError, EvaluationContext } from '@openfeature/web-sdk';
 
 describe('contextTransformer', () => {
   it('should use the targetingKey as user key', () => {

@@ -1,8 +1,8 @@
-import {LogicEngine,} from "json-logic-engine";
-import {endsWithHandler, endsWithRule, startsWithHandler, startsWithRule} from "./string-comp";
-import {semVer, semVerRule} from "./sem-ver";
-import {fractional, fractionalRule} from "./fractional";
-import {flagdPropertyKey, flagKeyPropertyKey, timestampPropertyKey} from "./common";
+import { LogicEngine } from 'json-logic-engine';
+import { endsWithHandler, endsWithRule, startsWithHandler, startsWithRule } from './string-comp';
+import { semVer, semVerRule } from './sem-ver';
+import { fractional, fractionalRule } from './fractional';
+import { flagdPropertyKey, flagKeyPropertyKey, timestampPropertyKey } from './common';
 
 export class Targeting {
   private readonly _logicEngine: LogicEngine;
@@ -19,7 +19,7 @@ export class Targeting {
 
   applyTargeting(flagKey: string, logic: unknown, data: object): unknown {
     if (Object.hasOwn(data, flagdPropertyKey)) {
-      console.warn(`overwriting ${flagdPropertyKey} property in the context`)
+      console.warn(`overwriting ${flagdPropertyKey} property in the context`);
     }
 
     const ctxData = {
@@ -28,7 +28,7 @@ export class Targeting {
         [flagKeyPropertyKey]: flagKey,
         [timestampPropertyKey]: Math.floor(Date.now() / 1000),
       },
-    }
+    };
 
     return this._logicEngine.run(logic, ctxData);
   }

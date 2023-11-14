@@ -50,7 +50,7 @@ export class FlagdWebProvider implements Provider {
     options: FlagdProviderOptions,
     logger?: Logger,
     promiseClient?: PromiseClient<typeof Service>,
-    callbackClient?: CallbackClient<typeof Service>
+    callbackClient?: CallbackClient<typeof Service>,
   ) {
     const { host, port, tls, maxRetries, maxDelay, pathPrefix } = getOptions(options);
     const transport = createConnectTransport({
@@ -151,7 +151,7 @@ export class FlagdWebProvider implements Provider {
             this._logger?.warn(`${FlagdWebProvider.name}: max retries reached`);
             this.events.emit(ProviderEvents.Error);
           }
-        }
+        },
       );
     });
   }

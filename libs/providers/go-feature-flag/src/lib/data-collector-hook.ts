@@ -3,21 +3,16 @@ import {
   FlagValue,
   Hook,
   HookContext,
-  HookHints, Logger, StandardResolutionReasons,
+  HookHints,
+  Logger,
+  StandardResolutionReasons,
 } from '@openfeature/server-sdk';
-import {
-  DataCollectorHookOptions,
-  DataCollectorRequest,
-  DataCollectorResponse,
-  FeatureEvent,
-} from './model';
-import {copy} from 'copy-anything';
+import { DataCollectorHookOptions, DataCollectorRequest, DataCollectorResponse, FeatureEvent } from './model';
+import { copy } from 'copy-anything';
 import axios from 'axios';
-
 
 const defaultTargetingKey = 'undefined-targetingKey';
 export class GoFeatureFlagDataCollectorHook implements Hook {
-
   // bgSchedulerId contains the id of the setInterval that is running.
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
@@ -54,16 +49,15 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
     this.collectUnCachedEvaluation = options.collectUnCachedEvaluation;
   }
 
-
-  init(){
-    this.bgScheduler = setInterval(async () => await this.callGoffDataCollection(), this.dataFlushInterval)
-    this.dataCollectorBuffer = []
+  init() {
+    this.bgScheduler = setInterval(async () => await this.callGoffDataCollection(), this.dataFlushInterval);
+    this.dataCollectorBuffer = [];
   }
 
   async close() {
     clearInterval(this.bgScheduler);
     // We call the data collector with what is still in the buffer.
-    await this.callGoffDataCollection()
+    await this.callGoffDataCollection();
   }
 
   /**
@@ -78,7 +72,7 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
     const dataToSend = copy(this.dataCollectorBuffer) || [];
     this.dataCollectorBuffer = [];
 
-    const request: DataCollectorRequest<boolean> = {events: dataToSend, meta: this.dataCollectorMetadata,}
+    const request: DataCollectorRequest<boolean> = { events: dataToSend, meta: this.dataCollectorMetadata };
     const endpointURL = new URL(this.endpoint);
     endpointURL.pathname = 'v1/data/collector';
 
@@ -91,19 +85,14 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
         timeout: this.timeout,
       });
     } catch (e) {
-      this.logger?.error(`impossible to send the data to the collector: ${e}`)
+      this.logger?.error(`impossible to send the data to the collector: ${e}`);
       // if we have an issue calling the collector we put the data back in the buffer
       this.dataCollectorBuffer = [...this.dataCollectorBuffer, ...dataToSend];
     }
   }
 
-
-  after(
-    hookContext: HookContext,
-    evaluationDetails: EvaluationDetails<FlagValue>,
-    hookHints?: HookHints
-  ) {
-    if (!this.collectUnCachedEvaluation && evaluationDetails.reason !== StandardResolutionReasons.CACHED){
+  after(hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>, hookHints?: HookHints) {
+    if (!this.collectUnCachedEvaluation && evaluationDetails.reason !== StandardResolutionReasons.CACHED) {
       return;
     }
 

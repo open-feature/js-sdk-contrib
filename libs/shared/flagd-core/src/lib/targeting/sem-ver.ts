@@ -1,4 +1,4 @@
-import {compare, parse} from 'semver'
+import { compare, parse } from 'semver';
 
 export const semVerRule = 'sem_ver';
 
@@ -7,7 +7,7 @@ export function semVer(data: unknown): boolean {
     return false;
   }
 
-  const args = Array.from(data)
+  const args = Array.from(data);
 
   if (args.length != 3) {
     return false;
@@ -42,5 +42,5 @@ export function semVer(data: unknown): boolean {
       return semVer1.minor == semVer2.minor;
   }
 
-  return false
+  return false;
 }

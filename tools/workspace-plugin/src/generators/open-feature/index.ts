@@ -53,7 +53,7 @@ export default async function (tree: Tree, schema: SchemaOptions) {
   ['spec.ts', 'ts'].forEach((suffix) => {
     tree.rename(
       joinPathFragments(projectLibDir, `${directory}-${fileName}.${suffix}`),
-      joinPathFragments(projectLibDir, `${libFileName}.${suffix}`)
+      joinPathFragments(projectLibDir, `${libFileName}.${suffix}`),
     );
   });
 
@@ -180,14 +180,17 @@ function updatePackage(tree: Tree, projectRoot: string, schema: SchemaOptions) {
     };
 
     // use undefined or this defaults to "commonjs", which breaks things: https://github.com/open-feature/js-sdk-contrib/pull/596
-    json.type = undefined
+    json.type = undefined;
 
     // client packages have a web-sdk dep, server js-sdk
-    json.peerDependencies = schema.category === 'client' ? {
-      '@openfeature/web-sdk': '>=0.4.0',
-    } : {
-      '@openfeature/server-sdk': '^1.6.0',
-    }
+    json.peerDependencies =
+      schema.category === 'client'
+        ? {
+            '@openfeature/web-sdk': '>=0.4.0',
+          }
+        : {
+            '@openfeature/server-sdk': '^1.6.0',
+          };
 
     return json;
   });

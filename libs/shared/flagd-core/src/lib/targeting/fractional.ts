@@ -1,7 +1,7 @@
-import {flagdPropertyKey, flagKeyPropertyKey, targetingPropertyKey} from "./common";
-import MurmurHash3 from "imurmurhash";
+import { flagdPropertyKey, flagKeyPropertyKey, targetingPropertyKey } from './common';
+import MurmurHash3 from 'imurmurhash';
 
-export const fractionalRule = "fractional";
+export const fractionalRule = 'fractional';
 
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
 export function fractional(data: unknown, context: Record<any, any>): string | null {
@@ -11,7 +11,7 @@ export function fractional(data: unknown, context: Record<any, any>): string | n
 
   const args = Array.from(data);
   if (args.length < 2) {
-    console.error('Invalid targeting rule. Require at least two buckets.')
+    console.error('Invalid targeting rule. Require at least two buckets.');
     return null;
   }
 
@@ -23,26 +23,26 @@ export function fractional(data: unknown, context: Record<any, any>): string | n
   let bucketBy: string;
   let buckets: unknown[];
 
-  if (typeof args[0] == "string") {
+  if (typeof args[0] == 'string') {
     bucketBy = args[0];
-    buckets = args.slice(1, args.length)
+    buckets = args.slice(1, args.length);
   } else {
     bucketBy = context[targetingPropertyKey];
     if (!bucketBy) {
-      console.error('Missing targetingKey property')
+      console.error('Missing targetingKey property');
       return null;
     }
 
     buckets = args;
   }
 
-  let bucketingList
+  let bucketingList;
 
   try {
-    bucketingList = toBucketingList(buckets)
+    bucketingList = toBucketingList(buckets);
   } catch (e) {
-    console.error('Error parsing targeting rule', e)
-    return null
+    console.error('Error parsing targeting rule', e);
+    return null;
   }
 
   const hashKey = flagdProperties[flagKeyPropertyKey] + bucketBy;
@@ -57,42 +57,42 @@ export function fractional(data: unknown, context: Record<any, any>): string | n
     sum += bucketEntry.fraction;
 
     if (sum >= bucket) {
-      return bucketEntry.variant
+      return bucketEntry.variant;
     }
   }
 
   return null;
 }
 
-function toBucketingList(from: unknown[]): { variant: string, fraction: number }[] {
+function toBucketingList(from: unknown[]): { variant: string; fraction: number }[] {
   // extract bucketing options
-  const bucketingArray: { variant: string, fraction: number }[] = [];
+  const bucketingArray: { variant: string; fraction: number }[] = [];
 
   let bucketSum = 0;
   for (let i = 0; i < from.length; i++) {
-    const entry = from[i]
+    const entry = from[i];
     if (!Array.isArray(entry)) {
-      throw new Error("Invalid bucket entries");
+      throw new Error('Invalid bucket entries');
     }
 
     if (entry.length != 2) {
-      throw new Error("Invalid bucketing entry. Require two values - variant and percentage");
+      throw new Error('Invalid bucketing entry. Require two values - variant and percentage');
     }
 
     if (typeof entry[0] !== 'string') {
-      throw new Error("Bucketing require variant to be present in string format");
+      throw new Error('Bucketing require variant to be present in string format');
     }
 
     if (typeof entry[1] !== 'number') {
-      throw new Error("Bucketing require bucketing percentage to be present");
+      throw new Error('Bucketing require bucketing percentage to be present');
     }
 
-    bucketingArray.push({fraction: entry[1], variant: entry[0]});
+    bucketingArray.push({ fraction: entry[1], variant: entry[0] });
     bucketSum += entry[1];
   }
 
   if (bucketSum != 100) {
-    throw new Error("Bucketing sum must add up to 100");
+    throw new Error('Bucketing sum must add up to 100');
   }
 
   return bucketingArray;
