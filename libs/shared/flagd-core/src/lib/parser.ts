@@ -1,5 +1,5 @@
 import Ajv from 'ajv';
-import {FeatureFlag, Flag} from './feature-flag';
+import { FeatureFlag, Flag } from './feature-flag';
 import mydata from '../../flagd-schemas/json/flagd-definitions.json';
 
 const ajv = new Ajv();

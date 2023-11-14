@@ -57,6 +57,6 @@ describe('Flag configurations', () => {
 
     const fibAlgo = flags.get('fibAlgo');
     expect(fibAlgo).toBeTruthy();
-    expect(fibAlgo?.targeting).toStrictEqual({"if": [{"in": ["@faas.com", {"var": ["email"]}]}, "binet", null]});
+    expect(fibAlgo?.targeting).toStrictEqual({ if: [{ in: ['@faas.com', { var: ['email'] }] }, 'binet', null] });
   });
 });

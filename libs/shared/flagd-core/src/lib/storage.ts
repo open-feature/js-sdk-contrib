@@ -1,5 +1,5 @@
-import {FeatureFlag} from './feature-flag';
-import {parse} from './parser';
+import { FeatureFlag } from './feature-flag';
+import { parse } from './parser';
 
 /**
  * The simple contract of the storage layer.
@@ -28,7 +28,7 @@ export class MemoryStorage implements Storage {
     try {
       this._flags = parse(cfg);
     } catch (e) {
-      console.error(e)
+      console.error(e);
     }
   }
 }

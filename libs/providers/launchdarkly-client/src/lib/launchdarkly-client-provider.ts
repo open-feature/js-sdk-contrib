@@ -10,7 +10,7 @@ import {
   GeneralError,
   OpenFeatureEventEmitter,
   ProviderEvents,
-  ProviderStatus
+  ProviderStatus,
 } from '@openfeature/web-sdk';
 
 import isEmpty from 'lodash.isempty';
@@ -20,7 +20,6 @@ import { basicLogger, LDClient, initialize, LDOptions, LDFlagChangeset } from 'l
 import { LaunchDarklyProviderOptions } from './launchdarkly-provider-options';
 import translateContext from './translate-context';
 import translateResult from './translate-result';
-
 
 /**
  * Create a ResolutionDetails for an evaluation that produced a type different
@@ -63,14 +62,14 @@ export class LaunchDarklyClientProvider implements Provider {
 
   constructor(
     private readonly envKey: string,
-    { logger, ...ldOptions }: LaunchDarklyProviderOptions) {
+    { logger, ...ldOptions }: LaunchDarklyProviderOptions,
+  ) {
     if (logger) {
       this.logger = logger;
     } else {
       this.logger = basicLogger({ level: 'info' });
     }
     this.ldOptions = { ...ldOptions, logger: this.logger };
-
   }
 
   private get client(): LDClient {

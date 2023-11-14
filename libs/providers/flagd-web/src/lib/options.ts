@@ -13,7 +13,7 @@ export interface Options {
 
   /**
    * The path at which the flagd gRPC service is available, for example: /flagd-api (optional).
-   * 
+   *
    * @default ""
    */
   pathPrefix: string;
@@ -52,7 +52,7 @@ export function getOptions(options: FlagdProviderOptions): Options {
       tls: true,
       maxRetries: 0,
       maxDelay: DEFAULT_MAX_DELAY,
-      pathPrefix: ""
+      pathPrefix: '',
     },
     ...options,
   };

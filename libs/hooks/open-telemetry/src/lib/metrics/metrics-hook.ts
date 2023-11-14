@@ -5,7 +5,7 @@ import {
   type EvaluationDetails,
   type FlagValue,
   type Hook,
-  type HookContext
+  type HookContext,
 } from '@openfeature/server-sdk';
 import { Attributes, Counter, UpDownCounter, ValueType, metrics } from '@opentelemetry/api';
 import {
@@ -19,7 +19,7 @@ import {
   REASON_ATTR,
   REQUESTS_TOTAL_NAME,
   SUCCESS_TOTAL_NAME,
-  VARIANT_ATTR
+  VARIANT_ATTR,
 } from '../conventions';
 import { OpenTelemetryHook, OpenTelemetryHookOptions } from '../otel-hook';
 
@@ -36,7 +36,7 @@ const ERROR_DESCRIPTION = 'feature flag evaluation error counter';
 
 /**
  * A hook that adds conventionally-compliant metrics to feature flag evaluations.
- * 
+ *
  * See {@link https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/feature-flags/}
  */
 export class MetricsHook extends OpenTelemetryHook implements Hook {
@@ -46,7 +46,10 @@ export class MetricsHook extends OpenTelemetryHook implements Hook {
   private readonly evaluationSuccessCounter: Counter<EvaluationAttributes | Attributes>;
   private readonly evaluationErrorCounter: Counter<ErrorEvaluationAttributes>;
 
-  constructor(options?: MetricsHookOptions, private readonly logger?: Logger) {
+  constructor(
+    options?: MetricsHookOptions,
+    private readonly logger?: Logger,
+  ) {
     super(options, logger);
     const meter = metrics.getMeter(METER_NAME);
     this.evaluationActiveUpDownCounter = meter.createUpDownCounter(ACTIVE_COUNT_NAME, {
