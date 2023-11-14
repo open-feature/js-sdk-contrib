@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.1...flagd-core-v0.1.2) (2023-11-14)
+
+
+### 🐛 Bug Fixes
+
+* false positive of a falsy variant value check ([#651](https://github.com/open-feature/js-sdk-contrib/issues/651)) ([1c7dc66](https://github.com/open-feature/js-sdk-contrib/commit/1c7dc660d15e00f84ad303d373417f8bb7b71966))
+
+
+### 🧹 Chore
+
+* address lint issues ([#642](https://github.com/open-feature/js-sdk-contrib/issues/642)) ([bbd9aee](https://github.com/open-feature/js-sdk-contrib/commit/bbd9aee896dc4a0817f379b799a1b8d331ee76c6))
+
 ## [0.1.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.0...flagd-core-v0.1.1) (2023-11-02)
 
 
