@@ -40,7 +40,7 @@ Options can be defined in the constructor or as environment variables. Construct
 | maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | int     | 1000      |                  |
 | maxEventStreamRetries | FLAGD_MAX_EVENT_STREAM_RETRIES | int     | 5         |                  |
 
-Given below are examples on usage patterns.
+Below are examples of usage patterns.
 
 ### Remote flag resolving over RPC
 
@@ -48,13 +48,13 @@ This is the default mode of operation of the provider.
 In this mode, FlagdProvider communicates with flagd via the gRPC protocol.
 Flag evaluations take place remotely at the connected [flagd](https://flagd.dev/) instance.
 
-```
+```ts
   OpenFeature.setProvider(new FlagdProvider())
 ```
 
-In the above example, provider expect flagd to be available at `localhost:8013` (default host and port).
+In the above example, the provider expects flagd to be available at `localhost:8013` (default host and port).
 
-Alternatively, you can use socket paths to connect to flagd as given below,
+Alternatively, you can use socket paths to connect to flagd.
 
 ```
   OpenFeature.setProvider(new FlagdProvider({
@@ -73,7 +73,7 @@ Flag configurations for evaluation are obtained via gRPC protocol using [sync pr
   }))
 ```
 
-In the above example, provider expect flag sync service implementation to be available at `localhost:8013` (default host and port).
+In the above example, the provider expects a flag sync service implementation to be available at `localhost:8013` (default host and port).
 
 ### Supported Events
 
