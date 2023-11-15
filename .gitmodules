@@ -13,3 +13,6 @@
 [submodule "libs/shared/flagd-core/flagd-schemas"]
 	path = libs/shared/flagd-core/flagd-schemas
 	url = git@github.com:open-feature/flagd-schemas.git
+[submodule "libs/providers/flagd/flagd-testbed"]
+	path = libs/providers/flagd/flagd-testbed
+	url = git@github.com:open-feature/flagd-testbed.git

@@ -65,8 +65,10 @@
       "options": {
         "commands": [
           "git submodule update --init spec",
+          "git submodule update --init flagd-testbed",
           "rm -f -r ./src/e2e/features/*",
-          "cp -v ./spec/specification/assets/gherkin/evaluation.feature ./src/e2e/features/"
+          "cp -v ./spec/specification/assets/gherkin/evaluation.feature ./src/e2e/features/",
+          "cp -v ./flagd-testbed/gherkin/*.feature ./src/e2e/features/"
         ],
         "cwd": "libs/providers/flagd",
         "parallel": false
@@ -76,7 +78,8 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "npx jest"
+          "npx jest --setupFiles './setup-rpc-provider.ts'",
+          "npx jest --setupFiles './setup-in-process-provider.ts'"
         ],
         "cwd": "libs/providers/flagd/src/e2e",
         "parallel": false

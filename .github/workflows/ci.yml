@@ -38,9 +38,13 @@ jobs:
 
       services:
         flagd:
-          image: ghcr.io/open-feature/flagd-testbed:latest
+          image: ghcr.io/open-feature/flagd-testbed:v0.4.4
           ports:
             - 8013:8013
+        sync:
+          image: ghcr.io/open-feature/sync-testbed:v0.4.4
+          ports:
+            - 9090:9090
 
       steps:
         - uses: actions/checkout@v4
