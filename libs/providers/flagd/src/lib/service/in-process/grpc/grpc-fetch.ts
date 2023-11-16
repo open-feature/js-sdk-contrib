@@ -1,7 +1,7 @@
 import { DataFetch } from '../data-fetch';
 import { Config } from '../../../configuration';
 import { FlagSyncServiceClient, SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/sync/v1/sync_service';
-import { ClientReadableStream, credentials } from '@grpc/grpc-js';
+import { ClientReadableStream, ServiceError, credentials, status } from '@grpc/grpc-js';
 import { Logger } from '@openfeature/core';
 
 export const initBackOffMs = 2 * 1000;
@@ -36,11 +36,13 @@ export class GrpcFetch implements DataFetch {
   connect(
     dataFillCallback: (flags: string) => void,
     connectCallback: () => void,
-    _: (flagsChanged: string[]) => void,
+    changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
   ): Promise<void> {
     // note that we never reject the promise as sync is a long-running operation
-    return new Promise((resolve) => this.listen(resolve, dataFillCallback, connectCallback, disconnectCallback));
+    return new Promise((resolve) =>
+      this.listen(resolve, dataFillCallback, connectCallback, changedCallback, disconnectCallback),
+    );
   }
 
   disconnect() {
@@ -53,6 +55,7 @@ export class GrpcFetch implements DataFetch {
     resolveConnect: () => void,
     dataFillCallback: (flags: string) => void,
     connectCallback: () => void,
+    changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
   ) {
     this._syncStream = this._syncClient.syncFlags(this._request);
@@ -62,20 +65,25 @@ export class GrpcFetch implements DataFetch {
       this._logger?.debug('Received sync payload');
       dataFillCallback(data.flagConfiguration);
       connectCallback();
+      changedCallback([]); // flags changed list not supported
       resolveConnect();
       this._nextBackoff = initBackOffMs;
     });
 
-    this._syncStream.on('error', (err: Error) => {
-      this._logger?.error('Connection error, attempting to reconnect', err);
-      disconnectCallback();
-      this.reconnectWithBackoff(resolveConnect, dataFillCallback, connectCallback, disconnectCallback);
-    });
-
-    this._syncStream.on('end', () => {
-      this._logger?.error('Stream ended, attempting to reconnect');
-      disconnectCallback();
-      this.reconnectWithBackoff(resolveConnect, dataFillCallback, connectCallback, disconnectCallback);
+    this._syncStream.on('error', (err: ServiceError | undefined) => {
+      if (err?.code === status.CANCELLED) {
+        this._logger?.debug('Stream cancelled, will not be re-established');
+      } else {
+        this._logger?.error('Connection error, attempting to reconnect', err);
+        disconnectCallback();
+        this.reconnectWithBackoff(
+          resolveConnect,
+          dataFillCallback,
+          connectCallback,
+          changedCallback,
+          disconnectCallback,
+        );
+      }
     });
   }
 
@@ -83,6 +91,7 @@ export class GrpcFetch implements DataFetch {
     resolver: () => void,
     dataFillCallback: (flags: string) => void,
     reconnectCallback: () => void,
+    changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
   ): void {
     // avoid reattempts if already connecting
@@ -104,7 +113,7 @@ export class GrpcFetch implements DataFetch {
         this._nextBackoff = maxBackOffMs;
       }
 
-      this.listen(resolver, dataFillCallback, reconnectCallback, disconnectCallback);
+      this.listen(resolver, dataFillCallback, reconnectCallback, changedCallback, disconnectCallback);
     }, this._nextBackoff);
   }
 }

@@ -8,6 +8,7 @@
     "test": "nx run-many --all --target=test",
     "e2e": "nx run-many --all --target=e2e --skip-nx-cache --output-style=stream --parallel=false",
     "lint": "nx run-many --all --target=lint",
+    "lint:fix": "nx run-many --all --target=lint --fix",
     "package": "npx nx run-many --all --target=package",
     "publish": "npx nx run-many --all --target=publish"
   },

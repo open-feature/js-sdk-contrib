@@ -39,7 +39,7 @@ export function semVer(data: unknown): boolean {
     case '^':
       return semVer1.major == semVer2.major;
     case '~':
-      return semVer1.minor == semVer2.minor;
+      return semVer1.major == semVer2.major && semVer1.minor == semVer2.minor;
   }
 
   return false;
