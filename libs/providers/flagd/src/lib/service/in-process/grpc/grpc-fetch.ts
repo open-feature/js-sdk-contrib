@@ -40,7 +40,9 @@ export class GrpcFetch implements DataFetch {
     disconnectCallback: () => void,
   ): Promise<void> {
     // note that we never reject the promise as sync is a long-running operation
-    return new Promise((resolve) => this.listen(resolve, dataFillCallback, connectCallback, changedCallback, disconnectCallback));
+    return new Promise((resolve) =>
+      this.listen(resolve, dataFillCallback, connectCallback, changedCallback, disconnectCallback),
+    );
   }
 
   disconnect() {
@@ -74,7 +76,14 @@ export class GrpcFetch implements DataFetch {
       } else {
         this._logger?.error('Connection error, attempting to reconnect', err);
         disconnectCallback();
-        this.reconnectWithBackoff(resolveConnect, dataFillCallback, connectCallback, changedCallback, disconnectCallback);      }
+        this.reconnectWithBackoff(
+          resolveConnect,
+          dataFillCallback,
+          connectCallback,
+          changedCallback,
+          disconnectCallback,
+        );
+      }
     });
   }
 

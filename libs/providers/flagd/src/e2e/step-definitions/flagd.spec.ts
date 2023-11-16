@@ -1,7 +1,4 @@
-import {
-  OpenFeature,
-  ProviderEvents
-} from '@openfeature/server-sdk';
+import { OpenFeature, ProviderEvents } from '@openfeature/server-sdk';
 import { defineFeature, loadFeature } from 'jest-cucumber';
 
 // load the feature file.
@@ -10,9 +7,7 @@ const feature = loadFeature('features/flagd.feature');
 // get a client (flagd provider registered in setup)
 const client = OpenFeature.getClient();
 
-const aFlagProviderIsSet = (
-  given: (stepMatcher: string, stepDefinitionCallback: () => void) => void,
-) => {
+const aFlagProviderIsSet = (given: (stepMatcher: string, stepDefinitionCallback: () => void) => void) => {
   given('a flagd provider is set', () => undefined);
 };
 
@@ -43,7 +38,7 @@ defineFeature(feature, (test) => {
 
   test('Flag change event', ({ given, when, and, then }) => {
     let ran = false;
-    
+
     aFlagProviderIsSet(given);
     when('a PROVIDER_CONFIGURATION_CHANGED handler is added', () => {
       client.addHandler(ProviderEvents.ConfigurationChanged, async () => {
@@ -52,7 +47,7 @@ defineFeature(feature, (test) => {
     });
     and(/^a flag with key "(.*)" is modified$/, async () => {
       // this happens every 1s in the associated container, so wait 2s
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     });
     then('the PROVIDER_CONFIGURATION_CHANGED handler must run', () => {
       expect(ran).toBeTruthy();
@@ -67,10 +62,13 @@ defineFeature(feature, (test) => {
     let defaultValue: boolean;
 
     aFlagProviderIsSet(given);
-    when(/^a zero-value boolean flag with key "(.*)" is evaluated with default value "(.*)"$/, (key, defaultVal: string) => {
-      flagKey = key;
-      defaultValue = defaultVal === 'true';
-    });
+    when(
+      /^a zero-value boolean flag with key "(.*)" is evaluated with default value "(.*)"$/,
+      (key, defaultVal: string) => {
+        flagKey = key;
+        defaultValue = defaultVal === 'true';
+      },
+    );
     then(/^the resolved boolean zero-value should be "(.*)"$/, async (expectedVal: string) => {
       const expectedValue = expectedVal === 'true';
       const value = await client.getBooleanValue(flagKey, defaultValue);
@@ -114,10 +112,13 @@ defineFeature(feature, (test) => {
     let defaultValue: number;
 
     aFlagProviderIsSet(given);
-    when(/^a zero-value float flag with key "(.*)" is evaluated with default value (\d+\.\d+)$/, (key, defaultValueString) => {
-      flagKey = key;
-      defaultValue = Number.parseFloat(defaultValueString);
-    });
+    when(
+      /^a zero-value float flag with key "(.*)" is evaluated with default value (\d+\.\d+)$/,
+      (key, defaultValueString) => {
+        flagKey = key;
+        defaultValue = Number.parseFloat(defaultValueString);
+      },
+    );
     then(/^the resolved float zero-value should be (\d+\.\d+)$/, async (expectedValueString) => {
       const expectedValue = Number.parseFloat(expectedValueString);
       const value = await client.getNumberValue(flagKey, defaultValue);

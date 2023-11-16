@@ -5,6 +5,6 @@ export default {
   verbose: true,
   silent: false,
   moduleNameMapper: {
-    '@openfeature/flagd-core': ['<rootDir>/../../../../shared/flagd-core/src']
+    '@openfeature/flagd-core': ['<rootDir>/../../../../shared/flagd-core/src'],
   },
 };

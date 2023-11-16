@@ -44,4 +44,3 @@ export function semVer(data: unknown): boolean {
 
   return false;
 }
- 
