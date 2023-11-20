@@ -1,4 +1,5 @@
 import { ClientReadableStream, ClientUnaryCall, ServiceError, credentials, status } from '@grpc/grpc-js';
+import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 import {
   EvaluationContext,
   FlagNotFoundError,
@@ -29,9 +30,7 @@ import {
 } from '../../../proto/ts/schema/v1/schema';
 import { Config } from '../../configuration';
 import {
-  BASE_EVENT_STREAM_RETRY_BACKOFF_MS,
   DEFAULT_MAX_CACHE_SIZE,
-  DEFAULT_MAX_EVENT_STREAM_RETRIES,
   EVENT_CONFIGURATION_CHANGE,
   EVENT_PROVIDER_READY,
 } from '../../constants';
@@ -73,14 +72,10 @@ export class GRPCService implements Service {
   private _client: ServiceClient;
   private _cache: LRUCache<string, ResolutionDetails<FlagValue>> | undefined;
   private _cacheEnabled = false;
-  private _streamAlive = false;
-  private _streamConnectAttempt = 0;
-  private _stream: ClientReadableStream<EventStreamResponse> | undefined = undefined;
-  private _streamConnectBackoff = BASE_EVENT_STREAM_RETRY_BACKOFF_MS;
-  private _maxEventStreamRetries;
+  private _eventStream: ClientReadableStream<EventStreamResponse> | undefined = undefined;
   private get _cacheActive() {
     // the cache is "active" (able to be used) if the config enabled it, AND the gRPC stream is live
-    return this._cacheEnabled && this._streamAlive;
+    return this._cacheEnabled && this._client.getChannel().getConnectivityState(false) === ConnectivityState.READY;
   }
 
   constructor(
@@ -89,7 +84,6 @@ export class GRPCService implements Service {
     private logger?: Logger,
   ) {
     const { host, port, tls, socketPath } = config;
-    this._maxEventStreamRetries = config.maxEventStreamRetries ?? DEFAULT_MAX_EVENT_STREAM_RETRIES;
     this._client = client
       ? client
       : new ServiceClient(
@@ -104,16 +98,18 @@ export class GRPCService implements Service {
   }
 
   connect(
-    connectCallback: () => void,
+    reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
   ): Promise<void> {
-    return this.connectStream(connectCallback, changedCallback, disconnectCallback);
+    return new Promise((resolve, reject) =>
+      this.listen(reconnectCallback, changedCallback, disconnectCallback, resolve, reject),
+    );
   }
 
   async disconnect(): Promise<void> {
     // cancel the stream and close the connection
-    this._stream?.cancel();
+    this._eventStream?.cancel();
     this._client.close();
   }
 
@@ -153,42 +149,33 @@ export class GRPCService implements Service {
     return this.resolve(this._client.resolveObject, flagKey, context, logger);
   }
 
-  private connectStream(
-    connectCallback: () => void,
+  private listen(
+    reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.logger?.debug(`${FlagdProvider.name}: connecting stream, attempt ${this._streamConnectAttempt}...`);
+    resolveConnect?: () => void,
+    rejectConnect?: (reason: Error) => void,
+  ) {
+    this.logger?.debug(`${FlagdProvider.name}: connecting stream...`);
       const stream = this._client.eventStream({}, {});
-      stream.on('error', (err: ServiceError | undefined) => {
-        if (err?.code === status.CANCELLED) {
-          this.logger?.debug(`${FlagdProvider.name}: stream cancelled, will not be re-established`);
-        } else {
-          this.handleError(reject, connectCallback, changedCallback, disconnectCallback);
-        }
-      });
-      stream.on('close', () => {
-        this.handleClose();
+      stream.on('error', (err: Error) => {
+        rejectConnect?.(err);
+        this.handleError(reconnectCallback, changedCallback, disconnectCallback);
       });
       stream.on('data', (message) => {
         if (message.type === EVENT_PROVIDER_READY) {
-          this.handleProviderReady(resolve, connectCallback);
+          this.logger?.debug(`${FlagdProvider.name}: streaming connection established with flagd`);
+          // if resolveConnect is undefined, this is a reconnection; we only want to fire the reconnect callback in that case
+          if (resolveConnect) {
+            resolveConnect();
+          } else {
+            reconnectCallback();
+          }
         } else if (message.type === EVENT_CONFIGURATION_CHANGE) {
           this.handleFlagsChanged(message, changedCallback);
         }
       });
-      this._stream = stream;
-    });
-  }
-
-  private handleProviderReady(resolve: () => void, connectCallback: () => void) {
-    connectCallback();
-    this.logger?.info(`${FlagdProvider.name}: streaming connection established with flagd`);
-    this._streamAlive = true;
-    this._streamConnectAttempt = 0;
-    this._streamConnectBackoff = BASE_EVENT_STREAM_RETRY_BACKOFF_MS;
-    resolve();
+      this._eventStream = stream;
   }
 
   private handleFlagsChanged(message: EventStreamResponse, changedCallback: (flagsChanged: string[]) => void) {
@@ -209,8 +196,18 @@ export class GRPCService implements Service {
     }
   }
 
+  private reconnect(
+    reconnectCallback: () => void,
+    changedCallback: (flagsChanged: string[]) => void,
+    disconnectCallback: () => void,
+  ) {
+    const channel = this._client.getChannel();
+    channel.watchConnectivityState(channel.getConnectivityState(true), Infinity, () => {
+      this.listen(reconnectCallback, changedCallback, disconnectCallback);
+    });
+  }
+
   private handleError(
-    reject: (reason?: Error) => void,
     connectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
@@ -218,29 +215,7 @@ export class GRPCService implements Service {
     disconnectCallback();
     this.logger?.error(`${FlagdProvider.name}: streaming connection error, will attempt reconnect...`);
     this._cache?.clear();
-    this._streamAlive = false;
-
-    // if we haven't reached max attempt, reconnect after backoff
-    if (this._streamConnectAttempt <= this._maxEventStreamRetries) {
-      this._streamConnectAttempt++;
-      setTimeout(() => {
-        this._streamConnectBackoff = this._streamConnectBackoff * 2;
-        this.connectStream(connectCallback, changedCallback, disconnectCallback).catch(() => {
-          // empty catch to avoid unhandled promise rejection
-        });
-      }, this._streamConnectBackoff);
-    } else {
-      // after max attempts, give up
-      const errorMessage = `${FlagdProvider.name}: max stream connect attempts (${this._maxEventStreamRetries} reached)`;
-      this.logger?.error(errorMessage);
-      reject(new Error(errorMessage));
-    }
-  }
-
-  private handleClose() {
-    this.logger?.info(`${FlagdProvider.name}: streaming connection closed`);
-    this._cache?.clear();
-    this._streamAlive = false;
+    this.reconnect(connectCallback, changedCallback, disconnectCallback);
   }
 
   private async resolve<T extends FlagValue>(

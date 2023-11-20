@@ -14,7 +14,7 @@ import { defineFeature, loadFeature } from 'jest-cucumber';
 const feature = loadFeature('features/evaluation.feature');
 
 // get a client (flagd provider registered in setup)
-const client = OpenFeature.getClient();
+const client = OpenFeature.getClient('e2e');
 
 const givenAnOpenfeatureClientIsRegistered = (
   given: (stepMatcher: string, stepDefinitionCallback: () => void) => void,
@@ -29,9 +29,6 @@ defineFeature(feature, (test) => {
     });
   });
 
-  afterAll(async () => {
-    await OpenFeature.close();
-  });
 
   test('Resolves boolean value', ({ given, when, then }) => {
     let value: boolean;

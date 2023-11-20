@@ -82,7 +82,7 @@
           "npx jest --setupFiles './setup-in-process-provider.ts'"
         ],
         "cwd": "libs/providers/flagd/src/e2e",
-        "parallel": false
+        "parallel": true
       },
       "dependsOn": [
         {
