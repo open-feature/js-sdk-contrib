@@ -78,13 +78,13 @@ export class GrpcFetch implements DataFetch {
 
   private reconnect(
     dataFillCallback: (flags: string) => void,
-    connectCallback: () => void,
+    reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
   ) {
     const channel = this._syncClient.getChannel();
     channel.watchConnectivityState(channel.getConnectivityState(true), Infinity, () => {
-      this.listen(dataFillCallback, connectCallback, changedCallback, disconnectCallback);
+      this.listen(dataFillCallback, reconnectCallback, changedCallback, disconnectCallback);
     });
   }
 }

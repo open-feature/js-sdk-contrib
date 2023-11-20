@@ -208,14 +208,14 @@ export class GRPCService implements Service {
   }
 
   private handleError(
-    connectCallback: () => void,
+    reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
   ) {
     disconnectCallback();
     this.logger?.error(`${FlagdProvider.name}: streaming connection error, will attempt reconnect...`);
     this._cache?.clear();
-    this.reconnect(connectCallback, changedCallback, disconnectCallback);
+    this.reconnect(reconnectCallback, changedCallback, disconnectCallback);
   }
 
   private async resolve<T extends FlagValue>(
