@@ -46,11 +46,12 @@ describe('grpc fetch', () => {
   });
 
   it('should handle error and watch channel for reconnect', () => {
-
     const mockChannel = {
       getConnectivityState: jest.fn(() => ConnectivityState.READY),
-      watchConnectivityState: jest.fn(),
-    }
+      watchConnectivityState: jest.fn(() => {
+        // empty
+      }),
+    };
 
     // given
     const serviceMock: FlagSyncServiceClient = {
@@ -73,7 +74,9 @@ describe('grpc fetch', () => {
 
     // when
     const fetch = new GrpcFetch(cfg, serviceMock);
-    fetch.connect(jest.fn(), jest.fn(), jest.fn(), disconnectCallback).catch(() => {});
+    fetch.connect(jest.fn(), jest.fn(), jest.fn(), disconnectCallback).catch(() => {
+      // do nothing
+    });
 
     // then
     expect(disconnectCallback).toBeCalledTimes(1);

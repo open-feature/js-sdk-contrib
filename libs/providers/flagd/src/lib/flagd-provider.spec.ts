@@ -265,7 +265,7 @@ describe(FlagdProvider.name, () => {
     const mockChannel = {
       getConnectivityState: jest.fn(() => ConnectivityState.READY),
       watchConnectivityState: jest.fn(),
-    }
+    };
 
     // mock ServiceClient to inject
     const streamingServiceClientMock = {
@@ -500,7 +500,9 @@ describe(FlagdProvider.name, () => {
           undefined,
           new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
         );
-        provider.initialize().catch(() => {});
+        provider.initialize().catch(() => {
+          // ignore
+        });
 
         // fake some errors
         registeredOnErrorCallback();

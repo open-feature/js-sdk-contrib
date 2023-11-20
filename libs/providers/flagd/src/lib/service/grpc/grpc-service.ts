@@ -29,11 +29,7 @@ import {
   ServiceClient,
 } from '../../../proto/ts/schema/v1/schema';
 import { Config } from '../../configuration';
-import {
-  DEFAULT_MAX_CACHE_SIZE,
-  EVENT_CONFIGURATION_CHANGE,
-  EVENT_PROVIDER_READY,
-} from '../../constants';
+import { DEFAULT_MAX_CACHE_SIZE, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
 import { Service } from '../service';
 
@@ -157,25 +153,25 @@ export class GRPCService implements Service {
     rejectConnect?: (reason: Error) => void,
   ) {
     this.logger?.debug(`${FlagdProvider.name}: connecting stream...`);
-      const stream = this._client.eventStream({}, {});
-      stream.on('error', (err: Error) => {
-        rejectConnect?.(err);
-        this.handleError(reconnectCallback, changedCallback, disconnectCallback);
-      });
-      stream.on('data', (message) => {
-        if (message.type === EVENT_PROVIDER_READY) {
-          this.logger?.debug(`${FlagdProvider.name}: streaming connection established with flagd`);
-          // if resolveConnect is undefined, this is a reconnection; we only want to fire the reconnect callback in that case
-          if (resolveConnect) {
-            resolveConnect();
-          } else {
-            reconnectCallback();
-          }
-        } else if (message.type === EVENT_CONFIGURATION_CHANGE) {
-          this.handleFlagsChanged(message, changedCallback);
+    const stream = this._client.eventStream({}, {});
+    stream.on('error', (err: Error) => {
+      rejectConnect?.(err);
+      this.handleError(reconnectCallback, changedCallback, disconnectCallback);
+    });
+    stream.on('data', (message) => {
+      if (message.type === EVENT_PROVIDER_READY) {
+        this.logger?.debug(`${FlagdProvider.name}: streaming connection established with flagd`);
+        // if resolveConnect is undefined, this is a reconnection; we only want to fire the reconnect callback in that case
+        if (resolveConnect) {
+          resolveConnect();
+        } else {
+          reconnectCallback();
         }
-      });
-      this._eventStream = stream;
+      } else if (message.type === EVENT_CONFIGURATION_CHANGE) {
+        this.handleFlagsChanged(message, changedCallback);
+      }
+    });
+    this._eventStream = stream;
   }
 
   private handleFlagsChanged(message: EventStreamResponse, changedCallback: (flagsChanged: string[]) => void) {

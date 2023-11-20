@@ -12,7 +12,7 @@ const client = OpenFeature.getClient('unstable');
 defineFeature(feature, (test) => {
   let readyRunCount = 0;
   let errorRunCount = 0;
-  
+
   beforeAll((done) => {
     client.addHandler(ProviderEvents.Ready, async () => {
       readyRunCount++;
@@ -22,7 +22,7 @@ defineFeature(feature, (test) => {
 
   test('Provider reconnection', ({ given, when, then, and }) => {
     given('a flagd provider is set', () => {
-        // handled in beforeAll
+      // handled in beforeAll
     });
     when('a PROVIDER_READY handler and a PROVIDER_ERROR handler are added', () => {
       client.addHandler(ProviderEvents.Error, () => {

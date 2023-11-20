@@ -29,7 +29,6 @@ defineFeature(feature, (test) => {
     });
   });
 
-
   test('Resolves boolean value', ({ given, when, then }) => {
     let value: boolean;
     let flagKey: string;
