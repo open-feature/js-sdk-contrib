@@ -7,5 +7,5 @@ export default {
   moduleNameMapper: {
     '@openfeature/flagd-core': ['<rootDir>/../../../../shared/flagd-core/src'],
   },
-  globalTeardown: './setup-after.ts',
+  globalTeardown: './tear-down.ts',
 };
