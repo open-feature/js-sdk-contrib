@@ -28,17 +28,16 @@ Options can be defined in the constructor or as environment variables. Construct
 
 ### Available Configuration Options
 
-| Option name           | Environment variable name      | Type    | Default   | Supported values |
-|-----------------------|--------------------------------|---------|-----------|------------------|
-| host                  | FLAGD_HOST                     | string  | localhost |                  |
-| port                  | FLAGD_PORT                     | number  | 8013      |                  |
-| tls                   | FLAGD_TLS                      | boolean | false     |                  |
-| socketPath            | FLAGD_SOCKET_PATH              | string  | -         |                  |
-| resolverType          | FLAGD_SOURCE_RESOLVER          | string  | rpc       | rpc, in-process  |
-| selector              | FLAGD_SOURCE_SELECTOR          | string  | -         |                  |
-| cache                 | FLAGD_CACHE                    | string  | lru       | lru,disabled     |
-| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | int     | 1000      |                  |
-| maxEventStreamRetries | FLAGD_MAX_EVENT_STREAM_RETRIES | int     | 5         |                  |
+| Option name                            | Environment variable name      | Type    | Default   | Supported values |
+| -------------------------------------- | ------------------------------ | ------- | --------- | ---------------- |
+| host                                   | FLAGD_HOST                     | string  | localhost |                  |
+| port                                   | FLAGD_PORT                     | number  | 8013      |                  |
+| tls                                    | FLAGD_TLS                      | boolean | false     |                  |
+| socketPath                             | FLAGD_SOCKET_PATH              | string  | -         |                  |
+| resolverType                           | FLAGD_SOURCE_RESOLVER          | string  | rpc       | rpc, in-process  |
+| selector                               | FLAGD_SOURCE_SELECTOR          | string  | -         |                  |
+| cache                                  | FLAGD_CACHE                    | string  | lru       | lru,disabled     |
+| maxCacheSize                           | FLAGD_MAX_CACHE_SIZE           | int     | 1000      |                  |
 
 Below are examples of usage patterns.
 
@@ -80,7 +79,7 @@ In the above example, the provider expects a flag sync service implementation to
 The flagd provider emits `PROVIDER_READY`, `PROVIDER_ERROR` and `PROVIDER_CONFIGURATION_CHANGED` events.
 
 | SDK event                        | Originating action in flagd                                                     |
-|----------------------------------|---------------------------------------------------------------------------------|
+| -------------------------------- | ------------------------------------------------------------------------------- |
 | `PROVIDER_READY`                 | The streaming connection with flagd has been established.                       |
 | `PROVIDER_ERROR`                 | The streaming connection with flagd has been broken.                            |
 | `PROVIDER_CONFIGURATION_CHANGED` | A flag configuration (default value, targeting rule, etc) in flagd has changed. |
@@ -90,7 +89,7 @@ For general information on events, see the [official documentation](https://open
 ### Flag Metadata
 
 | Field   | Type   | Value                                             |
-|---------|--------|---------------------------------------------------|
+| ------- | ------ | ------------------------------------------------- |
 | `scope` | string | "selector" set for the associated source in flagd |
 
 ## Building

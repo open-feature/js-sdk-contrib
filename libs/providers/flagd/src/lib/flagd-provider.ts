@@ -55,7 +55,7 @@ export class FlagdProvider implements Provider {
 
   initialize(): Promise<void> {
     return this._service
-      .connect(this.setReady.bind(this), this.emitChanged.bind(this), this.setError.bind(this))
+      .connect(this.handleReconnect.bind(this), this.handleChanged.bind(this), this.handleError.bind(this))
       .then(() => {
         this.logger?.debug(`${this.metadata.name}: ready`);
         this._status = ProviderStatus.READY;
@@ -122,15 +122,17 @@ export class FlagdProvider implements Provider {
     throw err;
   };
 
-  private setReady(): void {
+  private handleReconnect(): void {
     this._status = ProviderStatus.READY;
+    this._events.emit(ProviderEvents.Ready);
   }
 
-  private setError(): void {
+  private handleError(): void {
     this._status = ProviderStatus.ERROR;
+    this._events.emit(ProviderEvents.Error);
   }
 
-  private emitChanged(flagsChanged: string[]): void {
+  private handleChanged(flagsChanged: string[]): void {
     this._events.emit(ProviderEvents.ConfigurationChanged, { flagsChanged });
   }
 }

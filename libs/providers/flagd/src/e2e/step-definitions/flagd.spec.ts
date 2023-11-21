@@ -5,7 +5,7 @@ import { defineFeature, loadFeature } from 'jest-cucumber';
 const feature = loadFeature('features/flagd.feature');
 
 // get a client (flagd provider registered in setup)
-const client = OpenFeature.getClient();
+const client = OpenFeature.getClient('e2e');
 
 const aFlagProviderIsSet = (given: (stepMatcher: string, stepDefinitionCallback: () => void) => void) => {
   given('a flagd provider is set', () => undefined);
@@ -16,10 +16,6 @@ defineFeature(feature, (test) => {
     client.addHandler(ProviderEvents.Ready, async () => {
       done();
     });
-  });
-
-  afterAll(async () => {
-    await OpenFeature.close();
   });
 
   test('Provider ready event', ({ given, when, then }) => {

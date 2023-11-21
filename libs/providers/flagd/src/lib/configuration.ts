@@ -62,13 +62,6 @@ export interface Config {
    * @default 1000
    */
   maxCacheSize?: number;
-
-  /**
-   * Amount of times to attempt to reconnect to the event stream.
-   *
-   * @default 5
-   */
-  maxEventStreamRetries?: number;
 }
 
 export type FlagdProviderOptions = Partial<Config>;
@@ -81,7 +74,6 @@ const DEFAULT_CONFIG: Config = {
   selector: '',
   cache: 'lru',
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
-  maxEventStreamRetries: DEFAULT_MAX_EVENT_STREAM_RETRIES,
 };
 
 enum ENV_VAR {
@@ -91,7 +83,6 @@ enum ENV_VAR {
   FLAGD_SOCKET_PATH = 'FLAGD_SOCKET_PATH',
   FLAGD_CACHE = 'FLAGD_CACHE',
   FLAGD_MAX_CACHE_SIZE = 'FLAGD_MAX_CACHE_SIZE',
-  FLAGD_MAX_EVENT_STREAM_RETRIES = 'FLAGD_MAX_EVENT_STREAM_RETRIES',
   FLAGD_SOURCE_SELECTOR = 'FLAGD_SOURCE_SELECTOR',
   FLAGD_RESOLVER = 'FLAGD_RESOLVER',
 }
@@ -114,9 +105,6 @@ const getEnvVarConfig = (): Partial<Config> => ({
   }),
   ...(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE] && {
     maxCacheSize: Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
-  }),
-  ...(process.env[ENV_VAR.FLAGD_MAX_EVENT_STREAM_RETRIES] && {
-    maxEventStreamRetries: Number(process.env[ENV_VAR.FLAGD_MAX_EVENT_STREAM_RETRIES]),
   }),
   ...(process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR] && {
     selector: process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR],

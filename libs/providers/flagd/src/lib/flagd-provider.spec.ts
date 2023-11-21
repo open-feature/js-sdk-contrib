@@ -28,6 +28,7 @@ import {
 import { EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from './constants';
 import { FlagdProvider } from './flagd-provider';
 import { FlagChangeMessage, GRPCService } from './service/grpc/grpc-service';
+import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 
 const REASON = StandardResolutionReasons.STATIC;
 const ERROR_REASON = StandardResolutionReasons.ERROR;
@@ -261,10 +262,18 @@ describe(FlagdProvider.name, () => {
       cancel: jest.fn(),
     };
 
+    const mockChannel = {
+      getConnectivityState: jest.fn(() => ConnectivityState.READY),
+      watchConnectivityState: jest.fn(),
+    };
+
     // mock ServiceClient to inject
     const streamingServiceClientMock = {
       eventStream: jest.fn(() => {
         return streamMock;
+      }),
+      getChannel: jest.fn(() => {
+        return mockChannel;
       }),
       close: jest.fn(),
       resolveBoolean: jest.fn(
@@ -485,73 +494,23 @@ describe(FlagdProvider.name, () => {
     });
 
     describe('connection/re-connection', () => {
-      it('should attempt to inital connection multiple times', (done) => {
+      it('should watch channel for reconnect after error', () => {
         const provider = new FlagdProvider(
           undefined,
           undefined,
           new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
         );
-        provider.initialize();
+        provider.initialize().catch(() => {
+          // ignore
+        });
 
         // fake some errors
-        registeredOnErrorCallback();
-        registeredOnErrorCallback();
         registeredOnErrorCallback();
 
         // status should be ERROR
         expect(provider.status).toEqual(ProviderStatus.ERROR);
-
-        // connect finally
-        registeredOnMessageCallback({ type: EVENT_PROVIDER_READY, data: {} });
-
-        new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
-          try {
-            // within 3 seconds, we should have seen at least 3 connect attempts, and provider should be READY.
-            expect(
-              (streamingServiceClientMock.eventStream as jest.MockedFn<any>).mock.calls.length,
-            ).toBeGreaterThanOrEqual(3);
-            expect(provider.status).toEqual(ProviderStatus.READY);
-            done();
-          } catch (err) {
-            done(err);
-          }
-        });
-      });
-
-      it('should attempt re-connection multiple times', (done) => {
-        const provider = new FlagdProvider(
-          undefined,
-          undefined,
-          new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
-        );
-        provider.initialize();
-
-        // connect without issue initially
-        registeredOnMessageCallback({ type: EVENT_PROVIDER_READY, data: {} });
-
-        // status should be READY
-        expect(provider.status).toEqual(ProviderStatus.READY);
-
-        // fake some errors
-        registeredOnErrorCallback();
-        registeredOnErrorCallback();
-        registeredOnErrorCallback();
-
-        // status should be ERROR
-        expect(provider.status).toEqual(ProviderStatus.ERROR);
-
-        new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
-          try {
-            // within 4 seconds, we should have seen at least 3 connect attempts and status should be READY.
-            expect(
-              (streamingServiceClientMock.eventStream as jest.MockedFn<any>).mock.calls.length,
-            ).toBeGreaterThanOrEqual(3);
-            expect(provider.status).toEqual(ProviderStatus.READY);
-            done();
-          } catch (err) {
-            done(err);
-          }
-        });
+        expect(streamingServiceClientMock.getChannel().getConnectivityState).toHaveBeenCalledWith(true);
+        expect(streamingServiceClientMock.getChannel().watchConnectivityState).toHaveBeenCalled();
       });
     });
   });
