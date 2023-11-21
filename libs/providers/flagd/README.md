@@ -38,7 +38,6 @@ Options can be defined in the constructor or as environment variables. Construct
 | selector                               | FLAGD_SOURCE_SELECTOR          | string  | -         |                  |
 | cache                                  | FLAGD_CACHE                    | string  | lru       | lru,disabled     |
 | maxCacheSize                           | FLAGD_MAX_CACHE_SIZE           | int     | 1000      |                  |
-| maxEventStreamRetries ( 0 = unlimited) | FLAGD_MAX_EVENT_STREAM_RETRIES | int     | 0         |                  |
 
 Below are examples of usage patterns.
 

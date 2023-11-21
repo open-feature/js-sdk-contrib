@@ -15,7 +15,6 @@ describe('Configuration', () => {
       port: 8013,
       tls: false,
       maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
-      maxEventStreamRetries: DEFAULT_MAX_EVENT_STREAM_RETRIES,
       cache: 'lru',
       resolverType: 'rpc',
       selector: '',
@@ -28,7 +27,6 @@ describe('Configuration', () => {
     const tls = true;
     const socketPath = '/tmp/flagd.socks';
     const maxCacheSize = 333;
-    const maxEventStreamRetries = 10;
     const cache = 'disabled';
     const resolverType = 'in-process';
     const selector = 'app=weather';
@@ -39,7 +37,6 @@ describe('Configuration', () => {
     process.env['FLAGD_SOCKET_PATH'] = socketPath;
     process.env['FLAGD_CACHE'] = cache;
     process.env['FLAGD_MAX_CACHE_SIZE'] = `${maxCacheSize}`;
-    process.env['FLAGD_MAX_EVENT_STREAM_RETRIES'] = `${maxEventStreamRetries}`;
     process.env['FLAGD_SOURCE_SELECTOR'] = `${selector}`;
     process.env['FLAGD_RESOLVER'] = `${resolverType}`;
 
@@ -49,7 +46,6 @@ describe('Configuration', () => {
       tls,
       socketPath,
       maxCacheSize,
-      maxEventStreamRetries,
       cache,
       resolverType,
       selector,
@@ -62,7 +58,6 @@ describe('Configuration', () => {
       port: 3000,
       tls: true,
       maxCacheSize: 1000,
-      maxEventStreamRetries: 5,
       cache: 'lru',
       resolverType: 'rpc',
       selector: '',
