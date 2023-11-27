@@ -13,6 +13,8 @@ $ npm install @openfeature/launchdarkly-client-provider
 ## Sample initialization
 
 ```ts
+import { LaunchDarklyClientProvider } from '@openfeature/launchdarkly-client-provider';
+
 // initialize provider
 const clientEnvKey = 'LDEnvironmentID';
 
