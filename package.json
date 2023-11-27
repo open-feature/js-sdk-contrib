@@ -44,16 +44,10 @@
     "@nx/rollup": "16.9.1",
     "@nx/web": "16.9.1",
     "@nx/workspace": "16.9.1",
-<<<<<<< HEAD
-    "@openfeature/core": "^0.0.19",
+    "@openfeature/core": "^0.0.20",
     "@openfeature/flagd-core": ">=0.1.1",
-    "@openfeature/server-sdk": "^1.6.2",
-    "@openfeature/web-sdk": "^0.4.0",
-=======
-    "@openfeature/core": "^0.0.18",
-    "@openfeature/server-sdk": "^1.7.2",
-    "@openfeature/web-sdk": "^0.4.5",
->>>>>>> bea7567 (chore: update sdks)
+    "@openfeature/server-sdk": "^1.7.4",
+    "@openfeature/web-sdk": "^0.4.7",
     "@opentelemetry/sdk-metrics": "^1.15.0",
     "@swc-node/register": "~1.6.0",
     "@swc/cli": "~0.1.62",
