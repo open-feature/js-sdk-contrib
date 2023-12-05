@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.10.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.9.0...flagd-provider-v0.10.0) (2023-11-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* reconnect, missing and duped events, remove max reconnect ([#660](https://github.com/open-feature/js-sdk-contrib/issues/660))
+
+### 🐛 Bug Fixes
+
+* orphaned grpc connection, semver ~, change events ([#654](https://github.com/open-feature/js-sdk-contrib/issues/654)) ([5afbea7](https://github.com/open-feature/js-sdk-contrib/commit/5afbea754983f95858bf1bdfd15ab51793b0b72e))
+* reconnect, missing and duped events, remove max reconnect ([#660](https://github.com/open-feature/js-sdk-contrib/issues/660)) ([8489c2f](https://github.com/open-feature/js-sdk-contrib/commit/8489c2f47ea3a619c3b430edffb00f3cabeb2e1e))
+
+
+### ✨ New Features
+
+* flagd in-process provider ([#633](https://github.com/open-feature/js-sdk-contrib/issues/633)) ([2213946](https://github.com/open-feature/js-sdk-contrib/commit/2213946d9aa69c9e86325543c8ac60fbc5319d08))
+
+
+### 🧹 Chore
+
+* **deps:** update dependency @grpc/grpc-js to ~1.8.0 || ~1.9.0 ([#662](https://github.com/open-feature/js-sdk-contrib/issues/662)) ([2b977c2](https://github.com/open-feature/js-sdk-contrib/commit/2b977c266cbb874e0c245e7200237acfceafbb9e))
+
 ## [0.9.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.8.3...flagd-provider-v0.9.0) (2023-10-11)
 
 
