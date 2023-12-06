@@ -1,20 +1,20 @@
-import { flagdPropertyKey, flagKeyPropertyKey, targetingPropertyKey } from './common';
 import MurmurHash3 from 'imurmurhash';
+import { flagKeyPropertyKey, flagdPropertyKey, targetingPropertyKey } from './common';
 
 export const fractionalRule = 'fractional';
 
-// eslint-disable-next-line  @typescript-eslint/no-explicit-any
-export function fractional(data: unknown, context: Record<any, any>): string | null {
-  if (!Array.isArray(data)) {
-    return null;
-  }
-
-  const args = Array.from(data);
+export function fractional(...args: unknown[]): string | null {
   if (args.length < 2) {
     console.error('Invalid targeting rule. Require at least two buckets.');
     return null;
   }
 
+  // we put the context at the first index of the array
+  const context: {[key: string]: any} | undefined = args[0] || undefined;
+  if (typeof context !== 'object') {
+    return null;
+  }
+  const logicArgs = args.slice(1);
   const flagdProperties = context[flagdPropertyKey];
   if (!flagdProperties) {
     return null;
@@ -23,9 +23,9 @@ export function fractional(data: unknown, context: Record<any, any>): string | n
   let bucketBy: string;
   let buckets: unknown[];
 
-  if (typeof args[0] == 'string') {
-    bucketBy = args[0];
-    buckets = args.slice(1, args.length);
+  if (typeof logicArgs[0] == 'string') {
+    bucketBy = logicArgs[0];
+    buckets = logicArgs.slice(1, logicArgs.length);
   } else {
     bucketBy = context[targetingPropertyKey];
     if (!bucketBy) {
@@ -33,7 +33,7 @@ export function fractional(data: unknown, context: Record<any, any>): string | n
       return null;
     }
 
-    buckets = args;
+    buckets = logicArgs;
   }
 
   let bucketingList;

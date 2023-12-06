@@ -2,19 +2,17 @@ import { compare, parse } from 'semver';
 
 export const semVerRule = 'sem_ver';
 
-export function semVer(data: unknown): boolean {
-  if (!Array.isArray(data)) {
-    return false;
-  }
-
-  const args = Array.from(data);
+export function semVer(...args: unknown[]): boolean {
 
   if (args.length != 3) {
     return false;
   }
 
-  const semVer1 = parse(args[0]);
-  const semVer2 = parse(args[2]);
+  const semVertString1 = typeof args[0] === 'string' ? args[0] : undefined; 
+  const semVertString2 = typeof args[2] === 'string' ? args[2] : undefined; 
+
+  const semVer1 = parse(semVertString1);
+  const semVer2 = parse(semVertString2);
 
   if (!semVer1 || !semVer2) {
     return false;

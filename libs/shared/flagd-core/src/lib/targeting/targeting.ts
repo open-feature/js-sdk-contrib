@@ -1,23 +1,17 @@
-import { LogicEngine } from 'json-logic-engine';
 import { endsWithHandler, endsWithRule, startsWithHandler, startsWithRule } from './string-comp';
 import { semVer, semVerRule } from './sem-ver';
 import { fractional, fractionalRule } from './fractional';
 import { flagdPropertyKey, flagKeyPropertyKey, timestampPropertyKey } from './common';
+import * as jsonLogic from 'json-logic-js';
+
+jsonLogic.add_operation(startsWithRule, startsWithHandler);
+jsonLogic.add_operation(endsWithRule, endsWithHandler);
+jsonLogic.add_operation(semVerRule, semVer);
+jsonLogic.add_operation(fractionalRule, fractional);
 
 export class Targeting {
-  private readonly _logicEngine: LogicEngine;
 
-  constructor() {
-    const engine = new LogicEngine();
-    engine.addMethod(startsWithRule, startsWithHandler);
-    engine.addMethod(endsWithRule, endsWithHandler);
-    engine.addMethod(semVerRule, semVer);
-    engine.addMethod(fractionalRule, fractional);
-
-    this._logicEngine = engine;
-  }
-
-  applyTargeting(flagKey: string, logic: unknown, data: object): unknown {
+  applyTargeting(flagKey: string, logic: {[key: string]: any | unknown}, data: object): unknown {
     if (Object.hasOwn(data, flagdPropertyKey)) {
       console.warn(`overwriting ${flagdPropertyKey} property in the context`);
     }
@@ -30,6 +24,11 @@ export class Targeting {
       },
     };
 
-    return this._logicEngine.run(logic, ctxData);
+    // we need access to the context/$flag object in the "fractional" rule, so set it at arg zero if it's not there
+    if (logic[fractionalRule] && !logic[fractionalRule]?.[0]?.[flagdPropertyKey]) {
+      logic[fractionalRule] = [ctxData , ...logic[fractionalRule]];
+    }
+
+    return jsonLogic.apply(logic, ctxData);
   }
 }
