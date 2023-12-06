@@ -1,30 +1,29 @@
+import { EvaluationContext } from '@openfeature/core';
 import MurmurHash3 from 'imurmurhash';
 import { flagKeyPropertyKey, flagdPropertyKey, targetingPropertyKey } from './common';
 
 export const fractionalRule = 'fractional';
 
-export function fractional(...args: unknown[]): string | null {
-  // we put the context at the first index of the array
-  const context: { [key: string]: any } | undefined = args[0] || undefined;
+// we put the context at the first index of the arg array in this rule
+export function fractional(context: EvaluationContext, ...args: unknown[]): string | null {
   if (typeof context !== 'object') {
     return null;
   }
-  const logicArgs = args.slice(1);
-  if (logicArgs.length < 2) {
+  if (args.length < 2) {
     console.error('Invalid targeting rule. Require at least two buckets.');
     return null;
   }
-  const flagdProperties = context[flagdPropertyKey];
-  if (!flagdProperties) {
+  const flagdProperties = context[flagdPropertyKey] as { [flagKeyPropertyKey]: string };
+  if (!flagdProperties || !flagdProperties[flagKeyPropertyKey]) {
     return null;
   }
 
-  let bucketBy: string;
+  let bucketBy: string | undefined;
   let buckets: unknown[];
 
-  if (typeof logicArgs[0] == 'string') {
-    bucketBy = logicArgs[0];
-    buckets = logicArgs.slice(1, logicArgs.length);
+  if (typeof args[0] == 'string') {
+    bucketBy = args[0];
+    buckets = args.slice(1, args.length);
   } else {
     bucketBy = context[targetingPropertyKey];
     if (!bucketBy) {
@@ -32,7 +31,7 @@ export function fractional(...args: unknown[]): string | null {
       return null;
     }
 
-    buckets = logicArgs;
+    buckets = args;
   }
 
   let bucketingList;

@@ -10,7 +10,8 @@ jsonLogic.add_operation(semVerRule, semVer);
 jsonLogic.add_operation(fractionalRule, fractional);
 
 export class Targeting {
-  applyTargeting(flagKey: string, logic: { [key: string]: any | unknown }, data: object): unknown {
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  applyTargeting(flagKey: string, logic: { [key: string]: any }, data: object): unknown {
     if (Object.hasOwn(data, flagdPropertyKey)) {
       console.warn(`overwriting ${flagdPropertyKey} property in the context`);
     }
