@@ -4,10 +4,6 @@ import { flagKeyPropertyKey, flagdPropertyKey, targetingPropertyKey } from './co
 export const fractionalRule = 'fractional';
 
 export function fractional(...args: unknown[]): string | null {
-  if (args.length < 2) {
-    console.error('Invalid targeting rule. Require at least two buckets.');
-    return null;
-  }
 
   // we put the context at the first index of the array
   const context: { [key: string]: any } | undefined = args[0] || undefined;
@@ -15,6 +11,10 @@ export function fractional(...args: unknown[]): string | null {
     return null;
   }
   const logicArgs = args.slice(1);
+  if (logicArgs.length < 2) {
+    console.error('Invalid targeting rule. Require at least two buckets.');
+    return null;
+  }
   const flagdProperties = context[flagdPropertyKey];
   if (!flagdProperties) {
     return null;
