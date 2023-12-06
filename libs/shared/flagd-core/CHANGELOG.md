@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.2...flagd-core-v0.1.3) (2023-12-06)
+
+
+### 🐛 Bug Fixes
+
+* "in" op by using json-logic-js ([#671](https://github.com/open-feature/js-sdk-contrib/issues/671)) ([4b5e2fe](https://github.com/open-feature/js-sdk-contrib/commit/4b5e2fe5cf89385a8cf5e6be5b4bc0a50d4b791d))
+* orphaned grpc connection, semver ~, change events ([#654](https://github.com/open-feature/js-sdk-contrib/issues/654)) ([5afbea7](https://github.com/open-feature/js-sdk-contrib/commit/5afbea754983f95858bf1bdfd15ab51793b0b72e))
+
 ## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.1...flagd-core-v0.1.2) (2023-11-14)
 
 
