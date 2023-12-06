@@ -4,7 +4,6 @@ import { flagKeyPropertyKey, flagdPropertyKey, targetingPropertyKey } from './co
 export const fractionalRule = 'fractional';
 
 export function fractional(...args: unknown[]): string | null {
-
   // we put the context at the first index of the array
   const context: { [key: string]: any } | undefined = args[0] || undefined;
   if (typeof context !== 'object') {
