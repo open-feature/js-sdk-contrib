@@ -24,7 +24,7 @@ export class Targeting {
       },
     };
 
-    // we need access to the context/$flag object in the "fractional" rule, so set it at arg zero if it's not there
+    // we need access to the context/$flagd object in the "fractional" rule, so set it at arg zero if it's not there
     if (logic[fractionalRule] && !logic[fractionalRule]?.[0]?.[flagdPropertyKey]) {
       logic[fractionalRule] = [ctxData , ...logic[fractionalRule]];
     }
