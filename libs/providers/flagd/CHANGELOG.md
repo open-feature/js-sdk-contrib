@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.0...flagd-provider-v0.10.1) (2023-12-06)
+
+
+### 🐛 Bug Fixes
+
+* "in" op error, update core ([#675](https://github.com/open-feature/js-sdk-contrib/issues/675)) ([69944a8](https://github.com/open-feature/js-sdk-contrib/commit/69944a8117625b83704284e35a2ad807c63f8420))
+
 ## [0.10.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.9.0...flagd-provider-v0.10.0) (2023-11-28)
 
 
