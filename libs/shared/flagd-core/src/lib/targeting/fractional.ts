@@ -1,26 +1,24 @@
-import { flagdPropertyKey, flagKeyPropertyKey, targetingPropertyKey } from './common';
+import { EvaluationContext } from '@openfeature/core';
 import MurmurHash3 from 'imurmurhash';
+import { flagKeyPropertyKey, flagdPropertyKey, targetingPropertyKey } from './common';
 
 export const fractionalRule = 'fractional';
 
-// eslint-disable-next-line  @typescript-eslint/no-explicit-any
-export function fractional(data: unknown, context: Record<any, any>): string | null {
-  if (!Array.isArray(data)) {
+// we put the context at the first index of the arg array in this rule
+export function fractional(context: EvaluationContext, ...args: unknown[]): string | null {
+  if (typeof context !== 'object') {
     return null;
   }
-
-  const args = Array.from(data);
   if (args.length < 2) {
     console.error('Invalid targeting rule. Require at least two buckets.');
     return null;
   }
-
-  const flagdProperties = context[flagdPropertyKey];
-  if (!flagdProperties) {
+  const flagdProperties = context[flagdPropertyKey] as { [flagKeyPropertyKey]: string };
+  if (!flagdProperties || !flagdProperties[flagKeyPropertyKey]) {
     return null;
   }
 
-  let bucketBy: string;
+  let bucketBy: string | undefined;
   let buckets: unknown[];
 
   if (typeof args[0] == 'string') {
