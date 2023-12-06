@@ -10,8 +10,7 @@ jsonLogic.add_operation(semVerRule, semVer);
 jsonLogic.add_operation(fractionalRule, fractional);
 
 export class Targeting {
-
-  applyTargeting(flagKey: string, logic: {[key: string]: any | unknown}, data: object): unknown {
+  applyTargeting(flagKey: string, logic: { [key: string]: any | unknown }, data: object): unknown {
     if (Object.hasOwn(data, flagdPropertyKey)) {
       console.warn(`overwriting ${flagdPropertyKey} property in the context`);
     }
@@ -26,7 +25,7 @@ export class Targeting {
 
     // we need access to the context/$flagd object in the "fractional" rule, so set it at arg zero if it's not there
     if (logic[fractionalRule] && !logic[fractionalRule]?.[0]?.[flagdPropertyKey]) {
-      logic[fractionalRule] = [ctxData , ...logic[fractionalRule]];
+      logic[fractionalRule] = [ctxData, ...logic[fractionalRule]];
     }
 
     return jsonLogic.apply(logic, ctxData);

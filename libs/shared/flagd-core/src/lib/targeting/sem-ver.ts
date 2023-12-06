@@ -3,13 +3,12 @@ import { compare, parse } from 'semver';
 export const semVerRule = 'sem_ver';
 
 export function semVer(...args: unknown[]): boolean {
-
   if (args.length != 3) {
     return false;
   }
 
-  const semVertString1 = typeof args[0] === 'string' ? args[0] : undefined; 
-  const semVertString2 = typeof args[2] === 'string' ? args[2] : undefined; 
+  const semVertString1 = typeof args[0] === 'string' ? args[0] : undefined;
+  const semVertString2 = typeof args[2] === 'string' ? args[2] : undefined;
 
   const semVer1 = parse(semVertString1);
   const semVer2 = parse(semVertString2);
