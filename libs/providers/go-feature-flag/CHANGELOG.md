@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.6.0...go-feature-flag-provider-v0.6.1) (2023-12-07)
+
+
+### 🧹 Chore
+
+* address lint issues ([#642](https://github.com/open-feature/js-sdk-contrib/issues/642)) ([bbd9aee](https://github.com/open-feature/js-sdk-contrib/commit/bbd9aee896dc4a0817f379b799a1b8d331ee76c6))
+* goff test env correction ([#672](https://github.com/open-feature/js-sdk-contrib/issues/672)) ([725baf3](https://github.com/open-feature/js-sdk-contrib/commit/725baf3dea1c0ca5cb4e3ffdbcd6567797a685bb))
+
 ## [0.6.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.5.16...go-feature-flag-provider-v0.6.0) (2023-10-11)
 
 
