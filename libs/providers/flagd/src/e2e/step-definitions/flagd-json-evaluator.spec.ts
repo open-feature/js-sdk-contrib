@@ -39,9 +39,9 @@ defineFeature(feature, (test) => {
     });
   });
 
-    afterAll(async () => {
-      await OpenFeature.close();
-    });
+  afterAll(async () => {
+    await OpenFeature.close();
+  });
 
   test('Evaluator reuse', evaluateStringFlagWithContext);
 

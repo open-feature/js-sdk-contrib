@@ -54,7 +54,6 @@ export class GrpcFetch implements DataFetch {
     resolveConnect?: () => void,
     rejectConnect?: (reason: Error) => void,
   ) {
-
     closeStreamIfDefined(this._syncStream);
     this._syncStream = this._syncClient.syncFlags(this._request);
 

@@ -7,7 +7,9 @@ export const closeStreamIfDefined = (stream: ClientReadableStream<unknown> | und
    */
   if (stream) {
     stream.removeAllListeners();
-    stream.on('error', () => {});
+    stream.on('error', () => {
+      // swallow afters after closed
+    });
     stream.cancel();
     stream.destroy();
   }
