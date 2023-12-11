@@ -14,4 +14,5 @@ export default {
   // ignore e2e path
   testPathIgnorePatterns: ["/e2e/"],
   coverageDirectory: '../../../coverage/libs/providers/flagd',
+  forceExit: false,
 };
