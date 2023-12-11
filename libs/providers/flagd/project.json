@@ -78,8 +78,8 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "npx jest --setupFiles './setup-rpc-provider.ts'",
-          "npx jest --setupFiles './setup-in-process-provider.ts'"
+          "npx jest --setupFiles './setup-rpc-provider.ts' --config './jest.config.ts'",
+          "npx jest --setupFiles './setup-in-process-provider.ts' --config './jest.config.ts'"
         ],
         "cwd": "libs/providers/flagd/src/e2e",
         "parallel": false
