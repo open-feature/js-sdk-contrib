@@ -106,6 +106,7 @@ export class GRPCService implements Service {
 
   async disconnect(): Promise<void> {
     closeStreamIfDefined(this._eventStream);
+    this._client.close();
   }
 
   async resolveBoolean(

@@ -1,10 +1,14 @@
-import { ClientReadableStream } from "@grpc/grpc-js";
+import { ClientReadableStream } from '@grpc/grpc-js';
 
-export const closeStreamIfDefined = (stream:  ClientReadableStream<unknown> | undefined) => {
-    stream?.removeAllListeners();
-    stream?.on('error', () => {
-      // no-op, but we need a handler here to avoid a throw
-    });
-    stream?.cancel();
-    stream?.destroy();
-}
+export const closeStreamIfDefined = (stream: ClientReadableStream<unknown> | undefined) => {
+  /**
+   * cancel() is necessary to prevent calls from hanging the process, so we need to we need to remove all the
+   * handlers, and add a no-op for 'error' so we can cancel without bubbling up an exception
+   */
+  if (stream) {
+    stream.removeAllListeners();
+    stream.on('error', () => {});
+    stream.cancel();
+    stream.destroy();
+  }
+};

@@ -18,6 +18,10 @@ defineFeature(feature, (test) => {
     });
   });
 
+  afterAll(async () => {
+    await OpenFeature.close();
+  });
+
   test('Provider ready event', ({ given, when, then }) => {
     let ran = false;
 

@@ -35,7 +35,6 @@ export class GrpcFetch implements DataFetch {
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
   ): Promise<void> {
-    // note that we never reject the promise as sync is a long-running operation
     return new Promise((resolve, reject) =>
       this.listen(dataFillCallback, reconnectCallback, changedCallback, disconnectCallback, resolve, reject),
     );
@@ -44,6 +43,7 @@ export class GrpcFetch implements DataFetch {
   disconnect() {
     this._logger?.debug('Disconnecting gRPC sync connection');
     closeStreamIfDefined(this._syncStream);
+    this._syncClient.close();
   }
 
   private listen(
