@@ -29,6 +29,10 @@ defineFeature(feature, (test) => {
     });
   });
 
+  afterAll(async () => {
+    await OpenFeature.close();
+  });
+
   test('Resolves boolean value', ({ given, when, then }) => {
     let value: boolean;
     let flagKey: string;

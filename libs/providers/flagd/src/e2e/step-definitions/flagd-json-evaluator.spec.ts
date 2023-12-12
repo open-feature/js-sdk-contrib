@@ -39,6 +39,10 @@ defineFeature(feature, (test) => {
     });
   });
 
+  afterAll(async () => {
+    await OpenFeature.close();
+  });
+
   test('Evaluator reuse', evaluateStringFlagWithContext);
 
   test('Fractional operator', ({ given, when, and, then }) => {

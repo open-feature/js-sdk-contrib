@@ -81,6 +81,8 @@ describe(FlagdProvider.name, () => {
             }
           }),
           cancel: jest.fn(),
+          removeAllListeners: jest.fn(),
+          destroy: jest.fn(),
         };
       }),
       close: jest.fn(),
@@ -260,6 +262,8 @@ describe(FlagdProvider.name, () => {
         }
       }),
       cancel: jest.fn(),
+      removeAllListeners: jest.fn(),
+      destroy: jest.fn(),
     };
 
     const mockChannel = {
@@ -529,6 +533,8 @@ describe(FlagdProvider.name, () => {
             }
           }),
           cancel: jest.fn(),
+          removeAllListeners: jest.fn(),
+          destroy: jest.fn(),
         };
       }),
       close: jest.fn(),
@@ -635,6 +641,8 @@ describe(FlagdProvider.name, () => {
   });
 
   describe('shutdown', () => {
+    const removeAllListenersMock = jest.fn();
+    const destroyMock = jest.fn();
     const cancelMock = jest.fn();
     const closeMock = jest.fn();
 
@@ -648,6 +656,8 @@ describe(FlagdProvider.name, () => {
             }
           }),
           cancel: cancelMock,
+          removeAllListeners: removeAllListenersMock,
+          destroy: destroyMock,
         };
       }),
       close: closeMock,
@@ -668,7 +678,8 @@ describe(FlagdProvider.name, () => {
       it('should call service disconnect', async () => {
         await OpenFeature.close();
         expect(cancelMock).toHaveBeenCalled();
-        expect(closeMock).toHaveBeenCalled();
+        expect(removeAllListenersMock).toHaveBeenCalled();
+        expect(destroyMock).toHaveBeenCalled();
       });
     });
   });

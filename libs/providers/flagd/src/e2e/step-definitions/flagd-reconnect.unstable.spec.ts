@@ -20,6 +20,10 @@ defineFeature(feature, (test) => {
     });
   });
 
+  afterAll(async () => {
+    await OpenFeature.close();
+  });
+
   test('Provider reconnection', ({ given, when, then, and }) => {
     given('a flagd provider is set', () => {
       // handled in beforeAll

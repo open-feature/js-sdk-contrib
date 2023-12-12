@@ -32,6 +32,7 @@ import { Config } from '../../configuration';
 import { DEFAULT_MAX_CACHE_SIZE, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
 import { Service } from '../service';
+import { closeStreamIfDefined } from '../common';
 
 type AnyResponse =
   | ResolveBooleanResponse
@@ -104,8 +105,7 @@ export class GRPCService implements Service {
   }
 
   async disconnect(): Promise<void> {
-    // cancel the stream and close the connection
-    this._eventStream?.cancel();
+    closeStreamIfDefined(this._eventStream);
     this._client.close();
   }
 
@@ -153,6 +153,10 @@ export class GRPCService implements Service {
     rejectConnect?: (reason: Error) => void,
   ) {
     this.logger?.debug(`${FlagdProvider.name}: connecting stream...`);
+
+    // close the previous stream if we're reconnecting
+    closeStreamIfDefined(this._eventStream);
+
     const stream = this._client.eventStream({}, {});
     stream.on('error', (err: Error) => {
       rejectConnect?.(err);

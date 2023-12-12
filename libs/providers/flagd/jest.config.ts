@@ -13,5 +13,5 @@ export default {
   moduleFileExtensions: ['ts', 'js', 'html'],
   // ignore e2e path
   testPathIgnorePatterns: ["/e2e/"],
-  coverageDirectory: '../../../coverage/libs/providers/flagd',
+  coverageDirectory: '../../../coverage/libs/providers/flagd'
 };

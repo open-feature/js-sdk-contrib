@@ -4,6 +4,7 @@ import { GeneralError } from '@openfeature/server-sdk';
 import { FlagSyncServiceClient, SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/sync/v1/sync_service';
 import { Config } from '../../../configuration';
 import { DataFetch } from '../data-fetch';
+import { closeStreamIfDefined } from '../../common';
 
 /**
  * Implements the gRPC sync contract to fetch flag data.
@@ -34,7 +35,6 @@ export class GrpcFetch implements DataFetch {
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
   ): Promise<void> {
-    // note that we never reject the promise as sync is a long-running operation
     return new Promise((resolve, reject) =>
       this.listen(dataFillCallback, reconnectCallback, changedCallback, disconnectCallback, resolve, reject),
     );
@@ -42,7 +42,7 @@ export class GrpcFetch implements DataFetch {
 
   disconnect() {
     this._logger?.debug('Disconnecting gRPC sync connection');
-    this._syncStream?.destroy();
+    closeStreamIfDefined(this._syncStream);
     this._syncClient.close();
   }
 
@@ -54,6 +54,7 @@ export class GrpcFetch implements DataFetch {
     resolveConnect?: () => void,
     rejectConnect?: (reason: Error) => void,
   ) {
+    closeStreamIfDefined(this._syncStream);
     this._syncStream = this._syncClient.syncFlags(this._request);
 
     this._syncStream.on('data', (data: SyncFlagsResponse) => {
