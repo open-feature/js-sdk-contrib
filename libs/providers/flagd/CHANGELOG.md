@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.1...flagd-provider-v0.10.2) (2023-12-12)
+
+
+### 🐛 Bug Fixes
+
+* hanging grpc handles after shutdown ([#683](https://github.com/open-feature/js-sdk-contrib/issues/683)) ([848d7ae](https://github.com/open-feature/js-sdk-contrib/commit/848d7ae844ced7938531c9606bdbddb8fa68a2d7))
+
 ## [0.10.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.0...flagd-provider-v0.10.1) (2023-12-06)
 
 
