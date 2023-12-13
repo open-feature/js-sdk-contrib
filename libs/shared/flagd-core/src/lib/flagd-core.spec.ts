@@ -160,3 +160,38 @@ describe('flagd-core validations', () => {
     expect(() => core.resolveNumberEvaluation('myIntFlag', 100, {}, console)).toThrow(GeneralError);
   });
 });
+
+describe('flagd-core common flag definitions', () => {
+  it('should support boolean variant shorthand', () => {
+    const core = new FlagdCore();
+    const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":"false", "targeting":{"in":["@openfeature.dev",{"var":"email"}]}}}}`;
+    core.setConfigurations(flagCfg);
+
+    const resolved = core.resolveBooleanEvaluation('myBoolFlag', false, { email: 'user@openfeature.dev' }, console);
+    expect(resolved.value).toBe(true);
+    expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
+    expect(resolved.variant).toBe('true');
+  });
+
+  it('should support fractional logic', () => {
+    const core = new FlagdCore();
+    const flagCfg = `{"flags":{"headerColor":{"state":"ENABLED","variants":{"red":"red","blue":"blue","grey":"grey"},"defaultVariant":"grey", "targeting":{"fractional":[{"var":"email"},["red",50],["blue",50]]}}}}`;
+    core.setConfigurations(flagCfg);
+
+    const resolved = core.resolveStringEvaluation('headerColor', 'grey', { email: 'user@openfeature.dev' }, console);
+    expect(resolved.value).toBe('red');
+    expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
+    expect(resolved.variant).toBe('red');
+  });
+
+  it('should support nested fractional logic', () => {
+    const core = new FlagdCore();
+    const flagCfg = `{"flags":{"headerColor":{"state":"ENABLED","variants":{"red":"red","blue":"blue","grey":"grey"},"defaultVariant":"grey", "targeting":{"if":[true,{"fractional":[{"var":"email"},["red",50],["blue",50]]}]}}}}`;
+    core.setConfigurations(flagCfg);
+
+    const resolved = core.resolveStringEvaluation('headerColor', 'grey', { email: 'user@openfeature.dev' }, console);
+    expect(resolved.value).toBe('red');
+    expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
+    expect(resolved.variant).toBe('red');
+  });
+});
