@@ -1,32 +1,32 @@
 export const startsWithRule = 'starts_with';
 export const endsWithRule = 'ends_with';
 
-export function startsWithHandler(...args: unknown[]) {
-  return compare(startsWithRule, args);
+export function startsWithHandler(data: unknown) {
+  return compare(startsWithRule, data);
 }
 
-export function endsWithHandler(...args: unknown[]) {
-  return compare(endsWithRule, args);
+export function endsWithHandler(data: unknown) {
+  return compare(endsWithRule, data);
 }
 
-function compare(method: string, args: unknown[]): boolean {
-  if (!Array.isArray(args)) {
+function compare(method: string, data: unknown): boolean {
+  if (!Array.isArray(data)) {
     return false;
   }
 
-  if (args.length != 2) {
+  if (data.length != 2) {
     return false;
   }
 
-  if (typeof args[0] !== 'string' || typeof args[1] !== 'string') {
+  if (typeof data[0] !== 'string' || typeof data[1] !== 'string') {
     return false;
   }
 
   switch (method) {
     case startsWithRule:
-      return args[0].startsWith(args[1]);
+      return data[0].startsWith(data[1]);
     case endsWithRule:
-      return args[0].endsWith(args[1]);
+      return data[0].endsWith(data[1]);
     default:
       return false;
   }
