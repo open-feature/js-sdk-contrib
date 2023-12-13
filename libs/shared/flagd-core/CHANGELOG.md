@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.3...flagd-core-v0.1.4) (2023-12-13)
+
+
+### 🐛 Bug Fixes
+
+* fixed issue with nested fractional evaluations ([#686](https://github.com/open-feature/js-sdk-contrib/issues/686)) ([e0dbfdb](https://github.com/open-feature/js-sdk-contrib/commit/e0dbfdb2c73b45bdbadb22b4198b0134e395548a))
+
+
+### 🧹 Chore
+
+* improve logger, parsing and add helpers ([#689](https://github.com/open-feature/js-sdk-contrib/issues/689)) ([fa0a238](https://github.com/open-feature/js-sdk-contrib/commit/fa0a238bc4533e431e2c2969303866e74f4f181f))
+
 ## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.2...flagd-core-v0.1.3) (2023-12-06)
 
 
