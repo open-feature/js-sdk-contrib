@@ -14,7 +14,7 @@ export class InProcessService implements Service {
     dataFetcher?: DataFetch,
     private logger?: Logger,
   ) {
-    this._flagdCore = new FlagdCore();
+    this._flagdCore = new FlagdCore(undefined, logger);
     this._dataFetcher = dataFetcher ? dataFetcher : new GrpcFetch(config, undefined, logger);
   }
 
