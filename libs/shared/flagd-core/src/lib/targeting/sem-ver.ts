@@ -3,7 +3,7 @@ import { compare, parse } from 'semver';
 
 export const semVerRule = 'sem_ver';
 
-export function semVerOperator(logger: Logger) {
+export function semVerFactory(logger: Logger) {
   return function semVer(data: unknown): boolean {
     if (!Array.isArray(data)) {
       logger.debug(`Invalid ${semVerRule} configuration: Expected an array`);

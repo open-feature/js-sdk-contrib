@@ -3,7 +3,7 @@ import { type Logger } from '@openfeature/core';
 export const startsWithRule = 'starts_with';
 export const endsWithRule = 'ends_with';
 
-export function stringCompareOperators(logger: Logger) {
+export function stringCompareFactory(logger: Logger) {
   function startsWithHandler(data: unknown) {
     return compare(startsWithRule, data);
   }

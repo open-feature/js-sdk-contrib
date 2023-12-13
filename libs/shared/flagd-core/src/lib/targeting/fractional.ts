@@ -4,7 +4,7 @@ import type { EvaluationContext, EvaluationContextValue, Logger } from '@openfea
 
 export const fractionalRule = 'fractional';
 
-export function fractionalOperator(logger: Logger) {
+export function fractionalFactory(logger: Logger) {
   return function fractional(data: unknown, context: EvaluationContext): string | null {
     if (!Array.isArray(data)) {
       return null;

@@ -1,7 +1,7 @@
 import { LogicEngine } from 'json-logic-engine';
-import { stringCompareOperators, endsWithRule, startsWithRule } from './string-comp';
-import { semVerOperator, semVerRule } from './sem-ver';
-import { fractionalOperator, fractionalRule } from './fractional';
+import { stringCompareFactory, endsWithRule, startsWithRule } from './string-comp';
+import { semVerFactory, semVerRule } from './sem-ver';
+import { fractionalFactory, fractionalRule } from './fractional';
 import { flagdPropertyKey, flagKeyPropertyKey, timestampPropertyKey } from './common';
 import { type Logger } from '@openfeature/core';
 export class Targeting {
@@ -9,11 +9,11 @@ export class Targeting {
 
   constructor(private logger: Logger) {
     const engine = new LogicEngine();
-    const { endsWithHandler, startsWithHandler } = stringCompareOperators(logger);
+    const { endsWithHandler, startsWithHandler } = stringCompareFactory(logger);
     engine.addMethod(startsWithRule, startsWithHandler);
     engine.addMethod(endsWithRule, endsWithHandler);
-    engine.addMethod(semVerRule, semVerOperator(logger));
-    engine.addMethod(fractionalRule, fractionalOperator(logger));
+    engine.addMethod(semVerRule, semVerFactory(logger));
+    engine.addMethod(fractionalRule, fractionalFactory(logger));
 
     this._logicEngine = engine;
   }
