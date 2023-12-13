@@ -5,6 +5,7 @@ import {
   FlagValue,
   GeneralError,
   JsonValue,
+  FlagValueType,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
@@ -123,7 +124,7 @@ export class FlagdCore implements Storage {
   /**
    * Resolves the value of a flag based on the specified type type.
    * @template T - The type of the flag value.
-   * @param {('string' | 'boolean' | 'number' | 'object')} type - The type of the flag value.
+   * @param {FlagValueType} type - The type of the flag value.
    * @param {string} flagKey - The key of the flag.
    * @param {T} defaultValue - The default value of the flag.
    * @param {EvaluationContext} evalCtx - The evaluation context for targeting rules.
@@ -134,7 +135,7 @@ export class FlagdCore implements Storage {
    * @throws {GeneralError} - If the variant specified in the flag is not found.
    */
   resolve<T extends FlagValue>(
-    type: 'string' | 'boolean' | 'number' | 'object',
+    type: FlagValueType,
     flagKey: string,
     defaultValue: T,
     evalCtx: EvaluationContext = {},
