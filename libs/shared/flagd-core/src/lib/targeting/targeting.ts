@@ -1,25 +1,26 @@
 import { LogicEngine } from 'json-logic-engine';
-import { endsWithHandler, endsWithRule, startsWithHandler, startsWithRule } from './string-comp';
-import { semVer, semVerRule } from './sem-ver';
-import { fractional, fractionalRule } from './fractional';
+import { stringCompareOperators, endsWithRule, startsWithRule } from './string-comp';
+import { semVerOperator, semVerRule } from './sem-ver';
+import { fractionalOperator, fractionalRule } from './fractional';
 import { flagdPropertyKey, flagKeyPropertyKey, timestampPropertyKey } from './common';
-
+import { type Logger } from '@openfeature/core';
 export class Targeting {
   private readonly _logicEngine: LogicEngine;
 
-  constructor() {
+  constructor(private logger: Logger) {
     const engine = new LogicEngine();
+    const { endsWithHandler, startsWithHandler } = stringCompareOperators(logger);
     engine.addMethod(startsWithRule, startsWithHandler);
     engine.addMethod(endsWithRule, endsWithHandler);
-    engine.addMethod(semVerRule, semVer);
-    engine.addMethod(fractionalRule, fractional);
+    engine.addMethod(semVerRule, semVerOperator(logger));
+    engine.addMethod(fractionalRule, fractionalOperator(logger));
 
     this._logicEngine = engine;
   }
 
   applyTargeting(flagKey: string, logic: unknown, data: object): unknown {
     if (Object.hasOwn(data, flagdPropertyKey)) {
-      console.warn(`overwriting ${flagdPropertyKey} property in the context`);
+      this.logger.warn(`overwriting ${flagdPropertyKey} property in the context`);
     }
 
     const ctxData = {
