@@ -9,7 +9,11 @@ export class InProcessService implements Service {
   private _flagdCore: FlagdCore;
   private _dataFetcher: DataFetch;
 
-  constructor(config: Config, dataFetcher?: DataFetch, logger?: Logger) {
+  constructor(
+    config: Config,
+    dataFetcher?: DataFetch,
+    private logger?: Logger,
+  ) {
     this._flagdCore = new FlagdCore();
     this._dataFetcher = dataFetcher ? dataFetcher : new GrpcFetch(config, undefined, logger);
   }
@@ -63,6 +67,10 @@ export class InProcessService implements Service {
   }
 
   private fill(flags: string): void {
-    this._flagdCore.setConfigurations(flags);
+    try {
+      this._flagdCore.setConfigurations(flags);
+    } catch (err) {
+      this.logger?.error(err);
+    }
   }
 }
