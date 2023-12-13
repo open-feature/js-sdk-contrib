@@ -1,10 +1,18 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 import { Targeting } from './targeting';
+
+const logger = {
+  debug: () => {},
+  error: () => {},
+  info: () => {},
+  warn: () => {},
+};
 
 describe('Targeting rule evaluator', () => {
   let targeting: Targeting;
 
   beforeAll(() => {
-    targeting = new Targeting();
+    targeting = new Targeting(logger);
   });
 
   it('should inject flag key as a property', () => {
@@ -38,7 +46,7 @@ describe('String comparison operator', () => {
   let targeting: Targeting;
 
   beforeAll(() => {
-    targeting = new Targeting();
+    targeting = new Targeting(logger);
   });
 
   it('should evaluate starts with calls', () => {
@@ -56,7 +64,7 @@ describe('String comparison operator should validate', () => {
   let targeting: Targeting;
 
   beforeAll(() => {
-    targeting = new Targeting();
+    targeting = new Targeting(logger);
   });
 
   it('missing input', () => {
@@ -79,7 +87,7 @@ describe('Sem ver operator', () => {
   let targeting: Targeting;
 
   beforeAll(() => {
-    targeting = new Targeting();
+    targeting = new Targeting(logger);
   });
 
   it('should support equal operator', () => {
@@ -142,7 +150,7 @@ describe('fractional operator', () => {
   let targeting: Targeting;
 
   beforeAll(() => {
-    targeting = new Targeting();
+    targeting = new Targeting(logger);
   });
 
   it('should evaluate valid rule', () => {
@@ -177,7 +185,7 @@ describe('fractional operator should validate', () => {
   let targeting: Targeting;
 
   beforeAll(() => {
-    targeting = new Targeting();
+    targeting = new Targeting(logger);
   });
 
   it('bucket sum to be 100', () => {

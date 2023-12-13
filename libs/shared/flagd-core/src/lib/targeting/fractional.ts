@@ -1,67 +1,70 @@
 import { flagdPropertyKey, flagKeyPropertyKey, targetingPropertyKey } from './common';
 import MurmurHash3 from 'imurmurhash';
+import type { EvaluationContext, EvaluationContextValue, Logger } from '@openfeature/core';
 
 export const fractionalRule = 'fractional';
 
-// eslint-disable-next-line  @typescript-eslint/no-explicit-any
-export function fractional(data: unknown, context: Record<any, any>): string | null {
-  if (!Array.isArray(data)) {
-    return null;
-  }
-
-  const args = Array.from(data);
-  if (args.length < 2) {
-    console.error('Invalid targeting rule. Require at least two buckets.');
-    return null;
-  }
-
-  const flagdProperties = context[flagdPropertyKey];
-  if (!flagdProperties) {
-    return null;
-  }
-
-  let bucketBy: string;
-  let buckets: unknown[];
-
-  if (typeof args[0] == 'string') {
-    bucketBy = args[0];
-    buckets = args.slice(1, args.length);
-  } else {
-    bucketBy = context[targetingPropertyKey];
-    if (!bucketBy) {
-      console.error('Missing targetingKey property');
+export function fractionalFactory(logger: Logger) {
+  return function fractional(data: unknown, context: EvaluationContext): string | null {
+    if (!Array.isArray(data)) {
       return null;
     }
 
-    buckets = args;
-  }
-
-  let bucketingList;
-
-  try {
-    bucketingList = toBucketingList(buckets);
-  } catch (e) {
-    console.error('Error parsing targeting rule', e);
-    return null;
-  }
-
-  const hashKey = flagdProperties[flagKeyPropertyKey] + bucketBy;
-  // hash in signed 32 format. Bitwise operation here works in signed 32 hence the conversion
-  const hash = new MurmurHash3(hashKey).result() | 0;
-  const bucket = (Math.abs(hash) / 2147483648) * 100;
-
-  let sum = 0;
-  for (let i = 0; i < bucketingList.length; i++) {
-    const bucketEntry = bucketingList[i];
-
-    sum += bucketEntry.fraction;
-
-    if (sum >= bucket) {
-      return bucketEntry.variant;
+    const args = Array.from(data);
+    if (args.length < 2) {
+      logger.debug(`Invalid ${fractionalRule} configuration: Expected at least 2 buckets, got ${args.length}`);
+      return null;
     }
-  }
 
-  return null;
+    const flagdProperties = context[flagdPropertyKey] as { [key: string]: EvaluationContextValue };
+    if (!flagdProperties) {
+      logger.debug('Missing flagd properties, cannot perform fractional targeting');
+      return null;
+    }
+
+    let bucketBy: string | undefined;
+    let buckets: unknown[];
+
+    if (typeof args[0] == 'string') {
+      bucketBy = args[0];
+      buckets = args.slice(1, args.length);
+    } else {
+      bucketBy = context[targetingPropertyKey];
+      if (!bucketBy) {
+        logger.debug('Missing targetingKey property, cannot perform fractional targeting');
+        return null;
+      }
+
+      buckets = args;
+    }
+
+    let bucketingList;
+
+    try {
+      bucketingList = toBucketingList(buckets);
+    } catch (err) {
+      logger.debug(`Invalid ${fractionalRule} configuration: `, (err as Error).message);
+      return null;
+    }
+
+    const hashKey = flagdProperties[flagKeyPropertyKey] + bucketBy;
+    // hash in signed 32 format. Bitwise operation here works in signed 32 hence the conversion
+    const hash = new MurmurHash3(hashKey).result() | 0;
+    const bucket = (Math.abs(hash) / 2147483648) * 100;
+
+    let sum = 0;
+    for (let i = 0; i < bucketingList.length; i++) {
+      const bucketEntry = bucketingList[i];
+
+      sum += bucketEntry.fraction;
+
+      if (sum >= bucket) {
+        return bucketEntry.variant;
+      }
+    }
+
+    return null;
+  };
 }
 
 function toBucketingList(from: unknown[]): { variant: string; fraction: number }[] {

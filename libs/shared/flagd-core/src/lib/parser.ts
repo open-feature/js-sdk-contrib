@@ -1,9 +1,9 @@
 import Ajv from 'ajv';
 import { FeatureFlag, Flag } from './feature-flag';
-import mydata from '../../flagd-schemas/json/flagd-definitions.json';
+import flagDefinitionSchema from '../../flagd-schemas/json/flagd-definitions.json';
 
 const ajv = new Ajv();
-const matcher = ajv.compile(mydata);
+const matcher = ajv.compile(flagDefinitionSchema);
 
 const evaluatorKey = '$evaluators';
 const bracketReplacer = new RegExp('^[^{]*\\{|}[^}]*$', 'g');
