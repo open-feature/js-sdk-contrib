@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.2...flagd-provider-v0.10.3) (2023-12-13)
+
+
+### 🧹 Chore
+
+* improve logger, parsing and add helpers ([#689](https://github.com/open-feature/js-sdk-contrib/issues/689)) ([fa0a238](https://github.com/open-feature/js-sdk-contrib/commit/fa0a238bc4533e431e2c2969303866e74f4f181f))
+* update min flagd core to ~0.1.4 ([9afcc19](https://github.com/open-feature/js-sdk-contrib/commit/9afcc194e473fcc37efca5c6eb2d21a1dc71f567))
+
 ## [0.10.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.1...flagd-provider-v0.10.2) (2023-12-12)
 
 
