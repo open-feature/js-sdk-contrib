@@ -194,4 +194,15 @@ describe('flagd-core common flag definitions', () => {
     expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
     expect(resolved.variant).toBe('red');
   });
+
+  it('should support empty targeting rules', () => {
+    const core = new FlagdCore();
+    const flagCfg = `{"flags":{"isEnabled":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":"false","targeting":{}}}}`;
+    core.setConfigurations(flagCfg);
+
+    const resolved = core.resolveBooleanEvaluation('isEnabled', false, {}, console);
+    expect(resolved.value).toBe(false);
+    expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
+    expect(resolved.variant).toBe('false');
+  });
 });
