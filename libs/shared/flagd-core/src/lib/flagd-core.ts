@@ -160,7 +160,7 @@ export class FlagdCore implements Storage {
     let variant;
     let reason;
 
-    if (!flag.targeting) {
+    if (!flag.targeting || Object.keys(flag.targeting).length === 0) {
       logger.debug(`Flag ${flagKey} has no targeting rules`);
       variant = flag.defaultVariant;
       reason = StandardResolutionReasons.STATIC;
