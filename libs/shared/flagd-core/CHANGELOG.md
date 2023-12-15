@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.4...flagd-core-v0.1.5) (2023-12-15)
+
+
+### 🐛 Bug Fixes
+
+* treat empty targeting rules as static ([#696](https://github.com/open-feature/js-sdk-contrib/issues/696)) ([8bff89d](https://github.com/open-feature/js-sdk-contrib/commit/8bff89d023486734a739dbdfb016b2966ec43436))
+
 ## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.3...flagd-core-v0.1.4) (2023-12-13)
 
 
