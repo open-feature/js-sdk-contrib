@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.4.0...flagd-web-provider-v0.4.1) (2023-12-15)
+
+
+### 🐛 Bug Fixes
+
+* packaging issues impacting babel/react ([#596](https://github.com/open-feature/js-sdk-contrib/issues/596)) ([0446eab](https://github.com/open-feature/js-sdk-contrib/commit/0446eab5cf9b45ce7de251b4f5feb8df1d499b9d))
+* tsc issue with flagd-web proto output ([#695](https://github.com/open-feature/js-sdk-contrib/issues/695)) ([65e448c](https://github.com/open-feature/js-sdk-contrib/commit/65e448ce852bcdb06d76c412dd4577be07a165ce))
+
+
+### 🧹 Chore
+
+* add e2e tests for flagd ([#554](https://github.com/open-feature/js-sdk-contrib/issues/554)) ([9ecdcdf](https://github.com/open-feature/js-sdk-contrib/commit/9ecdcdf1660fe27afb4b0c58160c7ba687e29be2))
+* address lint issues ([#642](https://github.com/open-feature/js-sdk-contrib/issues/642)) ([bbd9aee](https://github.com/open-feature/js-sdk-contrib/commit/bbd9aee896dc4a0817f379b799a1b8d331ee76c6))
+* update nx, run migrations ([#552](https://github.com/open-feature/js-sdk-contrib/issues/552)) ([a88d8fc](https://github.com/open-feature/js-sdk-contrib/commit/a88d8fc097789fd7f56011e6ebb66070f52c6e56))
+* use spec submodule ([#568](https://github.com/open-feature/js-sdk-contrib/issues/568)) ([3feb18e](https://github.com/open-feature/js-sdk-contrib/commit/3feb18e0ffa77b87e799a2b5250413f03a4c69e9))
+
 ## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.3.5...flagd-web-provider-v0.4.0) (2023-07-31)
 
 
