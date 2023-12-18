@@ -6,11 +6,12 @@ import { parse } from './parser';
  */
 export interface Storage {
   /**
-   * Sets the configurations from the given string.
+   * Sets the configurations and returns the list of flags that have changed.
    * @param cfg The configuration string to be parsed and stored.
+   * @returns The list of flags that have changed.
    * @throws {Error} If the configuration string is invalid.
    */
-  setConfigurations(cfg: string): void;
+  setConfigurations(cfg: string): string[];
 
   /**
    * Gets the feature flag configuration with the given key.
@@ -44,7 +45,28 @@ export class MemoryStorage implements Storage {
     return this._flags;
   }
 
-  setConfigurations(cfg: string): void {
-    this._flags = parse(cfg);
+  setConfigurations(cfg: string): string[] {
+    const newFlags = parse(cfg);
+    const oldFlags = this._flags;
+    const added: string[] = [];
+    const removed: string[] = [];
+    const changed: string[] = [];
+
+    newFlags.forEach((value, key) => {
+      if (!oldFlags.has(key)) {
+        added.push(key);
+      } else if (oldFlags.get(key)?.hash !== value.hash) {
+        changed.push(key);
+      }
+    });
+
+    oldFlags.forEach((_, key) => {
+      if (!newFlags.has(key)) {
+        removed.push(key);
+      }
+    });
+
+    this._flags = newFlags;
+    return [...added, ...removed, ...changed];
   }
 }

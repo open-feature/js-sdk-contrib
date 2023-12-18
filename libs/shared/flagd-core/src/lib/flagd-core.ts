@@ -40,8 +40,8 @@ export class FlagdCore implements Storage {
     return this;
   }
 
-  setConfigurations(cfg: string): void {
-    this._storage.setConfigurations(cfg);
+  setConfigurations(cfg: string): string[] {
+    return this._storage.setConfigurations(cfg);
   }
 
   getFlag(key: string): FeatureFlag | undefined {
