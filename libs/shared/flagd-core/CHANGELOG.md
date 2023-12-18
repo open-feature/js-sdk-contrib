@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.5...flagd-core-v0.1.6) (2023-12-18)
+
+
+### ✨ New Features
+
+* **flagd-core:** add update config support, returns changed keys ([#703](https://github.com/open-feature/js-sdk-contrib/issues/703)) ([fa393a6](https://github.com/open-feature/js-sdk-contrib/commit/fa393a6c03ddeacc2899db4d4911cb06712211ba))
+
 ## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.4...flagd-core-v0.1.5) (2023-12-15)
 
 
