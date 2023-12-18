@@ -34,11 +34,10 @@ describe('MemoryStorage', () => {
     const flags3 = `{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false},"targeting":{"if":[true,"variant1"]}},"flag2":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}},"flag3":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}}}}`;
     const flags4 = `{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false},"targeting":{"if":[true,"variant2"]}},"flag2":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}},"flag3":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}}}}`;
 
-    storage.setConfigurations(flags1);
-
-    expect(storage.updateConfigurations(flags2)).toEqual(['flag2']);
-    expect(storage.updateConfigurations(flags3)).toEqual(['flag3', 'flag1']);
-    expect(storage.updateConfigurations(flags4)).toEqual(['flag1']);
+    expect(storage.setConfigurations(flags1)).toEqual(['flag1']);
+    expect(storage.setConfigurations(flags2)).toEqual(['flag2']);
+    expect(storage.setConfigurations(flags3)).toEqual(['flag3', 'flag1']);
+    expect(storage.setConfigurations(flags4)).toEqual(['flag1']);
   });
 
   it('should get flag correctly', () => {
