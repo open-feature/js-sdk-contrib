@@ -9,13 +9,23 @@ describe('MemoryStorage', () => {
   });
 
   it('should set configurations correctly', () => {
-    const cfg = '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}}}}';
+    const cfg =
+      '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}}}}';
     storage.setConfigurations(cfg);
 
     // Assert that the configurations are set correctly
-    expect(storage['_flags']).toEqual(new Map([
-      ['flag1', new FeatureFlag({ "state": "ENABLED", "defaultVariant": "variant1", "variants": { "variant1": true, "variant2": false } })],
-    ]));
+    expect(storage['_flags']).toEqual(
+      new Map([
+        [
+          'flag1',
+          new FeatureFlag({
+            state: 'ENABLED',
+            defaultVariant: 'variant1',
+            variants: { variant1: true, variant2: false },
+          }),
+        ],
+      ]),
+    );
   });
 
   it('should update configurations correctly', () => {
@@ -32,12 +42,17 @@ describe('MemoryStorage', () => {
   });
 
   it('should get flag correctly', () => {
-    const cfg = '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}},"flag2":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}}}}';
+    const cfg =
+      '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}},"flag2":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}}}}';
     storage.setConfigurations(cfg);
 
     // Assert that the correct flag is returned
-    expect(storage.getFlag('flag1')).toEqual(new FeatureFlag({ "state": "ENABLED", "defaultVariant": "variant1", "variants": { "variant1": true, "variant2": false } }));
-    expect(storage.getFlag('flag2')).toEqual(new FeatureFlag({ "state": "ENABLED", "defaultVariant": "variant1", "variants": { "variant1": true, "variant2": false } }));
+    expect(storage.getFlag('flag1')).toEqual(
+      new FeatureFlag({ state: 'ENABLED', defaultVariant: 'variant1', variants: { variant1: true, variant2: false } }),
+    );
+    expect(storage.getFlag('flag2')).toEqual(
+      new FeatureFlag({ state: 'ENABLED', defaultVariant: 'variant1', variants: { variant1: true, variant2: false } }),
+    );
 
     // Assert that undefined is returned for non-existing flag
     expect(storage.getFlag('flag3')).toBeUndefined();

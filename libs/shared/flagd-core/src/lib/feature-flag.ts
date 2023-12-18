@@ -21,7 +21,6 @@ export class FeatureFlag {
   private readonly _targeting: unknown;
   private readonly _hash: string;
 
-
   constructor(flag: Flag) {
     this._state = flag['state'];
     this._defaultVariant = flag['defaultVariant'];
