@@ -1,4 +1,5 @@
 import { FlagValue } from '@openfeature/core';
+import { createHash } from 'crypto';
 
 /**
  * Flagd flag configuration structure mapping to schema definition.
@@ -18,12 +19,19 @@ export class FeatureFlag {
   private readonly _defaultVariant: string;
   private readonly _variants: Map<string, FlagValue>;
   private readonly _targeting: unknown;
+  private readonly _hash: string;
+
 
   constructor(flag: Flag) {
     this._state = flag['state'];
     this._defaultVariant = flag['defaultVariant'];
     this._variants = new Map<string, FlagValue>(Object.entries(flag['variants']));
     this._targeting = flag['targeting'];
+    this._hash = createHash('sha1').update(JSON.stringify(flag)).digest('base64');
+  }
+
+  get hash(): string {
+    return this._hash;
   }
 
   get state(): string {

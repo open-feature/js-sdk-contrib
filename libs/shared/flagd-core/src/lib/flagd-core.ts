@@ -44,6 +44,10 @@ export class FlagdCore implements Storage {
     this._storage.setConfigurations(cfg);
   }
 
+  updateConfigurations(cfg: string): string[] {
+    return this._storage.updateConfigurations(cfg);
+  }
+
   getFlag(key: string): FeatureFlag | undefined {
     return this._storage.getFlag(key);
   }
