@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.6...flagd-core-v0.1.7) (2023-12-18)
+
+
+### 🐛 Bug Fixes
+
+* re-add browser support ([#706](https://github.com/open-feature/js-sdk-contrib/issues/706)) ([c262c66](https://github.com/open-feature/js-sdk-contrib/commit/c262c66497e0cc7d8b7ea2d9cc5b85f5d31093e6))
+
 ## [0.1.6](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.5...flagd-core-v0.1.6) (2023-12-18)
 
 
