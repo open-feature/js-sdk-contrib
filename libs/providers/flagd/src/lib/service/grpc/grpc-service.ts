@@ -185,12 +185,14 @@ export class GRPCService implements Service {
       if (data && typeof data === 'object' && 'flags' in data && data?.['flags']) {
         const flagChangeMessage = data as FlagChangeMessage;
         const flagsChanged: string[] = Object.keys(flagChangeMessage.flags || []);
-        // remove each changed key from cache
-        flagsChanged.forEach((key) => {
-          if (this._cache?.delete(key)) {
-            this.logger?.debug(`${FlagdProvider.name}: evicted key: ${key} from cache.`);
-          }
-        });
+        if (this._cacheEnabled) {
+          // remove each changed key from cache
+          flagsChanged.forEach((key) => {
+            if (this._cache?.delete(key)) {
+              this.logger?.debug(`${FlagdProvider.name}: evicted key: ${key} from cache.`);
+            }
+          });
+        }
         changedCallback(flagsChanged);
       }
     }

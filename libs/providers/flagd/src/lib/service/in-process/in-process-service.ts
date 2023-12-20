@@ -4,6 +4,7 @@ import { Config } from '../../configuration';
 import { FlagdCore } from '@openfeature/flagd-core';
 import { DataFetch } from './data-fetch';
 import { GrpcFetch } from './grpc/grpc-fetch';
+import { FileFetch } from './file/file-fetch';
 
 export class InProcessService implements Service {
   private _flagdCore: FlagdCore;
@@ -15,7 +16,11 @@ export class InProcessService implements Service {
     private logger?: Logger,
   ) {
     this._flagdCore = new FlagdCore(undefined, logger);
-    this._dataFetcher = dataFetcher ? dataFetcher : new GrpcFetch(config, undefined, logger);
+    this._dataFetcher = dataFetcher
+      ? dataFetcher
+      : config.offlineFlagSourcePath
+      ? new FileFetch(config.offlineFlagSourcePath)
+      : new GrpcFetch(config, undefined, logger);
   }
 
   connect(
@@ -66,11 +71,12 @@ export class InProcessService implements Service {
     return Promise.resolve(this._flagdCore.resolveObjectEvaluation(flagKey, defaultValue, context, logger));
   }
 
-  private fill(flags: string): void {
+  private fill(flags: string): string[] {
     try {
-      this._flagdCore.setConfigurations(flags);
+      return this._flagdCore.setConfigurations(flags);
     } catch (err) {
       this.logger?.error(err);
+      return [];
     }
   }
 }

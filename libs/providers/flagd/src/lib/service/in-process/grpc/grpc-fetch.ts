@@ -30,7 +30,7 @@ export class GrpcFetch implements DataFetch {
   }
 
   connect(
-    dataFillCallback: (flags: string) => void,
+    dataFillCallback: (flags: string) => string[],
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
@@ -40,14 +40,14 @@ export class GrpcFetch implements DataFetch {
     );
   }
 
-  disconnect() {
+  async disconnect() {
     this._logger?.debug('Disconnecting gRPC sync connection');
     closeStreamIfDefined(this._syncStream);
     this._syncClient.close();
   }
 
   private listen(
-    dataFillCallback: (flags: string) => void,
+    dataFillCallback: (flags: string) => string[],
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,
@@ -59,12 +59,16 @@ export class GrpcFetch implements DataFetch {
 
     this._syncStream.on('data', (data: SyncFlagsResponse) => {
       this._logger?.debug('Received sync payload');
-      dataFillCallback(data.flagConfiguration);
-      changedCallback([]); // flags changed list not supported
+      const changes = dataFillCallback(data.flagConfiguration);
+      // TODO This will fire on new connections because all flags will be marked as changed
+      if (changes.length > 0) {
+        changedCallback(changes);
+      }
       // if resolveConnect is undefined, this is a reconnection; we only want to fire the reconnect callback in that case
       if (resolveConnect) {
         resolveConnect();
       } else {
+        // Call if previously disconnected
         reconnectCallback();
       }
     });
@@ -78,7 +82,7 @@ export class GrpcFetch implements DataFetch {
   }
 
   private reconnect(
-    dataFillCallback: (flags: string) => void,
+    dataFillCallback: (flags: string) => string[],
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: () => void,

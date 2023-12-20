@@ -31,6 +31,7 @@ describe('grpc fetch', () => {
 
     const dataFillCallback = jest.fn((flags: string) => {
       callBackResponse = flags;
+      return [];
     });
     const connectCallback = jest.fn();
     const disconnectCallback = jest.fn();
@@ -40,8 +41,8 @@ describe('grpc fetch', () => {
     fetch.connect(dataFillCallback, connectCallback, jest.fn(), disconnectCallback);
 
     // then
-    expect(dataFillCallback).toBeCalledTimes(1);
-    expect(disconnectCallback).toBeCalledTimes(0);
+    expect(dataFillCallback).toHaveBeenCalledTimes(1);
+    expect(disconnectCallback).toHaveBeenCalledTimes(0);
     expect(callBackResponse).toBe(flagResponse);
   });
 
@@ -79,7 +80,7 @@ describe('grpc fetch', () => {
     });
 
     // then
-    expect(disconnectCallback).toBeCalledTimes(1);
+    expect(disconnectCallback).toHaveBeenCalledTimes(1);
     expect(serviceMock.getChannel().getConnectivityState).toHaveBeenCalledWith(true);
     expect(serviceMock.getChannel().watchConnectivityState).toHaveBeenCalled();
   });
