@@ -75,7 +75,6 @@ In the above example, the provider expects a flag sync service implementation to
 
 In-process resolver can also work in an offline mode.
 To enable this mode, you should provide a valid flag configuration file with the option `offlineFlagSourcePath`.
-The file must contain a valid flagd flag source file.
 
 ```
   OpenFeature.setProvider(new FlagdProvider({
