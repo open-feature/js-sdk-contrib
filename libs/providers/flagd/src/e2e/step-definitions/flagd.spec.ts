@@ -48,8 +48,8 @@ defineFeature(feature, (test) => {
       });
     });
     and(/^a flag with key "(.*)" is modified$/, async () => {
-      // this happens every 1s in the associated container, so wait 2s
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // this happens every 1s in the associated container, so wait 3s
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     });
     then('the PROVIDER_CONFIGURATION_CHANGED handler must run', () => {
       expect(ran).toBeTruthy();
