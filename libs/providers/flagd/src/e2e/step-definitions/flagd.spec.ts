@@ -1,4 +1,4 @@
-import { OpenFeature, ProviderEvents } from '@openfeature/server-sdk';
+import { OpenFeature, ProviderEvents, EventDetails } from '@openfeature/server-sdk';
 import { defineFeature, loadFeature } from 'jest-cucumber';
 
 // load the feature file.
@@ -38,11 +38,13 @@ defineFeature(feature, (test) => {
 
   test('Flag change event', ({ given, when, and, then }) => {
     let ran = false;
+    let eventDetails: EventDetails<ProviderEvents> | undefined;
 
     aFlagProviderIsSet(given);
     when('a PROVIDER_CONFIGURATION_CHANGED handler is added', () => {
-      client.addHandler(ProviderEvents.ConfigurationChanged, async () => {
+      client.addHandler(ProviderEvents.ConfigurationChanged, async (details) => {
         ran = true;
+        eventDetails = details;
       });
     });
     and(/^a flag with key "(.*)" is modified$/, async () => {
@@ -52,8 +54,8 @@ defineFeature(feature, (test) => {
     then('the PROVIDER_CONFIGURATION_CHANGED handler must run', () => {
       expect(ran).toBeTruthy();
     });
-    and(/^the event details must indicate "(.*)" was altered$/, () => {
-      // not supported
+    and(/^the event details must indicate "(.*)" was altered$/, (flagName) => {
+      expect(eventDetails?.flagsChanged).toContain(flagName);
     });
   });
 
