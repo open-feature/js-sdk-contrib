@@ -10,25 +10,26 @@ export class InProcessService implements Service {
   private _flagdCore: FlagdCore;
   private _dataFetcher: DataFetch;
 
-  constructor(
-    config: Config,
-    dataFetcher?: DataFetch,
-    private logger?: Logger,
-  ) {
+  constructor(config: Config, dataFetcher?: DataFetch, logger?: Logger) {
     this._flagdCore = new FlagdCore(undefined, logger);
     this._dataFetcher = dataFetcher
       ? dataFetcher
       : config.offlineFlagSourcePath
-      ? new FileFetch(config.offlineFlagSourcePath)
+      ? new FileFetch(config.offlineFlagSourcePath, logger)
       : new GrpcFetch(config, undefined, logger);
   }
 
   connect(
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
   ): Promise<void> {
-    return this._dataFetcher.connect(this.fill.bind(this), reconnectCallback, changedCallback, disconnectCallback);
+    return this._dataFetcher.connect(
+      this.setFlagConfiguration.bind(this),
+      reconnectCallback,
+      changedCallback,
+      disconnectCallback,
+    );
   }
 
   async disconnect(): Promise<void> {
@@ -71,12 +72,13 @@ export class InProcessService implements Service {
     return Promise.resolve(this._flagdCore.resolveObjectEvaluation(flagKey, defaultValue, context, logger));
   }
 
-  private fill(flags: string): string[] {
-    try {
-      return this._flagdCore.setConfigurations(flags);
-    } catch (err) {
-      this.logger?.error(err);
-      return [];
-    }
+  /**
+   * Sets the flag configuration
+   * @param flags The flags to set as stringified JSON
+   * @returns {string[]} The flags that have changed
+   * @throws — {Error} If the configuration string is invalid.
+   */
+  private setFlagConfiguration(flags: string): string[] {
+    return this._flagdCore.setConfigurations(flags);
   }
 }

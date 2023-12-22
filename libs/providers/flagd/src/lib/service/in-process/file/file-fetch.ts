@@ -1,66 +1,57 @@
-import { Logger } from '@openfeature/core';
-import { Config } from '../../../configuration';
+import { Logger, OpenFeatureError } from '@openfeature/core';
 import { DataFetch } from '../data-fetch';
-import * as fs from 'fs';
+import { promises as fsPromises, watch, type FSWatcher } from 'fs';
+import { GeneralError } from '@openfeature/core';
+
+const encoding = 'utf8';
 
 export class FileFetch implements DataFetch {
   private _filename: string;
-  private _watcher: fs.FSWatcher | null = null;
+  private _watcher: FSWatcher | null = null;
   private _logger: Logger | undefined;
 
   constructor(filename: string, logger?: Logger) {
     this._filename = filename;
+    this._logger = logger;
   }
 
-  connect(
+  async connect(
     dataFillCallback: (flags: string) => string[],
-    reconnectCallback: () => void,
+    _: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      fs.readFile(this._filename, 'utf8', (err, data) => {
-        if (err) {
-          console.error(`Error reading file: ${err}`);
-          disconnectCallback();
-          reject(err);
-        } else {
-          console.log('file loaded, calling dataFillCallback');
-          dataFillCallback(data);
-          // TODO see if this should be moved to the watcher
-          resolve();
+    this._logger?.debug('Starting file sync connection');
+    try {
+      const output = await fsPromises.readFile(this._filename, encoding);
+      // Don't emit the change event for the initial read
+      dataFillCallback(output);
+
+      this._watcher = watch(this._filename, { encoding }, async () => {
+        try {
+          const data = await fsPromises.readFile(this._filename, encoding);
+          const changes = dataFillCallback(data);
+          if (changes.length > 0) {
+            changedCallback(changes);
+          }
+        } catch (err) {
+          this._logger?.error(`Error reading file: ${err}`);
         }
       });
-
-      console.log('setting up watcher');
-      this._watcher = fs.watch(this._filename, (eventType, filename) => {
-        console.log('watcher event', eventType, filename);
-        if (eventType === 'change') {
-          fs.readFile(this._filename, 'utf8', (err, data) => {
-            if (err) {
-              console.error(`Error reading file: ${err}`);
-              disconnectCallback();
-              // reject(err);
-            } else {
-              console.log('file changed, calling dataFillCallback');
-              const changes = dataFillCallback(data);
-              if (changes.length > 0) {
-                changedCallback(changes);
-              }
-            }
-          });
+    } catch (err) {
+      if (err instanceof OpenFeatureError) {
+        throw err;
+      } else {
+        switch ((err as { code?: string })?.code) {
+          case 'ENOENT':
+            throw new GeneralError(`File not found: ${this._filename}`);
+          case 'EACCES':
+            throw new GeneralError(`File not accessible: ${this._filename}`);
+          default:
+            this._logger?.debug(`Error reading file: ${err}`);
+            throw new GeneralError();
         }
-      });
-
-      this._watcher.on('error', (err) => {
-        console.error(`Error watching file: ${err}`);
-        disconnectCallback();
-        // reject(err);
-      });
-
-      console.log('calling dataFillCallback');
-      // resolve();
-    });
+      }
+    }
   }
 
   async disconnect(): Promise<void> {

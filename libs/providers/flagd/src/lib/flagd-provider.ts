@@ -62,7 +62,8 @@ export class FlagdProvider implements Provider {
       })
       .catch((err) => {
         this._status = ProviderStatus.ERROR;
-        this.logger?.error(`${this.metadata.name}: error during initialization: ${err.message}, ${err.stack}`);
+        this.logger?.error(`${this.metadata.name}: error during initialization: ${err.message}`);
+        this.logger?.debug(err);
         throw err;
       });
   }
@@ -127,9 +128,9 @@ export class FlagdProvider implements Provider {
     this._events.emit(ProviderEvents.Ready);
   }
 
-  private handleError(): void {
+  private handleError(message: string): void {
     this._status = ProviderStatus.ERROR;
-    this._events.emit(ProviderEvents.Error);
+    this._events.emit(ProviderEvents.Error, { message });
   }
 
   private handleChanged(flagsChanged: string[]): void {

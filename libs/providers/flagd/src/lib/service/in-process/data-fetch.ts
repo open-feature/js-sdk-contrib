@@ -23,8 +23,9 @@ export interface DataFetch {
     changedCallback: (flagsChanged: string[]) => void,
     /**
      * Callback that runs when the connection is disconnected
+     * @param message The reason for the disconnection
      */
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
   ): Promise<void>;
 
   /**

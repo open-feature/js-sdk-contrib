@@ -10,10 +10,12 @@ import { closeStreamIfDefined } from '../../common';
  * Implements the gRPC sync contract to fetch flag data.
  */
 export class GrpcFetch implements DataFetch {
-  private _syncClient: FlagSyncServiceClient;
-  private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
+  private readonly _syncClient: FlagSyncServiceClient;
   private readonly _request: SyncFlagsRequest;
+  private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
   private _logger: Logger | undefined;
+  private _isConnected = false;
+  private _initialized = false;
 
   constructor(config: Config, syncServiceClient?: FlagSyncServiceClient, logger?: Logger) {
     const { host, port, tls, socketPath, selector } = config;
@@ -30,14 +32,16 @@ export class GrpcFetch implements DataFetch {
   }
 
   connect(
-    dataFillCallback: (flags: string) => string[],
+    dataCallback: (flags: string) => string[],
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
   ): Promise<void> {
-    return new Promise((resolve, reject) =>
-      this.listen(dataFillCallback, reconnectCallback, changedCallback, disconnectCallback, resolve, reject),
-    );
+    return new Promise<void>((resolve, reject) =>
+      this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback, resolve, reject),
+    ).then(() => {
+      this._initialized = true;
+    });
   }
 
   async disconnect() {
@@ -47,49 +51,59 @@ export class GrpcFetch implements DataFetch {
   }
 
   private listen(
-    dataFillCallback: (flags: string) => string[],
+    dataCallback: (flags: string) => string[],
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
     resolveConnect?: () => void,
     rejectConnect?: (reason: Error) => void,
   ) {
+    this._logger?.debug('Starting gRPC sync connection');
     closeStreamIfDefined(this._syncStream);
     this._syncStream = this._syncClient.syncFlags(this._request);
 
     this._syncStream.on('data', (data: SyncFlagsResponse) => {
-      this._logger?.debug('Received sync payload');
-      const changes = dataFillCallback(data.flagConfiguration);
-      // TODO This will fire on new connections because all flags will be marked as changed
-      if (changes.length > 0) {
-        changedCallback(changes);
+      this._logger?.debug(`Received sync payload`);
+
+      try {
+        const changes = dataCallback(data.flagConfiguration);
+        if (this._initialized && changes.length > 0) {
+          changedCallback(changes);
+        }
+      } catch (err) {
+        this._logger?.debug('Error processing sync payload: ', (err as Error)?.message ?? 'unknown error');
       }
-      // if resolveConnect is undefined, this is a reconnection; we only want to fire the reconnect callback in that case
+
       if (resolveConnect) {
         resolveConnect();
-      } else {
-        // Call if previously disconnected
+      } else if (!this._isConnected) {
+        // Not the first connection and there's no active connection.
+        this._logger?.debug('Reconnected to gRPC sync');
         reconnectCallback();
       }
+      this._isConnected = true;
     });
 
     this._syncStream.on('error', (err: ServiceError | undefined) => {
-      this._logger?.error('Connection error, attempting to reconnect', err);
-      disconnectCallback();
-      rejectConnect?.(new GeneralError('Failed to connect stream'));
-      this.reconnect(dataFillCallback, reconnectCallback, changedCallback, disconnectCallback);
+      this._logger?.error('Connection error, attempting to reconnect');
+      this._logger?.debug(err);
+      this._isConnected = false;
+      const errorMessage = err?.message ?? 'Failed to connect to syncFlags stream';
+      disconnectCallback(errorMessage);
+      rejectConnect?.(new GeneralError(errorMessage));
+      this.reconnect(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
     });
   }
 
   private reconnect(
-    dataFillCallback: (flags: string) => string[],
+    dataCallback: (flags: string) => string[],
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
   ) {
     const channel = this._syncClient.getChannel();
     channel.watchConnectivityState(channel.getConnectivityState(true), Infinity, () => {
-      this.listen(dataFillCallback, reconnectCallback, changedCallback, disconnectCallback);
+      this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
     });
   }
 }
