@@ -10,9 +10,9 @@ export class InProcessService implements Service {
   private _dataFetcher: DataFetch;
 
   constructor(
-    config: Config,
+    private readonly config: Config,
     dataFetcher?: DataFetch,
-    private logger?: Logger,
+    private readonly logger?: Logger,
   ) {
     this._flagdCore = new FlagdCore(undefined, logger);
     this._dataFetcher = dataFetcher ? dataFetcher : new GrpcFetch(config, undefined, logger);
@@ -30,40 +30,65 @@ export class InProcessService implements Service {
     this._dataFetcher.disconnect();
   }
 
-  resolveBoolean(
+  async resolveBoolean(
     flagKey: string,
     defaultValue: boolean,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
-    return Promise.resolve(this._flagdCore.resolveBooleanEvaluation(flagKey, defaultValue, context, logger));
+    const details = this._flagdCore.resolveBooleanEvaluation(flagKey, defaultValue, context, logger);
+    return {
+      ...details,
+      flagMetadata: this.addFlagMetadata(),
+    };
   }
 
-  resolveNumber(
+  async resolveNumber(
     flagKey: string,
     defaultValue: number,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<number>> {
-    return Promise.resolve(this._flagdCore.resolveNumberEvaluation(flagKey, defaultValue, context, logger));
+    const details = this._flagdCore.resolveNumberEvaluation(flagKey, defaultValue, context, logger);
+    return {
+      ...details,
+      flagMetadata: this.addFlagMetadata(),
+    };
   }
 
-  resolveString(
+  async resolveString(
     flagKey: string,
     defaultValue: string,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<string>> {
-    return Promise.resolve(this._flagdCore.resolveStringEvaluation(flagKey, defaultValue, context, logger));
+    const details = this._flagdCore.resolveStringEvaluation(flagKey, defaultValue, context, logger);
+    return {
+      ...details,
+      flagMetadata: this.addFlagMetadata(),
+    };
   }
 
-  resolveObject<T extends JsonValue>(
+  async resolveObject<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
-    return Promise.resolve(this._flagdCore.resolveObjectEvaluation(flagKey, defaultValue, context, logger));
+    const details = this._flagdCore.resolveObjectEvaluation(flagKey, defaultValue, context, logger);
+    return {
+      ...details,
+      flagMetadata: this.addFlagMetadata(),
+    };
+  }
+
+  /**
+   * Adds the flag metadata to the resolution details
+   */
+  private addFlagMetadata() {
+    return {
+      ...(this.config.selector ? { scope: this.config.selector } : {}),
+    };
   }
 
   private fill(flags: string): void {
