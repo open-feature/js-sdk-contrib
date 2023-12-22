@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2015", "DOM"],
+    "outDir": "../../../dist/out-tsc",
+    "declaration": true,
+    "types": [],
+    "allowSyntheticDefaultImports": true,
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["jest.config.ts", "**/*.spec.ts", "**/*.test.ts"]
+}
