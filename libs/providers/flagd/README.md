@@ -83,7 +83,7 @@ To enable this mode, you should provide a valid flag configuration file with the
   }))
 ```
 
-Offline mode uses `fs.watch` to watch for changes to the file, which has (a few caveat)[https://nodejs.org/docs/latest/api/fs.html#caveats] to be aware of.
+Offline mode uses `fs.watch` to watch for changes to the file, which has [a few caveat](https://nodejs.org/docs/latest/api/fs.html#caveats) to be aware of.
 This mode is useful for local development, test cases, and for offline applications.
 
 ### Supported Events
