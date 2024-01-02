@@ -1,4 +1,4 @@
-import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from './constants';
+import { DEFAULT_MAX_CACHE_SIZE } from './constants';
 
 export type CacheOption = 'lru' | 'disabled';
 export type ResolverType = 'rpc' | 'in-process';

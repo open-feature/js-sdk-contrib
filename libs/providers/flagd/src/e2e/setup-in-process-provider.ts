@@ -11,9 +11,8 @@ OpenFeature.setProvider(
   new FlagdProvider({ cache: 'disabled', resolverType: 'in-process', host: 'localhost', port: 9090 }),
 );
 OpenFeature.setProvider('unstable', new FlagdProvider({ resolverType: 'in-process', host: 'localhost', port: 9091 }));
-// TODO: update with correct assertions once we have ability to get providerMetadata for any provider
-// assert(
-//   OpenFeature.providerMetadata.name === FLAGD_NAME,
-//   new Error(`Expected ${FLAGD_NAME} provider to be configured, instead got: ${OpenFeature.providerMetadata.name}`),
-// );
+assert(
+  OpenFeature.providerMetadata.name === FLAGD_NAME,
+  new Error(`Expected ${FLAGD_NAME} provider to be configured, instead got: ${OpenFeature.providerMetadata.name}`),
+);
 console.log('flagd provider configured!');
