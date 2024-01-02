@@ -14,8 +14,18 @@ export class GrpcFetch implements DataFetch {
   private readonly _request: SyncFlagsRequest;
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
   private _logger: Logger | undefined;
-  private _isConnected = false;
+  /**
+   * Initialized will be set to true once the initial connection is successful
+   * and the first payload has been received. Subsequent reconnects will not
+   * change the initialized value.
+   */
   private _initialized = false;
+  /**
+   * Is connected represents the current known connection state. It will be
+   * set to true once the first payload has been received.but will be set to
+   * false if the connection is lost.
+   */
+  private _isConnected = false;
 
   constructor(config: Config, syncServiceClient?: FlagSyncServiceClient, logger?: Logger) {
     const { host, port, tls, socketPath, selector } = config;
