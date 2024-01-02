@@ -41,6 +41,7 @@ Thumbs.db
 
 # generated files
 proto
+.nx
 
 # yalc stuff
 .yalc
