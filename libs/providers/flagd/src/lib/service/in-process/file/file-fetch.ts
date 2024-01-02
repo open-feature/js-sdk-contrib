@@ -7,7 +7,7 @@ const encoding = 'utf8';
 
 export class FileFetch implements DataFetch {
   private _filename: string;
-  private _watcher: FSWatcher | null = null;
+  private _watcher: FSWatcher | undefined = undefined;
   private _logger: Logger | undefined;
 
   constructor(filename: string, logger?: Logger) {

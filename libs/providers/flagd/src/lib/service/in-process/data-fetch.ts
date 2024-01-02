@@ -7,7 +7,7 @@ export interface DataFetch {
    */
   connect(
     /**
-     * Callback that runs when data is filled from the source
+     * Callback that runs when data is received from the source
      * @param flags The flags from the source
      * @returns The flags that have changed
      */
