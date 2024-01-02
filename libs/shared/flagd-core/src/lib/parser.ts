@@ -1,6 +1,7 @@
 import Ajv from 'ajv';
 import { FeatureFlag, Flag } from './feature-flag';
 import flagDefinitionSchema from '../../flagd-schemas/json/flagd-definitions.json';
+import { ParseError } from '@openfeature/core';
 
 const ajv = new Ajv();
 const matcher = ajv.compile(flagDefinitionSchema);
@@ -8,22 +9,32 @@ const matcher = ajv.compile(flagDefinitionSchema);
 const evaluatorKey = '$evaluators';
 const bracketReplacer = new RegExp('^[^{]*\\{|}[^}]*$', 'g');
 
+const errorMessages = 'invalid flagd flag configuration';
+
 /**
  * Validate and parse flag configurations.
  */
 export function parse(flagCfg: string): Map<string, FeatureFlag> {
-  if (!isValid(JSON.parse(flagCfg))) {
-    throw new Error('invalid flagd flag configurations');
+  try {
+    const transformed = transform(flagCfg);
+    const flags: { flags: { [key: string]: Flag } } = JSON.parse(transformed);
+    const results = matcher(flags);
+    if (!results) {
+      throw new ParseError(errorMessages);
+    }
+    const flagMap = new Map<string, FeatureFlag>();
+
+    for (const flagsKey in flags.flags) {
+      flagMap.set(flagsKey, new FeatureFlag(flags.flags[flagsKey]));
+    }
+
+    return flagMap;
+  } catch (err) {
+    if (err instanceof ParseError) {
+      throw err;
+    }
+    throw new ParseError(errorMessages);
   }
-
-  const flags: { flags: { [key: string]: Flag } } = JSON.parse(transform(flagCfg));
-  const flagMap = new Map<string, FeatureFlag>();
-
-  for (const flagsKey in flags.flags) {
-    flagMap.set(flagsKey, new FeatureFlag(flags.flags[flagsKey]));
-  }
-
-  return flagMap;
 }
 
 // Transform $ref references of flagd configuration
@@ -44,15 +55,4 @@ function transform(flagCfg: string): string {
   }
 
   return transformed;
-}
-
-// Validate provided configuration against flagd schema
-function isValid(cfg: unknown): boolean {
-  const result = matcher(cfg);
-
-  if (result) {
-    return true;
-  }
-
-  return false;
 }

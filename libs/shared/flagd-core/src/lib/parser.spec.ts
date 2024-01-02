@@ -1,4 +1,5 @@
 import { parse } from './parser';
+import { ParseError } from '@openfeature/core';
 
 describe('Flag configurations', () => {
   it('should parse valid configurations - single', () => {
@@ -58,5 +59,17 @@ describe('Flag configurations', () => {
     const fibAlgo = flags.get('fibAlgo');
     expect(fibAlgo).toBeTruthy();
     expect(fibAlgo?.targeting).toStrictEqual({ if: [{ in: ['@faas.com', { var: ['email'] }] }, 'binet', null] });
+  });
+
+  it('should throw a parsing error due to invalid JSON', () => {
+    const invalidJson = '{';
+
+    expect(() => parse(invalidJson)).toThrow(ParseError);
+  });
+
+  it('should throw a parsing error due to invalid flagd configuration', () => {
+    const invalidFlagdConfig = '{"flags":{"fibAlgo":{}}}';
+
+    expect(() => parse(invalidFlagdConfig)).toThrow(ParseError);
   });
 });
