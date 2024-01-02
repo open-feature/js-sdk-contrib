@@ -4,7 +4,7 @@ import flagDefinitionSchema from '../../flagd-schemas/json/flagd-definitions.jso
 import { ParseError } from '@openfeature/core';
 
 const ajv = new Ajv();
-const matcher = ajv.compile(flagDefinitionSchema);
+const validate = ajv.compile(flagDefinitionSchema);
 
 const evaluatorKey = '$evaluators';
 const bracketReplacer = new RegExp('^[^{]*\\{|}[^}]*$', 'g');
@@ -18,8 +18,8 @@ export function parse(flagCfg: string): Map<string, FeatureFlag> {
   try {
     const transformed = transform(flagCfg);
     const flags: { flags: { [key: string]: Flag } } = JSON.parse(transformed);
-    const results = matcher(flags);
-    if (!results) {
+    const isValid = validate(flags);
+    if (!isValid) {
       throw new ParseError(errorMessages);
     }
     const flagMap = new Map<string, FeatureFlag>();
