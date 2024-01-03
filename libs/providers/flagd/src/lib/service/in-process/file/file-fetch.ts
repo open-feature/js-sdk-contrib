@@ -1,13 +1,11 @@
 import { Logger, OpenFeatureError } from '@openfeature/core';
 import { DataFetch } from '../data-fetch';
-import { promises as fsPromises, watch, type FSWatcher } from 'fs';
+import { promises as fsPromises, watchFile, unwatchFile } from 'fs';
 import { GeneralError } from '@openfeature/core';
 
 const encoding = 'utf8';
-
 export class FileFetch implements DataFetch {
   private _filename: string;
-  private _watcher: FSWatcher | undefined = undefined;
   private _logger: Logger | undefined;
 
   constructor(filename: string, logger?: Logger) {
@@ -26,17 +24,25 @@ export class FileFetch implements DataFetch {
       // Don't emit the change event for the initial read
       dataFillCallback(output);
 
-      this._watcher = watch(this._filename, { encoding }, async () => {
-        try {
-          const data = await fsPromises.readFile(this._filename, encoding);
-          const changes = dataFillCallback(data);
-          if (changes.length > 0) {
-            changedCallback(changes);
+      // Using watchFile instead of watch to support virtualized host file systems.
+      watchFile(
+        this._filename,
+        {
+          // More aggressive polling interval to support faster flag changes.
+          interval: 1007,
+        },
+        async () => {
+          try {
+            const data = await fsPromises.readFile(this._filename, encoding);
+            const changes = dataFillCallback(data);
+            if (changes.length > 0) {
+              changedCallback(changes);
+            }
+          } catch (err) {
+            this._logger?.error(`Error reading file: ${err}`);
           }
-        } catch (err) {
-          this._logger?.error(`Error reading file: ${err}`);
-        }
-      });
+        },
+      );
     } catch (err) {
       if (err instanceof OpenFeatureError) {
         throw err;
@@ -55,6 +61,6 @@ export class FileFetch implements DataFetch {
   }
 
   async disconnect(): Promise<void> {
-    this._watcher?.close();
+    unwatchFile(this._filename);
   }
 }

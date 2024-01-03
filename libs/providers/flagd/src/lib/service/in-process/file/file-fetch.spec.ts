@@ -42,18 +42,18 @@ describe('FileFetch', () => {
     mockReadFile(flags);
     const watchMock = jest.fn();
 
-    fs.watch = watchMock as jest.MockedFunction<typeof fs.watch>;
+    fs.watchFile = watchMock as jest.MockedFunction<typeof fs.watchFile>;
 
     await fileFetch.connect(dataFillCallbackMock, reconnectCallbackMock, changedCallbackMock);
 
     expect(dataFillCallbackMock).toHaveBeenCalledWith(flags);
-    expect(watchMock).toHaveBeenCalledWith('./flags.json', { encoding: 'utf8' }, expect.any(Function));
+    expect(watchMock).toHaveBeenCalledWith('./flags.json', expect.anything(), expect.any(Function));
   });
 
   it('should throw because of invalid json', async () => {
     const flags = 'this is not JSON';
     mockReadFile(flags);
-    const watchSpy = jest.spyOn(fs, 'watch');
+    const watchSpy = jest.spyOn(fs, 'watchFile');
 
     await expect(fileFetch.connect(dataFillCallback, reconnectCallbackMock, changedCallbackMock)).rejects.toThrow();
     expect(watchSpy).not.toHaveBeenCalled();
@@ -78,14 +78,14 @@ describe('FileFetch', () => {
   });
 
   it('should close the watcher on disconnect', async () => {
-    const closeMock = jest.fn();
-    const watchSpy = jest.spyOn(fs, 'watch').mockReturnValue({ close: closeMock } as any);
+    const watchSpy = jest.spyOn(fs, 'watchFile');
+    const unwatchSpy = jest.spyOn(fs, 'unwatchFile');
 
     await fileFetch.connect(dataFillCallbackMock, reconnectCallbackMock, changedCallbackMock);
     await fileFetch.disconnect();
 
     expect(watchSpy).toHaveBeenCalled();
-    expect(closeMock).toHaveBeenCalled();
+    expect(unwatchSpy).toHaveBeenCalledWith('./flags.json');
   });
 
   describe('on file change', () => {
@@ -96,11 +96,11 @@ describe('FileFetch', () => {
       const mockReadFile = fs.promises.readFile as jest.MockedFunction<typeof fs.promises.readFile>;
       mockReadFile.mockResolvedValueOnce(flags);
       const watchMock = jest.fn();
-      fs.watch = watchMock as jest.MockedFunction<typeof fs.watch>;
+      fs.watchFile = watchMock as jest.MockedFunction<typeof fs.watchFile>;
 
       await fileFetch.connect(dataFillCallback, reconnectCallbackMock, changedCallbackMock);
       mockReadFile.mockResolvedValueOnce(changedFlags);
-      // Manually call the callback that is passed to fs.watch;
+      // Manually call the callback that is passed to fs.watchFile;
       await watchMock.mock.calls[0][2]();
 
       expect(changedCallbackMock).toHaveBeenCalledWith(['flag']);
@@ -111,10 +111,10 @@ describe('FileFetch', () => {
       const mockReadFile = fs.promises.readFile as jest.MockedFunction<typeof fs.promises.readFile>;
       mockReadFile.mockResolvedValue(flags);
       const watchMock = jest.fn();
-      fs.watch = watchMock as jest.MockedFunction<typeof fs.watch>;
+      fs.watchFile = watchMock as jest.MockedFunction<typeof fs.watchFile>;
 
       await fileFetch.connect(dataFillCallback, reconnectCallbackMock, changedCallbackMock);
-      // Manually call the callback that is passed to fs.watch;
+      // Manually call the callback that is passed to fs.watchFile;
       await watchMock.mock.calls[0][2]();
 
       expect(changedCallbackMock).not.toHaveBeenCalled();
@@ -125,11 +125,11 @@ describe('FileFetch', () => {
       const mockReadFile = fs.promises.readFile as jest.MockedFunction<typeof fs.promises.readFile>;
       mockReadFile.mockResolvedValue(flags);
       const watchMock = jest.fn();
-      fs.watch = watchMock as jest.MockedFunction<typeof fs.watch>;
+      fs.watchFile = watchMock as jest.MockedFunction<typeof fs.watchFile>;
 
       await fileFetch.connect(dataFillCallback, reconnectCallbackMock, changedCallbackMock);
       mockReadFile.mockRejectedValueOnce(new Error('Error reading file'));
-      // Manually call the callback that is passed to fs.watch;
+      // Manually call the callback that is passed to fs.watchFile;
       await watchMock.mock.calls[0][2]();
 
       expect(changedCallbackMock).not.toHaveBeenCalled();
