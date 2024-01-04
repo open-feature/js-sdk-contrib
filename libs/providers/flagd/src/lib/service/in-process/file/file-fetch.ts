@@ -25,24 +25,17 @@ export class FileFetch implements DataFetch {
       dataFillCallback(output);
 
       // Using watchFile instead of watch to support virtualized host file systems.
-      watchFile(
-        this._filename,
-        {
-          // More aggressive polling interval to support faster flag changes.
-          interval: 1007,
-        },
-        async () => {
-          try {
-            const data = await fsPromises.readFile(this._filename, encoding);
-            const changes = dataFillCallback(data);
-            if (changes.length > 0) {
-              changedCallback(changes);
-            }
-          } catch (err) {
-            this._logger?.error(`Error reading file: ${err}`);
+      watchFile(this._filename, async () => {
+        try {
+          const data = await fsPromises.readFile(this._filename, encoding);
+          const changes = dataFillCallback(data);
+          if (changes.length > 0) {
+            changedCallback(changes);
           }
-        },
-      );
+        } catch (err) {
+          this._logger?.error(`Error reading file: ${err}`);
+        }
+      });
     } catch (err) {
       if (err instanceof OpenFeatureError) {
         throw err;

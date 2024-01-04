@@ -83,7 +83,7 @@ To enable this mode, you should provide a valid flag configuration file with the
   }))
 ```
 
-Offline mode uses `fs.watchFile` and polls once a second for changes to the file.
+Offline mode uses `fs.watchFile` and polls every 5 seconds for changes to the file.
 This mode is useful for local development, test cases, and for offline applications.
 
 ### Supported Events

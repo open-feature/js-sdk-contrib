@@ -47,7 +47,7 @@ describe('FileFetch', () => {
     await fileFetch.connect(dataFillCallbackMock, reconnectCallbackMock, changedCallbackMock);
 
     expect(dataFillCallbackMock).toHaveBeenCalledWith(flags);
-    expect(watchMock).toHaveBeenCalledWith('./flags.json', expect.anything(), expect.any(Function));
+    expect(watchMock).toHaveBeenCalledWith('./flags.json', expect.any(Function));
   });
 
   it('should throw because of invalid json', async () => {
@@ -101,7 +101,7 @@ describe('FileFetch', () => {
       await fileFetch.connect(dataFillCallback, reconnectCallbackMock, changedCallbackMock);
       mockReadFile.mockResolvedValueOnce(changedFlags);
       // Manually call the callback that is passed to fs.watchFile;
-      await watchMock.mock.calls[0][2]();
+      await watchMock.mock.calls[0][1]();
 
       expect(changedCallbackMock).toHaveBeenCalledWith(['flag']);
     });
@@ -115,7 +115,7 @@ describe('FileFetch', () => {
 
       await fileFetch.connect(dataFillCallback, reconnectCallbackMock, changedCallbackMock);
       // Manually call the callback that is passed to fs.watchFile;
-      await watchMock.mock.calls[0][2]();
+      await watchMock.mock.calls[0][1]();
 
       expect(changedCallbackMock).not.toHaveBeenCalled();
     });
@@ -130,7 +130,7 @@ describe('FileFetch', () => {
       await fileFetch.connect(dataFillCallback, reconnectCallbackMock, changedCallbackMock);
       mockReadFile.mockRejectedValueOnce(new Error('Error reading file'));
       // Manually call the callback that is passed to fs.watchFile;
-      await watchMock.mock.calls[0][2]();
+      await watchMock.mock.calls[0][1]();
 
       expect(changedCallbackMock).not.toHaveBeenCalled();
       expect(loggerMock.error).toHaveBeenCalled();
