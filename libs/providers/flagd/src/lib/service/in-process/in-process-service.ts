@@ -10,11 +10,10 @@ export class InProcessService implements Service {
   private _flagdCore: FlagdCore;
   private _dataFetcher: DataFetch;
 
-
   constructor(
     private readonly config: Config,
     dataFetcher?: DataFetch,
-    private readonly logger?: Logger,
+    logger?: Logger,
   ) {
     this._flagdCore = new FlagdCore(undefined, logger);
     this._dataFetcher = dataFetcher
