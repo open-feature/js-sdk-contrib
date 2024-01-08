@@ -97,7 +97,7 @@ export class GRPCService implements Service {
   connect(
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
   ): Promise<void> {
     return new Promise((resolve, reject) =>
       this.listen(reconnectCallback, changedCallback, disconnectCallback, resolve, reject),
@@ -148,7 +148,7 @@ export class GRPCService implements Service {
   private listen(
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
     resolveConnect?: () => void,
     rejectConnect?: (reason: Error) => void,
   ) {
@@ -185,12 +185,14 @@ export class GRPCService implements Service {
       if (data && typeof data === 'object' && 'flags' in data && data?.['flags']) {
         const flagChangeMessage = data as FlagChangeMessage;
         const flagsChanged: string[] = Object.keys(flagChangeMessage.flags || []);
-        // remove each changed key from cache
-        flagsChanged.forEach((key) => {
-          if (this._cache?.delete(key)) {
-            this.logger?.debug(`${FlagdProvider.name}: evicted key: ${key} from cache.`);
-          }
-        });
+        if (this._cacheEnabled) {
+          // remove each changed key from cache
+          flagsChanged.forEach((key) => {
+            if (this._cache?.delete(key)) {
+              this.logger?.debug(`${FlagdProvider.name}: evicted key: ${key} from cache.`);
+            }
+          });
+        }
         changedCallback(flagsChanged);
       }
     }
@@ -199,7 +201,7 @@ export class GRPCService implements Service {
   private reconnect(
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
   ) {
     const channel = this._client.getChannel();
     channel.watchConnectivityState(channel.getConnectivityState(true), Infinity, () => {
@@ -210,9 +212,9 @@ export class GRPCService implements Service {
   private handleError(
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
   ) {
-    disconnectCallback();
+    disconnectCallback('streaming connection error, will attempt reconnect...');
     this.logger?.error(`${FlagdProvider.name}: streaming connection error, will attempt reconnect...`);
     this._cache?.clear();
     this.reconnect(reconnectCallback, changedCallback, disconnectCallback);

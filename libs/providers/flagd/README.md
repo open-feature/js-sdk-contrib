@@ -1,7 +1,6 @@
 # Server-Side flagd Provider
 
-Flagd is a simple daemon for evaluating feature flags.
-It is designed to conform to OpenFeature schema for flag definitions.
+This provider is designed to use flagd's [evaluation protocol](https://github.com/open-feature/schemas/blob/main/protobuf/schema/v1/schema.proto), or locally evaluate flags defined in a flagd [flag definition](https://github.com/open-feature/schemas/blob/main/json/flagd-definitions.json).
 This repository and package provides the client code for interacting with it via the OpenFeature server-side JavaScript SDK.
 
 ## Installation
@@ -45,7 +44,7 @@ Below are examples of usage patterns.
 
 This is the default mode of operation of the provider.
 In this mode, FlagdProvider communicates with flagd via the gRPC protocol.
-Flag evaluations take place remotely at the connected [flagd](https://flagd.dev/) instance.
+Flag evaluations take place remotely on the connected [flagd](https://flagd.dev/) instance.
 
 ```ts
   OpenFeature.setProvider(new FlagdProvider())
@@ -73,6 +72,19 @@ Flag configurations for evaluation are obtained via gRPC protocol using [sync pr
 ```
 
 In the above example, the provider expects a flag sync service implementation to be available at `localhost:8013` (default host and port).
+
+In-process resolver can also work in an offline mode.
+To enable this mode, you should provide a valid flag configuration file with the option `offlineFlagSourcePath`.
+
+```
+  OpenFeature.setProvider(new FlagdProvider({
+      resolverType: 'in-process',
+      offlineFlagSourcePath: './flags.json',
+  }))
+```
+
+Offline mode uses `fs.watchFile` and polls every 5 seconds for changes to the file.
+This mode is useful for local development, test cases, and for offline applications.
 
 ### Supported Events
 

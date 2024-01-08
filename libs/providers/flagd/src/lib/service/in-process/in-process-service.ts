@@ -4,10 +4,12 @@ import { Config } from '../../configuration';
 import { FlagdCore } from '@openfeature/flagd-core';
 import { DataFetch } from './data-fetch';
 import { GrpcFetch } from './grpc/grpc-fetch';
+import { FileFetch } from './file/file-fetch';
 
 export class InProcessService implements Service {
   private _flagdCore: FlagdCore;
   private _dataFetcher: DataFetch;
+
 
   constructor(
     private readonly config: Config,
@@ -15,15 +17,24 @@ export class InProcessService implements Service {
     private readonly logger?: Logger,
   ) {
     this._flagdCore = new FlagdCore(undefined, logger);
-    this._dataFetcher = dataFetcher ? dataFetcher : new GrpcFetch(config, undefined, logger);
+    this._dataFetcher = dataFetcher
+      ? dataFetcher
+      : config.offlineFlagSourcePath
+      ? new FileFetch(config.offlineFlagSourcePath, logger)
+      : new GrpcFetch(config, undefined, logger);
   }
 
   connect(
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
   ): Promise<void> {
-    return this._dataFetcher.connect(this.fill.bind(this), reconnectCallback, changedCallback, disconnectCallback);
+    return this._dataFetcher.connect(
+      this.setFlagConfiguration.bind(this),
+      reconnectCallback,
+      changedCallback,
+      disconnectCallback,
+    );
   }
 
   async disconnect(): Promise<void> {
@@ -91,11 +102,13 @@ export class InProcessService implements Service {
     };
   }
 
-  private fill(flags: string): void {
-    try {
-      this._flagdCore.setConfigurations(flags);
-    } catch (err) {
-      this.logger?.error(err);
-    }
+  /**
+   * Sets the flag configuration
+   * @param flags The flags to set as stringified JSON
+   * @returns {string[]} The flags that have changed
+   * @throws — {Error} If the configuration string is invalid.
+   */
+  private setFlagConfiguration(flags: string): string[] {
+    return this._flagdCore.setConfigurations(flags);
   }
 }

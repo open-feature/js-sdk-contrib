@@ -45,6 +45,12 @@ export interface Config {
   resolverType?: ResolverType;
 
   /**
+   * File source of flags to be used by offline mode.
+   * Setting this enables the offline mode of the in-process provider.
+   */
+  offlineFlagSourcePath?: string;
+
+  /**
    * Selector to be used with flag sync gRPC contract.
    */
   selector?: string;
