@@ -4,7 +4,7 @@ export interface Service {
   connect(
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
-    disconnectCallback: () => void,
+    disconnectCallback: (message: string) => void,
   ): Promise<void>;
 
   disconnect(): Promise<void>;
