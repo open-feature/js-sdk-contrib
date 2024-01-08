@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.7...flagd-core-v0.1.8) (2024-01-08)
+
+
+### 🧹 Chore
+
+* throw ParseError on invalid flagd config ([#714](https://github.com/open-feature/js-sdk-contrib/issues/714)) ([837bf08](https://github.com/open-feature/js-sdk-contrib/commit/837bf0887a8b68e6418963160344af1aaeabbf0a))
+
 ## [0.1.7](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.6...flagd-core-v0.1.7) (2023-12-18)
 
 
