@@ -39,6 +39,7 @@ describe('ConfigCatProvider', () => {
     await provider.initialize();
 
     // Currently there is no option to get access to the event emitter
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     configCatEmitter = (provider.configCatClient as any).options.hooks;
   });
 

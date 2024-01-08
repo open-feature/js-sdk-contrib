@@ -91,7 +91,7 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
     }
   }
 
-  after(hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>, hookHints?: HookHints) {
+  after(hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>) {
     if (!this.collectUnCachedEvaluation && evaluationDetails.reason !== StandardResolutionReasons.CACHED) {
       return;
     }
@@ -109,7 +109,7 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
     this.dataCollectorBuffer?.push(event);
   }
 
-  error(hookContext: HookContext, err: unknown, hookHints?: HookHints) {
+  error(hookContext: HookContext) {
     const event = {
       contextKind: hookContext.context['anonymous'] ? 'anonymousUser' : 'user',
       kind: 'feature',

@@ -1,5 +1,5 @@
 import { FlagdProviderOptions, getConfig } from './configuration';
-import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from './constants';
+import { DEFAULT_MAX_CACHE_SIZE } from './constants';
 
 describe('Configuration', () => {
   const OLD_ENV = process.env;
