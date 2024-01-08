@@ -52,7 +52,7 @@ defineFeature(feature, (test) => {
     then('the PROVIDER_CONFIGURATION_CHANGED handler must run', () => {
       expect(ran).toBeTruthy();
     });
-    and(/^the event details must indicate "(.*)" was altered$/, (arg0) => {
+    and(/^the event details must indicate "(.*)" was altered$/, () => {
       // not supported
     });
   });
