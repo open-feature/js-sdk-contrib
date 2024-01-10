@@ -1,5 +1,5 @@
 import { Service } from '../service';
-import { EvaluationContext, JsonValue, Logger, ResolutionDetails } from '@openfeature/core';
+import { EvaluationContext, FlagValue, JsonValue, Logger, ResolutionDetails, FlagValueType } from '@openfeature/core';
 import { Config } from '../../configuration';
 import { FlagdCore } from '@openfeature/flagd-core';
 import { DataFetch } from './data-fetch';
@@ -10,7 +10,11 @@ export class InProcessService implements Service {
   private _flagdCore: FlagdCore;
   private _dataFetcher: DataFetch;
 
-  constructor(config: Config, dataFetcher?: DataFetch, logger?: Logger) {
+  constructor(
+    private readonly config: Config,
+    dataFetcher?: DataFetch,
+    logger?: Logger,
+  ) {
     this._flagdCore = new FlagdCore(undefined, logger);
     this._dataFetcher = dataFetcher
       ? dataFetcher
@@ -36,40 +40,63 @@ export class InProcessService implements Service {
     this._dataFetcher.disconnect();
   }
 
-  resolveBoolean(
+  async resolveBoolean(
     flagKey: string,
     defaultValue: boolean,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
-    return Promise.resolve(this._flagdCore.resolveBooleanEvaluation(flagKey, defaultValue, context, logger));
+    return this.evaluate('boolean', flagKey, defaultValue, context, logger);
   }
 
-  resolveNumber(
+  async resolveNumber(
     flagKey: string,
     defaultValue: number,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<number>> {
-    return Promise.resolve(this._flagdCore.resolveNumberEvaluation(flagKey, defaultValue, context, logger));
+    return this.evaluate('number', flagKey, defaultValue, context, logger);
   }
 
-  resolveString(
+  async resolveString(
     flagKey: string,
     defaultValue: string,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<string>> {
-    return Promise.resolve(this._flagdCore.resolveStringEvaluation(flagKey, defaultValue, context, logger));
+    return this.evaluate('string', flagKey, defaultValue, context, logger);
   }
 
-  resolveObject<T extends JsonValue>(
+  async resolveObject<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
-    return Promise.resolve(this._flagdCore.resolveObjectEvaluation(flagKey, defaultValue, context, logger));
+    return this.evaluate('object', flagKey, defaultValue, context, logger);
+  }
+
+  private evaluate<T extends FlagValue>(
+    type: FlagValueType,
+    flagKey: string,
+    defaultValue: T,
+    context: EvaluationContext,
+    logger: Logger,
+  ): ResolutionDetails<T> {
+    const details = this._flagdCore.resolve(type, flagKey, defaultValue, context, logger);
+    return {
+      ...details,
+      flagMetadata: this.addFlagMetadata(),
+    };
+  }
+
+  /**
+   * Adds the flag metadata to the resolution details
+   */
+  private addFlagMetadata() {
+    return {
+      ...(this.config.selector ? { scope: this.config.selector } : {}),
+    };
   }
 
   /**
