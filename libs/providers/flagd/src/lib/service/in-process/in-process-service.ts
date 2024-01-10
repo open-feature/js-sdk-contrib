@@ -1,5 +1,5 @@
 import { Service } from '../service';
-import { EvaluationContext, JsonValue, Logger, ResolutionDetails } from '@openfeature/core';
+import { EvaluationContext, FlagValue, JsonValue, Logger, ResolutionDetails, FlagValueType } from '@openfeature/core';
 import { Config } from '../../configuration';
 import { FlagdCore } from '@openfeature/flagd-core';
 import { DataFetch } from './data-fetch';
@@ -46,11 +46,7 @@ export class InProcessService implements Service {
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
-    const details = this._flagdCore.resolveBooleanEvaluation(flagKey, defaultValue, context, logger);
-    return {
-      ...details,
-      flagMetadata: this.addFlagMetadata(),
-    };
+    return this.evaluate('boolean', flagKey, defaultValue, context, logger);
   }
 
   async resolveNumber(
@@ -59,11 +55,7 @@ export class InProcessService implements Service {
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<number>> {
-    const details = this._flagdCore.resolveNumberEvaluation(flagKey, defaultValue, context, logger);
-    return {
-      ...details,
-      flagMetadata: this.addFlagMetadata(),
-    };
+    return this.evaluate('number', flagKey, defaultValue, context, logger);
   }
 
   async resolveString(
@@ -72,11 +64,7 @@ export class InProcessService implements Service {
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<string>> {
-    const details = this._flagdCore.resolveStringEvaluation(flagKey, defaultValue, context, logger);
-    return {
-      ...details,
-      flagMetadata: this.addFlagMetadata(),
-    };
+    return this.evaluate('string', flagKey, defaultValue, context, logger);
   }
 
   async resolveObject<T extends JsonValue>(
@@ -85,7 +73,17 @@ export class InProcessService implements Service {
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
-    const details = this._flagdCore.resolveObjectEvaluation(flagKey, defaultValue, context, logger);
+    return this.evaluate('object', flagKey, defaultValue, context, logger);
+  }
+
+  private evaluate<T extends FlagValue>(
+    type: FlagValueType,
+    flagKey: string,
+    defaultValue: T,
+    context: EvaluationContext,
+    logger: Logger,
+  ): ResolutionDetails<T> {
+    const details = this._flagdCore.resolve(type, flagKey, defaultValue, context, logger);
     return {
       ...details,
       flagMetadata: this.addFlagMetadata(),
