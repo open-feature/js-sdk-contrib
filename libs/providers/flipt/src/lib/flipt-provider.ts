@@ -88,11 +88,6 @@ export class FliptProvider implements Provider {
             value: booleanEvaluation?.enabled,
             reason: StandardResolutionReasons.TARGETING_MATCH,
           };
-        case 'FLAG_DISABLED_EVALUATION_REASON':
-          return {
-            value: defaultValue,
-            reason: StandardResolutionReasons.DISABLED,
-          };
         case 'UNKNOWN_EVALUATION_REASON':
           return {
             value: defaultValue,
@@ -172,13 +167,20 @@ export class FliptProvider implements Provider {
         };
       }
 
-      const flagValue: PrimitiveType | U = validateFlagType(flagType, variantEvaluation?.variantKey);
+      const flagValue: PrimitiveType | U = validateFlagType(
+        flagType,
+        flagType === 'json' ? variantEvaluation.variantAttachment : variantEvaluation.variantKey,
+      );
 
       return {
         value: flagValue,
         reason: StandardResolutionReasons.TARGETING_MATCH,
       };
     } catch (e) {
+      if (e instanceof TypeMismatchError) {
+        throw e;
+      }
+
       return {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
@@ -206,6 +208,7 @@ function validateFlagType<T extends PrimitiveTypeName, U extends JsonValue>(type
         if (!isNaN(actualValue)) {
           return actualValue;
         }
+
         throw new TypeMismatchError(`flag value does not match type ${type}`);
       case 'string':
         return value;
