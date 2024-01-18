@@ -7,6 +7,7 @@ import {
   ProviderStatus,
   ProviderMetadata,
   TypeMismatchError,
+  ProviderNotReadyError,
   StandardResolutionReasons,
   GeneralError,
 } from '@openfeature/server-sdk';
@@ -22,32 +23,48 @@ export class FliptProvider implements Provider {
     name: 'flipt-client-provider',
   };
 
-  private clientParameters: FliptClientParameters;
-  private namespace?: string;
+  private _clientParameters: FliptClientParameters;
+  private _namespace: string;
   private _client?: FliptClient;
 
   private _status: ProviderStatus = ProviderStatus.NOT_READY;
 
   constructor(namespace: string, clientParameters: FliptClientParameters) {
-    this.clientParameters = clientParameters;
-    this.namespace = namespace;
+    this._clientParameters = clientParameters;
+    this._namespace = namespace;
+  }
+
+  private set clientParameters(clientParameters: FliptClientParameters) {
+    this._clientParameters = clientParameters;
+  }
+
+  private get clientParameters(): FliptClientParameters {
+    return this._clientParameters;
+  }
+
+  private set namespace(namespace: string) {
+    this._namespace = namespace;
+  }
+
+  private get namespace() {
+    return this._namespace;
   }
 
   set status(status: ProviderStatus) {
     this._status = status;
   }
 
-  private set client(client: FliptClient) {
-    this._client = client;
-  }
-
   get status() {
     return this._status;
   }
 
+  private set client(client: FliptClient) {
+    this._client = client;
+  }
+
   private get client(): FliptClient {
     if (!this._client) {
-      throw new GeneralError('Provider is not initialized');
+      throw new ProviderNotReadyError('Provider is not initialized');
     }
     return this._client;
   }
@@ -68,13 +85,11 @@ export class FliptProvider implements Provider {
     const evalContext: Record<string, string> = transformContext(context);
 
     try {
-      const booleanEvaluation = await this._client?.evaluation.boolean({
-        namespaceKey: this.namespace ?? 'default',
+      const booleanEvaluation = await this.client.evaluation.boolean({
+        namespaceKey: this.namespace,
         flagKey,
         entityId: context.targetingKey ?? '',
-        context: {
-          ...evalContext,
-        },
+        context: evalContext,
       });
 
       switch (booleanEvaluation?.reason) {
@@ -100,11 +115,7 @@ export class FliptProvider implements Provider {
           };
       }
     } catch (e) {
-      return {
-        value: defaultValue,
-        reason: StandardResolutionReasons.ERROR,
-        errorMessage: getErrorMessage(e),
-      };
+      throw new GeneralError(getErrorMessage(e));
     }
   }
 
@@ -113,7 +124,7 @@ export class FliptProvider implements Provider {
     defaultValue: string,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
-    let value = await this.resolveFlagHelper(flagKey, 'string', defaultValue, context);
+    const value = await this.resolveFlagHelper(flagKey, 'string', defaultValue, context);
     return value as ResolutionDetails<string>;
   }
 
@@ -122,7 +133,7 @@ export class FliptProvider implements Provider {
     defaultValue: number,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
-    let value = await this.resolveFlagHelper(flagKey, 'number', defaultValue, context);
+    const value = await this.resolveFlagHelper(flagKey, 'number', defaultValue, context);
     return value as ResolutionDetails<number>;
   }
 
@@ -131,7 +142,7 @@ export class FliptProvider implements Provider {
     defaultValue: U,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
-    let value = await this.resolveFlagHelper(flagKey, 'json', defaultValue, context);
+    const value = await this.resolveFlagHelper(flagKey, 'json', defaultValue, context);
     return value as ResolutionDetails<U>;
   }
 
@@ -144,13 +155,11 @@ export class FliptProvider implements Provider {
     const evalContext: Record<string, string> = transformContext(context);
 
     try {
-      const variantEvaluation = await this.client?.evaluation.variant({
-        namespaceKey: this.namespace ?? 'default',
+      const variantEvaluation = await this.client.evaluation.variant({
+        namespaceKey: this.namespace,
         flagKey,
         entityId: context.targetingKey ?? '',
-        context: {
-          ...evalContext,
-        },
+        context: evalContext,
       });
 
       if (variantEvaluation.reason === 'FLAG_DISABLED_EVALUATION_REASON') {
@@ -181,11 +190,7 @@ export class FliptProvider implements Provider {
         throw e;
       }
 
-      return {
-        value: defaultValue,
-        reason: StandardResolutionReasons.ERROR,
-        errorMessage: getErrorMessage(e),
-      };
+      throw new GeneralError(getErrorMessage(e));
     }
   }
 }
@@ -203,22 +208,24 @@ type PrimitiveTypeName = 'string' | 'number' | 'json';
 function validateFlagType<T extends PrimitiveTypeName, U extends JsonValue>(type: T, value: string): PrimitiveType | U {
   if (typeof value !== 'undefined') {
     switch (type) {
-      case 'number':
+      case 'number': {
         const actualValue = parseFloat(value);
         if (!isNaN(actualValue)) {
           return actualValue;
         }
 
         throw new TypeMismatchError(`flag value does not match type ${type}`);
+      }
       case 'string':
         return value;
-      case 'json':
+      case 'json': {
         try {
           const obj: U = JSON.parse(value);
           return obj;
         } catch {
           throw new TypeMismatchError(`flag value does not match type ${type}`);
         }
+      }
       default:
         return value;
     }

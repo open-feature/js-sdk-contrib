@@ -2,7 +2,6 @@
   "name": "@openfeature/flipt-provider",
   "version": "0.0.1",
   "dependencies": {
-    "@flipt-io/flipt": "^1.0.0",
     "tslib": "^2.3.0"
   },
   "main": "./src/index.js",
@@ -12,6 +11,7 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/server-sdk": "^1.6.0"
+    "@openfeature/server-sdk": "^1.6.0",
+    "@flipt-io/flipt": "^1.0.0"
   }
 }
