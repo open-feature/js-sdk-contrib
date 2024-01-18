@@ -22,6 +22,8 @@ components:
     - kinyoklion
     - mateoc
     - sago2k8
+  libs/providers/flipt:
+    - yquansah
 
 ignored-authors:
   - renovate-bot
