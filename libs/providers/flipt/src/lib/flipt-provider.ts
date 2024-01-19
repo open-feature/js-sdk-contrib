@@ -111,7 +111,7 @@ export class FliptProvider implements Provider {
         default:
           return {
             value: defaultValue,
-            reason: StandardResolutionReasons.ERROR,
+            reason: StandardResolutionReasons.DEFAULT,
           };
       }
     } catch (e) {

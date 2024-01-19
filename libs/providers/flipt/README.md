@@ -32,7 +32,11 @@ OpenFeature.setProvider(provider);
 After the provider gets initialized, you can start evaluations of feature flags like so:
 
 ```ts
-await provider.resolveStringEvaluation('nonExistent', 'default', { targetingKey: 'myentity', email: 'john@flipt.io' });
+const client = OpenFeature.getClient();
+const details = await client.resolveStringEvaluation('nonExistent', 'default', {
+  targetingKey: 'myentity',
+  email: 'john@flipt.io',
+});
 ```
 
 ## Evaluation Context Transformation
