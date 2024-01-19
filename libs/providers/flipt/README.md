@@ -33,7 +33,7 @@ After the provider gets initialized, you can start evaluations of feature flags 
 
 ```ts
 const client = OpenFeature.getClient();
-const details = await client.resolveStringEvaluation('nonExistent', 'default', {
+const details = await client.getStringDetails('nonExistent', 'default', {
   targetingKey: 'myentity',
   email: 'john@flipt.io',
 });
