@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.6](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.5...go-feature-flag-web-provider-v0.1.6) (2024-01-21)
+
+
+### 🧹 Chore
+
+* address lint issues ([#642](https://github.com/open-feature/js-sdk-contrib/issues/642)) ([bbd9aee](https://github.com/open-feature/js-sdk-contrib/commit/bbd9aee896dc4a0817f379b799a1b8d331ee76c6))
+* fix lint issues and bump server sdk version ([#715](https://github.com/open-feature/js-sdk-contrib/issues/715)) ([bd57177](https://github.com/open-feature/js-sdk-contrib/commit/bd571770f3a1a01bd62663dc3473273449f96c5c))
+
 ## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.4...go-feature-flag-web-provider-v0.1.5) (2023-11-01)
 
 

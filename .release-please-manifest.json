@@ -6,7 +6,7 @@
   "libs/providers/env-var": "0.2.0",
   "libs/providers/config-cat": "0.4.0",
   "libs/providers/launchdarkly-client": "0.2.0",
-  "libs/providers/go-feature-flag-web": "0.1.5",
+  "libs/providers/go-feature-flag-web": "0.1.6",
   "libs/shared/flagd-core": "0.1.8",
   "libs/providers/flipt": "0.0.2"
 }
