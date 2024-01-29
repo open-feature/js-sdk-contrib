@@ -173,10 +173,20 @@ describe('flagd-core common flag definitions', () => {
     const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":"false", "targeting":{"in":["@openfeature.dev",{"var":"email"}]}}}}`;
     core.setConfigurations(flagCfg);
 
-    const resolved = core.resolveBooleanEvaluation('myBoolFlag', false, { email: 'user@openfeature.dev' }, console);
-    expect(resolved.value).toBe(true);
-    expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
-    expect(resolved.variant).toBe('true');
+    const resolvedTruthy = core.resolveBooleanEvaluation(
+      'myBoolFlag',
+      false,
+      { email: 'user@openfeature.dev' },
+      console,
+    );
+    expect(resolvedTruthy.value).toBe(true);
+    expect(resolvedTruthy.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
+    expect(resolvedTruthy.variant).toBe('true');
+
+    const resolvedFalsy = core.resolveBooleanEvaluation('myBoolFlag', false, { email: 'user@flagd.dev' }, console);
+    expect(resolvedFalsy.value).toBe(false);
+    expect(resolvedFalsy.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
+    expect(resolvedFalsy.variant).toBe('false');
   });
 
   it('should support fractional logic', () => {

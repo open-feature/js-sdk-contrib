@@ -169,7 +169,8 @@ export class FlagdCore implements Storage {
         targetingResolution = null;
       }
 
-      if (!targetingResolution) {
+      // Return default variant if targeting resolution is null or undefined
+      if (targetingResolution == null) {
         variant = flag.defaultVariant;
         reason = StandardResolutionReasons.DEFAULT;
       } else {
