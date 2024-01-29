@@ -150,11 +150,7 @@ export class FlagdCore implements Storage {
 
     // flag status check
     if (flag.state === 'DISABLED') {
-      logger.debug(`Flag ${flagKey} is disabled, returning default value ${defaultValue}`);
-      return {
-        value: defaultValue,
-        reason: StandardResolutionReasons.DISABLED,
-      };
+      throw new FlagNotFoundError(`flag: '${flagKey}' is disabled`);
     }
 
     let variant;

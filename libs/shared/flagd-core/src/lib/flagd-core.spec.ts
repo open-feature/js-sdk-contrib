@@ -1,5 +1,5 @@
 import { FlagdCore } from './flagd-core';
-import { GeneralError, StandardResolutionReasons, TypeMismatchError } from '@openfeature/core';
+import { FlagNotFoundError, GeneralError, StandardResolutionReasons, TypeMismatchError } from '@openfeature/core';
 
 describe('flagd-core resolving', () => {
   describe('truthy variant values', () => {
@@ -144,12 +144,18 @@ describe('flagd-core validations', () => {
     expect(() => core.resolveBooleanEvaluation('myIntFlag', true, {}, console)).toThrow(GeneralError);
   });
 
-  it('should validate flag status', () => {
-    const evaluation = core.resolveBooleanEvaluation('myBoolFlag', false, {}, console);
+  it('should throw because the flag does not exist', () => {
+    const flagKey = 'nonexistentFlagKey';
+    expect(() => core.resolveBooleanEvaluation(flagKey, false, {}, console)).toThrow(
+      new FlagNotFoundError(`flag: '${flagKey}' not found`),
+    );
+  });
 
-    expect(evaluation).toBeTruthy();
-    expect(evaluation.value).toBe(false);
-    expect(evaluation.reason).toBe(StandardResolutionReasons.DISABLED);
+  it('should throw because the flag is disabled and should behave like it does not exist', () => {
+    const flagKey = 'myBoolFlag';
+    expect(() => core.resolveBooleanEvaluation(flagKey, false, {}, console)).toThrow(
+      new FlagNotFoundError(`flag: '${flagKey}' is disabled`),
+    );
   });
 
   it('should validate variant', () => {
