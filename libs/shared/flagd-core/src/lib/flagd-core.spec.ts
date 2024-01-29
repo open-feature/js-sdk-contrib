@@ -168,25 +168,29 @@ describe('flagd-core validations', () => {
 });
 
 describe('flagd-core common flag definitions', () => {
-  it('should support boolean variant shorthand', () => {
+  describe('boolean variant shorthand', () => {
     const core = new FlagdCore();
     const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":"false", "targeting":{"in":["@openfeature.dev",{"var":"email"}]}}}}`;
     core.setConfigurations(flagCfg);
 
-    const resolvedTruthy = core.resolveBooleanEvaluation(
-      'myBoolFlag',
-      false,
-      { email: 'user@openfeature.dev' },
-      console,
-    );
-    expect(resolvedTruthy.value).toBe(true);
-    expect(resolvedTruthy.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
-    expect(resolvedTruthy.variant).toBe('true');
+    it('should support truthy values', () => {
+      const resolvedTruthy = core.resolveBooleanEvaluation(
+        'myBoolFlag',
+        false,
+        { email: 'user@openfeature.dev' },
+        console,
+      );
+      expect(resolvedTruthy.value).toBe(true);
+      expect(resolvedTruthy.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
+      expect(resolvedTruthy.variant).toBe('true');
+    });
 
-    const resolvedFalsy = core.resolveBooleanEvaluation('myBoolFlag', false, { email: 'user@flagd.dev' }, console);
-    expect(resolvedFalsy.value).toBe(false);
-    expect(resolvedFalsy.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
-    expect(resolvedFalsy.variant).toBe('false');
+    it('should support falsy values', () => {
+      const resolvedFalsy = core.resolveBooleanEvaluation('myBoolFlag', false, { email: 'user@flagd.dev' }, console);
+      expect(resolvedFalsy.value).toBe(false);
+      expect(resolvedFalsy.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
+      expect(resolvedFalsy.variant).toBe('false');
+    });
   });
 
   it('should support fractional logic', () => {
