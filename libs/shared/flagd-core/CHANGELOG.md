@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.8...flagd-core-v0.1.9) (2024-01-29)
+
+
+### 🐛 Bug Fixes
+
+* update disabled behavior to match spec  ([#744](https://github.com/open-feature/js-sdk-contrib/issues/744)) ([3f6b4f4](https://github.com/open-feature/js-sdk-contrib/commit/3f6b4f43e7e79a70517d1d654355cf4b82a31188))
+
 ## [0.1.8](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.7...flagd-core-v0.1.8) (2024-01-08)
 
 
