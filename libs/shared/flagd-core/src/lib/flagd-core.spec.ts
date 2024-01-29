@@ -145,14 +145,16 @@ describe('flagd-core validations', () => {
   });
 
   it('should throw because the flag does not exist', () => {
-    expect(() => core.resolveBooleanEvaluation('nonexistentFlagKey', false, {}, console)).toThrow(
-      new FlagNotFoundError("flag: 'nonexistentFlagKey' not found"),
+    const flagKey = 'nonexistentFlagKey';
+    expect(() => core.resolveBooleanEvaluation(flagKey, false, {}, console)).toThrow(
+      new FlagNotFoundError(`flag: '${flagKey}' not found`),
     );
   });
 
   it('should throw because the flag is disabled and should behave like it does not exist', () => {
-    expect(() => core.resolveBooleanEvaluation('myBoolFlag', false, {}, console)).toThrow(
-      new FlagNotFoundError(`flag: 'myBoolFlag' is disabled`),
+    const flagKey = 'myBoolFlag';
+    expect(() => core.resolveBooleanEvaluation(flagKey, false, {}, console)).toThrow(
+      new FlagNotFoundError(`flag: '${flagKey}' is disabled`),
     );
   });
 
