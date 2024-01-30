@@ -50,7 +50,7 @@ jobs:
           ports:
             - 9090:9090
         sync-unstable:
-          image: ghcr.io/open-feature/sync-testbed-unstable:v0.4.10
+          image: ghcr.io/open-feature/sync-testbed-unstable:v0.4.11
           ports:
             - 9091:9090
 
