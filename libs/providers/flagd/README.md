@@ -34,8 +34,9 @@ Options can be defined in the constructor or as environment variables. Construct
 | tls                                    | FLAGD_TLS                      | boolean | false     |                  |
 | socketPath                             | FLAGD_SOCKET_PATH              | string  | -         |                  |
 | resolverType                           | FLAGD_SOURCE_RESOLVER          | string  | rpc       | rpc, in-process  |
+| offlineFlagSourcePath                  | FLAGD_OFFLINE_FLAG_SOURCE_PATH | string  | -         |                  |
 | selector                               | FLAGD_SOURCE_SELECTOR          | string  | -         |                  |
-| cache                                  | FLAGD_CACHE                    | string  | lru       | lru,disabled     |
+| cache                                  | FLAGD_CACHE                    | string  | lru       | lru, disabled    |
 | maxCacheSize                           | FLAGD_MAX_CACHE_SIZE           | int     | 1000      |                  |
 
 Below are examples of usage patterns.
