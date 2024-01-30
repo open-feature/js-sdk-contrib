@@ -38,7 +38,7 @@ jobs:
 
       services:
         flagd:
-          image: ghcr.io/open-feature/flagd-testbed:v0.4.10
+          image: ghcr.io/open-feature/flagd-testbed:v0.4.11
           ports:
             - 8013:8013
         flagd-unstable:
