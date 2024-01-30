@@ -91,6 +91,7 @@ enum ENV_VAR {
   FLAGD_MAX_CACHE_SIZE = 'FLAGD_MAX_CACHE_SIZE',
   FLAGD_SOURCE_SELECTOR = 'FLAGD_SOURCE_SELECTOR',
   FLAGD_RESOLVER = 'FLAGD_RESOLVER',
+  FLAGD_OFFLINE_FLAG_SOURCE_PATH = 'FLAGD_OFFLINE_FLAG_SOURCE_PATH',
 }
 
 const getEnvVarConfig = (): Partial<Config> => ({
@@ -117,6 +118,9 @@ const getEnvVarConfig = (): Partial<Config> => ({
   }),
   ...((process.env[ENV_VAR.FLAGD_RESOLVER] === 'rpc' || process.env[ENV_VAR.FLAGD_RESOLVER] === 'in-process') && {
     resolverType: process.env[ENV_VAR.FLAGD_RESOLVER],
+  }),
+  ...(process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH] && {
+    offlineFlagSourcePath: process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH],
   }),
 });
 

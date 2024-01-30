@@ -30,6 +30,7 @@ describe('Configuration', () => {
     const cache = 'disabled';
     const resolverType = 'in-process';
     const selector = 'app=weather';
+    const offlineFlagSourcePath = '/tmp/flags.json';
 
     process.env['FLAGD_HOST'] = host;
     process.env['FLAGD_PORT'] = `${port}`;
@@ -39,6 +40,7 @@ describe('Configuration', () => {
     process.env['FLAGD_MAX_CACHE_SIZE'] = `${maxCacheSize}`;
     process.env['FLAGD_SOURCE_SELECTOR'] = `${selector}`;
     process.env['FLAGD_RESOLVER'] = `${resolverType}`;
+    process.env['FLAGD_OFFLINE_FLAG_SOURCE_PATH'] = offlineFlagSourcePath;
 
     expect(getConfig()).toStrictEqual({
       host,
@@ -49,6 +51,7 @@ describe('Configuration', () => {
       cache,
       resolverType,
       selector,
+      offlineFlagSourcePath,
     });
   });
 
