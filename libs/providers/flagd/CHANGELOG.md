@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.4...flagd-provider-v0.10.5) (2024-01-30)
+
+
+### ✨ New Features
+
+* add offline mode file path env ([#751](https://github.com/open-feature/js-sdk-contrib/issues/751)) ([4ff73e7](https://github.com/open-feature/js-sdk-contrib/commit/4ff73e787693cd2e783200e6c165352a2906185b))
+
 ## [0.10.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.3...flagd-provider-v0.10.4) (2024-01-10)
 
 
