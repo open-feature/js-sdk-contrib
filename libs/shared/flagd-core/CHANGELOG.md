@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.10](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.9...flagd-core-v0.1.10) (2024-01-30)
+
+
+### 🐛 Bug Fixes
+
+* falsy boolean shorthand logic ([#746](https://github.com/open-feature/js-sdk-contrib/issues/746)) ([0772c90](https://github.com/open-feature/js-sdk-contrib/commit/0772c90c10906e47109567ba1ac35fe8b38fbe74))
+
 ## [0.1.9](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.8...flagd-core-v0.1.9) (2024-01-29)
 
 
