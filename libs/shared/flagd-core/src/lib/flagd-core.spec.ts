@@ -225,4 +225,12 @@ describe('flagd-core common flag definitions', () => {
     expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
     expect(resolved.variant).toBe('false');
   });
+
+  it('should throw with invalid targeting rules', () => {
+    const core = new FlagdCore();
+    const flagCfg = `{"flags":{"isEnabled":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":"false","targeting":{"invalid": ["this is not valid targeting"]}}}}`;
+    core.setConfigurations(flagCfg);
+
+    expect(() => core.resolveBooleanEvaluation('isEnabled', false, {}, console)).toThrow();
+  });
 });

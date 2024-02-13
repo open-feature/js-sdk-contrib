@@ -70,39 +70,53 @@ export class GrpcFetch implements DataFetch {
   ) {
     this._logger?.debug('Starting gRPC sync connection');
     closeStreamIfDefined(this._syncStream);
-    this._syncStream = this._syncClient.syncFlags(this._request);
-
-    this._syncStream.on('data', (data: SyncFlagsResponse) => {
-      this._logger?.debug(`Received sync payload`);
-
-      try {
-        const changes = dataCallback(data.flagConfiguration);
-        if (this._initialized && changes.length > 0) {
-          changedCallback(changes);
+    try {
+      this._syncStream = this._syncClient.syncFlags(this._request);
+      this._syncStream.on('data', (data: SyncFlagsResponse) => {
+        this._logger?.debug(`Received sync payload`);
+  
+        try {
+          const changes = dataCallback(data.flagConfiguration);
+          if (this._initialized && changes.length > 0) {
+            changedCallback(changes);
+          }
+        } catch (err) {
+          this._logger?.debug('Error processing sync payload: ', (err as Error)?.message ?? 'unknown error');
         }
-      } catch (err) {
-        this._logger?.debug('Error processing sync payload: ', (err as Error)?.message ?? 'unknown error');
-      }
+  
+        if (resolveConnect) {
+          resolveConnect();
+        } else if (!this._isConnected) {
+          // Not the first connection and there's no active connection.
+          this._logger?.debug('Reconnected to gRPC sync');
+          reconnectCallback();
+        }
+        this._isConnected = true;
+      });
+  
+      this._syncStream.on('error', (err: ServiceError | undefined) => {
+        this.handleError(err as Error, dataCallback, reconnectCallback, changedCallback, disconnectCallback, rejectConnect);
+      });
+    } catch (err) {
+      this.handleError(err as Error, dataCallback, reconnectCallback, changedCallback, disconnectCallback, rejectConnect);
+    } 
+  }
 
-      if (resolveConnect) {
-        resolveConnect();
-      } else if (!this._isConnected) {
-        // Not the first connection and there's no active connection.
-        this._logger?.debug('Reconnected to gRPC sync');
-        reconnectCallback();
-      }
-      this._isConnected = true;
-    });
-
-    this._syncStream.on('error', (err: ServiceError | undefined) => {
-      this._logger?.error('Connection error, attempting to reconnect');
-      this._logger?.debug(err);
-      this._isConnected = false;
-      const errorMessage = err?.message ?? 'Failed to connect to syncFlags stream';
-      disconnectCallback(errorMessage);
-      rejectConnect?.(new GeneralError(errorMessage));
-      this.reconnect(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
-    });
+  private handleError(
+    err: Error,
+    dataCallback: (flags: string) => string[],
+    reconnectCallback: () => void,
+    changedCallback: (flagsChanged: string[]) => void,
+    disconnectCallback: (message: string) => void,
+    rejectConnect?: (reason: Error) => void,
+  ) {
+    this._logger?.error('Connection error, attempting to reconnect');
+    this._logger?.debug(err);
+    this._isConnected = false;
+    const errorMessage = err?.message ?? 'Failed to connect to syncFlags stream';
+    disconnectCallback(errorMessage);
+    rejectConnect?.(new GeneralError(errorMessage));
+    this.reconnect(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
   }
 
   private reconnect(
