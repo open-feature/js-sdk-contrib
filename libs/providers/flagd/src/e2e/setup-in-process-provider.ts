@@ -19,14 +19,26 @@ OpenFeature.setProvider(
 );
 assert(
   OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name === FLAGD_NAME,
-  new Error(`Expected ${FLAGD_NAME} provider to be configured, instead got: ${OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name}`),
+  new Error(
+    `Expected ${FLAGD_NAME} provider to be configured, instead got: ${
+      OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name
+    }`,
+  ),
 );
 assert(
   OpenFeature.getProviderMetadata(UNSTABLE_CLIENT_NAME).name === FLAGD_NAME,
-  new Error(`Expected ${FLAGD_NAME} provider to be configured, instead got: ${OpenFeature.getProviderMetadata(UNSTABLE_CLIENT_NAME).name}`),
+  new Error(
+    `Expected ${FLAGD_NAME} provider to be configured, instead got: ${
+      OpenFeature.getProviderMetadata(UNSTABLE_CLIENT_NAME).name
+    }`,
+  ),
 );
 assert(
   OpenFeature.getProviderMetadata(UNAVAILABLE_CLIENT_NAME).name === FLAGD_NAME,
-  new Error(`Expected ${FLAGD_NAME} provider to be configured, instead got: ${OpenFeature.getProviderMetadata(UNAVAILABLE_CLIENT_NAME).name}`),
+  new Error(
+    `Expected ${FLAGD_NAME} provider to be configured, instead got: ${
+      OpenFeature.getProviderMetadata(UNAVAILABLE_CLIENT_NAME).name
+    }`,
+  ),
 );
 console.log('flagd provider configured!');

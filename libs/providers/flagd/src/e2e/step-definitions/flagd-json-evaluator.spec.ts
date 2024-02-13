@@ -129,12 +129,12 @@ defineFeature(feature, (test) => {
     let defaultValue: number;
 
     aFlagProviderIsSet(given);
-    
+
     when(/^an integer flag with key "(.*)" is evaluated with default value (.*)$/, (key, defaultVal) => {
       flagKey = key;
       defaultValue = parseInt(defaultVal);
     });
-    
+
     then(/^the returned value should be (.*)$/, async (expectedValue) => {
       const value = await client.getNumberValue(flagKey, defaultValue);
       expect(value).toEqual(parseInt(expectedValue));

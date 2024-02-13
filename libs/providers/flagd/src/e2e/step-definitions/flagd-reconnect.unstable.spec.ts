@@ -54,13 +54,13 @@ defineFeature(feature, (test) => {
     given('flagd is unavailable', async () => {
       // handled in setup
     });
-    
+
     when('a flagd provider is set and initialization is awaited', () => {
       OpenFeature.getClient(UNAVAILABLE_CLIENT_NAME).addHandler(ProviderEvents.Error, () => {
         errorHandlerRun++;
       });
     });
-    
+
     then('an error should be indicated within the configured deadline', () => {
       expect(errorHandlerRun).toBeGreaterThan(0);
     });

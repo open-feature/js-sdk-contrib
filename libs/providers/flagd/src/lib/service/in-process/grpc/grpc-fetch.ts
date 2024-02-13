@@ -74,7 +74,7 @@ export class GrpcFetch implements DataFetch {
       this._syncStream = this._syncClient.syncFlags(this._request);
       this._syncStream.on('data', (data: SyncFlagsResponse) => {
         this._logger?.debug(`Received sync payload`);
-  
+
         try {
           const changes = dataCallback(data.flagConfiguration);
           if (this._initialized && changes.length > 0) {
@@ -83,7 +83,7 @@ export class GrpcFetch implements DataFetch {
         } catch (err) {
           this._logger?.debug('Error processing sync payload: ', (err as Error)?.message ?? 'unknown error');
         }
-  
+
         if (resolveConnect) {
           resolveConnect();
         } else if (!this._isConnected) {
@@ -93,13 +93,27 @@ export class GrpcFetch implements DataFetch {
         }
         this._isConnected = true;
       });
-  
+
       this._syncStream.on('error', (err: ServiceError | undefined) => {
-        this.handleError(err as Error, dataCallback, reconnectCallback, changedCallback, disconnectCallback, rejectConnect);
+        this.handleError(
+          err as Error,
+          dataCallback,
+          reconnectCallback,
+          changedCallback,
+          disconnectCallback,
+          rejectConnect,
+        );
       });
     } catch (err) {
-      this.handleError(err as Error, dataCallback, reconnectCallback, changedCallback, disconnectCallback, rejectConnect);
-    } 
+      this.handleError(
+        err as Error,
+        dataCallback,
+        reconnectCallback,
+        changedCallback,
+        disconnectCallback,
+        rejectConnect,
+      );
+    }
   }
 
   private handleError(
