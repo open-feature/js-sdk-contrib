@@ -27,7 +27,7 @@ import {
   ResolveStringRequest,
   ResolveStringResponse,
   ServiceClient,
-} from '../../../proto/ts/schema/v1/schema';
+} from '../../../proto/ts/flagd/evaluation/v1/evaluation';
 import { Config } from '../../configuration';
 import { DEFAULT_MAX_CACHE_SIZE, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';

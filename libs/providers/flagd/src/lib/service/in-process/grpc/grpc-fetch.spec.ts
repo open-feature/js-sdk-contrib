@@ -1,6 +1,6 @@
 import { GrpcFetch } from './grpc-fetch';
 import { Config } from '../../../configuration';
-import { FlagSyncServiceClient, SyncFlagsResponse, SyncState } from '../../../../proto/ts/sync/v1/sync_service';
+import { FlagSyncServiceClient, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 
 let watchStateCallback: () => void = () => ({});
@@ -70,7 +70,7 @@ describe('grpc fetch', () => {
         done(err);
       });
 
-    onDataCallback({ flagConfiguration, state: SyncState.SYNC_STATE_ALL });
+    onDataCallback({ flagConfiguration });
   });
 
   it('should handle data sync reconnection', (done) => {
@@ -86,13 +86,13 @@ describe('grpc fetch', () => {
       .then(() => {
         try {
           // Updated flags
-          onDataCallback({ flagConfiguration: updatedFlagConfig, state: SyncState.SYNC_STATE_ALL });
+          onDataCallback({ flagConfiguration: updatedFlagConfig });
           // Stream error
           onErrorCallback(new Error('Some connection error'));
           // Force clearing
           watchStateCallback();
           // Reconnect
-          onDataCallback({ flagConfiguration: reconnectFlagConfig, state: SyncState.SYNC_STATE_ALL });
+          onDataCallback({ flagConfiguration: reconnectFlagConfig });
 
           // Callback assertions
           expect(dataCallback).toHaveBeenCalledTimes(3);
@@ -117,7 +117,7 @@ describe('grpc fetch', () => {
     dataCallback.mockReturnValue(['test']);
 
     // First connection
-    onDataCallback({ flagConfiguration: initFlagConfig, state: SyncState.SYNC_STATE_ALL });
+    onDataCallback({ flagConfiguration: initFlagConfig });
   });
 
   it('should handle error and watch channel for reconnect', (done) => {

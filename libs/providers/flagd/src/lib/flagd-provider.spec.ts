@@ -24,7 +24,7 @@ import {
   ResolveStringRequest,
   ResolveStringResponse,
   ServiceClient,
-} from '../proto/ts/schema/v1/schema';
+} from '../proto/ts/flagd/evaluation/v1/evaluation';
 import { EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from './constants';
 import { FlagdProvider } from './flagd-provider';
 import { FlagChangeMessage, GRPCService } from './service/grpc/grpc-service';

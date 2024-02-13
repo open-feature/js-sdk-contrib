@@ -38,13 +38,17 @@ defineFeature(feature, (test) => {
 
   test('Flag change event', ({ given, when, and, then }) => {
     let ran = false;
-    let eventDetails: EventDetails<ProviderEvents> | undefined;
+    let flagsChanged: string[];
 
     aFlagProviderIsSet(given);
     when('a PROVIDER_CONFIGURATION_CHANGED handler is added', () => {
       client.addHandler(ProviderEvents.ConfigurationChanged, async (details) => {
         ran = true;
-        eventDetails = details;
+        // file writes are not atomic, so we get a few events in quick succession from the testbed
+        // some will not contain changes, this tolerates that; at least 1 should have our change
+        if (details?.flagsChanged?.length) {
+          flagsChanged = details?.flagsChanged;
+        }
       });
     });
     and(/^a flag with key "(.*)" is modified$/, async () => {
@@ -55,7 +59,7 @@ defineFeature(feature, (test) => {
       expect(ran).toBeTruthy();
     });
     and(/^the event details must indicate "(.*)" was altered$/, (flagName) => {
-      expect(eventDetails?.flagsChanged).toContain(flagName);
+      expect(flagsChanged).toContain(flagName);
     });
   });
 
