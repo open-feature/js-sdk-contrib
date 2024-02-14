@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.4.1...flagd-web-provider-v0.5.0) (2024-02-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* use new eval/sync protos (requires flagd v0.7.3+)  ([#762](https://github.com/open-feature/js-sdk-contrib/issues/762))
+
+### ✨ New Features
+
+* use new eval/sync protos (requires flagd v0.7.3+)  ([#762](https://github.com/open-feature/js-sdk-contrib/issues/762)) ([4da9deb](https://github.com/open-feature/js-sdk-contrib/commit/4da9deb48c6bd0c106b176fc7e3730cf50e60b6d))
+
 ## [0.4.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.4.0...flagd-web-provider-v0.4.1) (2023-12-15)
 
 
