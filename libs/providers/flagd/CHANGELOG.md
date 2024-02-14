@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.11.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.5...flagd-provider-v0.11.0) (2024-02-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* use new eval/sync protos (requires flagd v0.7.3+)  ([#762](https://github.com/open-feature/js-sdk-contrib/issues/762))
+
+### 🐛 Bug Fixes
+
+* init in-process error, throw on invalid rules ([#767](https://github.com/open-feature/js-sdk-contrib/issues/767)) ([e9f9e74](https://github.com/open-feature/js-sdk-contrib/commit/e9f9e74d66e9f8666eebb8d06141fce713c7914c))
+
+
+### ✨ New Features
+
+* use new eval/sync protos (requires flagd v0.7.3+)  ([#762](https://github.com/open-feature/js-sdk-contrib/issues/762)) ([4da9deb](https://github.com/open-feature/js-sdk-contrib/commit/4da9deb48c6bd0c106b176fc7e3730cf50e60b6d))
+
+
+### 🧹 Chore
+
+* **deps:** update dependency @grpc/grpc-js to ~1.8.0 || ~1.9.0 || ~1.10.0 ([#764](https://github.com/open-feature/js-sdk-contrib/issues/764)) ([c05bf9d](https://github.com/open-feature/js-sdk-contrib/commit/c05bf9d8b5980f60611e92a2bab024306e397ec0))
+
 ## [0.10.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.4...flagd-provider-v0.10.5) (2024-01-30)
 
 
