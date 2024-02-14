@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.11](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.10...flagd-core-v0.1.11) (2024-02-14)
+
+
+### 🐛 Bug Fixes
+
+* init in-process error, throw on invalid rules ([#767](https://github.com/open-feature/js-sdk-contrib/issues/767)) ([e9f9e74](https://github.com/open-feature/js-sdk-contrib/commit/e9f9e74d66e9f8666eebb8d06141fce713c7914c))
+
 ## [0.1.10](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.9...flagd-core-v0.1.10) (2024-01-30)
 
 
