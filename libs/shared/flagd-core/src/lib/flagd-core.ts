@@ -137,7 +137,7 @@ export class FlagdCore implements Storage {
   resolve<T extends FlagValue>(
     type: FlagValueType,
     flagKey: string,
-    defaultValue: T,
+    _: T,
     evalCtx: EvaluationContext = {},
     logger?: Logger,
   ): ResolutionDetails<T> {
@@ -165,8 +165,7 @@ export class FlagdCore implements Storage {
       try {
         targetingResolution = this._targeting.applyTargeting(flagKey, flag.targeting, evalCtx);
       } catch (e) {
-        logger.error(`Error evaluating targeting rule for flag ${flagKey}, falling back to default`, e);
-        targetingResolution = null;
+        throw new GeneralError(`Error evaluating targeting rule for flag ${flagKey}: ${(e as Error)?.message}`);
       }
 
       // Return default variant if targeting resolution is null or undefined

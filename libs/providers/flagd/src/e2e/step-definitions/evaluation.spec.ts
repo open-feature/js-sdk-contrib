@@ -9,12 +9,13 @@ import {
   StandardResolutionReasons,
 } from '@openfeature/server-sdk';
 import { defineFeature, loadFeature } from 'jest-cucumber';
+import { E2E_CLIENT_NAME } from '../constants';
 
 // load the feature file.
 const feature = loadFeature('features/evaluation.feature');
 
 // get a client (flagd provider registered in setup)
-const client = OpenFeature.getClient('e2e');
+const client = OpenFeature.getClient(E2E_CLIENT_NAME);
 
 const givenAnOpenfeatureClientIsRegistered = (
   given: (stepMatcher: string, stepDefinitionCallback: () => void) => void,
