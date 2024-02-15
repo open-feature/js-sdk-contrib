@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.11.0...flagd-provider-v0.11.1) (2024-02-15)
+
+
+### ✨ New Features
+
+* use updated proto ([#770](https://github.com/open-feature/js-sdk-contrib/issues/770)) ([5405af5](https://github.com/open-feature/js-sdk-contrib/commit/5405af57d0ecaa64796dc87c90e98d83fe246e6c))
+
 ## [0.11.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.5...flagd-provider-v0.11.0) (2024-02-14)
 
 
