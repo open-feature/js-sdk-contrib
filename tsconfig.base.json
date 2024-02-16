@@ -26,7 +26,8 @@
       "@openfeature/go-feature-flag-provider": ["libs/providers/go-feature-flag/src/index.ts"],
       "@openfeature/go-feature-flag-web-provider": ["libs/providers/go-feature-flag-web/src/index.ts"],
       "@openfeature/hooks-open-telemetry": ["libs/hooks/open-telemetry/src/index.ts"],
-      "@openfeature/launchdarkly-client-provider": ["libs/providers/launchdarkly-client/src/index.ts"]
+      "@openfeature/launchdarkly-client-provider": ["libs/providers/launchdarkly-client/src/index.ts"],
+      "@openfeature/ofrep-web-provider": ["libs/providers/ofrep-web/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
