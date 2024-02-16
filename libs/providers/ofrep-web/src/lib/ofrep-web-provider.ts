@@ -9,14 +9,15 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
-import { EvaluateResponse } from './model/evaluate_response';
+import { EvaluateResponse } from './model/evaluate-response';
 import { OfrepWebProviderOptions } from './model/options';
+import { InMemoryCacheEntry } from './model/in-memory-cache-entry';
 
 export class OfrepWebProvider implements Provider {
   // endpoint of your OFREP instance
   private readonly _endpoint: string;
   // _inMemoryCache is the in memory representation of all the flag evaluations.
-  private _inMemoryCache: { [key: string]: ResolutionDetails<FlagValue> } = {};
+  private _inMemoryCache: { [key: string]: InMemoryCacheEntry<FlagValue> } = {};
   // _options is the options used to configure the provider.
   private readonly _options?: OfrepWebProviderOptions;
 
@@ -58,6 +59,7 @@ export class OfrepWebProvider implements Provider {
   }
 
   resolveStringEvaluation(flagKey: string, _: string): ResolutionDetails<string> {
+    console.log(this._inMemoryCache);
     return this.evaluate(flagKey, 'string');
   }
 
@@ -119,6 +121,7 @@ export class OfrepWebProvider implements Provider {
           errorCode: evaluationResp.errorCode,
           flagMetadata: evaluationResp.metadata,
           reason: evaluationResp.reason,
+          ETag: evaluationResp.ETag,
         };
       } else {
         this._options?.logger?.error(

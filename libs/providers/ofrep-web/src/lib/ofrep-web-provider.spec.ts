@@ -23,6 +23,7 @@ describe('OFREPWebProvider', () => {
         reason: 'TARGETING_MATCH',
         value: 'toto',
         variant: 'Variant1',
+        ETag: '9f9fc0b4',
       },
       {
         key: 'flag2',
@@ -32,6 +33,7 @@ describe('OFREPWebProvider', () => {
         reason: 'SPLIT',
         value: 'titi',
         variant: 'Variant150',
+        ETag: '6c23a4',
       },
       {
         key: 'flag3',

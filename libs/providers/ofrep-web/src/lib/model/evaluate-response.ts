@@ -10,4 +10,5 @@ export interface SingleEvaluationResponse {
   reason: ResolutionReason;
   value: FlagValue;
   variant: string;
+  ETag: string;
 }
