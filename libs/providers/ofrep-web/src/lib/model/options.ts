@@ -1,5 +1,10 @@
 import { Logger } from '@openfeature/web-sdk';
 
+export enum ChangePropagationStrategy {
+  DISABLED = 'DISABLED',
+  POLLING = 'POLLING', // Polling strategy is the default strategy
+}
+
 export interface OfrepWebProviderOptions {
   /**
    * bearerToken is the Bearer Token used to authenticate the requests to the provider.
@@ -19,4 +24,23 @@ export interface OfrepWebProviderOptions {
    * logger is the Open Feature logger used by the provider.
    */
   logger?: Logger;
+
+  /**
+   * changePropagationStrategy is the strategy used by the provider to propagate the changes
+   * from the server to the client.
+   */
+  changePropagationStrategy?: ChangePropagationStrategy;
+
+  /**
+   * if changePropagationStrategy is POLLING, pollingOptions is the configuration of the polling.
+   */
+  pollingOptions?: PollingOptions;
+}
+
+export interface PollingOptions {
+  /**
+   * interval is the time in millisecond between each polling request.
+   * Default: 10000 ms
+   */
+  interval?: number;
 }
