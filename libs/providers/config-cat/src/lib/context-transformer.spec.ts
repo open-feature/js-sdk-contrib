@@ -18,6 +18,9 @@ describe('context-transformer', () => {
 
       const user = {
         identifier: context['targetingKey'],
+        country: undefined,
+        custom: {},
+        email: undefined,
       };
 
       expect(transformContext(context)).toEqual(user);
@@ -34,6 +37,7 @@ describe('context-transformer', () => {
         identifier: context['targetingKey'],
         email: context['email'],
         country: context['country'],
+        custom: {},
       };
 
       expect(transformContext(context)).toEqual(user);
