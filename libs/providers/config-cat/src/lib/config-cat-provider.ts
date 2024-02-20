@@ -84,7 +84,7 @@ export class ConfigCatProvider implements Provider {
   }
 
   public async onClose(): Promise<void> {
-    await this._client?.dispose();
+    this._client?.dispose();
   }
 
   async resolveBooleanEvaluation(
@@ -199,7 +199,11 @@ function toResolutionDetails<U extends JsonValue>(
   data: Omit<IEvaluationDetails, 'value'>,
   reason?: ResolutionReason,
 ): ResolutionDetails<U> {
-  const matchedRule = Boolean(data.matchedEvaluationRule || data.matchedEvaluationPercentageRule);
+  const matchedTargeting = 'matchedEvaluationRule' in data ? data.matchedEvaluationRule : data.matchedTargetingRule;
+  const matchedPercentage =
+    'matchedEvaluationPercentageRule' in data ? data.matchedEvaluationPercentageRule : data.matchedPercentageOption;
+
+  const matchedRule = Boolean(matchedTargeting || matchedPercentage);
   const evaluatedReason = matchedRule ? StandardResolutionReasons.TARGETING_MATCH : StandardResolutionReasons.STATIC;
 
   return {
