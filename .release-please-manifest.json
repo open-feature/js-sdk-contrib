@@ -8,5 +8,8 @@
   "libs/providers/launchdarkly-client": "0.2.1",
   "libs/providers/go-feature-flag-web": "0.1.6",
   "libs/shared/flagd-core": "0.1.11",
-  "libs/providers/flipt": "0.0.2"
+  "libs/providers/flipt": "0.0.2",
+  "libs/providers/unleash-provider": "0.1.0",
+  "libs/providers/unleash": "0.1.0",
+  "libs/providers/unleash-client": "0.1.0"
 }
