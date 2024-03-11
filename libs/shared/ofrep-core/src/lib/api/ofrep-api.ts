@@ -1,32 +1,22 @@
-import {
-  EvaluationFailureResponse,
-  EvaluationRequest,
-  EvaluationSuccessResponse,
-  isEvaluationFailureResponse,
-  isEvaluationSuccessResponse,
-} from '../types/evaluation';
+import { EvaluationRequest, isEvaluationFailureResponse, isEvaluationSuccessResponse } from '../model/evaluation';
 import {
   OFREPApiFetchError,
   OFREPApiInvalidResponseError,
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
 } from './errors';
+import { isBulkEvaluationFailureResponse, isBulkEvaluationSuccessResponse } from '../model/bulk-evaluation';
+import {
+  OFREPApiBulkEvaluationResult,
+  OFREPApiEvaluationResult,
+  OFREPEvaluationErrorHttpStatus,
+  OFREPEvaluationErrorHttpStatuses,
+  OFREPEvaluationSuccessHttpStatus,
+  OFREPEvaluationSuccessHttpStatuses,
+} from '../model/ofrep-api-result';
 
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
 export type RequestOptions = Omit<RequestInit, 'method' | 'body'>;
-
-export interface OFREPApiResult<
-  S extends number | undefined,
-  T,
-  R extends Response | undefined = Response | undefined,
-> {
-  readonly status: S;
-  readonly value: T;
-  readonly response: R;
-}
-
-export type OFREPApiFailureResult = OFREPApiResult<Exclude<number, 200>, EvaluationFailureResponse>;
-export type OFREPApiSuccessResult = OFREPApiResult<200, EvaluationSuccessResponse, Response>;
 
 export class OFREPApi {
   private static readonly jsonRegex = new RegExp(/application\/[^+]*[+]?(json);?.*/, 'i');
@@ -41,6 +31,14 @@ export class OFREPApi {
     return !!contentTypeHeader && OFREPApi.jsonRegex.test(contentTypeHeader);
   }
 
+  public static isOFREFErrorHttpStatus(status: number): status is OFREPEvaluationErrorHttpStatus {
+    return (OFREPEvaluationErrorHttpStatuses as readonly number[]).includes(status);
+  }
+
+  public static isOFREFSuccessHttpStatus(status: number): status is OFREPEvaluationSuccessHttpStatus {
+    return (OFREPEvaluationSuccessHttpStatuses as readonly number[]).includes(status);
+  }
+
   private async doFetchRequest(req: Request): Promise<{ response: Response; body: object }> {
     let response: Response;
     try {
@@ -53,7 +51,7 @@ export class OFREPApi {
       throw new OFREPApiUnauthorizedError(response);
     }
 
-    if (response.status === 409) {
+    if (response.status === 429) {
       throw new OFREPApiTooManyRequestsError(response);
     }
 
@@ -73,7 +71,7 @@ export class OFREPApi {
     flagKey: string,
     evaluationRequest: EvaluationRequest,
     options?: RequestOptions,
-  ): Promise<OFREPApiFailureResult | OFREPApiSuccessResult> {
+  ): Promise<OFREPApiEvaluationResult> {
     const request = new Request(`${this.baseUrl}/ofrep/v1/evaluate/flags/${flagKey}`, {
       ...options,
       method: 'POST',
@@ -83,8 +81,28 @@ export class OFREPApi {
     const { response, body } = await this.doFetchRequest(request);
     if (response.status === 200 && isEvaluationSuccessResponse(body)) {
       return { status: response.status, value: body, response };
-    } else if (isEvaluationFailureResponse(body)) {
+    } else if (OFREPApi.isOFREFErrorHttpStatus(response.status) && isEvaluationFailureResponse(body)) {
       return { status: response.status, value: body, response };
+    }
+
+    throw new OFREPApiInvalidResponseError(response, 'The JSON returned by OFREP does not match the expected format');
+  }
+
+  public async postBulkEvaluateFlags(
+    evaluationRequest: EvaluationRequest,
+    options?: RequestOptions,
+  ): Promise<OFREPApiBulkEvaluationResult> {
+    const request = new Request(`${this.baseUrl}/ofrep/v1/evaluate/flags`, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify(evaluationRequest),
+    });
+
+    const { response, body } = await this.doFetchRequest(request);
+    if (response.status === 200 && isBulkEvaluationSuccessResponse(body)) {
+      return { status: response.status, value: body, response };
+    } else if (OFREPApi.isOFREFErrorHttpStatus(response.status) && isBulkEvaluationFailureResponse(body)) {
+      return { status: response.status as OFREPEvaluationErrorHttpStatus, value: body, response };
     }
 
     throw new OFREPApiInvalidResponseError(response, 'The JSON returned by OFREP does not match the expected format');

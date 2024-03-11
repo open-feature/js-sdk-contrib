@@ -11,8 +11,24 @@ export interface BulkEvaluationFailureResponse {
   errorDetails?: string;
 }
 
+export function isBulkEvaluationFailureResponse(response: unknown): response is BulkEvaluationFailureResponse {
+  if (!response || typeof response !== 'object') {
+    return false;
+  }
+
+  return 'errorCode' in response;
+}
+
 export interface BulkEvaluationSuccessResponse {
   flags?: EvaluationResponse[];
+}
+
+export function isBulkEvaluationSuccessResponse(response: unknown): response is BulkEvaluationSuccessResponse {
+  if (!response || typeof response !== 'object') {
+    return false;
+  }
+
+  return 'flags' in response;
 }
 
 export type BulkEvaluationResponse = BulkEvaluationFailureResponse | BulkEvaluationSuccessResponse;
