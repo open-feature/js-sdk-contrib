@@ -22,6 +22,7 @@
       "@openfeature/env-var-provider": ["libs/providers/env-var/src/index.ts"],
       "@openfeature/flagd-core": ["libs/shared/flagd-core/src/index.ts"],
       "@openfeature/flagd-provider": ["libs/providers/flagd/src/index.ts"],
+      "@openfeature/ofrep-shared": ["libs/shared/ofrep-core/src/index.ts"],
       "@openfeature/flipt-provider": ["libs/providers/flipt/src/index.ts"],
       "@openfeature/go-feature-flag-provider": ["libs/providers/go-feature-flag/src/index.ts"],
       "@openfeature/go-feature-flag-web-provider": ["libs/providers/go-feature-flag-web/src/index.ts"],

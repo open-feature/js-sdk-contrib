@@ -1,19 +1,23 @@
-import { EvaluationRequest, isEvaluationFailureResponse, isEvaluationSuccessResponse } from '../model/evaluation';
 import {
-  OFREPApiFetchError,
-  OFREPApiInvalidResponseError,
-  OFREPApiTooManyRequestsError,
-  OFREPApiUnauthorizedError,
-} from './errors';
-import { isBulkEvaluationFailureResponse, isBulkEvaluationSuccessResponse } from '../model/bulk-evaluation';
-import {
+  EvaluationRequest,
   OFREPApiBulkEvaluationResult,
   OFREPApiEvaluationResult,
   OFREPEvaluationErrorHttpStatus,
   OFREPEvaluationErrorHttpStatuses,
   OFREPEvaluationSuccessHttpStatus,
   OFREPEvaluationSuccessHttpStatuses,
-} from '../model/ofrep-api-result';
+  isEvaluationFailureResponse,
+  isEvaluationSuccessResponse,
+  isBulkEvaluationFailureResponse,
+  isBulkEvaluationSuccessResponse,
+} from '../model';
+import {
+  OFREPApiFetchError,
+  OFREPApiUnexpectedResponseError,
+  OFREPApiTooManyRequestsError,
+  OFREPApiUnauthorizedError,
+  OFREPForbiddenError,
+} from './errors';
 
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
 export type RequestOptions = Omit<RequestInit, 'method' | 'body'>;
@@ -39,7 +43,7 @@ export class OFREPApi {
     return (OFREPEvaluationSuccessHttpStatuses as readonly number[]).includes(status);
   }
 
-  private async doFetchRequest(req: Request): Promise<{ response: Response; body: object }> {
+  private async doFetchRequest(req: Request): Promise<{ response: Response; body?: unknown }> {
     let response: Response;
     try {
       response = await this.fetchImplementation(req);
@@ -51,60 +55,63 @@ export class OFREPApi {
       throw new OFREPApiUnauthorizedError(response);
     }
 
+    if (response.status === 403) {
+      throw new OFREPForbiddenError(response);
+    }
+
     if (response.status === 429) {
       throw new OFREPApiTooManyRequestsError(response);
     }
 
-    if (!this.isJsonMime(response)) {
-      throw new OFREPApiInvalidResponseError(response, 'OFREP did not respond with expected MIME application/json');
+    if (response.status === 200 && !this.isJsonMime(response)) {
+      throw new OFREPApiUnexpectedResponseError(response, 'OFREP did not respond with expected MIME application/json');
     }
 
-    const body: unknown = await response.json();
-    if (!body || typeof body !== 'object') {
-      throw new OFREPApiInvalidResponseError(response, 'OFREP did not respond with an object as body');
+    try {
+      return { response, body: await response.json() };
+    } catch {
+      return { response };
     }
-
-    return { response, body };
   }
 
   public async postEvaluateFlags(
     flagKey: string,
-    evaluationRequest: EvaluationRequest,
+    evaluationRequest?: EvaluationRequest,
     options?: RequestOptions,
   ): Promise<OFREPApiEvaluationResult> {
     const request = new Request(`${this.baseUrl}/ofrep/v1/evaluate/flags/${flagKey}`, {
       ...options,
       method: 'POST',
-      body: JSON.stringify(evaluationRequest),
+      body: JSON.stringify(evaluationRequest ?? {}),
     });
 
     const { response, body } = await this.doFetchRequest(request);
     if (response.status === 200 && isEvaluationSuccessResponse(body)) {
-      return { status: response.status, value: body, response };
+      return { httpStatus: response.status, value: body, httpResponse: response };
     } else if (OFREPApi.isOFREFErrorHttpStatus(response.status) && isEvaluationFailureResponse(body)) {
-      return { status: response.status, value: body, response };
+      return { httpStatus: response.status, value: body, httpResponse: response };
     }
 
-    throw new OFREPApiInvalidResponseError(response, 'The JSON returned by OFREP does not match the expected format');
+    throw new OFREPApiUnexpectedResponseError(response, 'The OFREP response does not match the expected format');
   }
 
   public async postBulkEvaluateFlags(
-    evaluationRequest: EvaluationRequest,
+    evaluationRequest?: EvaluationRequest,
     options?: RequestOptions,
   ): Promise<OFREPApiBulkEvaluationResult> {
     const request = new Request(`${this.baseUrl}/ofrep/v1/evaluate/flags`, {
       ...options,
       method: 'POST',
-      body: JSON.stringify(evaluationRequest),
+      body: JSON.stringify(evaluationRequest ?? {}),
     });
 
     const { response, body } = await this.doFetchRequest(request);
     if (response.status === 200 && isBulkEvaluationSuccessResponse(body)) {
-      return { status: response.status, value: body, response };
+      return { httpStatus: response.status, value: body, httpResponse: response };
     } else if (OFREPApi.isOFREFErrorHttpStatus(response.status) && isBulkEvaluationFailureResponse(body)) {
-      return { status: response.status as OFREPEvaluationErrorHttpStatus, value: body, response };
+      return { httpStatus: response.status as OFREPEvaluationErrorHttpStatus, value: body, httpResponse: response };
     }
 
-    throw new OFREPApiInvalidResponseError(response, 'The JSON returned by OFREP does not match the expected format');
+    throw new OFREPApiUnexpectedResponseError(response, 'The OFREP response does not match the expected format');
   }
 }

@@ -53,6 +53,7 @@ export enum EvaluationFailureErrorCode {
   TargetingKeyMissing = 'TARGETING_KEY_MISSING',
   InvalidContext = 'INVALID_CONTEXT',
   General = 'GENERAL',
+  FlagNotFound = 'FLAG_NOT_FOUND',
 }
 
 export interface EvaluationFailureResponse {

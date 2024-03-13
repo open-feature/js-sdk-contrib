@@ -6,9 +6,9 @@ export interface OFREPApiResult<
   T,
   R extends Response | undefined = Response | undefined,
 > {
-  readonly status: S;
+  readonly httpStatus: S;
   readonly value: T;
-  readonly response: R;
+  readonly httpResponse: R;
 }
 
 export const OFREPEvaluationErrorHttpStatuses = [400, 404, 500] as const;
