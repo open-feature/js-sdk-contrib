@@ -14,20 +14,21 @@ The OpenFeature SDK is required as peer dependency.
 
 The minimum required version of `@openfeature/server-sdk` currently is `1.6.0`.
 
-The minimum required version of `configcat-js` currently is `8.0.0`.
+The minimum required version of `configcat-js-ssr` currently is `7.1.2`.
 
 ```
-$ npm install @openfeature/server-sdk configcat-js
+$ npm install @openfeature/server-sdk configcat-js-ssr
 ```
 
 ## Usage
 
-The ConfigCat provider uses the [ConfigCat Javascript SDK](https://configcat.com/docs/sdk-reference/js/).
+The ConfigCat provider uses the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
+This means that the provider can be used in both server (e.g. Node.js) and client (browser) applications.
 
 It can either be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create``` or
 the ```ConfigCatProvider``` constructor.
 
-The available options can be found in the [ConfigCat Javascript SDK docs](https://configcat.com/docs/sdk-reference/js/).
+The available options can be found in the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
 
 ### Example using the default configuration
 
@@ -53,7 +54,7 @@ OpenFeature.setProvider(provider);
 ## Evaluation Context
 
 ConfigCat only supports string values in its "evaluation
-context", [there known as user](https://configcat.com/docs/advanced/user-object/).
+context", [there known as User Object](https://configcat.com/docs/advanced/user-object/).
 
 This means that every value is converted to a string. This is trivial for numbers and booleans. Objects and arrays are
 converted to JSON strings that can be interpreted in ConfigCat.
