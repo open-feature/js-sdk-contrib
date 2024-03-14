@@ -214,7 +214,7 @@ describe('GoFeatureFlagWebProvider', () => {
     it('should get a valid boolean flag evaluation', async () => {
       const flagKey = 'bool_flag';
       await OpenFeature.setContext(defaultContext);
-      OpenFeature.setProvider('test-provider', defaultProvider);
+      await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getBooleanDetails(flagKey, false);
@@ -233,7 +233,7 @@ describe('GoFeatureFlagWebProvider', () => {
     it('should get a valid string flag evaluation', async () => {
       const flagKey = 'string_flag';
       await OpenFeature.setContext(defaultContext);
-      OpenFeature.setProvider('test-provider', defaultProvider);
+      await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getStringDetails(flagKey, 'false');
@@ -252,7 +252,7 @@ describe('GoFeatureFlagWebProvider', () => {
     it('should get a valid number flag evaluation', async () => {
       const flagKey = 'number_flag';
       await OpenFeature.setContext(defaultContext);
-      OpenFeature.setProvider('test-provider', defaultProvider);
+      await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getNumberDetails(flagKey, 456);
@@ -271,7 +271,7 @@ describe('GoFeatureFlagWebProvider', () => {
     it('should get a valid object flag evaluation', async () => {
       const flagKey = 'object_flag';
       await OpenFeature.setContext(defaultContext);
-      OpenFeature.setProvider('test-provider', defaultProvider);
+      await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getObjectDetails(flagKey, { error: true });
@@ -290,7 +290,7 @@ describe('GoFeatureFlagWebProvider', () => {
     it('should get an error if evaluate a boolean flag with a string function', async () => {
       const flagKey = 'bool_flag';
       await OpenFeature.setContext(defaultContext);
-      OpenFeature.setProvider('test-provider', defaultProvider);
+      await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getStringDetails(flagKey, 'false');
@@ -308,7 +308,7 @@ describe('GoFeatureFlagWebProvider', () => {
     it('should get an error if flag does not exists', async () => {
       const flagKey = 'not-exist';
       await OpenFeature.setContext(defaultContext);
-      OpenFeature.setProvider('test-provider', defaultProvider);
+      await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
       const client = await OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getBooleanDetails(flagKey, false);
@@ -382,7 +382,9 @@ describe('GoFeatureFlagWebProvider', () => {
       expect(staleHandler).not.toBeCalled();
       expect(configurationChangedHandler.mock.calls[0][0]).toEqual({
         clientName: 'test-provider',
+        domain: 'test-provider',
         message: 'flag configuration have changed',
+        providerName: 'GoFeatureFlagWebProvider',
         flagsChanged: [
           'deleted-flag-1',
           'deleted-flag-2',
