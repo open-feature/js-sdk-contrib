@@ -1,5 +1,5 @@
 import { EvaluationContext, EvaluationContextValue, TargetingKeyMissingError } from '@openfeature/server-sdk';
-import { User as ConfigCatUser } from 'configcat-js';
+import { User as ConfigCatUser } from 'configcat-js-ssr';
 
 function contextValueToString(contextValue: EvaluationContextValue): string | undefined {
   if (typeof contextValue === 'string') {
