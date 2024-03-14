@@ -1,4 +1,4 @@
-import { EvaluationContext, FlagValue } from '@openfeature/core';
+import type { EvaluationContext, FlagValue } from '@openfeature/core';
 
 export interface EvaluationRequest {
   /**
