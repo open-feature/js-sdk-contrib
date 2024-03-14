@@ -9,7 +9,7 @@ import {
   LogLevel,
   OverrideBehaviour,
   PollingMode,
-} from 'configcat-js';
+} from 'configcat-js-ssr';
 
 import { IEventEmitter } from 'configcat-common/lib/EventEmitter';
 

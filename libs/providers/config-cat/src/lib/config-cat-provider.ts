@@ -12,7 +12,7 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/server-sdk';
-import { getClient, IConfig, IConfigCatClient, IEvaluationDetails, SettingValue } from 'configcat-js';
+import { getClient, IConfig, IConfigCatClient, IEvaluationDetails, SettingValue } from 'configcat-js-ssr';
 import { transformContext } from './context-transformer';
 
 export class ConfigCatProvider implements Provider {
