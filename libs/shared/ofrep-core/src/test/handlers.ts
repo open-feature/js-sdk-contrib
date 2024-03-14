@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { http, HttpResponse, StrictResponse } from 'msw';
 import {
   BulkEvaluationResponse,
   EvaluationFailureErrorCode,
@@ -106,6 +106,11 @@ export const handlers = [
           },
           { status: 400 },
         );
+      }
+
+      const etag = info.request.headers.get('If-None-Match');
+      if (etag) {
+        return new HttpResponse(undefined, { status: 304 }) as StrictResponse<undefined>;
       }
 
       return HttpResponse.json<BulkEvaluationResponse>({

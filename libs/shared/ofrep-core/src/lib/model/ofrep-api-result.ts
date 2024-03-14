@@ -2,7 +2,7 @@ import { EvaluationFailureResponse, EvaluationSuccessResponse } from './evaluati
 import { BulkEvaluationFailureResponse, BulkEvaluationSuccessResponse } from './bulk-evaluation';
 
 export interface OFREPApiResult<
-  S extends OFREPEvaluationErrorHttpStatus | OFREPEvaluationSuccessHttpStatus,
+  S extends OFREPEvaluationErrorHttpStatus | OFREPEvaluationNotModifiedHttpStatus | OFREPEvaluationSuccessHttpStatus,
   T,
   R extends Response | undefined = Response | undefined,
 > {
@@ -16,6 +16,8 @@ export type OFREPEvaluationErrorHttpStatus = (typeof OFREPEvaluationErrorHttpSta
 
 export const OFREPEvaluationSuccessHttpStatuses = [200] as const;
 export type OFREPEvaluationSuccessHttpStatus = (typeof OFREPEvaluationSuccessHttpStatuses)[number];
+
+export type OFREPEvaluationNotModifiedHttpStatus = 304;
 
 export type OFREPApiEvaluationFailureResult = OFREPApiResult<OFREPEvaluationErrorHttpStatus, EvaluationFailureResponse>;
 export type OFREPApiEvaluationSuccessResult = OFREPApiResult<
@@ -34,4 +36,12 @@ export type OFREPApiBulkEvaluationSuccessResult = OFREPApiResult<
   BulkEvaluationSuccessResponse,
   Response
 >;
-export type OFREPApiBulkEvaluationResult = OFREPApiBulkEvaluationFailureResult | OFREPApiBulkEvaluationSuccessResult;
+export type OFREPApiBulkEvaluationNotChangedResult = OFREPApiResult<
+  OFREPEvaluationNotModifiedHttpStatus,
+  undefined,
+  Response
+>;
+export type OFREPApiBulkEvaluationResult =
+  | OFREPApiBulkEvaluationFailureResult
+  | OFREPApiBulkEvaluationNotChangedResult
+  | OFREPApiBulkEvaluationSuccessResult;

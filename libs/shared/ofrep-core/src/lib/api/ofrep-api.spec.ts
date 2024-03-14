@@ -238,9 +238,17 @@ describe('OFREPApi', () => {
       // This is to check if the value type is determined by http status code
       if (result.httpStatus === 200) {
         expect(result.value.flags).toBeDefined();
+      } else if (result.httpStatus === 304) {
+        expect(result.value).not.toBeDefined();
       } else {
         expect(result.value.errorCode).toBeDefined();
       }
+    });
+
+    it('return BulkEvaluationNotModified response as value on 304', async () => {
+      const result = await api.postBulkEvaluateFlags(undefined, { headers: [['If-None-Match', '1234']] });
+      expect(result.httpStatus).toEqual(304);
+      expect(result.value).not.toBeDefined();
     });
 
     it('return BulkEvaluationSuccessResponse response as value on successful evaluation', async () => {

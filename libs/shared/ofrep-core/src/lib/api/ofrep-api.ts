@@ -108,6 +108,8 @@ export class OFREPApi {
     const { response, body } = await this.doFetchRequest(request);
     if (response.status === 200 && isBulkEvaluationSuccessResponse(body)) {
       return { httpStatus: response.status, value: body, httpResponse: response };
+    } else if (response.status === 304) {
+      return { httpStatus: response.status, value: undefined, httpResponse: response };
     } else if (OFREPApi.isOFREFErrorHttpStatus(response.status) && isBulkEvaluationFailureResponse(body)) {
       return { httpStatus: response.status as OFREPEvaluationErrorHttpStatus, value: body, httpResponse: response };
     }

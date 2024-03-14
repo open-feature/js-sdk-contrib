@@ -23,6 +23,12 @@ export interface BulkEvaluationSuccessResponse {
   flags?: EvaluationResponse[];
 }
 
+export interface BulkEvaluationSuccessResponse {
+  flags?: EvaluationResponse[];
+}
+
+export type BulkEvaluationNotModifiedResponse = undefined;
+
 export function isBulkEvaluationSuccessResponse(response: unknown): response is BulkEvaluationSuccessResponse {
   if (!response || typeof response !== 'object') {
     return false;
@@ -31,4 +37,7 @@ export function isBulkEvaluationSuccessResponse(response: unknown): response is 
   return 'flags' in response;
 }
 
-export type BulkEvaluationResponse = BulkEvaluationFailureResponse | BulkEvaluationSuccessResponse;
+export type BulkEvaluationResponse =
+  | BulkEvaluationFailureResponse
+  | BulkEvaluationNotModifiedResponse
+  | BulkEvaluationSuccessResponse;
