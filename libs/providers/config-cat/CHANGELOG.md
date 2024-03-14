@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.5.0](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.4.0...config-cat-provider-v0.5.0) (2024-03-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* Allow ConfigCat provider to be used in server applications ([#796](https://github.com/open-feature/js-sdk-contrib/issues/796))
+
+### 🐛 Bug Fixes
+
+* Allow ConfigCat provider to be used in server applications ([#796](https://github.com/open-feature/js-sdk-contrib/issues/796)) ([190946f](https://github.com/open-feature/js-sdk-contrib/commit/190946ff83ede64f513d43a1791cc4dc274b0d37))
+* **deps:** update dependency configcat-js to v9 ([#664](https://github.com/open-feature/js-sdk-contrib/issues/664)) ([6fdf552](https://github.com/open-feature/js-sdk-contrib/commit/6fdf55256cc3238fdeb9bd2bf0cde0bf494a78f9))
+
+
+### 🧹 Chore
+
+* address lint issues ([#642](https://github.com/open-feature/js-sdk-contrib/issues/642)) ([bbd9aee](https://github.com/open-feature/js-sdk-contrib/commit/bbd9aee896dc4a0817f379b799a1b8d331ee76c6))
+* fix lint issues and bump server sdk version ([#715](https://github.com/open-feature/js-sdk-contrib/issues/715)) ([bd57177](https://github.com/open-feature/js-sdk-contrib/commit/bd571770f3a1a01bd62663dc3473273449f96c5c))
+
 ## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.3.0...config-cat-provider-v0.4.0) (2023-10-11)
 
 
