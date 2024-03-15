@@ -33,7 +33,7 @@ Options can be defined in the constructor or as environment variables. Construct
 | port                                   | FLAGD_PORT                     | number  | 8013      |                  |
 | tls                                    | FLAGD_TLS                      | boolean | false     |                  |
 | socketPath                             | FLAGD_SOCKET_PATH              | string  | -         |                  |
-| resolverType                           | FLAGD_SOURCE_RESOLVER          | string  | rpc       | rpc, in-process  |
+| resolverType                           | FLAGD_RESOLVER                 | string  | rpc       | rpc, in-process  |
 | offlineFlagSourcePath                  | FLAGD_OFFLINE_FLAG_SOURCE_PATH | string  | -         |                  |
 | selector                               | FLAGD_SOURCE_SELECTOR          | string  | -         |                  |
 | cache                                  | FLAGD_CACHE                    | string  | lru       | lru, disabled    |

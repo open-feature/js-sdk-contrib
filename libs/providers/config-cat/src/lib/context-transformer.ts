@@ -1,5 +1,5 @@
 import { EvaluationContext, EvaluationContextValue, TargetingKeyMissingError } from '@openfeature/server-sdk';
-import { User as ConfigCatUser } from 'configcat-common/lib/RolloutEvaluator';
+import { User as ConfigCatUser } from 'configcat-js-ssr';
 
 function contextValueToString(contextValue: EvaluationContextValue): string | undefined {
   if (typeof contextValue === 'string') {
@@ -21,14 +21,14 @@ function contextValueToString(contextValue: EvaluationContextValue): string | un
   return JSON.stringify(contextValue);
 }
 
-function transformContextValues(contextValue: EvaluationContextValue): ConfigCatUser['custom'] | undefined {
+function transformContextValues(contextValue: EvaluationContextValue): ConfigCatUser['custom'] {
   if (contextValue === null) {
-    return undefined;
+    return {};
   }
 
   if (typeof contextValue !== 'object' || Array.isArray(contextValue)) {
     const value = contextValueToString(contextValue);
-    return value ? { value } : undefined;
+    return value ? { value } : {};
   }
 
   if (contextValue instanceof Date) {
@@ -38,7 +38,7 @@ function transformContextValues(contextValue: EvaluationContextValue): ConfigCat
   return Object.entries(contextValue).reduce<ConfigCatUser['custom']>((context, [key, value]) => {
     const transformedValue = contextValueToString(value);
     return transformedValue ? { ...context, [key]: transformedValue } : context;
-  }, undefined);
+  }, {});
 }
 
 function stringOrUndefined(param?: unknown): string | undefined {

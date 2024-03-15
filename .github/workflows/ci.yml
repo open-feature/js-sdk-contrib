@@ -38,11 +38,11 @@ jobs:
 
       services:
         flagd:
-          image: ghcr.io/open-feature/flagd-testbed:v0.5.1
+          image: ghcr.io/open-feature/flagd-testbed:v0.5.2
           ports:
             - 8013:8013
         flagd-unstable:
-          image: ghcr.io/open-feature/flagd-testbed-unstable:v0.5.1
+          image: ghcr.io/open-feature/flagd-testbed-unstable:v0.5.2
           ports:
             - 8014:8013
         sync:
@@ -50,7 +50,7 @@ jobs:
           ports:
             - 9090:9090
         sync-unstable:
-          image: ghcr.io/open-feature/sync-testbed-unstable:v0.5.1
+          image: ghcr.io/open-feature/sync-testbed-unstable:v0.5.2
           ports:
             - 9091:9090
 
