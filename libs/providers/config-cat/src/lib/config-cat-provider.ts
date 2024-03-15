@@ -12,7 +12,7 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/server-sdk';
-import { getClient, IConfig, IConfigCatClient, IEvaluationDetails, SettingValue } from 'configcat-js';
+import { getClient, IConfig, IConfigCatClient, IEvaluationDetails, SettingValue } from 'configcat-js-ssr';
 import { transformContext } from './context-transformer';
 
 export class ConfigCatProvider implements Provider {
@@ -99,7 +99,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
-      transformContext(context),
+      context.targetingKey != null ? transformContext(context) : undefined,
     );
 
     const validatedValue = validateFlagType('boolean', value);
@@ -121,7 +121,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
-      transformContext(context),
+      context.targetingKey != null ? transformContext(context) : undefined,
     );
 
     const validatedValue = validateFlagType('string', value);
@@ -143,7 +143,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
-      transformContext(context),
+      context.targetingKey != null ? transformContext(context) : undefined,
     );
 
     const validatedValue = validateFlagType('number', value);
@@ -165,7 +165,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync(
       flagKey,
       undefined,
-      transformContext(context),
+      context.targetingKey != null ? transformContext(context) : undefined,
     );
 
     if (typeof value === 'undefined') {
