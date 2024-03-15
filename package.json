@@ -48,7 +48,7 @@
     "@openfeature/core": "^1.0.0",
     "@openfeature/flagd-core": ">=0.1.10",
     "@openfeature/server-sdk": "^1.13.2",
-    "@openfeature/web-sdk": "file:.yalc/@openfeature/web-sdk",
+    "@openfeature/web-sdk": "1.0.0",
     "@opentelemetry/sdk-metrics": "^1.15.0",
     "@swc-node/register": "~1.8.0",
     "@swc/cli": "~0.3.0",
