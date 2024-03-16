@@ -186,10 +186,10 @@ function updatePackage(tree: Tree, projectRoot: string, schema: SchemaOptions) {
     json.peerDependencies =
       schema.category === 'client'
         ? {
-            '@openfeature/web-sdk': '>=0.4.0',
+            '@openfeature/web-sdk': '^1.0.0',
           }
         : {
-            '@openfeature/server-sdk': '^1.6.0',
+            '@openfeature/server-sdk': '^1.13.0',
           };
 
     return json;
