@@ -1,0 +1,85 @@
+{
+  "name": "ofrep-core",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/ofrep-core/src",
+  "projectType": "library",
+  "targets": {
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/shared/ofrep-core"
+      },
+      "dependsOn": [
+        "build"
+      ]
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "libs/shared/ofrep-core/**/*.ts"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "libs/shared/ofrep-core/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    },
+    "package": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "project": "libs/shared/ofrep-core/package.json",
+        "outputPath": "dist/libs/shared/ofrep-core",
+        "entryFile": "libs/shared/ofrep-core/src/index.ts",
+        "tsConfig": "libs/shared/ofrep-core/tsconfig.lib.json",
+        "compiler": "tsc",
+        "generateExportsField": true,
+        "buildableProjectDepsInPackageJsonType": "dependencies",
+        "umdName": "ofrep-core",
+        "external": "all",
+        "format": [
+          "cjs",
+          "esm"
+        ],
+        "assets": [
+          {
+            "glob": "package.json",
+            "input": "./assets",
+            "output": "./src/"
+          },
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/shared/ofrep-core",
+            "output": "./"
+          }
+        ],
+        "updateBuildableProjectDepsInPackageJson": true
+      }
+    }
+  },
+  "tags": []
+}
