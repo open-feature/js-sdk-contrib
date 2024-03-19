@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.5.1...flagd-web-provider-v0.6.0) (2024-03-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* update OpenFeature SDK peer ([#798](https://github.com/open-feature/js-sdk-contrib/issues/798))
+
+### ✨ New Features
+
+* update OpenFeature SDK peer ([#798](https://github.com/open-feature/js-sdk-contrib/issues/798)) ([ebd16b9](https://github.com/open-feature/js-sdk-contrib/commit/ebd16b9630bcc6b253a7061a144e8d476cd8b586))
+
 ## [0.5.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.5.0...flagd-web-provider-v0.5.1) (2024-02-15)
 
 
