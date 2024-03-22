@@ -92,7 +92,7 @@ describe('FlagsmithProvider', () => {
       await OpenFeature.setProviderAndWait(provider);
       const details = client.getBooleanDetails(exampleBooleanFlagName, false);
       const changedHandler = jest.fn();
-      OpenFeature.getClient().addHandler(ProviderEvents.ConfigurationChanged, changedHandler);
+      OpenFeature.addHandler(ProviderEvents.ConfigurationChanged, changedHandler);
       expect(changedHandler).toHaveBeenCalledTimes(0);
       expect(details.reason).toEqual('STATIC');
       expect(details.value).toEqual(true);
@@ -122,7 +122,7 @@ describe('FlagsmithProvider', () => {
       await OpenFeature.setProviderAndWait(provider);
       const details = client.getBooleanDetails(exampleBooleanFlagName, false);
       const changedHandler = jest.fn();
-      OpenFeature.getClient().addHandler(ProviderEvents.Ready, changedHandler);
+      OpenFeature.addHandler(ProviderEvents.Ready, changedHandler);
       expect(changedHandler).toHaveBeenCalledTimes(1);
       expect(details.reason).toEqual('STATIC');
       expect(details.value).toEqual(true);
@@ -162,7 +162,7 @@ describe('FlagsmithProvider', () => {
       await OpenFeature.setProviderAndWait(provider);
       const details = client.getBooleanDetails(exampleBooleanFlagName, false);
       const changedHandler = jest.fn();
-      OpenFeature.getClient().addHandler(ProviderEvents.ConfigurationChanged, changedHandler);
+      OpenFeature.addHandler(ProviderEvents.ConfigurationChanged, changedHandler);
       expect(changedHandler).toHaveBeenCalledTimes(0);
       expect(details.reason).toEqual('STATIC');
       expect(details.value).toEqual(true);
@@ -192,7 +192,7 @@ describe('FlagsmithProvider', () => {
       await OpenFeature.setProviderAndWait(provider);
       const details = client.getBooleanDetails(exampleBooleanFlagName, false);
       const changedHandler = jest.fn();
-      OpenFeature.getClient().addHandler(ProviderEvents.Ready, changedHandler);
+      OpenFeature.addHandler(ProviderEvents.Ready, changedHandler);
       expect(changedHandler).toHaveBeenCalledTimes(1);
       expect(details.reason).toEqual('STATIC');
       expect(details.value).toEqual(true);
@@ -264,8 +264,8 @@ describe('FlagsmithProvider', () => {
       const readyHandler = jest.fn();
       const errorHandler = jest.fn();
       expect(provider.status).toEqual(ProviderStatus.NOT_READY);
-      OpenFeature.getClient().addHandler(ProviderEvents.Ready, readyHandler);
-      OpenFeature.getClient().addHandler(ProviderEvents.Error, errorHandler);
+      OpenFeature.addHandler(ProviderEvents.Ready, readyHandler);
+      OpenFeature.addHandler(ProviderEvents.Error, errorHandler);
       await OpenFeature.setProviderAndWait(provider);
       expect(provider.status).toEqual(ProviderStatus.READY);
       expect(readyHandler).toHaveBeenCalledTimes(1);
@@ -277,8 +277,8 @@ describe('FlagsmithProvider', () => {
       const readyHandler = jest.fn();
       const errorHandler = jest.fn();
       expect(provider.status).toEqual(ProviderStatus.NOT_READY);
-      OpenFeature.getClient().addHandler(ProviderEvents.Ready, readyHandler);
-      OpenFeature.getClient().addHandler(ProviderEvents.Error, errorHandler);
+      OpenFeature.addHandler(ProviderEvents.Ready, readyHandler);
+      OpenFeature.addHandler(ProviderEvents.Error, errorHandler);
       await OpenFeature.setProviderAndWait(provider);
       expect(provider.status).toEqual(ProviderStatus.ERROR);
       expect(errorHandler).toHaveBeenCalledTimes(1);
@@ -288,7 +288,7 @@ describe('FlagsmithProvider', () => {
       const provider = new FlagsmithProvider({ ...config });
       await OpenFeature.setProviderAndWait(provider);
       const staleHandler = jest.fn();
-      OpenFeature.getClient().addHandler(ProviderEvents.Stale, staleHandler);
+      OpenFeature.addHandler(ProviderEvents.Stale, staleHandler);
       expect(provider.status).toEqual(ProviderStatus.READY);
       const contextChange = OpenFeature.setContext({ targetingKey: 'test' });
       expect(provider.status).toEqual(ProviderStatus.STALE);
