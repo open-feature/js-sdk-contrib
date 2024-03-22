@@ -11,7 +11,7 @@ import {
   ResolutionDetails,
   ResolutionReason,
 } from '@openfeature/web-sdk';
-import { createFlagsmithInstance } from 'flagsmith/isomorphic';
+import { createFlagsmithInstance } from 'flagsmith';
 import { IFlagsmith, IInitConfig, IState } from 'flagsmith/types';
 import { FlagType, typeFactory } from './type-factory';
 
@@ -68,6 +68,7 @@ export class FlagsmithProvider implements Provider {
       ...context,
       identity,
       onChange: (previousFlags, params, loadingState) => {
+        console.log("Hi", params.flagsChanged)
         this.status = ProviderStatus.READY;
         if (params.flagsChanged) {
           this.events.emit(ProviderEvents.ConfigurationChanged, {
