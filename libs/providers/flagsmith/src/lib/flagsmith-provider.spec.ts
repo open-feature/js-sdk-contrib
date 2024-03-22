@@ -1,4 +1,4 @@
-import FlagsmithWebProvider from './flagsmith-provider';
+import FlagsmithProvider from './flagsmith-provider';
 import { IInitConfig } from 'flagsmith/types';
 import {
   exampleBooleanFlagName,
@@ -11,8 +11,7 @@ import {
   getFetchMock,
 } from './flagsmith.mocks';
 import { OpenFeature, ProviderEvents, ProviderStatus } from '@openfeature/web-sdk';
-import flagsmithIsomorphic, { createFlagsmithInstance } from 'flagsmith/isomorphic';
-import { LaunchDarklyClientProvider } from '@openfeature/launchdarkly-client-provider';
+import { createFlagsmithInstance } from 'flagsmith/isomorphic';
 
 const logger = {
   error: jest.fn(),
@@ -26,7 +25,7 @@ const exampleConfig: () => IInitConfig = () => ({
   environmentID: '0p3nf34tur3',
   fetch: getFetchMock(exampleFlagsmithResponse),
 });
-describe('FlagsmithWebProvider', () => {
+describe('FlagsmithProvider', () => {
   beforeEach(async () => {
     // Clear all instances and calls to constructor and all methods of mock logger
     jest.clearAllMocks();
@@ -36,21 +35,21 @@ describe('FlagsmithWebProvider', () => {
   describe('constructor', () => {
     it('should initialize the environment ID', async () => {
       const config = exampleConfig();
-      const provider = new FlagsmithWebProvider(config);
+      const provider = new FlagsmithProvider(config);
       await OpenFeature.setProviderAndWait(provider);
       expect(provider.flagsmithClient.getState().environmentID).toEqual(config.environmentID);
     });
 
     it('should allow a custom instance of Flagsmith to be used', async () => {
       const instance = createFlagsmithInstance();
-      const provider = new FlagsmithWebProvider({ flagsmithInstance: instance, ...exampleConfig() });
+      const provider = new FlagsmithProvider({ flagsmithInstance: instance, ...exampleConfig() });
       expect(provider.flagsmithClient).toEqual(instance);
     });
   });
   describe('resolution', () => {
     const client = OpenFeature.getClient();
     const config = exampleConfig();
-    const provider = new FlagsmithWebProvider({ ...config });
+    const provider = new FlagsmithProvider({ ...config });
     it('should resolve booleans to the enabled state', async () => {
       await OpenFeature.setProviderAndWait(provider);
       const details = client.getBooleanDetails(exampleBooleanFlagName, false);
@@ -109,7 +108,7 @@ describe('FlagsmithWebProvider', () => {
   describe('events', () => {
     it('should call the ready handler when initialized', async () => {
       const config = exampleConfig();
-      const provider = new FlagsmithWebProvider({ ...config });
+      const provider = new FlagsmithProvider({ ...config });
       const readyHandler = jest.fn();
       const errorHandler = jest.fn();
       expect(provider.status).toEqual(ProviderStatus.NOT_READY);
@@ -122,7 +121,7 @@ describe('FlagsmithWebProvider', () => {
     });
     it('should call the error handler when errored', async () => {
       const config = exampleConfig();
-      const provider = new FlagsmithWebProvider({ ...config, environmentID: '' });
+      const provider = new FlagsmithProvider({ ...config, environmentID: '' });
       const readyHandler = jest.fn();
       const errorHandler = jest.fn();
       expect(provider.status).toEqual(ProviderStatus.NOT_READY);
@@ -134,7 +133,7 @@ describe('FlagsmithWebProvider', () => {
     });
     it('should call the stale handler when context changed', async () => {
       const config = exampleConfig();
-      const provider = new FlagsmithWebProvider({ ...config });
+      const provider = new FlagsmithProvider({ ...config });
       await OpenFeature.setProviderAndWait(provider);
       const staleHandler = jest.fn();
       OpenFeature.getClient().addHandler(ProviderEvents.Stale, staleHandler);
@@ -149,7 +148,7 @@ describe('FlagsmithWebProvider', () => {
     it('should initialize without the targeting key, identify when provided and logout when not provided again', async () => {
       const targetingKey = 'test';
       const config = exampleConfig();
-      const provider = new FlagsmithWebProvider({
+      const provider = new FlagsmithProvider({
         logger,
         ...config,
       });
@@ -186,7 +185,7 @@ describe('FlagsmithWebProvider', () => {
       const targetingKey = 'test';
       const traits = { foo: 'bar', example: 123 };
       const config = exampleConfig();
-      const provider = new FlagsmithWebProvider(config);
+      const provider = new FlagsmithProvider(config);
       await OpenFeature.setContext({ targetingKey, traits });
       await OpenFeature.setProviderAndWait(provider);
       expect(provider.flagsmithClient.getState().identity).toEqual(targetingKey);
@@ -214,7 +213,7 @@ describe('FlagsmithWebProvider', () => {
   describe('common errors', () => {
     it('should throw an error if there was an api error', async () => {
       const config = exampleConfig();
-      const provider = new FlagsmithWebProvider({
+      const provider = new FlagsmithProvider({
         ...config,
         logger,
         fetch: getFetchErrorMock(),
@@ -224,7 +223,7 @@ describe('FlagsmithWebProvider', () => {
     });
     it('should throw an error if there was no Environment ID provided', async () => {
       const config = exampleConfig();
-      const provider = new FlagsmithWebProvider({
+      const provider = new FlagsmithProvider({
         logger,
         ...config,
         fetch: getFetchErrorMock(),
