@@ -1,11 +1,12 @@
 import { OpenFeature, ProviderEvents } from '@openfeature/server-sdk';
 import { defineFeature, loadFeature } from 'jest-cucumber';
+import { E2E_CLIENT_NAME } from '../constants';
 
 // load the feature file.
 const feature = loadFeature('features/flagd.feature');
 
 // get a client (flagd provider registered in setup)
-const client = OpenFeature.getClient('e2e');
+const client = OpenFeature.getClient(E2E_CLIENT_NAME);
 
 const aFlagProviderIsSet = (given: (stepMatcher: string, stepDefinitionCallback: () => void) => void) => {
   given('a flagd provider is set', () => undefined);
@@ -38,22 +39,28 @@ defineFeature(feature, (test) => {
 
   test('Flag change event', ({ given, when, and, then }) => {
     let ran = false;
+    let flagsChanged: string[];
 
     aFlagProviderIsSet(given);
     when('a PROVIDER_CONFIGURATION_CHANGED handler is added', () => {
-      client.addHandler(ProviderEvents.ConfigurationChanged, async () => {
+      client.addHandler(ProviderEvents.ConfigurationChanged, async (details) => {
         ran = true;
+        // file writes are not atomic, so we get a few events in quick succession from the testbed
+        // some will not contain changes, this tolerates that; at least 1 should have our change
+        if (details?.flagsChanged?.length) {
+          flagsChanged = details?.flagsChanged;
+        }
       });
     });
     and(/^a flag with key "(.*)" is modified$/, async () => {
-      // this happens every 1s in the associated container, so wait 2s
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // this happens every 1s in the associated container, so wait 3s
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     });
     then('the PROVIDER_CONFIGURATION_CHANGED handler must run', () => {
       expect(ran).toBeTruthy();
     });
-    and(/^the event details must indicate "(.*)" was altered$/, (arg0) => {
-      // not supported
+    and(/^the event details must indicate "(.*)" was altered$/, (flagName) => {
+      expect(flagsChanged).toContain(flagName);
     });
   });
 

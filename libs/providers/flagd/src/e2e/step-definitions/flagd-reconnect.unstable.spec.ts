@@ -1,5 +1,6 @@
 import { OpenFeature, ProviderEvents } from '@openfeature/server-sdk';
 import { defineFeature, loadFeature } from 'jest-cucumber';
+import { UNAVAILABLE_CLIENT_NAME, UNSTABLE_CLIENT_NAME } from '../constants';
 
 jest.setTimeout(30000);
 
@@ -7,7 +8,7 @@ jest.setTimeout(30000);
 const feature = loadFeature('features/flagd-reconnect.feature');
 
 // get a client (flagd provider registered in setup)
-const client = OpenFeature.getClient('unstable');
+const client = OpenFeature.getClient(UNSTABLE_CLIENT_NAME);
 
 defineFeature(feature, (test) => {
   let readyRunCount = 0;
@@ -44,6 +45,24 @@ defineFeature(feature, (test) => {
     and('when the connection is reestablished the PROVIDER_READY handler must run again', async () => {
       await new Promise((resolve) => setTimeout(resolve, 10000));
       expect(readyRunCount).toBeGreaterThan(1);
+    });
+  });
+
+  test('Provider unavailable', ({ given, when, then }) => {
+    let errorHandlerRun = 0;
+
+    given('flagd is unavailable', async () => {
+      // handled in setup
+    });
+
+    when('a flagd provider is set and initialization is awaited', () => {
+      OpenFeature.getClient(UNAVAILABLE_CLIENT_NAME).addHandler(ProviderEvents.Error, () => {
+        errorHandlerRun++;
+      });
+    });
+
+    then('an error should be indicated within the configured deadline', () => {
+      expect(errorHandlerRun).toBeGreaterThan(0);
     });
   });
 });

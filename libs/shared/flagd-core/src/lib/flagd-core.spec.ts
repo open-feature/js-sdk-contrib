@@ -1,5 +1,5 @@
 import { FlagdCore } from './flagd-core';
-import { GeneralError, StandardResolutionReasons, TypeMismatchError } from '@openfeature/core';
+import { FlagNotFoundError, GeneralError, StandardResolutionReasons, TypeMismatchError } from '@openfeature/core';
 
 describe('flagd-core resolving', () => {
   describe('truthy variant values', () => {
@@ -144,12 +144,18 @@ describe('flagd-core validations', () => {
     expect(() => core.resolveBooleanEvaluation('myIntFlag', true, {}, console)).toThrow(GeneralError);
   });
 
-  it('should validate flag status', () => {
-    const evaluation = core.resolveBooleanEvaluation('myBoolFlag', false, {}, console);
+  it('should throw because the flag does not exist', () => {
+    const flagKey = 'nonexistentFlagKey';
+    expect(() => core.resolveBooleanEvaluation(flagKey, false, {}, console)).toThrow(
+      new FlagNotFoundError(`flag: '${flagKey}' not found`),
+    );
+  });
 
-    expect(evaluation).toBeTruthy();
-    expect(evaluation.value).toBe(false);
-    expect(evaluation.reason).toBe(StandardResolutionReasons.DISABLED);
+  it('should throw because the flag is disabled and should behave like it does not exist', () => {
+    const flagKey = 'myBoolFlag';
+    expect(() => core.resolveBooleanEvaluation(flagKey, false, {}, console)).toThrow(
+      new FlagNotFoundError(`flag: '${flagKey}' is disabled`),
+    );
   });
 
   it('should validate variant', () => {
@@ -162,15 +168,29 @@ describe('flagd-core validations', () => {
 });
 
 describe('flagd-core common flag definitions', () => {
-  it('should support boolean variant shorthand', () => {
+  describe('boolean variant shorthand', () => {
     const core = new FlagdCore();
     const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":"false", "targeting":{"in":["@openfeature.dev",{"var":"email"}]}}}}`;
     core.setConfigurations(flagCfg);
 
-    const resolved = core.resolveBooleanEvaluation('myBoolFlag', false, { email: 'user@openfeature.dev' }, console);
-    expect(resolved.value).toBe(true);
-    expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
-    expect(resolved.variant).toBe('true');
+    it('should support truthy values', () => {
+      const resolvedTruthy = core.resolveBooleanEvaluation(
+        'myBoolFlag',
+        false,
+        { email: 'user@openfeature.dev' },
+        console,
+      );
+      expect(resolvedTruthy.value).toBe(true);
+      expect(resolvedTruthy.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
+      expect(resolvedTruthy.variant).toBe('true');
+    });
+
+    it('should support falsy values', () => {
+      const resolvedFalsy = core.resolveBooleanEvaluation('myBoolFlag', false, { email: 'user@flagd.dev' }, console);
+      expect(resolvedFalsy.value).toBe(false);
+      expect(resolvedFalsy.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
+      expect(resolvedFalsy.variant).toBe('false');
+    });
   });
 
   it('should support fractional logic', () => {
@@ -204,5 +224,13 @@ describe('flagd-core common flag definitions', () => {
     expect(resolved.value).toBe(false);
     expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
     expect(resolved.variant).toBe('false');
+  });
+
+  it('should throw with invalid targeting rules', () => {
+    const core = new FlagdCore();
+    const flagCfg = `{"flags":{"isEnabled":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":"false","targeting":{"invalid": ["this is not valid targeting"]}}}}`;
+    core.setConfigurations(flagCfg);
+
+    expect(() => core.resolveBooleanEvaluation('isEnabled', false, {}, console)).toThrow();
   });
 });

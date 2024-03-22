@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FlagValue, ErrorCode, EvaluationContextValue } from '@openfeature/web-sdk';
 
 /**

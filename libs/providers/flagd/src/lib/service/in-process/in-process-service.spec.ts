@@ -24,5 +24,21 @@ describe('In-process-service', () => {
     expect(resolveBoolean.value).toBeTruthy();
     expect(resolveBoolean.variant).toBe('on');
     expect(resolveBoolean.reason).toBe('STATIC');
+    expect(resolveBoolean.flagMetadata).toEqual({});
+  });
+
+  describe('flag metadata', () => {
+    it('should include scope as flag metadata', async () => {
+      // given
+      const selector = 'devFlags';
+      const service = new InProcessService({ host: '', port: 0, tls: false, selector }, dataFetcher);
+
+      // when
+      await service.connect(jest.fn, jest.fn, jest.fn);
+
+      // then
+      const resolveBoolean = await service.resolveBoolean('booleanFlag', false, {}, console);
+      expect(resolveBoolean.flagMetadata).toEqual({ scope: selector });
+    });
   });
 });

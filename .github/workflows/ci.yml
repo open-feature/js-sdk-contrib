@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.x, 18.x, 20.x]
+        node-version: [18.x, 20.x]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,19 +38,19 @@ jobs:
 
       services:
         flagd:
-          image: ghcr.io/open-feature/flagd-testbed:v0.4.8
+          image: ghcr.io/open-feature/flagd-testbed:v0.5.2
           ports:
             - 8013:8013
         flagd-unstable:
-          image: ghcr.io/open-feature/flagd-testbed-unstable:v0.4.8
+          image: ghcr.io/open-feature/flagd-testbed-unstable:v0.5.2
           ports:
             - 8014:8013
         sync:
-          image: ghcr.io/open-feature/sync-testbed:v0.4.8
+          image: ghcr.io/open-feature/sync-testbed:v0.5.1
           ports:
             - 9090:9090
         sync-unstable:
-          image: ghcr.io/open-feature/sync-testbed-unstable:v0.4.8
+          image: ghcr.io/open-feature/sync-testbed-unstable:v0.5.2
           ports:
             - 9091:9090
 

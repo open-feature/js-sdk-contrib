@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.1](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.2.0...launchdarkly-client-provider-v0.2.1) (2024-02-01)
+
+
+### 🐛 Bug Fixes
+
+* packaging issues impacting babel/react ([#596](https://github.com/open-feature/js-sdk-contrib/issues/596)) ([0446eab](https://github.com/open-feature/js-sdk-contrib/commit/0446eab5cf9b45ce7de251b4f5feb8df1d499b9d))
+
+
+### 🧹 Chore
+
+* address lint issues ([#642](https://github.com/open-feature/js-sdk-contrib/issues/642)) ([bbd9aee](https://github.com/open-feature/js-sdk-contrib/commit/bbd9aee896dc4a0817f379b799a1b8d331ee76c6))
+* fix lint issues and bump server sdk version ([#715](https://github.com/open-feature/js-sdk-contrib/issues/715)) ([bd57177](https://github.com/open-feature/js-sdk-contrib/commit/bd571770f3a1a01bd62663dc3473273449f96c5c))
+* update nx, run migrations ([#552](https://github.com/open-feature/js-sdk-contrib/issues/552)) ([a88d8fc](https://github.com/open-feature/js-sdk-contrib/commit/a88d8fc097789fd7f56011e6ebb66070f52c6e56))
+* Update README.md launchdarkly-client typo ([#636](https://github.com/open-feature/js-sdk-contrib/issues/636)) ([37fa182](https://github.com/open-feature/js-sdk-contrib/commit/37fa182da225c5c0a676737828538a07454d4485))
+* update README.md to include client provider import ([#668](https://github.com/open-feature/js-sdk-contrib/issues/668)) ([28d1e01](https://github.com/open-feature/js-sdk-contrib/commit/28d1e010edbd8a4ddf759e2a2602acc06cbe0b57))
+
 ## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.1.2...launchdarkly-client-provider-v0.2.0) (2023-08-17)
 
 

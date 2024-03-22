@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.1.11](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.10...flagd-core-v0.1.11) (2024-02-14)
+
+
+### 🐛 Bug Fixes
+
+* init in-process error, throw on invalid rules ([#767](https://github.com/open-feature/js-sdk-contrib/issues/767)) ([e9f9e74](https://github.com/open-feature/js-sdk-contrib/commit/e9f9e74d66e9f8666eebb8d06141fce713c7914c))
+
+## [0.1.10](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.9...flagd-core-v0.1.10) (2024-01-30)
+
+
+### 🐛 Bug Fixes
+
+* falsy boolean shorthand logic ([#746](https://github.com/open-feature/js-sdk-contrib/issues/746)) ([0772c90](https://github.com/open-feature/js-sdk-contrib/commit/0772c90c10906e47109567ba1ac35fe8b38fbe74))
+
+## [0.1.9](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.8...flagd-core-v0.1.9) (2024-01-29)
+
+
+### 🐛 Bug Fixes
+
+* update disabled behavior to match spec  ([#744](https://github.com/open-feature/js-sdk-contrib/issues/744)) ([3f6b4f4](https://github.com/open-feature/js-sdk-contrib/commit/3f6b4f43e7e79a70517d1d654355cf4b82a31188))
+
+## [0.1.8](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.7...flagd-core-v0.1.8) (2024-01-08)
+
+
+### 🧹 Chore
+
+* throw ParseError on invalid flagd config ([#714](https://github.com/open-feature/js-sdk-contrib/issues/714)) ([837bf08](https://github.com/open-feature/js-sdk-contrib/commit/837bf0887a8b68e6418963160344af1aaeabbf0a))
+
 ## [0.1.7](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.6...flagd-core-v0.1.7) (2023-12-18)
 
 

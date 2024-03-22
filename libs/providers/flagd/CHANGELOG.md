@@ -1,5 +1,69 @@
 # Changelog
 
+## [0.12.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.11.1...flagd-provider-v0.12.0) (2024-03-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* update OpenFeature SDK peer ([#798](https://github.com/open-feature/js-sdk-contrib/issues/798))
+
+### ✨ New Features
+
+* update OpenFeature SDK peer ([#798](https://github.com/open-feature/js-sdk-contrib/issues/798)) ([ebd16b9](https://github.com/open-feature/js-sdk-contrib/commit/ebd16b9630bcc6b253a7061a144e8d476cd8b586))
+
+
+### 📚 Documentation
+
+* fix resolve type environment variable ([eaf7788](https://github.com/open-feature/js-sdk-contrib/commit/eaf7788e028a0c91cab4d6bf5b5645456aef0904))
+
+## [0.11.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.11.0...flagd-provider-v0.11.1) (2024-02-15)
+
+
+### ✨ New Features
+
+* use updated proto ([#770](https://github.com/open-feature/js-sdk-contrib/issues/770)) ([5405af5](https://github.com/open-feature/js-sdk-contrib/commit/5405af57d0ecaa64796dc87c90e98d83fe246e6c))
+
+## [0.11.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.5...flagd-provider-v0.11.0) (2024-02-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* use new eval/sync protos (requires flagd v0.7.3+)  ([#762](https://github.com/open-feature/js-sdk-contrib/issues/762))
+
+### 🐛 Bug Fixes
+
+* init in-process error, throw on invalid rules ([#767](https://github.com/open-feature/js-sdk-contrib/issues/767)) ([e9f9e74](https://github.com/open-feature/js-sdk-contrib/commit/e9f9e74d66e9f8666eebb8d06141fce713c7914c))
+
+
+### ✨ New Features
+
+* use new eval/sync protos (requires flagd v0.7.3+)  ([#762](https://github.com/open-feature/js-sdk-contrib/issues/762)) ([4da9deb](https://github.com/open-feature/js-sdk-contrib/commit/4da9deb48c6bd0c106b176fc7e3730cf50e60b6d))
+
+
+### 🧹 Chore
+
+* **deps:** update dependency @grpc/grpc-js to ~1.8.0 || ~1.9.0 || ~1.10.0 ([#764](https://github.com/open-feature/js-sdk-contrib/issues/764)) ([c05bf9d](https://github.com/open-feature/js-sdk-contrib/commit/c05bf9d8b5980f60611e92a2bab024306e397ec0))
+
+## [0.10.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.4...flagd-provider-v0.10.5) (2024-01-30)
+
+
+### ✨ New Features
+
+* add offline mode file path env ([#751](https://github.com/open-feature/js-sdk-contrib/issues/751)) ([4ff73e7](https://github.com/open-feature/js-sdk-contrib/commit/4ff73e787693cd2e783200e6c165352a2906185b))
+
+## [0.10.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.3...flagd-provider-v0.10.4) (2024-01-10)
+
+
+### ✨ New Features
+
+* add flag metadata to in-process evaluator ([#709](https://github.com/open-feature/js-sdk-contrib/issues/709)) ([2a4c50b](https://github.com/open-feature/js-sdk-contrib/commit/2a4c50b9675ca01d2c1976ddfa1b2b080bb90488))
+* add offline mode, fix in-process connection edge cases ([#708](https://github.com/open-feature/js-sdk-contrib/issues/708)) ([3d56225](https://github.com/open-feature/js-sdk-contrib/commit/3d5622594befde03e74fafc7857cd7cd49ceeb59))
+
+
+### 🧹 Chore
+
+* fix lint issues and bump server sdk version ([#715](https://github.com/open-feature/js-sdk-contrib/issues/715)) ([bd57177](https://github.com/open-feature/js-sdk-contrib/commit/bd571770f3a1a01bd62663dc3473273449f96c5c))
+
 ## [0.10.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.10.2...flagd-provider-v0.10.3) (2023-12-13)
 
 

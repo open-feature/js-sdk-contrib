@@ -12,7 +12,7 @@ import {
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/server-sdk';
-import { getClient, IConfig, IConfigCatClient, IEvaluationDetails, SettingValue } from 'configcat-js';
+import { getClient, IConfig, IConfigCatClient, IEvaluationDetails, SettingValue } from 'configcat-js-ssr';
 import { transformContext } from './context-transformer';
 
 export class ConfigCatProvider implements Provider {
@@ -84,7 +84,7 @@ export class ConfigCatProvider implements Provider {
   }
 
   public async onClose(): Promise<void> {
-    await this._client?.dispose();
+    this._client?.dispose();
   }
 
   async resolveBooleanEvaluation(
@@ -99,7 +99,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
-      transformContext(context),
+      context.targetingKey != null ? transformContext(context) : undefined,
     );
 
     const validatedValue = validateFlagType('boolean', value);
@@ -121,7 +121,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
-      transformContext(context),
+      context.targetingKey != null ? transformContext(context) : undefined,
     );
 
     const validatedValue = validateFlagType('string', value);
@@ -143,7 +143,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync<SettingValue>(
       flagKey,
       undefined,
-      transformContext(context),
+      context.targetingKey != null ? transformContext(context) : undefined,
     );
 
     const validatedValue = validateFlagType('number', value);
@@ -165,7 +165,7 @@ export class ConfigCatProvider implements Provider {
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync(
       flagKey,
       undefined,
-      transformContext(context),
+      context.targetingKey != null ? transformContext(context) : undefined,
     );
 
     if (typeof value === 'undefined') {
@@ -199,7 +199,11 @@ function toResolutionDetails<U extends JsonValue>(
   data: Omit<IEvaluationDetails, 'value'>,
   reason?: ResolutionReason,
 ): ResolutionDetails<U> {
-  const matchedRule = Boolean(data.matchedEvaluationRule || data.matchedEvaluationPercentageRule);
+  const matchedTargeting = 'matchedEvaluationRule' in data ? data.matchedEvaluationRule : data.matchedTargetingRule;
+  const matchedPercentage =
+    'matchedEvaluationPercentageRule' in data ? data.matchedEvaluationPercentageRule : data.matchedPercentageOption;
+
+  const matchedRule = Boolean(matchedTargeting || matchedPercentage);
   const evaluatedReason = matchedRule ? StandardResolutionReasons.TARGETING_MATCH : StandardResolutionReasons.STATIC;
 
   return {

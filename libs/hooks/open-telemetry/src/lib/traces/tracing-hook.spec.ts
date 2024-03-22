@@ -148,7 +148,7 @@ describe('OpenTelemetry Hooks', () => {
       describe('error in mapper', () => {
         beforeEach(() => {
           tracingHook = new TracingHook({
-            attributeMapper: (_) => {
+            attributeMapper: () => {
               throw new Error('fake error');
             },
           });

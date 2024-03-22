@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.5.1...flagd-web-provider-v0.6.0) (2024-03-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* update OpenFeature SDK peer ([#798](https://github.com/open-feature/js-sdk-contrib/issues/798))
+
+### ✨ New Features
+
+* update OpenFeature SDK peer ([#798](https://github.com/open-feature/js-sdk-contrib/issues/798)) ([ebd16b9](https://github.com/open-feature/js-sdk-contrib/commit/ebd16b9630bcc6b253a7061a144e8d476cd8b586))
+
+## [0.5.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.5.0...flagd-web-provider-v0.5.1) (2024-02-15)
+
+
+### ✨ New Features
+
+* use updated proto ([#773](https://github.com/open-feature/js-sdk-contrib/issues/773)) ([437bbe4](https://github.com/open-feature/js-sdk-contrib/commit/437bbe4334ef8104d27bb40e9c109164f2a25ca5))
+
+## [0.5.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.4.1...flagd-web-provider-v0.5.0) (2024-02-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* use new eval/sync protos (requires flagd v0.7.3+)  ([#762](https://github.com/open-feature/js-sdk-contrib/issues/762))
+
+### ✨ New Features
+
+* use new eval/sync protos (requires flagd v0.7.3+)  ([#762](https://github.com/open-feature/js-sdk-contrib/issues/762)) ([4da9deb](https://github.com/open-feature/js-sdk-contrib/commit/4da9deb48c6bd0c106b176fc7e3730cf50e60b6d))
+
 ## [0.4.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.4.0...flagd-web-provider-v0.4.1) (2023-12-15)
 
 

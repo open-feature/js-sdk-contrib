@@ -1,4 +1,4 @@
-import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_EVENT_STREAM_RETRIES } from './constants';
+import { DEFAULT_MAX_CACHE_SIZE } from './constants';
 
 export type CacheOption = 'lru' | 'disabled';
 export type ResolverType = 'rpc' | 'in-process';
@@ -45,6 +45,12 @@ export interface Config {
   resolverType?: ResolverType;
 
   /**
+   * File source of flags to be used by offline mode.
+   * Setting this enables the offline mode of the in-process provider.
+   */
+  offlineFlagSourcePath?: string;
+
+  /**
    * Selector to be used with flag sync gRPC contract.
    */
   selector?: string;
@@ -85,6 +91,7 @@ enum ENV_VAR {
   FLAGD_MAX_CACHE_SIZE = 'FLAGD_MAX_CACHE_SIZE',
   FLAGD_SOURCE_SELECTOR = 'FLAGD_SOURCE_SELECTOR',
   FLAGD_RESOLVER = 'FLAGD_RESOLVER',
+  FLAGD_OFFLINE_FLAG_SOURCE_PATH = 'FLAGD_OFFLINE_FLAG_SOURCE_PATH',
 }
 
 const getEnvVarConfig = (): Partial<Config> => ({
@@ -111,6 +118,9 @@ const getEnvVarConfig = (): Partial<Config> => ({
   }),
   ...((process.env[ENV_VAR.FLAGD_RESOLVER] === 'rpc' || process.env[ENV_VAR.FLAGD_RESOLVER] === 'in-process') && {
     resolverType: process.env[ENV_VAR.FLAGD_RESOLVER],
+  }),
+  ...(process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH] && {
+    offlineFlagSourcePath: process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH],
   }),
 });
 
