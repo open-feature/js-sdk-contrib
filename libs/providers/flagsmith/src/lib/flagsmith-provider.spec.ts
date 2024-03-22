@@ -261,14 +261,17 @@ describe('FlagsmithProvider', () => {
     it('should call the ready handler when initialized', async () => {
       const config = defaultConfig();
       const provider = new FlagsmithProvider({ ...config });
-      const readyHandler = jest.fn();
+      const readyHandler = jest.fn().mockImplementation(() => {
+        return OpenFeature.getClient().getBooleanValue(exampleBooleanFlagName, false);
+      });
       const errorHandler = jest.fn();
       expect(provider.status).toEqual(ProviderStatus.NOT_READY);
       OpenFeature.addHandler(ProviderEvents.Ready, readyHandler);
       OpenFeature.addHandler(ProviderEvents.Error, errorHandler);
       await OpenFeature.setProviderAndWait(provider);
       expect(provider.status).toEqual(ProviderStatus.READY);
-      expect(readyHandler).toHaveBeenCalledTimes(1);
+      expect(readyHandler).toHaveBeenCalled();
+      expect(readyHandler).toHaveReturnedWith(true);
       expect(errorHandler).toHaveBeenCalledTimes(0);
     });
     it('should call the error handler when errored', async () => {
