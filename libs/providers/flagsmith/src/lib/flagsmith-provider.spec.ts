@@ -9,7 +9,7 @@ import {
   exampleStringFlagName,
   getFetchErrorMock,
   getFetchMock,
-} from './flagsmith-mocks';
+} from './flagsmith.mocks';
 import { OpenFeature, ProviderEvents, ProviderStatus } from '@openfeature/web-sdk';
 import flagsmithIsomorphic, { createFlagsmithInstance } from 'flagsmith/isomorphic';
 import { LaunchDarklyClientProvider } from '@openfeature/launchdarkly-client-provider';
