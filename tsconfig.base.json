@@ -28,9 +28,7 @@
       "@openfeature/go-feature-flag-web-provider": ["libs/providers/go-feature-flag-web/src/index.ts"],
       "@openfeature/hooks-open-telemetry": ["libs/hooks/open-telemetry/src/index.ts"],
       "@openfeature/launchdarkly-client-provider": ["libs/providers/launchdarkly-client/src/index.ts"],
-      "@openfeature/flagsmith-provider": [
-        "libs/shared/flagsmith/src/index.ts"
-      ]
+      "@openfeature/flagsmith-provider": ["libs/shared/flagsmith/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
