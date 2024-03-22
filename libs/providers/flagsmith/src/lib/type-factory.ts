@@ -9,12 +9,16 @@ export type FlagType = 'string' | 'number' | 'object' | 'boolean';
  * @param type - The target type for the conversion.
  * @returns The converted value if successful, or null if conversion fails or the type is unsupported.
  */
-export const typeFactory = (value: string | number | boolean | null | undefined, type: FlagType): FlagValue | null => {
+export const typeFactory = (
+  value: string | number | boolean | null | undefined,
+  type: FlagType,
+): FlagValue | undefined => {
+  if (value === null) return undefined;
   switch (type) {
     case 'string':
-      return typeof value === 'string' ? value : null;
+      return typeof value !== null && typeof value !== 'undefined' ? `${value}` : value;
     case 'number':
-      return typeof value === 'number' ? value : parseFloat(value as string) || null;
+      return typeof value === 'number' ? value : parseFloat(value as string) || value;
     case 'boolean':
       return typeof value === 'boolean' ? value : false;
     case 'object':
@@ -22,11 +26,11 @@ export const typeFactory = (value: string | number | boolean | null | undefined,
         try {
           return JSON.parse(value);
         } catch (error) {
-          return null;
+          return value;
         }
       }
-      return null;
+      return value;
     default:
-      return null;
+      return value;
   }
 };

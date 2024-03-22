@@ -9,10 +9,11 @@ import {
   ProviderMetadata,
   ProviderStatus,
   ResolutionDetails,
+  ResolutionReason,
   StandardResolutionReasons,
 } from '@openfeature/web-sdk';
-import { createFlagsmithInstance } from 'flagsmith';
-import { FlagSource, IFlagsmith, IInitConfig } from 'flagsmith/types';
+import { createFlagsmithInstance } from 'flagsmith/isomorphic';
+import { FlagSource, IFlagsmith, IInitConfig, IState } from 'flagsmith/types';
 import { FlagType, typeFactory } from './type-factory';
 
 export default class FlagsmithProvider implements Provider {
@@ -30,9 +31,13 @@ export default class FlagsmithProvider implements Provider {
   // The Open Feature event emitter
   events = new OpenFeatureEventEmitter();
 
-  constructor(config: IInitConfig, logger?: Logger) {
+  constructor({
+    logger,
+    flagsmithInstance,
+    ...config
+  }: Omit<IInitConfig, 'identity' | 'traits'> & { logger?: Logger; flagsmithInstance?: IFlagsmith }) {
     this._logger = logger;
-    this._client = createFlagsmithInstance();
+    this._client = flagsmithInstance || createFlagsmithInstance();
     this._config = config;
   }
 
@@ -44,29 +49,41 @@ export default class FlagsmithProvider implements Provider {
     this._status = status;
   }
 
-  async initialize(context?: EvaluationContext) {
-    await this._client
-      .init({
-        ...this._config,
-        ...context,
-        onChange: (previousFlags, params, loadingState) => {
-          if (params.flagsChanged) {
-            this.events.emit(ProviderEvents.ConfigurationChanged, {
-              message: 'Flags changed',
-            });
-          }
-        },
-      })
-      .then(() => {
-        this.status = ProviderStatus.READY;
-      })
-      .catch((e) => {
-        this.status = ProviderStatus.ERROR;
-        this.errorHandler(e, 'Initialize');
+  async initialize(context?: EvaluationContext & Partial<IState>) {
+    const identity = context?.targetingKey;
+    if (this._client?.initialised) {
+      //Already initialised, set the state based on the new context, allow certain context props to be optional
+      const defaultState = { ...this._client.getState(), identity: undefined, traits: {} };
+      this._client.identity = identity;
+      this._client.setState({
+        ...defaultState,
+        ...(context || {}),
       });
+      this._status = ProviderStatus.STALE;
+      this.events.emit(ProviderEvents.Stale, { message: 'context has changed' });
+      return this._client.getFlags();
+    }
+
+    return this._client.init({
+      ...this._config,
+      ...context,
+      identity,
+      onChange: (previousFlags, params, loadingState) => {
+        this.status = ProviderStatus.READY;
+        if (params.flagsChanged) {
+          this.events.emit(ProviderEvents.ConfigurationChanged, {
+            message: 'Flags changed',
+          });
+        }
+      },
+      onError: (error) => {
+        this.status = ProviderStatus.ERROR;
+        this.errorHandler(error, 'Initialize');
+      },
+    });
   }
 
-  onContextChange(_: EvaluationContext, newContext: EvaluationContext) {
+  onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext & Partial<IState>) {
     this.events.emit(ProviderEvents.Stale, { message: 'Context Changed' });
     return this.initialize(newContext);
   }
@@ -101,23 +118,31 @@ export default class FlagsmithProvider implements Provider {
       type,
     );
     return {
-      value: (value === null ? defaultValue : value) as T,
-      reason: this.parseReason(),
+      value: (typeof value !== type ? defaultValue : value) as T,
+      reason: this.parseReason(value, type),
     } as ResolutionDetails<T>;
   }
 
   /**
-   * Based on Flagsmith's loading state, determine the Open Feature resolution reason
+   * Based on Flagsmith's loading state and feature resolution, determine the Open Feature resolution reason
    * @private
    */
-  private parseReason() {
+  private parseReason(value: any, type: FlagType): ResolutionReason {
+    if (value === undefined) {
+      return 'DEFAULT';
+    }
+
+    if (typeof value !== type) {
+      return 'ERROR';
+    }
+
     switch (this._client.loadingState?.source) {
-      case FlagSource.CACHE:
-        return StandardResolutionReasons.CACHED;
-      case FlagSource.NONE:
-        return StandardResolutionReasons.STATIC;
+      case 'CACHE':
+        return 'CACHED';
+      case 'DEFAULT_FLAGS':
+        return 'DEFAULT';
       default:
-        return StandardResolutionReasons.DEFAULT;
+        return 'STATIC';
     }
   }
 
@@ -128,13 +153,13 @@ export default class FlagsmithProvider implements Provider {
    */
   private errorHandler(error: any, action: string) {
     let errorMessage = `Unknown error ${error}`;
+    Object.getOwnPropertyNames(error);
     if (typeof error === 'string') {
       errorMessage = error;
     } else if (error?.message) {
-      this.events.emit(ProviderEvents.Error, {
-        message: error.message,
-      });
+      errorMessage = error.message;
     }
+
     const fullError = `${this.metadata.name}: error invoking action ${action}. ${errorMessage}`;
     this._logger?.error(fullError);
     this.events.emit(ProviderEvents.Error, {

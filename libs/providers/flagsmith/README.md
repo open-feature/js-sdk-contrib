@@ -10,7 +10,22 @@ npm install @openfeature/flagsmith-provider @openfeature/web-sdk
 
 ## Initialising the provider
 
-The Flagsmith Provider can be created with the standard [initialization options](https://docs.flagsmith.com/clients/javascript/#example-initialising-the-sdk).
+The Flagsmith Provider can be created with the standard [initialization options](https://docs.flagsmith.com/clients/javascript/#example-initialising-the-sdk) as well as a logger and custom Flagsmi.
+
+```javascript
+import { FlagsmithWebProvider } from '../lib/flagsmith-provider';
+
+const flagsmithFeatureFlagWebProvider = new FlagsmithWebProvider({
+    environmentID: '<ENVIRONMENT_ID>',
+    logger
+});
+OpenFeature.setProvider(flagsmithFeatureFlagWebProvider); // Attach the provider to OpenFeature
+const client = await OpenFeature.getClient();
+```
+
+## Usage with React Native / SSO 
+
+The Flagsmith Provider can be constructed with a custom flagsmith instance, [initialization options](https://docs.flagsmith.com/clients/javascript/#example-initialising-the-sdk).
 
 ```javascript
 import { FlagsmithWebProvider } from '../lib/flagsmith-provider';
