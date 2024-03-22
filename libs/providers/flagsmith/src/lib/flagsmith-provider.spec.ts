@@ -36,6 +36,17 @@ describe('FlagsmithProvider', () => {
       expect(provider.flagsmithClient.getState().environmentID).toEqual(config.environmentID);
     });
 
+    it('calls onChange', async () => {
+      const config = defaultConfig();
+      const onChange = jest.fn();
+      const provider = new FlagsmithProvider({ ...config, onChange });
+      await OpenFeature.setProviderAndWait(provider);
+      expect(onChange).toHaveBeenCalledTimes(1);
+      await OpenFeature.setContext({ targetingKey: 'test' });
+      expect(onChange).toHaveBeenCalledTimes(2);
+      expect(provider.flagsmithClient.getState().environmentID).toEqual(config.environmentID);
+    });
+
     it('should allow a custom instance of Flagsmith to be used', async () => {
       const instance = createFlagsmithInstance();
       const provider = new FlagsmithProvider({ flagsmithInstance: instance, ...defaultConfig() });

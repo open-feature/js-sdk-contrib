@@ -68,13 +68,13 @@ export class FlagsmithProvider implements Provider {
       ...context,
       identity,
       onChange: (previousFlags, params, loadingState) => {
-        console.log("Hi", params.flagsChanged)
         this.status = ProviderStatus.READY;
         if (params.flagsChanged) {
           this.events.emit(ProviderEvents.ConfigurationChanged, {
             message: 'Flags changed',
           });
         }
+        this._config.onChange?.(previousFlags, params, loadingState);
       },
       onError: (error) => {
         this.status = ProviderStatus.ERROR;
