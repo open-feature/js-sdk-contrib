@@ -13,9 +13,9 @@ npm install @openfeature/flagsmith-provider @openfeature/web-sdk
 The Flagsmith Provider can be created with the standard [initialization options](https://docs.flagsmith.com/clients/javascript/#example-initialising-the-sdk) and an optional Flagsmith instance to use.
 
 ```javascript
-import { FlagsmithWebProvider } from '../lib/flagsmith-provider';
+import { FlagsmithProvider } from '../lib/flagsmith-provider';
 
-const flagsmithFeatureFlagWebProvider = new FlagsmithWebProvider({
+const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
     environmentID: '<ENVIRONMENT_ID>'
 });
 OpenFeature.setProvider(flagsmithFeatureFlagWebProvider); // Attach the provider to OpenFeature
@@ -27,9 +27,9 @@ The Flagsmith Provider can be constructed with a custom flagsmith instance, [ini
 
 ```javascript
 import flagsmith from 'react-native-flagsmith' // Could also be flagsmith/isomorphic, flagsmith-es or createFlagsmithInstance()
-import { FlagsmithWebProvider } from '../lib/flagsmith-provider';
+import { FlagsmithProvider } from '../lib/flagsmith-provider';
 
-const flagsmithFeatureFlagWebProvider = new FlagsmithWebProvider({
+const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
     environmentID: '<ENVIRONMENT_ID>',
     flagsmithInstance: flagsmith
 });
@@ -42,7 +42,7 @@ In Flagsmith, users are [identified](https://docs.flagsmith.com/clients/javascri
 
 To identify and set traits you can specify a targetingKey(identity) and optionally a set of traits. This will do the equivalent of ``flagsmith.identify(id, traits)`` or pass these to ``flagsmith.init`` if you are calling this before ``OpenFeature.setProvider``.
 ```javascript
-const flagsmithFeatureFlagWebProvider = new FlagsmithWebProvider({
+const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
     environmentID: '<ENVIRONMENT_ID>',
 });
 await OpenFeature.setContext({ targetingKey, traits });
