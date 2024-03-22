@@ -10,13 +10,12 @@ import {
   ProviderStatus,
   ResolutionDetails,
   ResolutionReason,
-  StandardResolutionReasons,
 } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from 'flagsmith/isomorphic';
-import { FlagSource, IFlagsmith, IInitConfig, IState } from 'flagsmith/types';
+import { IFlagsmith, IInitConfig, IState } from 'flagsmith/types';
 import { FlagType, typeFactory } from './type-factory';
 
-export default class FlagsmithProvider implements Provider {
+export class FlagsmithProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: FlagsmithProvider.name,
   };

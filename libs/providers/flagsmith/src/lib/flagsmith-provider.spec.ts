@@ -1,4 +1,4 @@
-import FlagsmithProvider from './flagsmith-provider';
+import { FlagsmithProvider } from './flagsmith-provider';
 import { IInitConfig } from 'flagsmith/types';
 import {
   exampleBooleanFlagName,
