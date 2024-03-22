@@ -5,7 +5,6 @@ export default {
   transform: {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
-  transformIgnorePatterns: [ 'node_modules/*.d.ts', ],
   moduleFileExtensions: ['ts', 'js', 'html'],
-  coverageDirectory: '../../../coverage/libs/providers/flagsmith-client',
+  coverageDirectory: '../../../coverage/libs/providers/flagsmith',
 };
