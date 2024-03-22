@@ -25,6 +25,8 @@ OpenFeature.setProvider(flagsmithFeatureFlagWebProvider); // Attach the provider
 
 The Flagsmith Provider can be constructed with a custom flagsmith instance, [initialization options](https://docs.flagsmith.com/clients/javascript/#example-initialising-the-sdk).
 
+Note: In order to use the React Native implementation of OpenFeature you will need to install both flagsmith and react-native-flagsmith.
+
 ```javascript
 import flagsmith from 'react-native-flagsmith' // Could also be flagsmith/isomorphic, flagsmith-es or createFlagsmithInstance()
 import { FlagsmithProvider } from '../lib/flagsmith-provider';
