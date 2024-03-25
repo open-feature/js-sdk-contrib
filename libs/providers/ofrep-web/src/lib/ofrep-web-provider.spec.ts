@@ -3,10 +3,14 @@ import TestLogger from './test-logger';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
 import { ClientProviderEvents, ClientProviderStatus, OpenFeature } from '@openfeature/web-sdk';
+import { EvaluationDetails } from '@openfeature/core';
 
 describe('OFREPWebProvider', () => {
   beforeAll(() => server.listen());
-  afterEach(() => server.resetHandlers());
+  afterEach(async () => {
+    server.resetHandlers();
+    await OpenFeature.close();
+  });
   afterAll(() => server.close());
 
   const endpointBaseURL = 'https://localhost:8080';
@@ -84,59 +88,108 @@ describe('OFREPWebProvider', () => {
     expect(client.providerStatus).toBe(ClientProviderStatus.ERROR);
   });
 
-  it('xxx', async () => {
+  it('should be in ERROR status if targetingKey is missing', async () => {
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 100 }, new TestLogger());
+    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    await OpenFeature.setContext({ ...defaultContext, errors: { targetingMissing: true } });
+    OpenFeature.setProvider(providerName, provider);
+    const client = OpenFeature.getClient(providerName);
 
+    const errorHandler = jest.fn();
+    const readyHandler = jest.fn();
+    client.addHandler(ClientProviderEvents.Error, errorHandler);
+    client.addHandler(ClientProviderEvents.Ready, readyHandler);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(errorHandler).toHaveBeenCalled();
+    expect(readyHandler).not.toHaveBeenCalled();
+
+    expect(client.providerStatus).toBe(ClientProviderStatus.ERROR);
+  });
+
+  it('should return a FLAG_NOT_FOUND error if the flag does not exist', async () => {
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext(defaultContext);
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
 
-    client.addHandler(ClientProviderEvents.Ready, (xxx) => {
-      console.log(`ready: ${JSON.stringify(xxx)}`);
-    });
-
-    client.addHandler(ClientProviderEvents.Error, (xxx) => {
-      console.log(`error: ${JSON.stringify(xxx)}`);
-    });
-
-    client.addHandler(ClientProviderEvents.Stale, (xxx) => {
-      console.log(`stale: ${JSON.stringify(xxx)}`);
-    });
-
-    client.addHandler(ClientProviderEvents.Reconciling, (xxx) => {
-      console.log(`Reconciling: ${JSON.stringify(xxx)}`);
-    });
-
-    client.addHandler(ClientProviderEvents.ContextChanged, (xxx) => {
-      console.log(`ContextChanged: ${JSON.stringify(xxx)}`);
-    });
-
-    client.addHandler(ClientProviderEvents.ConfigurationChanged, (xxx) => {
-      console.log(`ConfigurationChanged: ${JSON.stringify(xxx)}`);
-    });
-
-    console.log(client.getBooleanDetails('bool-flag', true));
-
-    console.log('status:', client.providerStatus);
-
-    await OpenFeature.setContext({
-      ...defaultContext,
-      errors: {
-        403: true,
-      },
-    });
-
-    console.log('status:', client.providerStatus);
-
-    console.log(client.getBooleanDetails('bool-flag', false));
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await OpenFeature.setContext({
-      ...defaultContext,
-      email: 'john.doe@goff.org',
-    });
-    await OpenFeature.close();
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    const flag = client.getBooleanDetails('non-existent-flag', false);
+    expect(flag.errorCode).toBe('FLAG_NOT_FOUND');
+    expect(flag.value).toBe(false);
   });
+
+  it('should return EvaluationDetails if the flag exists', async () => {
+    const flagKey = 'bool-flag';
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    await OpenFeature.setContext(defaultContext);
+    await OpenFeature.setProviderAndWait(providerName, provider);
+    const client = OpenFeature.getClient(providerName);
+
+    const flag = client.getBooleanDetails(flagKey, false);
+    expect(flag).toEqual({
+      flagKey,
+      value: true,
+      variant: 'variantA',
+      flagMetadata: { context: defaultContext },
+      reason: 'STATIC',
+    });
+  });
+
+  // it('xxx', async () => {
+  //   const providerName = expect.getState().currentTestName || 'test-provider';
+  //   const provider = new OfrepWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 100 }, new TestLogger());
+  //
+  //   await OpenFeature.setContext(defaultContext);
+  //   await OpenFeature.setProviderAndWait(providerName, provider);
+  //   const client = OpenFeature.getClient(providerName);
+  //
+  //   client.addHandler(ClientProviderEvents.Ready, (xxx) => {
+  //     console.log(`ready: ${JSON.stringify(xxx)}`);
+  //   });
+  //
+  //   client.addHandler(ClientProviderEvents.Error, (xxx) => {
+  //     console.log(`error: ${JSON.stringify(xxx)}`);
+  //   });
+  //
+  //   client.addHandler(ClientProviderEvents.Stale, (xxx) => {
+  //     console.log(`stale: ${JSON.stringify(xxx)}`);
+  //   });
+  //
+  //   client.addHandler(ClientProviderEvents.Reconciling, (xxx) => {
+  //     console.log(`Reconciling: ${JSON.stringify(xxx)}`);
+  //   });
+  //
+  //   client.addHandler(ClientProviderEvents.ContextChanged, (xxx) => {
+  //     console.log(`ContextChanged: ${JSON.stringify(xxx)}`);
+  //   });
+  //
+  //   client.addHandler(ClientProviderEvents.ConfigurationChanged, (xxx) => {
+  //     console.log(`ConfigurationChanged: ${JSON.stringify(xxx)}`);
+  //   });
+  //
+  //   console.log(client.getBooleanDetails('bool-flag', true));
+  //
+  //   console.log('status:', client.providerStatus);
+  //
+  //   await OpenFeature.setContext({
+  //     ...defaultContext,
+  //     errors: {
+  //       403: true,
+  //     },
+  //   });
+  //
+  //   console.log('status:', client.providerStatus);
+  //
+  //   console.log(client.getBooleanDetails('bool-flag', false));
+  //
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  //   await OpenFeature.setContext({
+  //     ...defaultContext,
+  //     email: 'john.doe@goff.org',
+  //   });
+  //   await OpenFeature.close();
+  //   await new Promise((resolve) => setTimeout(resolve, 3000));
+  // });
 });
