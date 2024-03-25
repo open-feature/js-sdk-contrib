@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.6...go-feature-flag-web-provider-v0.2.0) (2024-03-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* update OpenFeature SDK peer ([#798](https://github.com/open-feature/js-sdk-contrib/issues/798))
+
+### ✨ New Features
+
+* update OpenFeature SDK peer ([#798](https://github.com/open-feature/js-sdk-contrib/issues/798)) ([ebd16b9](https://github.com/open-feature/js-sdk-contrib/commit/ebd16b9630bcc6b253a7061a144e8d476cd8b586))
+
 ## [0.1.6](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.5...go-feature-flag-web-provider-v0.1.6) (2024-01-21)
 
 
