@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - uses: bufbuild/buf-setup-action@v1.28.1
+      - uses: bufbuild/buf-setup-action@v1.30.0
         with:
           github_token: ${{ github.token }}
       - uses: nrwl/nx-set-shas@v3
@@ -68,7 +68,7 @@ jobs:
         - name: Install
           run: npm ci
 
-        - uses: bufbuild/buf-setup-action@v1.28.1
+        - uses: bufbuild/buf-setup-action@v1.30.0
           with:
             github_token: ${{ github.token }}
 
