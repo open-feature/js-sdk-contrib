@@ -225,7 +225,9 @@ export class OfrepWebProvider implements Provider {
     this._pollingIntervalId = setInterval(async () => {
       try {
         const res = await this._evaluateFlags(this._context);
-        console.log(res);
+        if (res === EvaluationStatus.SUCCESS_WITH_CHANGES) {
+          this.events?.emit(ClientProviderEvents.ConfigurationChanged, { message: 'Flags updated' });
+        }
       } catch (error) {
         this.events?.emit(ClientProviderEvents.Stale, { message: `Error while polling: ${error}` });
       }
