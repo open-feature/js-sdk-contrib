@@ -2,9 +2,15 @@
 export default {
   displayName: 'providers-ofrep-web',
   preset: '../../../jest.preset.js',
-  transform: {
-    '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
+  globals: {
+    'ts-jest': {
+      tsconfig: '<rootDir>/tsconfig.spec.json',
+    },
   },
+  transform: {
+    '^.+\\.[tj]s$': 'ts-jest',
+  },
+  testEnvironment: 'jsdom',
   moduleFileExtensions: ['ts', 'js', 'html'],
-  coverageDirectory: '../../../coverage/libs/providers/ofrep-web',
+  setupFiles: ['./jest.polyfills.js'],
 };

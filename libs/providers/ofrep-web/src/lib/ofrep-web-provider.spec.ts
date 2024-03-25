@@ -1,89 +1,74 @@
 import { OfrepWebProvider } from './ofrep-web-provider';
-import { OpenFeature } from '@openfeature/web-sdk';
 import TestLogger from './test-logger';
-import fetchMock from 'fetch-mock-jest';
-import { ChangePropagationStrategy } from './model/options';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
+import { ClientProviderEvents, ClientProviderStatus, OpenFeature } from '@openfeature/web-sdk';
 
 describe('OFREPWebProvider', () => {
-  beforeEach(async () => {
-    fetchMock.mockClear();
-    fetchMock.reset();
-  });
+  beforeAll(() => server.listen());
+  afterEach(() => server.resetHandlers());
+  afterAll(() => server.close());
+
+  const defaultContext = {
+    targetingKey: '21640825-95e7-4335-b149-bd6881cf7875',
+    errors: {
+      // 403: true,
+    },
+  };
+
   it('xxx', async () => {
-    const provider = new OfrepWebProvider('http://localhost:1031/ofrep/', [], {
-      logger: new TestLogger(),
-      changePropagationStrategy: ChangePropagationStrategy.POLLING,
-      pollingOptions: {
-        interval: 500,
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OfrepWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 100 }, new TestLogger());
+
+    await OpenFeature.setContext(defaultContext);
+    await OpenFeature.setProviderAndWait(providerName, provider);
+    const client = OpenFeature.getClient(providerName);
+
+    client.addHandler(ClientProviderEvents.Ready, (xxx) => {
+      console.log(`ready: ${JSON.stringify(xxx)}`);
+    });
+
+    client.addHandler(ClientProviderEvents.Error, (xxx) => {
+      console.log(`error: ${JSON.stringify(xxx)}`);
+    });
+
+    client.addHandler(ClientProviderEvents.Stale, (xxx) => {
+      console.log(`stale: ${JSON.stringify(xxx)}`);
+    });
+
+    client.addHandler(ClientProviderEvents.Reconciling, (xxx) => {
+      console.log(`Reconciling: ${JSON.stringify(xxx)}`);
+    });
+
+    client.addHandler(ClientProviderEvents.ContextChanged, (xxx) => {
+      console.log(`ContextChanged: ${JSON.stringify(xxx)}`);
+    });
+
+    client.addHandler(ClientProviderEvents.ConfigurationChanged, (xxx) => {
+      console.log(`ConfigurationChanged: ${JSON.stringify(xxx)}`);
+    });
+
+    console.log(client.getBooleanDetails('bool-flag', true));
+
+    console.log('status:', client.providerStatus);
+
+    await OpenFeature.setContext({
+      ...defaultContext,
+      errors: {
+        403: true,
       },
     });
 
-    const evaluateEndpoint = 'http://localhost:1031/ofrep/v1/evaluate';
-    const flagChangesEndpoint = 'http://localhost:1031/ofrep/v1/flag/changes';
-    const fetchResult = [
-      {
-        key: 'flag1',
-        metadata: {
-          additionalProp1: 'xxx',
-        },
-        reason: 'TARGETING_MATCH',
-        value: 'toto',
-        variant: 'Variant1',
-        ETag: '9f9fc0b4',
-      },
-      {
-        key: 'flag2',
-        metadata: {
-          additionalProp1: 'xxx',
-        },
-        reason: 'SPLIT',
-        value: 'titi',
-        variant: 'Variant150',
-        ETag: '6c23a4',
-      },
-      {
-        key: 'flag3',
-        metadata: {
-          additionalProp1: 'xxx',
-        },
-        reason: 'SPLIT',
-        value: 'titi',
-        variant: 'Variant150',
-        ETag: '6c23a4',
-      },
-    ];
+    console.log('status:', client.providerStatus);
 
-    const fetchFlagChanges = [
-      {
-        key: 'flag1',
-        ETag: '9f9fc0b1',
-      },
-      {
-        key: 'flag2',
-        ETag: '6c23a5',
-      },
-      {
-        key: 'flag3',
-        errorCode: 'FLAG_NOT_FOUND',
-        errorDetails: 'Flag not found',
-      },
-    ];
-
-    fetchMock.post(evaluateEndpoint, (url, options) => {
-      const t = JSON.parse(options.body as string).flags as string[];
-      if (t.length === 0) {
-        return fetchResult;
-      }
-      return fetchResult.filter((f) => t.includes(f.key));
-    });
-    fetchMock.post(flagChangesEndpoint, fetchFlagChanges, { overwriteRoutes: true });
-    await OpenFeature.setContext({ targetingKey: 'user1' });
-    await OpenFeature.setProviderAndWait(provider);
-    const cli = OpenFeature.getClient();
-    console.log(cli.getStringDetails('flag1', 'default'));
-    console.log(cli.getStringDetails('flag3', 'default'));
+    console.log(client.getBooleanDetails('bool-flag', false));
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log(cli.getStringDetails('flag3', 'default'));
+    await OpenFeature.setContext({
+      ...defaultContext,
+      email: 'john.doe@goff.org',
+    });
+    await OpenFeature.close();
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   });
 });

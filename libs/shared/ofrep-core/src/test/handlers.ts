@@ -113,20 +113,25 @@ export const handlers = [
         return new HttpResponse(undefined, { status: 304 }) as StrictResponse<undefined>;
       }
 
-      return HttpResponse.json<BulkEvaluationResponse>({
-        flags: [
-          {
-            key: 'bool-flag',
-            value: true,
-            metadata: { context: requestBody.context },
-          },
-          {
-            key: 'object-flag',
-            value: { complex: true, nested: { also: true } },
-            metadata: { context: requestBody.context },
-          },
-        ],
-      });
+      return HttpResponse.json<BulkEvaluationResponse>(
+        {
+          flags: [
+            {
+              key: 'bool-flag',
+              value: true,
+              metadata: { context: requestBody.context },
+              variant: 'variantA',
+              reason: EvaluationSuccessReason.Static,
+            },
+            {
+              key: 'object-flag',
+              value: { complex: true, nested: { also: true } },
+              metadata: { context: requestBody.context },
+            },
+          ],
+        },
+        { headers: { etag: '123' } },
+      );
     },
   ),
 ];
