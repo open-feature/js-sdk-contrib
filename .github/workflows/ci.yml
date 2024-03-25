@@ -46,7 +46,7 @@ jobs:
           ports:
             - 8014:8013
         sync:
-          image: ghcr.io/open-feature/sync-testbed:v0.5.1
+          image: ghcr.io/open-feature/sync-testbed:v0.5.2
           ports:
             - 9090:9090
         sync-unstable:
