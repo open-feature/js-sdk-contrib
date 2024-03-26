@@ -52,7 +52,7 @@
     "@opentelemetry/sdk-metrics": "^1.15.0",
     "@swc-node/register": "~1.9.0",
     "@swc/cli": "~0.3.0",
-    "@swc/core": "1.4.8",
+    "@swc/core": "1.4.11",
     "@types/assert": "^1.5.6",
     "@types/events": "^3.0.0",
     "@types/imurmurhash": "^0.1.3",
