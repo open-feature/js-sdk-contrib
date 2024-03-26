@@ -108,6 +108,23 @@ export const handlers = [
         );
       }
 
+      if (errors?.['invalidContext']) {
+        return HttpResponse.json<BulkEvaluationResponse>(
+          {
+            errorCode: EvaluationFailureErrorCode.InvalidContext,
+          },
+          { status: 400 },
+        );
+      }
+      if (errors?.['parseError']) {
+        return HttpResponse.json<BulkEvaluationResponse>(
+          {
+            errorCode: EvaluationFailureErrorCode.ParseError,
+          },
+          { status: 400 },
+        );
+      }
+
       const etag = info.request.headers.get('If-None-Match');
       if (etag) {
         return new HttpResponse(undefined, { status: 304 }) as StrictResponse<undefined>;
