@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.3.0...open-telemetry-hooks-v0.4.0) (2024-03-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* update OpenFeature SDK peer ([#798](https://github.com/open-feature/js-sdk-contrib/issues/798))
+
+### ✨ New Features
+
+* update OpenFeature SDK peer ([#798](https://github.com/open-feature/js-sdk-contrib/issues/798)) ([ebd16b9](https://github.com/open-feature/js-sdk-contrib/commit/ebd16b9630bcc6b253a7061a144e8d476cd8b586))
+
+
+### 🧹 Chore
+
+* address lint issues ([#642](https://github.com/open-feature/js-sdk-contrib/issues/642)) ([bbd9aee](https://github.com/open-feature/js-sdk-contrib/commit/bbd9aee896dc4a0817f379b799a1b8d331ee76c6))
+* fix lint issues and bump server sdk version ([#715](https://github.com/open-feature/js-sdk-contrib/issues/715)) ([bd57177](https://github.com/open-feature/js-sdk-contrib/commit/bd571770f3a1a01bd62663dc3473273449f96c5c))
+
 ## [0.3.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.2.4...open-telemetry-hooks-v0.3.0) (2023-10-11)
 
 

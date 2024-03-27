@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - uses: bufbuild/buf-setup-action@v1.28.1
+      - uses: bufbuild/buf-setup-action@v1.30.0
         with:
           github_token: ${{ github.token }}
       - uses: nrwl/nx-set-shas@v3
@@ -46,7 +46,7 @@ jobs:
           ports:
             - 8014:8013
         sync:
-          image: ghcr.io/open-feature/sync-testbed:v0.5.1
+          image: ghcr.io/open-feature/sync-testbed:v0.5.2
           ports:
             - 9090:9090
         sync-unstable:
@@ -68,7 +68,7 @@ jobs:
         - name: Install
           run: npm ci
 
-        - uses: bufbuild/buf-setup-action@v1.28.1
+        - uses: bufbuild/buf-setup-action@v1.30.0
           with:
             github_token: ${{ github.token }}
 
