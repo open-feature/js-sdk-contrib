@@ -38,6 +38,11 @@ export class FlagsmithProvider implements Provider {
     this._logger = logger;
     this._client = flagsmithInstance || createFlagsmithInstance();
     this._config = config;
+    const serverState = this._config.state;
+    if (serverState) {
+      this._client.setState(serverState);
+      this.status = ProviderStatus.READY;
+    }
   }
 
   get status() {

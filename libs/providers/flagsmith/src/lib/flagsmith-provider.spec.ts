@@ -52,6 +52,29 @@ describe('FlagsmithProvider', () => {
       const provider = new FlagsmithProvider({ flagsmithInstance: instance, ...defaultConfig() });
       expect(provider.flagsmithClient).toEqual(instance);
     });
+
+    it('should initialize with SSR state and evaluate synchronously if provided', async () => {
+      const config = defaultConfig();
+      const state = {
+        ...defaultState,
+        identity: 'test',
+        traits: { example: 1 },
+        evaluationEvent: null,
+        ts: null,
+      };
+      const provider = new FlagsmithProvider({
+        logger,
+        ...config,
+        preventFetch: true,
+        state,
+        flagsmithInstance: createFlagsmithInstance(),
+      });
+      OpenFeature.setProvider(provider);
+      expect(provider.flagsmithClient.getState()).toEqual(state);
+      const details = OpenFeature.getClient().getNumberDetails(exampleNumericFlagName, 12);
+      expect(details.value).toEqual(100);
+      expect(details.reason).toEqual('STATIC');
+    });
   });
 
   describe('cache', () => {
@@ -336,6 +359,36 @@ describe('FlagsmithProvider', () => {
       );
       expect(config.fetch).toHaveBeenCalledTimes(3);
     });
+    it('should initialize with the targeting key and traits when passed to initialize', async () => {
+      const targetingKey = 'test';
+      const traits = { foo: 'bar', example: 123 };
+      const config = defaultConfig();
+      const provider = new FlagsmithProvider(config);
+      await OpenFeature.setContext({ targetingKey, traits });
+      await OpenFeature.setProviderAndWait(provider);
+      expect(provider.flagsmithClient.getState().identity).toEqual(targetingKey);
+      expect(config.fetch).toHaveBeenCalledTimes(1);
+      expect(config.fetch).toHaveBeenCalledWith(
+        `${provider.flagsmithClient.getState().api}identities/`,
+        expect.objectContaining({
+          body: JSON.stringify({
+            identifier: targetingKey,
+            traits: [
+              {
+                trait_key: 'foo',
+                trait_value: 'bar',
+              },
+              {
+                trait_key: 'example',
+                trait_value: 123,
+              },
+            ],
+          }),
+        }),
+      );
+    });
+  });
+  describe('server state', () => {
     it('should initialize with the targeting key and traits when passed to initialize', async () => {
       const targetingKey = 'test';
       const traits = { foo: 'bar', example: 123 };
