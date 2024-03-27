@@ -13,7 +13,7 @@ npm install @openfeature/flagsmith-provider @openfeature/web-sdk
 The Flagsmith Provider can be created with the standard [initialization options](https://docs.flagsmith.com/clients/javascript/#example-initialising-the-sdk) and an optional Flagsmith instance to use.
 
 ```javascript
-import { FlagsmithProvider } from '../lib/flagsmith-provider';
+import { FlagsmithProvider } from '@openfeature/flagsmith-provider';
 
 const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
     environmentID: '<ENVIRONMENT_ID>'
@@ -29,7 +29,7 @@ Note: In order to use the React Native implementation of OpenFeature you will ne
 
 ```javascript
 import flagsmith from 'react-native-flagsmith' // Could also be flagsmith/isomorphic, flagsmith-es or createFlagsmithInstance()
-import { FlagsmithProvider } from '../lib/flagsmith-provider';
+import { FlagsmithProvider } from '@openfeature/flagsmith-provider';
 
 const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
     environmentID: '<ENVIRONMENT_ID>',
@@ -84,3 +84,7 @@ Run `nx package providers-flagsmith` to build the library.
 ## Running unit tests
 
 Run `nx test providers-flagsmith` to execute the unit tests via [Jest](https://jestjs.io).
+
+## Examples
+
+You can find examples using this provider in several frameworks [Here](https://github.com/Flagsmith/flagsmith-js-examples/tree/main/open-feature).
