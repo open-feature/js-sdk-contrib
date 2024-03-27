@@ -1,21 +1,10 @@
+import { EvaluationContext, Provider, JsonValue, ResolutionDetails, TypeMismatchError } from '@openfeature/server-sdk';
 import {
-  EvaluationContext,
-  Provider,
-  JsonValue,
-  ResolutionDetails,
-  InvalidContextError,
-  ParseError,
-  FlagMetadata,
-  GeneralError,
-  TargetingKeyMissingError,
-  TypeMismatchError,
-  FlagNotFoundError,
-} from '@openfeature/server-sdk';
-import {
-  EvaluationFailureErrorCode,
   EvaluationFlagValue,
+  handleEvaluationError,
   OFREPApi,
   OFREPApiEvaluationResult,
+  toResolutionDetails,
 } from '@openfeature/ofrep-core';
 
 export class OfrepProvider implements Provider {
@@ -71,43 +60,13 @@ export class OfrepProvider implements Provider {
     defaultValue: T,
   ): ResolutionDetails<T> {
     if (result.httpStatus !== 200) {
-      const code = result.value.errorCode;
-      const details = result.value.errorDetails;
-
-      switch (code) {
-        case EvaluationFailureErrorCode.ParseError:
-          throw new ParseError(details);
-        case EvaluationFailureErrorCode.TargetingKeyMissing:
-          throw new TargetingKeyMissingError(details);
-        case EvaluationFailureErrorCode.InvalidContext:
-          throw new InvalidContextError(details);
-        case EvaluationFailureErrorCode.FlagNotFound:
-          throw new FlagNotFoundError(details);
-        case EvaluationFailureErrorCode.General:
-          throw new TargetingKeyMissingError(details);
-        default:
-          throw new GeneralError(details);
-      }
+      handleEvaluationError(result);
     }
 
     if (typeof result.value.value !== typeof defaultValue) {
       throw new TypeMismatchError();
     }
 
-    return {
-      value: result.value.value as T,
-      variant: result.value.variant,
-      reason: result.value.reason,
-      flagMetadata: result.value.metadata && this.toFlagMetadata(result.value.metadata),
-    };
-  }
-
-  private toFlagMetadata(metadata: object): FlagMetadata {
-    // OFREP metadata is defined as any object but OF metadata is defined as Record<string, string | number | boolean>
-    const originalEntries = Object.entries(metadata);
-    const onlyPrimitiveEntries = originalEntries.filter(([, value]) =>
-      ['string', 'number', 'boolean'].includes(typeof value),
-    );
-    return Object.fromEntries(onlyPrimitiveEntries);
+    return toResolutionDetails(result.value);
   }
 }
