@@ -10,6 +10,11 @@ import {
   isEvaluationSuccessResponse,
   isBulkEvaluationFailureResponse,
   isBulkEvaluationSuccessResponse,
+  EvaluationFailureErrorCode,
+  OFREPApiEvaluationFailureResult,
+  OFREPApiBulkEvaluationFailureResult,
+  EvaluationSuccessResponse,
+  EvaluationFlagValue,
 } from '../model';
 import {
   OFREPApiFetchError,
@@ -18,6 +23,15 @@ import {
   OFREPApiUnauthorizedError,
   OFREPForbiddenError,
 } from './errors';
+import {
+  FlagMetadata,
+  FlagNotFoundError,
+  GeneralError,
+  InvalidContextError,
+  ParseError,
+  TargetingKeyMissingError,
+  ResolutionDetails,
+} from '@openfeature/core';
 
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
 export type RequestOptions = Omit<RequestInit, 'method' | 'body'>;
@@ -116,4 +130,46 @@ export class OFREPApi {
 
     throw new OFREPApiUnexpectedResponseError(response, 'The OFREP response does not match the expected format');
   }
+}
+
+export function handleEvaluationError(
+  result: OFREPApiEvaluationFailureResult | OFREPApiBulkEvaluationFailureResult,
+): never {
+  const code = result.value.errorCode;
+  const details = result.value.errorDetails;
+
+  switch (code) {
+    case EvaluationFailureErrorCode.ParseError:
+      throw new ParseError(details);
+    case EvaluationFailureErrorCode.TargetingKeyMissing:
+      throw new TargetingKeyMissingError(details);
+    case EvaluationFailureErrorCode.InvalidContext:
+      throw new InvalidContextError(details);
+    case EvaluationFailureErrorCode.FlagNotFound:
+      throw new FlagNotFoundError(details);
+    case EvaluationFailureErrorCode.General:
+      throw new TargetingKeyMissingError(details);
+    default:
+      throw new GeneralError(details);
+  }
+}
+
+export function toResolutionDetails<T extends EvaluationFlagValue>(
+  result: EvaluationSuccessResponse,
+): ResolutionDetails<T> {
+  return {
+    value: result.value as T,
+    variant: result.variant,
+    reason: result.reason,
+    flagMetadata: result.metadata && toFlagMetadata(result.metadata),
+  };
+}
+
+export function toFlagMetadata(metadata: object): FlagMetadata {
+  // OFREP metadata is defined as any object but OF metadata is defined as Record<string, string | number | boolean>
+  const originalEntries = Object.entries(metadata);
+  const onlyPrimitiveEntries = originalEntries.filter(([, value]) =>
+    ['string', 'number', 'boolean'].includes(typeof value),
+  );
+  return Object.fromEntries(onlyPrimitiveEntries);
 }
