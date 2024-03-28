@@ -345,9 +345,9 @@ describe('FlagsmithProvider', () => {
       );
       expect(config.fetch).toHaveBeenNthCalledWith(
         2,
-        `${provider.flagsmithClient.getState().api}identities/?identifier=test`,
+        `${provider.flagsmithClient.getState().api}identities/`,
         expect.objectContaining({
-          body: undefined,
+          body: '{"identifier":"test","traits":[]}',
         }),
       );
       expect(config.fetch).toHaveBeenNthCalledWith(
