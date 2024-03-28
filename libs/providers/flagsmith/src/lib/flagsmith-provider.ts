@@ -38,11 +38,6 @@ export class FlagsmithProvider implements Provider {
     this._logger = logger;
     this._client = flagsmithInstance || createFlagsmithInstance();
     this._config = config;
-    const serverState = this._config.state;
-    if (serverState) {
-      this._client.setState(serverState);
-      this.status = ProviderStatus.READY;
-    }
   }
 
   get status() {
@@ -55,6 +50,7 @@ export class FlagsmithProvider implements Provider {
 
   async initialize(context?: EvaluationContext & Partial<IState>) {
     const identity = context?.targetingKey;
+
     if (this._client?.initialised) {
       //Already initialised, set the state based on the new context, allow certain context props to be optional
       const defaultState = { ...this._client.getState(), identity: undefined, traits: {} };
@@ -68,6 +64,11 @@ export class FlagsmithProvider implements Provider {
       return this._client.getFlags();
     }
 
+    const serverState = this._config.state;
+    if (serverState) {
+      this._client.setState(serverState);
+      this.status = ProviderStatus.READY;
+    }
     return this._client.init({
       ...this._config,
       ...context,
