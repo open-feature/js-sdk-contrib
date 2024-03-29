@@ -7,16 +7,13 @@ import {
   FlagValue,
   GeneralError,
   Hook,
-  InvalidContextError,
   JsonValue,
   Logger,
   OpenFeatureError,
-  ParseError,
   Provider,
   ProviderEventEmitter,
   ProviderFatalError,
   ResolutionDetails,
-  TargetingKeyMissingError,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
 import { OfrepWebProviderOptions } from './model/ofrep-web-provider-options';
@@ -24,7 +21,9 @@ import {
   EvaluationFailureErrorCode,
   EvaluationRequest,
   EvaluationResponse,
-  EvaluationSuccessResponse,
+  handleEvaluationError,
+  isEvaluationFailureResponse,
+  isEvaluationSuccessResponse,
   OFREPApi,
   OFREPApiFetchError,
   OFREPApiTooManyRequestsError,
@@ -33,6 +32,13 @@ import {
   RequestOptions,
 } from '@openfeature/ofrep-core';
 import { EvaluationStatus } from './model/evaluation-status';
+import {
+  InvalidContextError,
+  ParseError,
+  StandardResolutionReasons,
+  TargetingKeyMissingError,
+} from '@openfeature/core';
+import { isResolutionError, ResolutionError } from './model/resolutionError';
 
 export class OfrepWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 30000;
@@ -51,7 +57,7 @@ export class OfrepWebProvider implements Provider {
 
   private _ofrepAPI: OFREPApi;
   private _etag: string | undefined;
-  private _cache: { [key: string]: ResolutionDetails<FlagValue> } = {};
+  private _cache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
 
@@ -77,11 +83,16 @@ export class OfrepWebProvider implements Provider {
   /**
    * onContextChange is called when the context changes, it will re-evaluate the flags with the new context
    * and update the cache.
-   * @param _ - the old context (we are not using it)
+   * @param oldContext - the old context (we are not using it)
    * @param newContext - the new context
    */
-  async onContextChange?(_: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+  async onContextChange?(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     try {
+      if (oldContext === newContext) {
+        // If the context has not changed, we are doing nothing.
+        return;
+      }
+
       this._context = newContext;
       await this._evaluateFlags(newContext);
     } catch (error) {
@@ -135,34 +146,34 @@ export class OfrepWebProvider implements Provider {
     }
 
     if (response.httpStatus === 400) {
-      switch (response.value.errorCode) {
-        case EvaluationFailureErrorCode.TargetingKeyMissing:
-          throw new TargetingKeyMissingError();
-        case EvaluationFailureErrorCode.InvalidContext:
-          throw new InvalidContextError();
-        case EvaluationFailureErrorCode.ParseError:
-          throw new ParseError();
-        default:
-          throw new GeneralError();
-      }
+      handleEvaluationError(response);
     }
 
     if (response.httpStatus === 200) {
       const bulkSuccessResp = response.value;
-      const newCache: { [key: string]: ResolutionDetails<FlagValue> } = {};
+      const newCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
 
       bulkSuccessResp.flags?.forEach((evalResp: EvaluationResponse) => {
         if (evalResp.key === undefined) {
           return;
         }
         const key = evalResp.key;
-        const evalSuccessResp = evalResp as EvaluationSuccessResponse;
-        newCache[key] = {
-          value: evalSuccessResp.value,
-          flagMetadata: evalSuccessResp.metadata as FlagMetadata,
-          reason: evalSuccessResp.reason,
-          variant: evalSuccessResp.variant,
-        };
+
+        if (isEvaluationFailureResponse(evalResp)) {
+          newCache[key] = {
+            errorCode: evalResp.errorCode,
+            reason: StandardResolutionReasons.ERROR,
+          };
+        }
+
+        if (isEvaluationSuccessResponse(evalResp)) {
+          newCache[key] = {
+            value: evalResp.value,
+            flagMetadata: evalResp.metadata as FlagMetadata,
+            reason: evalResp.reason,
+            variant: evalResp.variant,
+          };
+        }
       });
       this._cache = newCache;
       return EvaluationStatus.SUCCESS_WITH_CHANGES;
@@ -203,9 +214,27 @@ export class OfrepWebProvider implements Provider {
     if (!resolved) {
       throw new FlagNotFoundError(`flag key ${flagKey} not found in cache`);
     }
+
+    if (isResolutionError(resolved)) {
+      switch (resolved.errorCode) {
+        case EvaluationFailureErrorCode.FlagNotFound:
+          throw new FlagNotFoundError(`flag key ${flagKey} not found`);
+        case EvaluationFailureErrorCode.TargetingKeyMissing:
+          throw new TargetingKeyMissingError(`targeting key missing for flag key ${flagKey}`);
+        case EvaluationFailureErrorCode.InvalidContext:
+          throw new InvalidContextError(`invalid context for flag key ${flagKey}`);
+        case EvaluationFailureErrorCode.ParseError:
+          throw new ParseError(`parse error for flag key ${flagKey}`);
+        case EvaluationFailureErrorCode.General:
+        default:
+          throw new GeneralError(`general error during flag evaluation for flag key ${flagKey}`);
+      }
+    }
+
     if (typeof resolved.value !== type) {
       throw new TypeMismatchError(`flag key ${flagKey} is not of type ${type}`);
     }
+
     return {
       variant: resolved.variant,
       value: resolved.value as T,
