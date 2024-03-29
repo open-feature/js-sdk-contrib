@@ -9,5 +9,5 @@
   "libs/providers/go-feature-flag-web": "0.2.0",
   "libs/shared/flagd-core": "0.1.11",
   "libs/shared/ofrep-core": "0.0.3-experimental",
-  "libs/providers/flipt": "0.0.2"
+  "libs/providers/flipt": "0.1.0"
 }
