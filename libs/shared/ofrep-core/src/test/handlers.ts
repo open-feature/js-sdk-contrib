@@ -36,7 +36,7 @@ export const handlers = [
       }
 
       if (errors?.['429']) {
-        throw HttpResponse.text(undefined, { status: 429 });
+        throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': '2000' } });
       }
 
       if (errors?.['notFound']) {
@@ -97,7 +97,7 @@ export const handlers = [
       }
 
       if (errors?.['429']) {
-        throw HttpResponse.text(undefined, { status: 429 });
+        throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': '1' } });
       }
 
       if (errors?.['targetingMissing']) {

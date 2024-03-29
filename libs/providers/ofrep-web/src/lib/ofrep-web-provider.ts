@@ -1,5 +1,4 @@
 import {
-  AnyProviderEvent,
   ClientProviderEvents,
   EvaluationContext,
   FlagMetadata,
@@ -12,7 +11,6 @@ import {
   OpenFeatureError,
   OpenFeatureEventEmitter,
   Provider,
-  ProviderEventEmitter,
   ProviderFatalError,
   ResolutionDetails,
   TypeMismatchError,
@@ -58,7 +56,8 @@ export class OfrepWebProvider implements Provider {
 
   private _ofrepAPI: OFREPApi;
   private _etag: string | null;
-  private pollingInterval: number;
+  private _pollingInterval: number;
+  private _retryPollingAfter: Date | undefined;
   private _cache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
@@ -68,7 +67,7 @@ export class OfrepWebProvider implements Provider {
     this._logger = logger;
     this._etag = null;
     this._ofrepAPI = new OFREPApi(this._options.baseUrl);
-    this.pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
+    this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
   }
 
   resolveBooleanEvaluation(flagKey: string): ResolutionDetails<boolean> {
@@ -92,13 +91,22 @@ export class OfrepWebProvider implements Provider {
    */
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     try {
+      const now = new Date();
+      if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
+        // we do nothing because we should not call the endpoint
+        return;
+      }
       this._context = newContext;
       await this._evaluateFlags(newContext);
     } catch (error) {
+      if (error instanceof OFREPApiTooManyRequestsError) {
+        this.events?.emit(ClientProviderEvents.Stale, { message: `${error.name}: ${error.message}` });
+        return;
+      }
+
       if (
         error instanceof OpenFeatureError ||
         error instanceof OFREPApiFetchError ||
-        error instanceof OFREPApiTooManyRequestsError ||
         error instanceof OFREPApiUnauthorizedError ||
         error instanceof OFREPForbiddenError
       ) {
@@ -128,55 +136,80 @@ export class OfrepWebProvider implements Provider {
    * @throws GeneralError if the API returned a 400 with an unknown error code
    */
   private async _evaluateFlags(context?: EvaluationContext | undefined): Promise<EvaluationStatus> {
-    const evalReq: EvaluationRequest = {
-      context,
-    };
-    const options: RequestOptions = {
-      headers: new Headers({
-        'Content-Type': 'application/json',
-      }),
-      ...(this._etag !== null ? { headers: { 'If-None-Match': this._etag } } : {}),
-    };
+    try {
+      const evalReq: EvaluationRequest = {
+        context,
+      };
+      const options: RequestOptions = {
+        headers: new Headers({
+          'Content-Type': 'application/json',
+        }),
+        ...(this._etag !== null ? { headers: { 'If-None-Match': this._etag } } : {}),
+      };
 
-    const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, options);
-    if (response.httpStatus === 304) {
-      // nothing has changed since last time, we are doing nothing
-      return EvaluationStatus.SUCCESS_NO_CHANGES;
+      const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, options);
+      if (response.httpStatus === 304) {
+        // nothing has changed since last time, we are doing nothing
+        return EvaluationStatus.SUCCESS_NO_CHANGES;
+      }
+
+      if (response.httpStatus === 400) {
+        handleEvaluationError(response);
+      }
+
+      if (response.httpStatus === 200) {
+        const bulkSuccessResp = response.value;
+        const newCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
+
+        bulkSuccessResp.flags?.forEach((evalResp: EvaluationResponse) => {
+          if (isEvaluationFailureResponse(evalResp)) {
+            newCache[evalResp.key] = {
+              errorCode: evalResp.errorCode,
+              errorDetails: evalResp.errorDetails,
+              reason: StandardResolutionReasons.ERROR,
+            };
+          }
+
+          if (isEvaluationSuccessResponse(evalResp) && evalResp.key) {
+            newCache[evalResp.key] = {
+              value: evalResp.value,
+              flagMetadata: evalResp.metadata as FlagMetadata,
+              reason: evalResp.reason,
+              variant: evalResp.variant,
+            };
+          }
+        });
+        this._cache = newCache;
+        this._etag = response.httpResponse?.headers.get('etag');
+        return EvaluationStatus.SUCCESS_WITH_CHANGES;
+      }
+      throw new GeneralError('Unexpected error happen during the evaluation');
+    } catch (error) {
+      if (error instanceof OFREPApiTooManyRequestsError) {
+        this._setRetryAfter(error);
+      }
+      throw error;
     }
-
-    if (response.httpStatus === 400) {
-      handleEvaluationError(response);
-    }
-
-    if (response.httpStatus === 200) {
-      const bulkSuccessResp = response.value;
-      const newCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
-
-      bulkSuccessResp.flags?.forEach((evalResp: EvaluationResponse) => {
-        if (isEvaluationFailureResponse(evalResp)) {
-          newCache[evalResp.key] = {
-            errorCode: evalResp.errorCode,
-            errorDetails: evalResp.errorDetails,
-            reason: StandardResolutionReasons.ERROR,
-          };
-        }
-
-        if (isEvaluationSuccessResponse(evalResp) && evalResp.key) {
-          newCache[evalResp.key] = {
-            value: evalResp.value,
-            flagMetadata: evalResp.metadata as FlagMetadata,
-            reason: evalResp.reason,
-            variant: evalResp.variant,
-          };
-        }
-      });
-      this._cache = newCache;
-      this._etag = response.httpResponse?.headers.get('etag');
-      return EvaluationStatus.SUCCESS_WITH_CHANGES;
-    }
-    throw new GeneralError('Unexpected error happen during the evaluation');
   }
 
+  /**
+   * _setRetryAfter is setting the date until we should stop polling based on the error.
+   * @param error - OFREPApiTooManyRequestsError received
+   * @private
+   */
+  private _setRetryAfter(error: OFREPApiTooManyRequestsError) {
+    const retryAfter = error.response?.headers.get('Retry-After');
+    if (retryAfter) {
+      if (!isNaN(retryAfter as unknown as number)) {
+        this._retryPollingAfter = new Date(Date.now() + (retryAfter as unknown as number) * 1000);
+      } else {
+        const retryAfterDate = new Date(retryAfter);
+        if (retryAfterDate.toString() !== 'Invalid Date') {
+          this._retryPollingAfter = retryAfterDate;
+        }
+      }
+    }
+  }
   /**
    * Initialize the provider, it will evaluate the flags and start the polling if it is not disabled.
    * @param context - the context to use for the evaluation
@@ -186,7 +219,7 @@ export class OfrepWebProvider implements Provider {
       this._context = context;
       await this._evaluateFlags(context);
 
-      if (this.pollingInterval > 0) {
+      if (this._pollingInterval > 0) {
         this.startPolling();
       }
 
@@ -250,6 +283,10 @@ export class OfrepWebProvider implements Provider {
   private startPolling() {
     this._pollingIntervalId = setInterval(async () => {
       try {
+        const now = new Date();
+        if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
+          return;
+        }
         const res = await this._evaluateFlags(this._context);
         if (res === EvaluationStatus.SUCCESS_WITH_CHANGES) {
           this.events?.emit(ClientProviderEvents.ConfigurationChanged, { message: 'Flags updated' });
@@ -257,7 +294,7 @@ export class OfrepWebProvider implements Provider {
       } catch (error) {
         this.events?.emit(ClientProviderEvents.Stale, { message: `Error while polling: ${error}` });
       }
-    }, this.pollingInterval) as unknown as number;
+    }, this._pollingInterval) as unknown as number;
   }
 
   /**

@@ -254,15 +254,15 @@ describe('OFREPWebProvider', () => {
     const client = OpenFeature.getClient(providerName);
 
     const readyHandler = jest.fn();
-    const staleHandler = jest.fn();
+    const reconcilingHandler = jest.fn();
     client.addHandler(ClientProviderEvents.Ready, readyHandler);
-    client.addHandler(ClientProviderEvents.Reconciling, staleHandler);
+    client.addHandler(ClientProviderEvents.Reconciling, reconcilingHandler);
 
     const got1 = client.getObjectDetails(flagKey, {});
     await OpenFeature.setContext({ ...defaultContext, errors: { 401: true } });
     await new Promise((resolve) => setTimeout(resolve, 80));
     expect(readyHandler).toHaveBeenCalledTimes(1);
-    expect(staleHandler).toHaveBeenCalledTimes(1);
+    expect(reconcilingHandler).toHaveBeenCalledTimes(1);
 
     // Commenting those checks, because we are not able to retrieve the information
     // of the provider being stale inside the provider itself.
@@ -272,5 +272,29 @@ describe('OFREPWebProvider', () => {
     // expect(got1).not.toEqual(got2);
     // expect(got2.reason).toBe('CACHED');
   });
-  // STALE
+
+  it('should not try to call the API before retry-after header', async () => {
+    const flagKey = 'object-flag';
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL, pollInterval: 100 }, new TestLogger());
+    await OpenFeature.setContext(defaultContext);
+    await OpenFeature.setProviderAndWait(providerName, provider);
+    const client = OpenFeature.getClient(providerName);
+
+    const reconcilingHandler = jest.fn();
+    const staleHandler = jest.fn();
+    client.addHandler(ClientProviderEvents.Reconciling, reconcilingHandler);
+    client.addHandler(ClientProviderEvents.Stale, staleHandler);
+
+    const got1 = client.getObjectDetails(flagKey, {});
+    await OpenFeature.setContext({ ...defaultContext, errors: { 429: true } });
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    expect(reconcilingHandler).toHaveBeenCalledTimes(1);
+    expect(staleHandler).toHaveBeenCalledTimes(1);
+    await OpenFeature.setContext({ ...defaultContext });
+    expect(staleHandler).toHaveBeenCalledTimes(1);
+    expect(staleHandler).toHaveBeenCalledTimes(1);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(reconcilingHandler).toHaveBeenCalledTimes(2);
+  });
 });
