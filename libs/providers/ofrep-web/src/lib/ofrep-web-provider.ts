@@ -58,6 +58,7 @@ export class OfrepWebProvider implements Provider {
 
   private _ofrepAPI: OFREPApi;
   private _etag: string | null;
+  private pollingInterval: number;
   private _cache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
@@ -67,6 +68,7 @@ export class OfrepWebProvider implements Provider {
     this._logger = logger;
     this._etag = null;
     this._ofrepAPI = new OFREPApi(this._options.baseUrl);
+    this.pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
   }
 
   resolveBooleanEvaluation(flagKey: string): ResolutionDetails<boolean> {
@@ -85,16 +87,11 @@ export class OfrepWebProvider implements Provider {
   /**
    * onContextChange is called when the context changes, it will re-evaluate the flags with the new context
    * and update the cache.
-   * @param oldContext - the old context (we are not using it)
-   * @param newContext - the new context
+   * @param oldContext - the old evaluation context
+   * @param newContext - the new evaluation context
    */
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     try {
-      if (oldContext === newContext) {
-        // If the context has not changed, we are doing nothing.
-        return;
-      }
-
       this._context = newContext;
       await this._evaluateFlags(newContext);
     } catch (error) {
@@ -189,7 +186,7 @@ export class OfrepWebProvider implements Provider {
       this._context = context;
       await this._evaluateFlags(context);
 
-      if (!this._options.disablePolling) {
+      if (this.pollingInterval > 0) {
         this.startPolling();
       }
 
@@ -251,7 +248,6 @@ export class OfrepWebProvider implements Provider {
    * @private
    */
   private startPolling() {
-    const pollInterval = this._options?.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
     this._pollingIntervalId = setInterval(async () => {
       try {
         const res = await this._evaluateFlags(this._context);
@@ -261,7 +257,7 @@ export class OfrepWebProvider implements Provider {
       } catch (error) {
         this.events?.emit(ClientProviderEvents.Stale, { message: `Error while polling: ${error}` });
       }
-    }, pollInterval) as unknown as number;
+    }, this.pollingInterval) as unknown as number;
   }
 
   /**
