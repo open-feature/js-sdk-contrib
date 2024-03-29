@@ -173,4 +173,99 @@ describe('OFREPWebProvider', () => {
       reason: 'STATIC',
     });
   });
+
+  it('should return ParseError if the API return the error', async () => {
+    const flagKey = 'parse-error';
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    await OpenFeature.setContext({ ...defaultContext, errors: { flagInError: true } });
+    await OpenFeature.setProviderAndWait(providerName, provider);
+    const client = OpenFeature.getClient(providerName);
+
+    const flag = client.getBooleanDetails(flagKey, false);
+    expect(flag).toEqual({
+      flagKey,
+      value: false,
+      errorCode: 'PARSE_ERROR',
+      errorMessage: 'parse error for flag key parse-error: custom error details',
+      reason: 'ERROR',
+      flagMetadata: {},
+    });
+  });
+
+  it('should send a configuration changed event, when new flag is send', async () => {
+    const flagKey = 'object-flag';
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL, pollInterval: 50 }, new TestLogger());
+    await OpenFeature.setContext({ ...defaultContext, changeConfig: true });
+    await OpenFeature.setProviderAndWait(providerName, provider);
+    const client = OpenFeature.getClient(providerName);
+
+    const configChangedHandler = jest.fn();
+    const readyHandler = jest.fn();
+    const reconcilingHandler = jest.fn();
+    client.addHandler(ClientProviderEvents.Ready, readyHandler);
+    client.addHandler(ClientProviderEvents.ConfigurationChanged, configChangedHandler);
+    client.addHandler(ClientProviderEvents.Reconciling, reconcilingHandler);
+
+    const got1 = client.getObjectDetails(flagKey, {});
+
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(readyHandler).toHaveBeenCalledTimes(1);
+    expect(configChangedHandler).toHaveBeenCalledTimes(1);
+    expect(reconcilingHandler).not.toHaveBeenCalled();
+
+    const got2 = client.getObjectDetails(flagKey, {});
+    expect(got1).not.toEqual(got2);
+  });
+
+  it('should call reconciling handler, when context changed', async () => {
+    const flagKey = 'object-flag';
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    await OpenFeature.setContext(defaultContext);
+    await OpenFeature.setProviderAndWait(providerName, provider);
+    const client = OpenFeature.getClient(providerName);
+
+    const configChangedHandler = jest.fn();
+    const readyHandler = jest.fn();
+    const reconcilingHandler = jest.fn();
+    client.addHandler(ClientProviderEvents.Ready, readyHandler);
+    client.addHandler(ClientProviderEvents.ConfigurationChanged, configChangedHandler);
+    client.addHandler(ClientProviderEvents.Reconciling, reconcilingHandler);
+
+    const got1 = client.getObjectDetails(flagKey, {});
+    await OpenFeature.setContext({ ...defaultContext, contextChanged: true });
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(readyHandler).toHaveBeenCalledTimes(1);
+    expect(reconcilingHandler).toHaveBeenCalledTimes(1);
+    expect(configChangedHandler).not.toHaveBeenCalled();
+
+    const got2 = client.getObjectDetails(flagKey, {});
+    expect(got1).not.toEqual(got2);
+  });
+
+  it('should call stale handler, when api is not responding', async () => {
+    const flagKey = 'object-flag';
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL, pollInterval: 50 }, new TestLogger());
+    await OpenFeature.setContext(defaultContext);
+    await OpenFeature.setProviderAndWait(providerName, provider);
+    const client = OpenFeature.getClient(providerName);
+
+    const readyHandler = jest.fn();
+    const staleHandler = jest.fn();
+    client.addHandler(ClientProviderEvents.Ready, readyHandler);
+    client.addHandler(ClientProviderEvents.Reconciling, staleHandler);
+
+    const got1 = client.getObjectDetails(flagKey, {});
+    await OpenFeature.setContext({ ...defaultContext, errors: { 401: true } });
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(readyHandler).toHaveBeenCalledTimes(1);
+    expect(staleHandler).toHaveBeenCalledTimes(1);
+
+    const got2 = client.getObjectDetails(flagKey, {});
+    expect(got1).not.toEqual(got2);
+  });
+  // STALE
 });

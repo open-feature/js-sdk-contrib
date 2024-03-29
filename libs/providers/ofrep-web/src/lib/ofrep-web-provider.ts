@@ -10,6 +10,7 @@ import {
   JsonValue,
   Logger,
   OpenFeatureError,
+  OpenFeatureEventEmitter,
   Provider,
   ProviderEventEmitter,
   ProviderFatalError,
@@ -47,7 +48,7 @@ export class OfrepWebProvider implements Provider {
     name: OfrepWebProvider.name,
   };
   readonly runsOn = 'client';
-  events?: ProviderEventEmitter<AnyProviderEvent, Record<string, unknown>> | undefined;
+  events = new OpenFeatureEventEmitter();
   hooks?: Hook[] | undefined;
 
   // logger is the Open Feature logger to use
@@ -56,7 +57,7 @@ export class OfrepWebProvider implements Provider {
   private _options: OfrepWebProviderOptions;
 
   private _ofrepAPI: OFREPApi;
-  private _etag: string | undefined;
+  private _etag: string | null;
   private _cache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
@@ -64,6 +65,7 @@ export class OfrepWebProvider implements Provider {
   constructor(options: OfrepWebProviderOptions, logger?: Logger) {
     this._options = options;
     this._logger = logger;
+    this._etag = null;
     this._ofrepAPI = new OFREPApi(this._options.baseUrl);
   }
 
@@ -86,7 +88,7 @@ export class OfrepWebProvider implements Provider {
    * @param oldContext - the old context (we are not using it)
    * @param newContext - the new context
    */
-  async onContextChange?(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+  async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     try {
       if (oldContext === newContext) {
         // If the context has not changed, we are doing nothing.
@@ -136,7 +138,7 @@ export class OfrepWebProvider implements Provider {
       headers: new Headers({
         'Content-Type': 'application/json',
       }),
-      ...(this._etag ? { headers: { 'If-None-Match': this._etag } } : {}),
+      ...(this._etag !== null ? { headers: { 'If-None-Match': this._etag } } : {}),
     };
 
     const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, options);
@@ -154,20 +156,16 @@ export class OfrepWebProvider implements Provider {
       const newCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
 
       bulkSuccessResp.flags?.forEach((evalResp: EvaluationResponse) => {
-        if (evalResp.key === undefined) {
-          return;
-        }
-        const key = evalResp.key;
-
         if (isEvaluationFailureResponse(evalResp)) {
-          newCache[key] = {
+          newCache[evalResp.key] = {
             errorCode: evalResp.errorCode,
+            errorDetails: evalResp.errorDetails,
             reason: StandardResolutionReasons.ERROR,
           };
         }
 
-        if (isEvaluationSuccessResponse(evalResp)) {
-          newCache[key] = {
+        if (isEvaluationSuccessResponse(evalResp) && evalResp.key) {
+          newCache[evalResp.key] = {
             value: evalResp.value,
             flagMetadata: evalResp.metadata as FlagMetadata,
             reason: evalResp.reason,
@@ -176,9 +174,10 @@ export class OfrepWebProvider implements Provider {
         }
       });
       this._cache = newCache;
+      this._etag = response.httpResponse?.headers.get('etag');
       return EvaluationStatus.SUCCESS_WITH_CHANGES;
     }
-    throw new GeneralError('not supposed to happen');
+    throw new GeneralError('Unexpected error happen during the evaluation');
   }
 
   /**
@@ -218,16 +217,18 @@ export class OfrepWebProvider implements Provider {
     if (isResolutionError(resolved)) {
       switch (resolved.errorCode) {
         case EvaluationFailureErrorCode.FlagNotFound:
-          throw new FlagNotFoundError(`flag key ${flagKey} not found`);
+          throw new FlagNotFoundError(`flag key ${flagKey} not found: ${resolved.errorDetails}`);
         case EvaluationFailureErrorCode.TargetingKeyMissing:
-          throw new TargetingKeyMissingError(`targeting key missing for flag key ${flagKey}`);
+          throw new TargetingKeyMissingError(`targeting key missing for flag key ${flagKey}: ${resolved.errorDetails}`);
         case EvaluationFailureErrorCode.InvalidContext:
-          throw new InvalidContextError(`invalid context for flag key ${flagKey}`);
+          throw new InvalidContextError(`invalid context for flag key ${flagKey}: ${resolved.errorDetails}`);
         case EvaluationFailureErrorCode.ParseError:
-          throw new ParseError(`parse error for flag key ${flagKey}`);
+          throw new ParseError(`parse error for flag key ${flagKey}: ${resolved.errorDetails}`);
         case EvaluationFailureErrorCode.General:
         default:
-          throw new GeneralError(`general error during flag evaluation for flag key ${flagKey}`);
+          throw new GeneralError(
+            `general error during flag evaluation for flag key ${flagKey}: ${resolved.errorDetails}`,
+          );
       }
     }
 
