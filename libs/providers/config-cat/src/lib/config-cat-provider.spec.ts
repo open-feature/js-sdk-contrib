@@ -10,15 +10,13 @@ import {
   OverrideBehaviour,
   PollingMode,
 } from 'configcat-js-ssr';
-
-import { IEventEmitter } from 'configcat-common/lib/EventEmitter';
+import { EventEmitter } from 'events';
 
 describe('ConfigCatProvider', () => {
   const targetingKey = 'abc';
 
   let provider: ConfigCatProvider;
-  // TODO: this type (and maybe the emitter itself?) is removed in later versions, it may not be sustainable to test with this
-  let configCatEmitter: IEventEmitter<HookEvents>;
+  let configCatEmitter: EventEmitter<HookEvents>;
 
   const values = {
     booleanFalse: false,
