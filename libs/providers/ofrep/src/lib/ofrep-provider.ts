@@ -1,4 +1,4 @@
-import { EvaluationContext, Provider, JsonValue, ResolutionDetails, TypeMismatchError } from '@openfeature/server-sdk';
+import { EvaluationContext, JsonValue, Provider, ResolutionDetails, TypeMismatchError } from '@openfeature/server-sdk';
 import {
   EvaluationFlagValue,
   handleEvaluationError,
@@ -6,17 +6,18 @@ import {
   OFREPApiEvaluationResult,
   toResolutionDetails,
 } from '@openfeature/ofrep-core';
+import { OFREPProviderOptions, toRequestOptions } from './ofrep-provider-options';
 
-export class OfrepProvider implements Provider {
+export class OFREPProvider implements Provider {
   private ofrepApi: OFREPApi;
 
   readonly runsOn = 'server';
   readonly metadata = {
-    name: OfrepProvider.name,
+    name: OFREPProvider.name,
   };
 
-  constructor(baseUrl: string) {
-    this.ofrepApi = new OFREPApi(baseUrl);
+  constructor(private options: OFREPProviderOptions) {
+    this.ofrepApi = new OFREPApi(options.baseUrl, options.fetchImplementation);
   }
 
   public async resolveBooleanEvaluation(
@@ -24,7 +25,7 @@ export class OfrepProvider implements Provider {
     defaultValue: boolean,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
-    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context });
+    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, this.requestOptions);
     return this.toResolutionDetails(result, defaultValue);
   }
 
@@ -33,7 +34,7 @@ export class OfrepProvider implements Provider {
     defaultValue: string,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
-    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context });
+    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, this.requestOptions);
     return this.toResolutionDetails(result, defaultValue);
   }
 
@@ -42,7 +43,7 @@ export class OfrepProvider implements Provider {
     defaultValue: number,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
-    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context });
+    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, this.requestOptions);
     return this.toResolutionDetails(result, defaultValue);
   }
 
@@ -51,7 +52,7 @@ export class OfrepProvider implements Provider {
     defaultValue: U,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
-    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context });
+    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, this.requestOptions);
     return this.toResolutionDetails(result, defaultValue);
   }
 
@@ -68,5 +69,9 @@ export class OfrepProvider implements Provider {
     }
 
     return toResolutionDetails(result.value);
+  }
+
+  private get requestOptions() {
+    return toRequestOptions(this.options);
   }
 }
