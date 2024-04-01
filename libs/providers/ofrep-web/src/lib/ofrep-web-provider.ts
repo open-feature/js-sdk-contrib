@@ -91,12 +91,14 @@ export class OfrepWebProvider implements Provider {
    */
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     try {
+      this._context = newContext;
+
       const now = new Date();
       if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
         // we do nothing because we should not call the endpoint
         return;
       }
-      this._context = newContext;
+
       await this._evaluateFlags(newContext);
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError) {
