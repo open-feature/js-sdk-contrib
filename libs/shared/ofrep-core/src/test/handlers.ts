@@ -185,15 +185,13 @@ export const handlers = [
           {
             flags: [
               {
-                key: 'bool-flag',
-                value: true,
-                metadata: { context: requestBody.context },
-                variant: 'variantA',
-                reason: EvaluationSuccessReason.Static,
-              },
-              {
                 key: 'object-flag',
                 value: { complex: true, nested: { also: true }, refreshed: true },
+                metadata: { context: requestBody.context },
+              },
+              {
+                key: 'object-flag-2',
+                value: { complex: true, nested: { also: true } },
                 metadata: { context: requestBody.context },
               },
             ],

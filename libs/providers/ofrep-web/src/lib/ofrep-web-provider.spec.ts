@@ -1,5 +1,5 @@
 import { OfrepWebProvider } from './ofrep-web-provider';
-import TestLogger from './test-logger';
+import TestLogger from '../../test/test-logger';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
 import { ClientProviderEvents, ClientProviderStatus, OpenFeature } from '@openfeature/web-sdk';

@@ -30,14 +30,14 @@ import {
   OFREPForbiddenError,
   RequestOptions,
 } from '@openfeature/ofrep-core';
-import { EvaluationStatus } from './model/evaluation-status';
 import {
   InvalidContextError,
   ParseError,
   StandardResolutionReasons,
   TargetingKeyMissingError,
 } from '@openfeature/core';
-import { isResolutionError, ResolutionError } from './model/resolutionError';
+import { isResolutionError, ResolutionError } from './model/resolution-error';
+import { BulkEvaluationStatus, EvaluateFlagsResponse } from './model/evaluate-flags-response';
 
 export class OfrepWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 30000;
@@ -135,7 +135,7 @@ export class OfrepWebProvider implements Provider {
    * @throws ParseError if the API returned a 400 with the error code ParseError
    * @throws GeneralError if the API returned a 400 with an unknown error code
    */
-  private async _evaluateFlags(context?: EvaluationContext | undefined): Promise<EvaluationStatus> {
+  private async _evaluateFlags(context?: EvaluationContext | undefined): Promise<EvaluateFlagsResponse> {
     try {
       const evalReq: EvaluationRequest = {
         context,
@@ -150,7 +150,7 @@ export class OfrepWebProvider implements Provider {
       const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, options);
       if (response.httpStatus === 304) {
         // nothing has changed since last time, we are doing nothing
-        return EvaluationStatus.SUCCESS_NO_CHANGES;
+        return { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [] };
       }
 
       if (response.httpStatus === 400) {
@@ -179,9 +179,10 @@ export class OfrepWebProvider implements Provider {
             };
           }
         });
+        const listUpdatedFlags = this._getListUpdatedFlags(this._cache, newCache);
         this._cache = newCache;
         this._etag = response.httpResponse?.headers.get('etag');
-        return EvaluationStatus.SUCCESS_WITH_CHANGES;
+        return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
       }
       throw new GeneralError('Unexpected error happen during the evaluation');
     } catch (error) {
@@ -190,6 +191,38 @@ export class OfrepWebProvider implements Provider {
       }
       throw error;
     }
+  }
+
+  /**
+   * _getListUpdatedFlags is a function that will compare the old cache with the new cache and
+   * return the list of flags that have been updated / deleted / created.
+   * @param oldCache
+   * @param newCache
+   * @private
+   */
+  private _getListUpdatedFlags(
+    oldCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError },
+    newCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError },
+  ): string[] {
+    const changedKeys: string[] = [];
+    const oldKeys = Object.keys(oldCache);
+    const newKeys = Object.keys(newCache);
+
+    // Check for added or modified keys in newCache
+    for (const key in newCache) {
+      if (oldKeys.indexOf(key) === -1 || JSON.stringify(oldCache[key]) !== JSON.stringify(newCache[key])) {
+        changedKeys.push(key);
+      }
+    }
+
+    // Check for removed keys in oldCache
+    for (const key in oldCache) {
+      if (newKeys.indexOf(key) === -1) {
+        changedKeys.push(key);
+      }
+    }
+
+    return changedKeys;
   }
 
   /**
@@ -288,8 +321,11 @@ export class OfrepWebProvider implements Provider {
           return;
         }
         const res = await this._evaluateFlags(this._context);
-        if (res === EvaluationStatus.SUCCESS_WITH_CHANGES) {
-          this.events?.emit(ClientProviderEvents.ConfigurationChanged, { message: 'Flags updated' });
+        if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
+          this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
+            message: 'Flags updated',
+            flagsChanged: res.flags,
+          });
         }
       } catch (error) {
         this.events?.emit(ClientProviderEvents.Stale, { message: `Error while polling: ${error}` });
