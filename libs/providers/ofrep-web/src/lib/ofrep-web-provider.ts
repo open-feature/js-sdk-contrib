@@ -155,38 +155,35 @@ export class OfrepWebProvider implements Provider {
         return { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [] };
       }
 
-      if (response.httpStatus === 400) {
+      if (response.httpStatus !== 200) {
         handleEvaluationError(response);
       }
 
-      if (response.httpStatus === 200) {
-        const bulkSuccessResp = response.value;
-        const newCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
+      const bulkSuccessResp = response.value;
+      const newCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
 
-        bulkSuccessResp.flags?.forEach((evalResp: EvaluationResponse) => {
-          if (isEvaluationFailureResponse(evalResp)) {
-            newCache[evalResp.key] = {
-              errorCode: evalResp.errorCode,
-              errorDetails: evalResp.errorDetails,
-              reason: StandardResolutionReasons.ERROR,
-            };
-          }
+      bulkSuccessResp.flags?.forEach((evalResp: EvaluationResponse) => {
+        if (isEvaluationFailureResponse(evalResp)) {
+          newCache[evalResp.key] = {
+            errorCode: evalResp.errorCode,
+            errorDetails: evalResp.errorDetails,
+            reason: StandardResolutionReasons.ERROR,
+          };
+        }
 
-          if (isEvaluationSuccessResponse(evalResp) && evalResp.key) {
-            newCache[evalResp.key] = {
-              value: evalResp.value,
-              flagMetadata: evalResp.metadata as FlagMetadata,
-              reason: evalResp.reason,
-              variant: evalResp.variant,
-            };
-          }
-        });
-        const listUpdatedFlags = this._getListUpdatedFlags(this._cache, newCache);
-        this._cache = newCache;
-        this._etag = response.httpResponse?.headers.get('etag');
-        return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
-      }
-      throw new GeneralError('Unexpected error happen during the evaluation');
+        if (isEvaluationSuccessResponse(evalResp) && evalResp.key) {
+          newCache[evalResp.key] = {
+            value: evalResp.value,
+            flagMetadata: evalResp.metadata as FlagMetadata,
+            reason: evalResp.reason,
+            variant: evalResp.variant,
+          };
+        }
+      });
+      const listUpdatedFlags = this._getListUpdatedFlags(this._cache, newCache);
+      this._cache = newCache;
+      this._etag = response.httpResponse?.headers.get('etag');
+      return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError) {
         this._setRetryAfter(error);
