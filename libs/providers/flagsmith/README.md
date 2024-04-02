@@ -14,6 +14,7 @@ The Flagsmith Provider can be created with the standard [initialization options]
 
 ```javascript
 import { FlagsmithProvider } from '@openfeature/flagsmith-provider';
+import { OpenFeature } from '@openfeature/web-sdk';
 
 const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
     environmentID: '<ENVIRONMENT_ID>'
@@ -30,6 +31,7 @@ Note: In order to use the React Native implementation of OpenFeature you will ne
 ```javascript
 import flagsmith from 'react-native-flagsmith' // Could also be flagsmith/isomorphic, flagsmith-es or createFlagsmithInstance()
 import { FlagsmithProvider } from '@openfeature/flagsmith-provider';
+import { OpenFeature } from '@openfeature/web-sdk';
 
 const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
     environmentID: '<ENVIRONMENT_ID>',
