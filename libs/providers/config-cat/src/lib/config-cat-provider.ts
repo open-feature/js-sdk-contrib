@@ -218,14 +218,14 @@ type PrimitiveTypeName = 'string' | 'boolean' | 'number' | 'object' | 'undefined
 type PrimitiveType<T> = T extends 'string'
   ? string
   : T extends 'boolean'
-  ? boolean
-  : T extends 'number'
-  ? number
-  : T extends 'object'
-  ? object
-  : T extends 'undefined'
-  ? undefined
-  : unknown;
+    ? boolean
+    : T extends 'number'
+      ? number
+      : T extends 'object'
+        ? object
+        : T extends 'undefined'
+          ? undefined
+          : unknown;
 
 function isType<T extends PrimitiveTypeName>(type: T, value: unknown): value is PrimitiveType<T> {
   return typeof value === type;

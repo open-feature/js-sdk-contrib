@@ -19,8 +19,8 @@ export class InProcessService implements Service {
     this._dataFetcher = dataFetcher
       ? dataFetcher
       : config.offlineFlagSourcePath
-      ? new FileFetch(config.offlineFlagSourcePath, logger)
-      : new GrpcFetch(config, undefined, logger);
+        ? new FileFetch(config.offlineFlagSourcePath, logger)
+        : new GrpcFetch(config, undefined, logger);
   }
 
   connect(
