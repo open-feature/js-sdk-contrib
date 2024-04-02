@@ -17,6 +17,9 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 400 });
       }
 
+      const authHeader = info.request.headers.get('Authorization');
+      const expectedAuthHeader = requestBody.context?.['expectedAuthHeader'] ?? null;
+
       const errors = requestBody.context?.['errors'] as Record<string, boolean> | undefined;
       if (errors?.['network']) {
         throw HttpResponse.error();
@@ -26,7 +29,7 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 400 });
       }
 
-      if (errors?.['401']) {
+      if (errors?.['401'] || expectedAuthHeader !== authHeader) {
         throw HttpResponse.text(undefined, { status: 401 });
       }
 
@@ -35,7 +38,37 @@ export const handlers = [
       }
 
       if (errors?.['429']) {
-        throw HttpResponse.text(undefined, { status: 429 });
+        throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': '2000' } });
+      }
+
+      if (errors?.['parseError']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.ParseError,
+          },
+          { status: 400 },
+        );
+      }
+
+      if (errors?.['targetingMissing']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+          },
+          { status: 400 },
+        );
+      }
+
+      if (errors?.['invalidContext']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.InvalidContext,
+          },
+          { status: 400 },
+        );
       }
 
       if (errors?.['notFound']) {
@@ -48,11 +81,11 @@ export const handlers = [
         );
       }
 
-      if (errors?.['targetingMissing']) {
+      if (errors?.['general']) {
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+            errorCode: EvaluationFailureErrorCode.General,
           },
           { status: 400 },
         );
@@ -78,6 +111,9 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 400 });
       }
 
+      const authHeader = info.request.headers.get('Authorization');
+      const expectedAuthHeader = requestBody.context?.['expectedAuthHeader'] ?? null;
+
       const errors = requestBody.context?.['errors'] as Record<string, boolean> | undefined;
       if (errors?.['network']) {
         throw HttpResponse.error();
@@ -87,7 +123,7 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 400 });
       }
 
-      if (errors?.['401']) {
+      if (errors?.['401'] || expectedAuthHeader !== authHeader) {
         throw HttpResponse.text(undefined, { status: 401 });
       }
 
@@ -96,37 +132,178 @@ export const handlers = [
       }
 
       if (errors?.['429']) {
-        throw HttpResponse.text(undefined, { status: 429 });
+        throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': '1' } });
+      }
+
+      if (errors?.['parseError']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.ParseError,
+          },
+          { status: 400 },
+        );
       }
 
       if (errors?.['targetingMissing']) {
-        return HttpResponse.json<BulkEvaluationResponse>(
+        return HttpResponse.json<EvaluationFailureResponse>(
           {
+            key: info.params.key,
             errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
           },
           { status: 400 },
         );
       }
 
+      if (errors?.['invalidContext']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.InvalidContext,
+          },
+          { status: 400 },
+        );
+      }
+
+      if (errors?.['notFound']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.FlagNotFound,
+          },
+          { status: 404 },
+        );
+      }
+
+      if (errors?.['general']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.General,
+          },
+          { status: 400 },
+        );
+
+        if (errors?.['flagInError']) {
+          return HttpResponse.json<BulkEvaluationResponse>(
+            {
+              flags: [
+                {
+                  key: 'bool-flag',
+                  value: true,
+                  metadata: { context: requestBody.context },
+                  variant: 'variantA',
+                  reason: EvaluationSuccessReason.Static,
+                },
+                {
+                  key: 'parse-error',
+                  errorCode: EvaluationFailureErrorCode.ParseError,
+                  errorDetails: 'custom error details',
+                },
+                {
+                  key: 'flag-not-found',
+                  errorCode: EvaluationFailureErrorCode.FlagNotFound,
+                  errorDetails: 'custom error details',
+                },
+                {
+                  key: 'targeting-key-missing',
+                  errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+                  errorDetails: 'custom error details',
+                },
+                {
+                  key: 'targeting-key-missing',
+                  errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+                  errorDetails: 'custom error details',
+                },
+                {
+                  key: 'invalid-context',
+                  errorCode: EvaluationFailureErrorCode.InvalidContext,
+                  errorDetails: 'custom error details',
+                },
+                {
+                  key: 'general-error',
+                  errorCode: EvaluationFailureErrorCode.General,
+                  errorDetails: 'custom error details',
+                },
+                {
+                  key: 'unknown-error',
+                  errorCode: 'UNKNOWN_ERROR' as EvaluationFailureErrorCode,
+                  errorDetails: 'custom error details',
+                },
+              ],
+            },
+            { headers: { etag: '123' } },
+          );
+        }
+      }
+
       const etag = info.request.headers.get('If-None-Match');
+      const changeConfig = requestBody.context?.['changeConfig'] as boolean | undefined;
+      if (etag && changeConfig) {
+        return HttpResponse.json<BulkEvaluationResponse>(
+          {
+            flags: [
+              {
+                key: 'object-flag',
+                value: { complex: true, nested: { also: true }, refreshed: true },
+                metadata: { context: requestBody.context },
+              },
+              {
+                key: 'object-flag-2',
+                value: { complex: true, nested: { also: true } },
+                metadata: { context: requestBody.context },
+              },
+            ],
+          },
+          { headers: { etag: '1234' } },
+        );
+      }
+
+      if (requestBody.context?.['contextChanged'] as boolean) {
+        return HttpResponse.json<BulkEvaluationResponse>(
+          {
+            flags: [
+              {
+                key: 'bool-flag',
+                value: true,
+                metadata: { context: requestBody.context },
+                variant: 'variantA',
+                reason: EvaluationSuccessReason.Static,
+              },
+              {
+                key: 'object-flag',
+                value: { complex: true, nested: { also: true }, contextChange: true },
+                metadata: { context: requestBody.context },
+              },
+            ],
+          },
+          { headers: { etag: '123' } },
+        );
+      }
+
       if (etag) {
         return new HttpResponse(undefined, { status: 304 }) as StrictResponse<undefined>;
       }
 
-      return HttpResponse.json<BulkEvaluationResponse>({
-        flags: [
-          {
-            key: 'bool-flag',
-            value: true,
-            metadata: { context: requestBody.context },
-          },
-          {
-            key: 'object-flag',
-            value: { complex: true, nested: { also: true } },
-            metadata: { context: requestBody.context },
-          },
-        ],
-      });
+      return HttpResponse.json<BulkEvaluationResponse>(
+        {
+          flags: [
+            {
+              key: 'bool-flag',
+              value: true,
+              metadata: { context: requestBody.context },
+              variant: 'variantA',
+              reason: EvaluationSuccessReason.Static,
+            },
+            {
+              key: 'object-flag',
+              value: { complex: true, nested: { also: true } },
+              metadata: { context: requestBody.context },
+            },
+          ],
+        },
+        { headers: { etag: '123' } },
+      );
     },
   ),
 ];

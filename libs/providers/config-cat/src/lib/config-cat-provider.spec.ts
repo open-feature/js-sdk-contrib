@@ -10,14 +10,13 @@ import {
   OverrideBehaviour,
   PollingMode,
 } from 'configcat-js-ssr';
-
-import { IEventEmitter } from 'configcat-common/lib/EventEmitter';
+import { EventEmitter } from 'events';
 
 describe('ConfigCatProvider', () => {
   const targetingKey = 'abc';
 
   let provider: ConfigCatProvider;
-  let configCatEmitter: IEventEmitter<HookEvents>;
+  let configCatEmitter: EventEmitter<HookEvents>;
 
   const values = {
     booleanFalse: false,
