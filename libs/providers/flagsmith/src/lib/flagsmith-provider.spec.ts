@@ -10,7 +10,7 @@ import {
   exampleStringFlagName,
   getFetchErrorMock,
 } from './flagsmith.mocks';
-import { OpenFeature, ProviderEvents, ProviderStatus } from '@openfeature/web-sdk';
+import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from 'flagsmith';
 
 const logger = {
@@ -285,11 +285,9 @@ describe('FlagsmithProvider', () => {
         return OpenFeature.getClient().getBooleanValue(exampleBooleanFlagName, false);
       });
       const errorHandler = jest.fn();
-      expect(provider.status).toEqual(ProviderStatus.NOT_READY);
       OpenFeature.addHandler(ProviderEvents.Ready, readyHandler);
       OpenFeature.addHandler(ProviderEvents.Error, errorHandler);
       await OpenFeature.setProviderAndWait(provider);
-      expect(provider.status).toEqual(ProviderStatus.READY);
       expect(readyHandler).toHaveBeenCalled();
       expect(readyHandler).toHaveReturnedWith(true);
       expect(errorHandler).toHaveBeenCalledTimes(0);
@@ -299,11 +297,9 @@ describe('FlagsmithProvider', () => {
       const provider = new FlagsmithProvider({ ...config, environmentID: '' });
       const readyHandler = jest.fn();
       const errorHandler = jest.fn();
-      expect(provider.status).toEqual(ProviderStatus.NOT_READY);
       OpenFeature.addHandler(ProviderEvents.Ready, readyHandler);
       OpenFeature.addHandler(ProviderEvents.Error, errorHandler);
       await OpenFeature.setProviderAndWait(provider);
-      expect(provider.status).toEqual(ProviderStatus.ERROR);
       expect(errorHandler).toHaveBeenCalledTimes(1);
     });
     it('should call the stale handler when context changed', async () => {
@@ -312,11 +308,8 @@ describe('FlagsmithProvider', () => {
       await OpenFeature.setProviderAndWait(provider);
       const staleHandler = jest.fn();
       OpenFeature.addHandler(ProviderEvents.Stale, staleHandler);
-      expect(provider.status).toEqual(ProviderStatus.READY);
       const contextChange = OpenFeature.setContext({ targetingKey: 'test' });
-      expect(provider.status).toEqual(ProviderStatus.STALE);
       await contextChange;
-      expect(provider.status).toEqual(ProviderStatus.READY);
     });
   });
   describe('context', () => {

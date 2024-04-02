@@ -7,7 +7,6 @@ import {
   Provider,
   ProviderEvents,
   ProviderMetadata,
-  ProviderStatus,
   ResolutionDetails,
   ResolutionReason,
 } from '@openfeature/web-sdk';
@@ -23,8 +22,6 @@ export class FlagsmithProvider implements Provider {
   private _client: IFlagsmith;
   //The Open Feature logger to use
   private _logger?: Logger;
-  //The status of the provider
-  private _status = ProviderStatus.NOT_READY;
   //The configuration used for the Flagsmith SDK
   private _config: IInitConfig;
   // The Open Feature event emitter
@@ -40,14 +37,6 @@ export class FlagsmithProvider implements Provider {
     this._config = config;
   }
 
-  get status() {
-    return this._status;
-  }
-
-  set status(status: ProviderStatus) {
-    this._status = status;
-  }
-
   async initialize(context?: EvaluationContext & Partial<IState>) {
     const identity = context?.targetingKey;
 
@@ -59,7 +48,6 @@ export class FlagsmithProvider implements Provider {
         ...defaultState,
         ...(context || {}),
       });
-      this._status = ProviderStatus.STALE;
       this.events.emit(ProviderEvents.Stale, { message: 'context has changed' });
       return this._client.getFlags();
     }
@@ -67,14 +55,13 @@ export class FlagsmithProvider implements Provider {
     const serverState = this._config.state;
     if (serverState) {
       this._client.setState(serverState);
-      this.status = ProviderStatus.READY;
+      this.events.emit(ProviderEvents.Ready, { message: 'flags provided by SSR state' });
     }
     return this._client.init({
       ...this._config,
       ...context,
       identity,
       onChange: (previousFlags, params, loadingState) => {
-        this.status = ProviderStatus.READY;
         this.events.emit(ProviderEvents.Ready, {
           message: 'Flags ready',
         });
@@ -86,7 +73,6 @@ export class FlagsmithProvider implements Provider {
         this._config.onChange?.(previousFlags, params, loadingState);
       },
       onError: (error) => {
-        this.status = ProviderStatus.ERROR;
         this.errorHandler(error, 'Initialize');
       },
     });
@@ -111,10 +97,6 @@ export class FlagsmithProvider implements Provider {
 
   resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T) {
     return this.evaluate<T>(flagKey, 'object', defaultValue);
-  }
-
-  async onClose(): Promise<void> {
-    this.status = ProviderStatus.NOT_READY;
   }
 
   /**
