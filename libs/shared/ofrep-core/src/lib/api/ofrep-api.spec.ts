@@ -195,6 +195,8 @@ describe('OFREPApi', () => {
             key: 'bool-flag',
             metadata: { context: { key1: 'value1', targetingKey: 'user-1' } },
             value: true,
+            reason: EvaluationSuccessReason.Static,
+            variant: 'variantA',
           },
           {
             key: 'object-flag',
@@ -260,6 +262,8 @@ describe('OFREPApi', () => {
             key: 'bool-flag',
             metadata: {},
             value: true,
+            reason: EvaluationSuccessReason.Static,
+            variant: 'variantA',
           },
           {
             key: 'object-flag',
