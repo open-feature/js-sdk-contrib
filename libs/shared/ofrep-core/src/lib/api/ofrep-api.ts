@@ -148,7 +148,7 @@ export function handleEvaluationError(
     case EvaluationFailureErrorCode.FlagNotFound:
       throw new FlagNotFoundError(details);
     case EvaluationFailureErrorCode.General:
-      throw new TargetingKeyMissingError(details);
+      throw new GeneralError(details);
     default:
       throw new GeneralError(details);
   }
