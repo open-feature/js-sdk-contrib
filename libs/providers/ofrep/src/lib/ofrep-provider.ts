@@ -23,11 +23,12 @@ export class OFREPProvider implements Provider {
 
   readonly runsOn = 'server';
   readonly metadata = {
-    name: OFREPProvider.name,
+    name: 'OpenFeature Remote Evaluation Protocol',
   };
 
   constructor(private options: OFREPProviderOptions) {
     try {
+      // Cannot use URL.canParse as it is only available from Node 19.x
       new URL(this.options.baseUrl);
     } catch {
       throw new Error(`The given OFREP URL "${this.options.baseUrl}" is not a valid URL.`);
