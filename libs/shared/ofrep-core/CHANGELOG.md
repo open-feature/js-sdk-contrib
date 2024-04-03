@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.5-experimental](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.0.4-experimental...ofrep-core-v0.0.5-experimental) (2024-04-02)
+
+
+### ✨ New Features
+
+* **ofrep:** moves base options to ofrep-core ([#834](https://github.com/open-feature/js-sdk-contrib/issues/834)) ([474059c](https://github.com/open-feature/js-sdk-contrib/commit/474059c207067e437a698a12582582d8b567aabf))
+
+## [0.0.4-experimental](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.0.3-experimental...ofrep-core-v0.0.4-experimental) (2024-04-02)
+
+
+### 🧹 Chore
+
+* **ofrep:** add more errors to msw tests ([#832](https://github.com/open-feature/js-sdk-contrib/issues/832)) ([c738d85](https://github.com/open-feature/js-sdk-contrib/commit/c738d8576405539b9a2e8f13702b2c35ded9609e))
+
 ## [0.0.3-experimental](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.0.2-experimental...ofrep-core-v0.0.3-experimental) (2024-03-27)
 
 

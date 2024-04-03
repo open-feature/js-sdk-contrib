@@ -7,7 +7,6 @@ import {
   EvaluationResponse,
   EvaluationSuccessReason,
 } from '../lib';
-import { context } from '@opentelemetry/api';
 
 export const handlers = [
   http.post<{ key: string }, EvaluationRequest, EvaluationResponse>(
@@ -18,6 +17,9 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 400 });
       }
 
+      const authHeader = info.request.headers.get('Authorization');
+      const expectedAuthHeader = requestBody.context?.['expectedAuthHeader'] ?? null;
+
       const errors = requestBody.context?.['errors'] as Record<string, boolean> | undefined;
       if (errors?.['network']) {
         throw HttpResponse.error();
@@ -27,7 +29,7 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 400 });
       }
 
-      if (errors?.['401']) {
+      if (errors?.['401'] || expectedAuthHeader !== authHeader) {
         throw HttpResponse.text(undefined, { status: 401 });
       }
 
@@ -37,6 +39,36 @@ export const handlers = [
 
       if (errors?.['429']) {
         throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': '2000' } });
+      }
+
+      if (errors?.['parseError']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.ParseError,
+          },
+          { status: 400 },
+        );
+      }
+
+      if (errors?.['targetingMissing']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+          },
+          { status: 400 },
+        );
+      }
+
+      if (errors?.['invalidContext']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.InvalidContext,
+          },
+          { status: 400 },
+        );
       }
 
       if (errors?.['notFound']) {
@@ -49,11 +81,11 @@ export const handlers = [
         );
       }
 
-      if (errors?.['targetingMissing']) {
+      if (errors?.['general']) {
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+            errorCode: EvaluationFailureErrorCode.General,
           },
           { status: 400 },
         );
@@ -79,6 +111,9 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 400 });
       }
 
+      const authHeader = info.request.headers.get('Authorization');
+      const expectedAuthHeader = requestBody.context?.['expectedAuthHeader'] ?? null;
+
       const errors = requestBody.context?.['errors'] as Record<string, boolean> | undefined;
       if (errors?.['network']) {
         throw HttpResponse.error();
@@ -88,7 +123,7 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 400 });
       }
 
-      if (errors?.['401']) {
+      if (errors?.['401'] || expectedAuthHeader !== authHeader) {
         throw HttpResponse.text(undefined, { status: 401 });
       }
 
@@ -100,9 +135,20 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': '1' } });
       }
 
-      if (errors?.['targetingMissing']) {
-        return HttpResponse.json<BulkEvaluationResponse>(
+      if (errors?.['parseError']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
           {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.ParseError,
+          },
+          { status: 400 },
+        );
+      }
+
+      if (errors?.['targetingMissing']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
             errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
           },
           { status: 400 },
@@ -110,17 +156,30 @@ export const handlers = [
       }
 
       if (errors?.['invalidContext']) {
-        return HttpResponse.json<BulkEvaluationResponse>(
+        return HttpResponse.json<EvaluationFailureResponse>(
           {
+            key: info.params.key,
             errorCode: EvaluationFailureErrorCode.InvalidContext,
           },
           { status: 400 },
         );
       }
-      if (errors?.['parseError']) {
-        return HttpResponse.json<BulkEvaluationResponse>(
+
+      if (errors?.['notFound']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
           {
-            errorCode: EvaluationFailureErrorCode.ParseError,
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.FlagNotFound,
+          },
+          { status: 404 },
+        );
+      }
+
+      if (errors?.['general']) {
+        return HttpResponse.json<EvaluationFailureResponse>(
+          {
+            key: info.params.key,
+            errorCode: EvaluationFailureErrorCode.General,
           },
           { status: 400 },
         );
