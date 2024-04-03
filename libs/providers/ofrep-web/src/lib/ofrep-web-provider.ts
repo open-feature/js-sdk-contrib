@@ -70,6 +70,28 @@ export class OfrepWebProvider implements Provider {
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
   }
 
+  /**
+   * Initialize the provider, it will evaluate the flags and start the polling if it is not disabled.
+   * @param context - the context to use for the evaluation
+   */
+  async initialize?(context?: EvaluationContext | undefined): Promise<void> {
+    try {
+      this._context = context;
+      await this._evaluateFlags(context);
+
+      if (this._pollingInterval > 0) {
+        this.startPolling();
+      }
+
+      this._logger?.debug(`${this.metadata.name} initialized successfully`);
+    } catch (error) {
+      if (error instanceof OFREPApiUnauthorizedError || error instanceof OFREPForbiddenError) {
+        throw new ProviderFatalError('Initialization failed', error);
+      }
+      throw error;
+    }
+  }
+
   resolveBooleanEvaluation(flagKey: string): ResolutionDetails<boolean> {
     return this.evaluate(flagKey, 'boolean');
   }
@@ -240,27 +262,6 @@ export class OfrepWebProvider implements Provider {
           this._retryPollingAfter = retryAfterDate;
         }
       }
-    }
-  }
-  /**
-   * Initialize the provider, it will evaluate the flags and start the polling if it is not disabled.
-   * @param context - the context to use for the evaluation
-   */
-  async initialize?(context?: EvaluationContext | undefined): Promise<void> {
-    try {
-      this._context = context;
-      await this._evaluateFlags(context);
-
-      if (this._pollingInterval > 0) {
-        this.startPolling();
-      }
-
-      this._logger?.debug(`${this.metadata.name} initialized successfully`);
-    } catch (error) {
-      if (error instanceof OFREPApiUnauthorizedError || error instanceof OFREPForbiddenError) {
-        throw new ProviderFatalError('Initialization failed', error);
-      }
-      throw error;
     }
   }
 
