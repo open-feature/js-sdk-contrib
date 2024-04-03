@@ -4,9 +4,12 @@ import {
   handleEvaluationError,
   OFREPApi,
   OFREPApiEvaluationResult,
+  OFREPProviderBaseOptions,
+  toRequestOptions,
   toResolutionDetails,
 } from '@openfeature/ofrep-core';
-import { OFREPProviderOptions, toRequestOptions } from './ofrep-provider-options';
+
+export type OFREPProviderOptions = OFREPProviderBaseOptions;
 
 export class OFREPProvider implements Provider {
   private ofrepApi: OFREPApi;
@@ -65,7 +68,7 @@ export class OFREPProvider implements Provider {
     }
 
     if (typeof result.value.value !== typeof defaultValue) {
-      throw new TypeMismatchError();
+      throw new TypeMismatchError(`Expected flag type ${typeof defaultValue} but got ${typeof result.value.value}`);
     }
 
     return toResolutionDetails(result.value);

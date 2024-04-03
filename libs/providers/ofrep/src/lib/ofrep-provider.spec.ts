@@ -1,8 +1,7 @@
-import { OFREPProvider } from './ofrep-provider';
+import { OFREPProvider, OFREPProviderOptions } from './ofrep-provider';
 
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
-import { OFREPProviderOptions } from './ofrep-provider-options';
 import {
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
