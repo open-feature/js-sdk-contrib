@@ -1,4 +1,11 @@
-import { EvaluationContext, JsonValue, Provider, ResolutionDetails, TypeMismatchError } from '@openfeature/server-sdk';
+import {
+  EvaluationContext,
+  JsonValue,
+  Provider,
+  ProviderFatalError,
+  ResolutionDetails,
+  TypeMismatchError,
+} from '@openfeature/server-sdk';
 import {
   EvaluationFlagValue,
   handleEvaluationError,
@@ -20,6 +27,12 @@ export class OFREPProvider implements Provider {
   };
 
   constructor(private options: OFREPProviderOptions) {
+    try {
+      new URL(this.options.baseUrl);
+    } catch {
+      throw new Error(`The given OFREP URL "${this.options.baseUrl}" is not a valid URL.`);
+    }
+
     this.ofrepApi = new OFREPApi(options.baseUrl, options.fetchImplementation);
   }
 

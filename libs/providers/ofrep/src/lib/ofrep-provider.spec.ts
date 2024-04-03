@@ -35,6 +35,10 @@ describe('OFREPProvider should', () => {
     expect(new OFREPProvider(defaultOptions)).toBeInstanceOf(OFREPProvider);
   });
 
+  it('throw if an invalid URL is given', () => {
+    expect(() => new OFREPProvider({ baseUrl: 'non-url' })).toThrow();
+  });
+
   it('send auth header from static headers', async () => {
     await expect(provider.resolveBooleanEvaluation('my-flag', false, { expectedAuthHeader: 'secret' })).rejects.toThrow(
       OFREPApiUnauthorizedError,
