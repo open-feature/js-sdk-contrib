@@ -41,7 +41,7 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': '2000' } });
       }
 
-      if (typeof errors?.['429'] === "string") {
+      if (typeof errors?.['429'] === 'string') {
         throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': errors?.['429'] } });
       }
 

@@ -62,8 +62,8 @@ describe('OFREPApi', () => {
     });
 
     it('parse numeric Retry-After header correctly on 429 response', async () => {
-      jest.useFakeTimers({})
-      jest.setSystemTime(new Date('2018-01-27'))
+      jest.useFakeTimers({});
+      jest.setSystemTime(new Date('2018-01-27'));
 
       try {
         await api.postEvaluateFlags('my-flag', { context: { errors: { 429: true } } });
@@ -73,32 +73,32 @@ describe('OFREPApi', () => {
         }
 
         expect(error.retryAfterSeconds).toEqual(2000);
-        expect(error.retryAfterDate).toEqual(new Date("2018-01-27T00:33:20.000Z"));
+        expect(error.retryAfterDate).toEqual(new Date('2018-01-27T00:33:20.000Z'));
       }
     });
 
     it('parse date Retry-After header correctly on 429 response', async () => {
-      jest.useFakeTimers({})
-      jest.setSystemTime(new Date('2018-01-27'))
+      jest.useFakeTimers({});
+      jest.setSystemTime(new Date('2018-01-27'));
 
       try {
-        await api.postEvaluateFlags('my-flag', { context: { errors: { 429: "Sat, 27 Jan 2018 07:28:00 GMT" } } });
+        await api.postEvaluateFlags('my-flag', { context: { errors: { 429: 'Sat, 27 Jan 2018 07:28:00 GMT' } } });
       } catch (error) {
         if (!(error instanceof OFREPApiTooManyRequestsError)) {
           throw new Error('Expected OFREPApiTooManyRequestsError');
         }
 
         expect(error.retryAfterSeconds).toEqual(null);
-        expect(error.retryAfterDate).toEqual(new Date("2018-01-27T07:28:00.000Z"));
+        expect(error.retryAfterDate).toEqual(new Date('2018-01-27T07:28:00.000Z'));
       }
     });
 
     it('ignore Retry-After header if it is not valid on 429 response', async () => {
-      jest.useFakeTimers({})
-      jest.setSystemTime(new Date('2018-01-27'))
+      jest.useFakeTimers({});
+      jest.setSystemTime(new Date('2018-01-27'));
 
       try {
-        await api.postEvaluateFlags('my-flag', { context: { errors: { 429: "abcdefg" } } });
+        await api.postEvaluateFlags('my-flag', { context: { errors: { 429: 'abcdefg' } } });
       } catch (error) {
         if (!(error instanceof OFREPApiTooManyRequestsError)) {
           throw new Error('Expected OFREPApiTooManyRequestsError');
