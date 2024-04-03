@@ -42,8 +42,8 @@ import { BulkEvaluationStatus, EvaluateFlagsResponse } from './model/evaluate-fl
 export class OfrepWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 30000;
 
-  metadata = {
-    name: OfrepWebProvider.name,
+  readonly metadata = {
+    name: 'OpenFeature Remote Evaluation Protocol Web Provider',
   };
   readonly runsOn = 'client';
   events = new OpenFeatureEventEmitter();
@@ -63,10 +63,17 @@ export class OfrepWebProvider implements Provider {
   private _pollingIntervalId?: number;
 
   constructor(options: OfrepWebProviderOptions, logger?: Logger) {
+    try {
+      // Cannot use URL.canParse as it is only available from Node 19.x
+      new URL(options.baseUrl);
+    } catch {
+      throw new Error(`The given OFREP URL "${options.baseUrl}" is not a valid URL.`);
+    }
+
     this._options = options;
     this._logger = logger;
     this._etag = null;
-    this._ofrepAPI = new OFREPApi(this._options.baseUrl);
+    this._ofrepAPI = new OFREPApi(this._options.baseUrl, this._options.fetchImplementation);
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
   }
 

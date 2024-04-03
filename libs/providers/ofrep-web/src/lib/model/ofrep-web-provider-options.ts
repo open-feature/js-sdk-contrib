@@ -1,9 +1,6 @@
-export interface OfrepWebProviderOptions {
-  /**
-   * baseUrl is the base URL of the OFREP API.
-   */
-  baseUrl: string;
+import { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
 
+export type OfrepWebProviderOptions = OFREPProviderBaseOptions & {
   /**
    * pollInterval is the time in milliseconds to wait between we call the OFREP
    * API to get the latest evaluation of your flags.
@@ -12,4 +9,4 @@ export interface OfrepWebProviderOptions {
    * Default: 30000
    */
   pollInterval?: number; // in milliseconds
-}
+};
