@@ -37,8 +37,12 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 403 });
       }
 
-      if (errors?.['429']) {
+      if (errors?.['429'] === true) {
         throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': '2000' } });
+      }
+
+      if (typeof errors?.['429'] === 'string') {
+        throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': errors?.['429'] } });
       }
 
       if (errors?.['parseError']) {
