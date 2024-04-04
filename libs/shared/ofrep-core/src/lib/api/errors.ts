@@ -91,7 +91,7 @@ export class OFREPApiTooManyRequestsError extends OFREPApiError {
         return null;
       }
 
-      return new Date(Date.now() + this.retryAfterSeconds * 1000);
+      return new Date(this.requestTime.getTime() + this.retryAfterSeconds * 1000);
     }
 
     const date = new Date(this.retryAfterHeader);
