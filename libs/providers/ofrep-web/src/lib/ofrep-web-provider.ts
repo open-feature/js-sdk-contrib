@@ -38,6 +38,7 @@ import {
 } from '@openfeature/core';
 import { isResolutionError, ResolutionError } from './model/resolution-error';
 import { BulkEvaluationStatus, EvaluateFlagsResponse } from './model/evaluate-flags-response';
+import { inMemoryCache } from './model/in-memory-cache';
 
 export class OFREPWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 30000;
@@ -58,7 +59,7 @@ export class OFREPWebProvider implements Provider {
   private _etag: string | null;
   private _pollingInterval: number;
   private _retryPollingAfter: Date | undefined;
-  private _cache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
+  private _cache: inMemoryCache = {};
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
 
@@ -189,7 +190,7 @@ export class OFREPWebProvider implements Provider {
       }
 
       const bulkSuccessResp = response.value;
-      const newCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError } = {};
+      const newCache: inMemoryCache = {};
 
       bulkSuccessResp.flags?.forEach((evalResp: EvaluationResponse) => {
         if (isEvaluationFailureResponse(evalResp)) {
@@ -228,10 +229,7 @@ export class OFREPWebProvider implements Provider {
    * @param newCache
    * @private
    */
-  private _getListUpdatedFlags(
-    oldCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError },
-    newCache: { [key: string]: ResolutionDetails<FlagValue> | ResolutionError },
-  ): string[] {
+  private _getListUpdatedFlags(oldCache: inMemoryCache, newCache: inMemoryCache): string[] {
     const changedKeys: string[] = [];
     const oldKeys = Object.keys(oldCache);
     const newKeys = Object.keys(newCache);
