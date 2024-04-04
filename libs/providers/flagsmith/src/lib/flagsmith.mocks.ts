@@ -1,5 +1,5 @@
 import { IFlagsmithResponse, IInitConfig } from 'flagsmith/types';
-type Flatten<T> = T extends any[] ? T[number] : T;
+type Flatten<T> = T extends unknown[] ? T[number] : T;
 type FeatureResponse = Flatten<IFlagsmithResponse['flags']>;
 type Callback = (err: Error | null, val: string | null) => void;
 
