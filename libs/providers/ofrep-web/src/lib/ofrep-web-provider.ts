@@ -15,7 +15,7 @@ import {
   ResolutionDetails,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
-import { OfrepWebProviderOptions } from './model/ofrep-web-provider-options';
+import { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
 import {
   EvaluationFailureErrorCode,
   EvaluationRequest,
@@ -53,7 +53,7 @@ export class OFREPWebProvider implements Provider {
   // logger is the Open Feature logger to use
   private _logger?: Logger;
   // _options is the options used to configure the provider.
-  private _options: OfrepWebProviderOptions;
+  private _options: OFREPWebProviderOptions;
 
   private _ofrepAPI: OFREPApi;
   private _etag: string | null;
@@ -63,7 +63,7 @@ export class OFREPWebProvider implements Provider {
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
 
-  constructor(options: OfrepWebProviderOptions, logger?: Logger) {
+  constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     try {
       // Cannot use URL.canParse as it is only available from Node 19.x
       new URL(options.baseUrl);
