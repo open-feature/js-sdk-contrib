@@ -39,7 +39,7 @@ import {
 import { isResolutionError, ResolutionError } from './model/resolution-error';
 import { BulkEvaluationStatus, EvaluateFlagsResponse } from './model/evaluate-flags-response';
 
-export class OfrepWebProvider implements Provider {
+export class OFREPWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 30000;
 
   readonly metadata = {

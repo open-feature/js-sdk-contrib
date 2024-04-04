@@ -1,4 +1,4 @@
-import { OfrepWebProvider } from './ofrep-web-provider';
+import { OFREPWebProvider } from './ofrep-web-provider';
 import TestLogger from '../../test/test-logger';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
@@ -22,7 +22,7 @@ describe('OFREPWebProvider', () => {
 
   it('should call the READY handler, when the provider is ready', async () => {
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext(defaultContext);
     OpenFeature.setProvider(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -37,7 +37,7 @@ describe('OFREPWebProvider', () => {
 
   it('should be in FATAL status if 401 error during initialise', async () => {
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext({ ...defaultContext, errors: { 401: true } });
     OpenFeature.setProvider(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -51,7 +51,7 @@ describe('OFREPWebProvider', () => {
 
   it('should be in FATAL status if 403 error during initialise', async () => {
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext({ ...defaultContext, errors: { 403: true } });
     OpenFeature.setProvider(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -70,7 +70,7 @@ describe('OFREPWebProvider', () => {
 
   it('should be in ERROR status if 429 error during initialise', async () => {
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext({ ...defaultContext, errors: { 429: true } });
     OpenFeature.setProvider(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -89,7 +89,7 @@ describe('OFREPWebProvider', () => {
 
   it('should be in ERROR status if targetingKey is missing', async () => {
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext({ ...defaultContext, errors: { targetingMissing: true } });
     OpenFeature.setProvider(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -108,7 +108,7 @@ describe('OFREPWebProvider', () => {
 
   it('should be in ERROR status if invalid context', async () => {
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext({ ...defaultContext, errors: { invalidContext: true } });
     OpenFeature.setProvider(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -127,7 +127,7 @@ describe('OFREPWebProvider', () => {
 
   it('should be in ERROR status if parse error', async () => {
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext({ ...defaultContext, errors: { parseError: true } });
     OpenFeature.setProvider(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -146,7 +146,7 @@ describe('OFREPWebProvider', () => {
 
   it('should return a FLAG_NOT_FOUND error if the flag does not exist', async () => {
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext(defaultContext);
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -159,7 +159,7 @@ describe('OFREPWebProvider', () => {
   it('should return EvaluationDetails if the flag exists', async () => {
     const flagKey = 'bool-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext(defaultContext);
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -177,7 +177,7 @@ describe('OFREPWebProvider', () => {
   it('should return ParseError if the API return the error', async () => {
     const flagKey = 'parse-error';
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext({ ...defaultContext, errors: { flagInError: true } });
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -196,7 +196,7 @@ describe('OFREPWebProvider', () => {
   it('should send a configuration changed event, when new flag is send', async () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL, pollInterval: 50 }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: 50 }, new TestLogger());
     await OpenFeature.setContext({ ...defaultContext, changeConfig: true });
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -222,7 +222,7 @@ describe('OFREPWebProvider', () => {
   it('should call reconciling handler, when context changed', async () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext(defaultContext);
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -248,7 +248,7 @@ describe('OFREPWebProvider', () => {
   it('should call stale handler, when api is not responding', async () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL, pollInterval: 50 }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: 50 }, new TestLogger());
     await OpenFeature.setContext(defaultContext);
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -276,7 +276,7 @@ describe('OFREPWebProvider', () => {
   it('should not try to call the API before retry-after header', async () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OfrepWebProvider({ baseUrl: endpointBaseURL, pollInterval: 100 }, new TestLogger());
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: 100 }, new TestLogger());
     await OpenFeature.setContext(defaultContext);
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
