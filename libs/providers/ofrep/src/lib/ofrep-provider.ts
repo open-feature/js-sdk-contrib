@@ -20,6 +20,7 @@ import {
   toRequestOptions,
   toResolutionDetails,
 } from '@openfeature/ofrep-core';
+import { GeneralError } from '@openfeature/core';
 
 export type OFREPProviderOptions = Omit<OFREPProviderBaseOptions, 'headersFactory'> & {
   headersFactory?: () => Promise<HttpHeaders> | HttpHeaders;
@@ -84,15 +85,7 @@ export class OFREPProvider implements Provider {
   ): Promise<ResolutionDetails<T>> {
     const currentDate = new Date();
     if (this.notBefore && this.notBefore > currentDate) {
-      return {
-        value: defaultValue,
-        reason: StandardResolutionReasons.DEFAULT,
-        errorCode: ErrorCode.GENERAL,
-        flagMetadata: {
-          retryAfter: this.notBefore.toISOString(),
-        },
-        errorMessage: `OFREP evaluation paused due to TooManyRequests until ${this.notBefore.toISOString()}`,
-      };
+      throw new GeneralError(`OFREP evaluation paused due to TooManyRequests until ${this.notBefore.toISOString()}`);
     } else if (this.notBefore) {
       this.notBefore = null;
     }

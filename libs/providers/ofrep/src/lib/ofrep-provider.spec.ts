@@ -101,15 +101,7 @@ describe('OFREPProvider should', () => {
     }
 
     // The provider should short circuit the evaluation due to Retry-After header
-    expect(await fastProvider.resolveBooleanEvaluation('my-flag', false, {})).toEqual({
-      value: false,
-      errorCode: 'GENERAL',
-      reason: 'DEFAULT',
-      errorMessage: 'OFREP evaluation paused due to TooManyRequests until 2018-01-27T00:33:20.000Z',
-      flagMetadata: {
-        retryAfter: '2018-01-27T00:33:20.000Z',
-      },
-    });
+    await expect(() => fastProvider.resolveBooleanEvaluation('my-flag', false, {})).rejects.toThrow(GeneralError);
 
     // Now the time is over and the provider should call the API again
     jest.setSystemTime(new Date('2018-01-27T00:33:21.000Z'));
