@@ -80,7 +80,7 @@ export const exampleJSONFlag: FeatureResponse = {
     name: exampleJSONFlagName,
   },
 };
-export const getFetchMock = (response: Record<string, any>) => {
+export const getFetchMock = (response: Record<string, unknown>) => {
   return jest.fn().mockResolvedValue({
     text: async () => JSON.stringify(response),
     status: 200,
