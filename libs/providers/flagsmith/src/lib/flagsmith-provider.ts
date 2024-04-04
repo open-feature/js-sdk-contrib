@@ -18,6 +18,8 @@ export class FlagsmithProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: FlagsmithProvider.name,
   };
+  
+  readonly runsOn = 'client';
   //The Flagsmith Client
   private _client: IFlagsmith;
   //The Open Feature logger to use
