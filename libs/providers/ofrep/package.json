@@ -12,6 +12,6 @@
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.6.0",
-    "@openfeature/ofrep-core": "^0.0.4-experimental"
+    "@openfeature/ofrep-core": "^0.0.6-experimental"
   }
 }

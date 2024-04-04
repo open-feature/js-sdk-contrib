@@ -1,29 +1,27 @@
-import {
-  EvaluationContext,
-  JsonValue,
-  Provider,
-  ProviderFatalError,
-  ResolutionDetails,
-  TypeMismatchError,
-} from '@openfeature/server-sdk';
+import { EvaluationContext, JsonValue, Provider, ResolutionDetails, TypeMismatchError } from '@openfeature/server-sdk';
 import {
   EvaluationFlagValue,
   handleEvaluationError,
+  HttpHeaders,
+  mergeHeaders,
   OFREPApi,
   OFREPApiEvaluationResult,
   OFREPProviderBaseOptions,
+  RequestOptions,
   toRequestOptions,
   toResolutionDetails,
 } from '@openfeature/ofrep-core';
 
-export type OFREPProviderOptions = OFREPProviderBaseOptions;
+export type OFREPProviderOptions = Omit<OFREPProviderBaseOptions, 'headersFactory'> & {
+  headersFactory?: () => Promise<HttpHeaders> | HttpHeaders;
+};
 
 export class OFREPProvider implements Provider {
   private ofrepApi: OFREPApi;
 
   readonly runsOn = 'server';
   readonly metadata = {
-    name: 'OpenFeature Remote Evaluation Protocol',
+    name: 'OpenFeature Remote Evaluation Protocol Server',
   };
 
   constructor(private options: OFREPProviderOptions) {
@@ -42,8 +40,7 @@ export class OFREPProvider implements Provider {
     defaultValue: boolean,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
-    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, this.requestOptions);
-    return this.toResolutionDetails(result, defaultValue);
+    return this.evaluate(flagKey, defaultValue, context);
   }
 
   public async resolveStringEvaluation(
@@ -51,8 +48,7 @@ export class OFREPProvider implements Provider {
     defaultValue: string,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
-    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, this.requestOptions);
-    return this.toResolutionDetails(result, defaultValue);
+    return this.evaluate(flagKey, defaultValue, context);
   }
 
   public async resolveNumberEvaluation(
@@ -60,8 +56,7 @@ export class OFREPProvider implements Provider {
     defaultValue: number,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
-    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, this.requestOptions);
-    return this.toResolutionDetails(result, defaultValue);
+    return this.evaluate(flagKey, defaultValue, context);
   }
 
   public async resolveObjectEvaluation<U extends JsonValue>(
@@ -69,7 +64,15 @@ export class OFREPProvider implements Provider {
     defaultValue: U,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
-    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, this.requestOptions);
+    return this.evaluate(flagKey, defaultValue, context);
+  }
+
+  private async evaluate<T extends EvaluationFlagValue>(
+    flagKey: string,
+    defaultValue: T,
+    context: EvaluationContext,
+  ): Promise<ResolutionDetails<T>> {
+    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, await this.baseRequestOptions());
     return this.toResolutionDetails(result, defaultValue);
   }
 
@@ -88,7 +91,11 @@ export class OFREPProvider implements Provider {
     return toResolutionDetails(result.value);
   }
 
-  private get requestOptions() {
-    return toRequestOptions(this.options);
+  private async baseRequestOptions(): Promise<RequestOptions> {
+    const { headers, headersFactory, ...restOptions } = this.options;
+    return {
+      ...toRequestOptions(restOptions),
+      headers: mergeHeaders(headers, await headersFactory?.()),
+    };
   }
 }

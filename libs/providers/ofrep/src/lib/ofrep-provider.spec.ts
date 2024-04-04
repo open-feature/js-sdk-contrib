@@ -36,7 +36,9 @@ describe('OFREPProvider should', () => {
   });
 
   it('throw if an invalid URL is given', () => {
-    expect(() => new OFREPProvider({ baseUrl: 'non-url' })).toThrow();
+    expect(() => {
+      new OFREPProvider({ baseUrl: 'non-url' });
+    }).toThrow();
   });
 
   it('send auth header from static headers', async () => {
@@ -115,6 +117,22 @@ describe('OFREPProvider should', () => {
     const providerWithAuth = new OFREPProvider({
       ...defaultOptions,
       headersFactory: () => [['Authorization', 'secret']],
+    });
+    const flag = await providerWithAuth.resolveBooleanEvaluation('my-flag', false, { expectedAuthHeader: 'secret' });
+    expect(flag.value).toEqual(true);
+  });
+
+  it('send auth header from async headerFactory', async () => {
+    await expect(provider.resolveBooleanEvaluation('my-flag', false, { expectedAuthHeader: 'secret' })).rejects.toThrow(
+      OFREPApiUnauthorizedError,
+    );
+
+    const providerWithAuth = new OFREPProvider({
+      ...defaultOptions,
+      headersFactory: async () => {
+        const secret: string = await new Promise((resolve) => setTimeout(() => resolve('secret'), 500));
+        return [['Authorization', secret]];
+      },
     });
     const flag = await providerWithAuth.resolveBooleanEvaluation('my-flag', false, { expectedAuthHeader: 'secret' });
     expect(flag.value).toEqual(true);
