@@ -44,9 +44,61 @@ export class OFREPForbiddenError extends OFREPApiError {
 }
 
 export class OFREPApiTooManyRequestsError extends OFREPApiError {
-  constructor(response: Response, message?: string, options?: ErrorOptions) {
+  public readonly requestTime: Date;
+
+  constructor(
+    public override response: Response,
+    message?: string,
+    options?: ErrorOptions,
+  ) {
     super(undefined, response, message, options);
     Object.setPrototypeOf(this, OFREPApiTooManyRequestsError.prototype);
+
     this.name = OFREPApiTooManyRequestsError.name;
+    this.requestTime = new Date();
+    this.message =
+      message ?? this.retryAfterDate
+        ? `rate limit exceeded, try again after ${this.retryAfterDate}`
+        : `rate limit exceeded, try again later`;
+  }
+
+  public get retryAfterHeader(): string | null {
+    return this.response.headers.get('Retry-After');
+  }
+
+  public get retryAfterSeconds(): number | null {
+    if (!this.retryAfterHeader) {
+      return null;
+    }
+
+    const retrySeconds = Number.parseInt(this.retryAfterHeader, 10);
+    if (!Number.isFinite(retrySeconds)) {
+      return null;
+    }
+
+    return retrySeconds;
+  }
+
+  public get retryAfterDate(): Date | null {
+    if (!this.retryAfterHeader) {
+      return null;
+    }
+
+    if (this.retryAfterSeconds) {
+      const retryAfterSeconds = this.retryAfterSeconds;
+
+      if (!retryAfterSeconds) {
+        return null;
+      }
+
+      return new Date(Date.now() + this.retryAfterSeconds * 1000);
+    }
+
+    const date = new Date(this.retryAfterHeader);
+    if (isNaN(date.valueOf())) {
+      return null;
+    }
+
+    return date;
   }
 }
