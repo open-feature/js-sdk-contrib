@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.6-experimental](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.0.5-experimental...ofrep-core-v0.0.6-experimental) (2024-04-04)
+
+
+### ✨ New Features
+
+* **ofrep:** parse Retry-After header in OFREPApiTooManyRequestsError ([#841](https://github.com/open-feature/js-sdk-contrib/issues/841)) ([ba7aa3e](https://github.com/open-feature/js-sdk-contrib/commit/ba7aa3efbc5ffacc2008d4591b2a585df34cbd01))
+
 ## [0.0.5-experimental](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.0.4-experimental...ofrep-core-v0.0.5-experimental) (2024-04-02)
 
 
