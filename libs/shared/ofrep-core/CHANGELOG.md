@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.7-experimental](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.0.6-experimental...ofrep-core-v0.0.7-experimental) (2024-04-04)
+
+
+### 🐛 Bug Fixes
+
+* Use request time to compute the retry after ([#846](https://github.com/open-feature/js-sdk-contrib/issues/846)) ([ddc2c90](https://github.com/open-feature/js-sdk-contrib/commit/ddc2c9042c82c9066415ce4f6243639ae94d20c5))
+
 ## [0.0.6-experimental](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.0.5-experimental...ofrep-core-v0.0.6-experimental) (2024-04-04)
 
 
