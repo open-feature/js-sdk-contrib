@@ -1,4 +1,12 @@
-import { EvaluationContext, JsonValue, Provider, ResolutionDetails, TypeMismatchError } from '@openfeature/server-sdk';
+import {
+  ErrorCode,
+  EvaluationContext,
+  JsonValue,
+  Provider,
+  ResolutionDetails,
+  StandardResolutionReasons,
+  TypeMismatchError,
+} from '@openfeature/server-sdk';
 import {
   EvaluationFlagValue,
   handleEvaluationError,
@@ -6,6 +14,7 @@ import {
   mergeHeaders,
   OFREPApi,
   OFREPApiEvaluationResult,
+  OFREPApiTooManyRequestsError,
   OFREPProviderBaseOptions,
   RequestOptions,
   toRequestOptions,
@@ -17,6 +26,7 @@ export type OFREPProviderOptions = Omit<OFREPProviderBaseOptions, 'headersFactor
 };
 
 export class OFREPProvider implements Provider {
+  private notBefore: Date | null = null;
   private ofrepApi: OFREPApi;
 
   readonly runsOn = 'server';
@@ -72,8 +82,30 @@ export class OFREPProvider implements Provider {
     defaultValue: T,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<T>> {
-    const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, await this.baseRequestOptions());
-    return this.toResolutionDetails(result, defaultValue);
+    const currentDate = new Date();
+    if (this.notBefore && this.notBefore > currentDate) {
+      return {
+        value: defaultValue,
+        reason: StandardResolutionReasons.DEFAULT,
+        errorCode: ErrorCode.GENERAL,
+        flagMetadata: {
+          retryAfter: this.notBefore.toISOString(),
+        },
+        errorMessage: `OFREP evaluation paused due to TooManyRequests until ${this.notBefore.toISOString()}`,
+      };
+    } else if (this.notBefore) {
+      this.notBefore = null;
+    }
+
+    try {
+      const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, await this.baseRequestOptions());
+      return this.toResolutionDetails(result, defaultValue);
+    } catch (error) {
+      if (error instanceof OFREPApiTooManyRequestsError) {
+        this.notBefore = error.retryAfterDate;
+      }
+      throw error;
+    }
   }
 
   private toResolutionDetails<T extends EvaluationFlagValue>(

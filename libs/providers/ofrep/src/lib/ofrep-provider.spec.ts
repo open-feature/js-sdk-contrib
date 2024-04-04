@@ -26,10 +26,18 @@ describe('OFREPProvider should', () => {
 
   beforeAll(() => {
     server.listen();
+  });
+  beforeEach(() => {
+    jest.useFakeTimers();
     provider = new OFREPProvider(defaultOptions);
   });
-  afterEach(() => server.resetHandlers());
-  afterAll(() => server.close());
+  afterEach(() => {
+    jest.useRealTimers();
+    server.resetHandlers();
+  });
+  afterAll(() => {
+    server.close();
+  });
 
   it('be and instance of OfrepProvider', () => {
     expect(new OFREPProvider(defaultOptions)).toBeInstanceOf(OFREPProvider);
@@ -70,9 +78,47 @@ describe('OFREPProvider should', () => {
   });
 
   it('throw OFREPForbiddenError on HTTP 429 response', async () => {
-    await expect(provider.resolveBooleanEvaluation('my-flag', false, { errors: { 429: true } })).rejects.toThrow(
+    const fastProvider = new OFREPProvider(defaultOptions);
+    await expect(fastProvider.resolveBooleanEvaluation('my-flag', false, { errors: { 429: true } })).rejects.toThrow(
       OFREPApiTooManyRequestsError,
     );
+  });
+
+  it('short circuit evaluation after receiving 409 until Retry-After is done', async () => {
+    jest.setSystemTime(new Date('2018-01-27T00:00:00.000Z'));
+
+    const fastProvider = new OFREPProvider(defaultOptions);
+    try {
+      await fastProvider.resolveBooleanEvaluation('my-flag', false, {
+        errors: { 429: 'Sat, 27 Jan 2018 00:33:20 GMT' },
+      });
+    } catch (error) {
+      if (!(error instanceof OFREPApiTooManyRequestsError)) {
+        throw new Error('Expected OFREPApiTooManyRequestsError');
+      }
+
+      expect(error.retryAfterDate).toEqual(new Date('2018-01-27T00:33:20.000Z'));
+    }
+
+    // The provider should short circuit the evaluation due to Retry-After header
+    expect(await fastProvider.resolveBooleanEvaluation('my-flag', false, {})).toEqual({
+      value: false,
+      errorCode: 'GENERAL',
+      reason: 'DEFAULT',
+      errorMessage: 'OFREP evaluation paused due to TooManyRequests until 2018-01-27T00:33:20.000Z',
+      flagMetadata: {
+        retryAfter: '2018-01-27T00:33:20.000Z',
+      },
+    });
+
+    // Now the time is over and the provider should call the API again
+    jest.setSystemTime(new Date('2018-01-27T00:33:21.000Z'));
+    expect(await fastProvider.resolveBooleanEvaluation('my-flag', false, {})).toEqual({
+      flagMetadata: {},
+      reason: 'STATIC',
+      value: true,
+      variant: 'default',
+    });
   });
 
   it('map EvaluationFailureErrorCode.ParseError from response to ParseError', async () => {
@@ -130,7 +176,7 @@ describe('OFREPProvider should', () => {
     const providerWithAuth = new OFREPProvider({
       ...defaultOptions,
       headersFactory: async () => {
-        const secret: string = await new Promise((resolve) => setTimeout(() => resolve('secret'), 500));
+        const secret: string = await new Promise((resolve) => resolve('secret'));
         return [['Authorization', secret]];
       },
     });

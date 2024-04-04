@@ -66,7 +66,7 @@ OpenFeature.setProvider(
 
 The header factory is evaluated before every flag evaluation which makes it possible to use dynamic values for the headers.
 
-The following shows an example of loading a token and using it as bearer token. 
+The following shows an example of loading a token and using it as bearer token.
 
 ```ts
 import { OFREPProvider } from '@openfeature/ofrep-provider';
@@ -93,7 +93,7 @@ import { fetchPolyfill } from 'some-fetch-polyfill';
 OpenFeature.setProvider(
   new OFREPProvider({
     baseUrl: 'https://localhost:8080',
-    fetchImplementation: fetchPolyfill
+    fetchImplementation: fetchPolyfill,
   }),
 );
 ```

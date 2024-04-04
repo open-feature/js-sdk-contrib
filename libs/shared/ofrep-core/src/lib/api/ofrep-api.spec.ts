@@ -20,15 +20,21 @@ import {
 describe('OFREPApi', () => {
   let api: OFREPApi;
 
-  beforeAll(() => server.listen());
+  beforeAll(() => {
+    server.listen();
+  });
   beforeEach(() => {
+    jest.useFakeTimers();
     api = new OFREPApi('https://localhost:8080');
   });
   afterEach(() => {
+    jest.runOnlyPendingTimers();
     jest.useRealTimers();
     server.resetHandlers();
   });
-  afterAll(() => server.close());
+  afterAll(() => {
+    server.close();
+  });
 
   describe('postEvaluateFlags should', () => {
     it('throw OFREPApiFetchError on network error', async () => {
@@ -62,7 +68,6 @@ describe('OFREPApi', () => {
     });
 
     it('parse numeric Retry-After header correctly on 429 response', async () => {
-      jest.useFakeTimers({});
       jest.setSystemTime(new Date('2018-01-27'));
 
       try {
@@ -78,7 +83,6 @@ describe('OFREPApi', () => {
     });
 
     it('parse date Retry-After header correctly on 429 response', async () => {
-      jest.useFakeTimers({});
       jest.setSystemTime(new Date('2018-01-27'));
 
       try {
@@ -94,7 +98,6 @@ describe('OFREPApi', () => {
     });
 
     it('ignore Retry-After header if it is not valid on 429 response', async () => {
-      jest.useFakeTimers({});
       jest.setSystemTime(new Date('2018-01-27'));
 
       try {
