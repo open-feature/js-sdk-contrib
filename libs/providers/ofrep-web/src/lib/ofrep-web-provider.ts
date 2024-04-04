@@ -214,8 +214,8 @@ export class OFREPWebProvider implements Provider {
       this._etag = response.httpResponse?.headers.get('etag');
       return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
     } catch (error) {
-      if (error instanceof OFREPApiTooManyRequestsError) {
-        this._setRetryAfter(error);
+      if (error instanceof OFREPApiTooManyRequestsError && error.retryAfterDate !== null) {
+        this._retryPollingAfter = error.retryAfterDate;
       }
       throw error;
     }
@@ -251,25 +251,6 @@ export class OFREPWebProvider implements Provider {
     }
 
     return changedKeys;
-  }
-
-  /**
-   * _setRetryAfter is setting the date until we should stop polling based on the error.
-   * @param error - OFREPApiTooManyRequestsError received
-   * @private
-   */
-  private _setRetryAfter(error: OFREPApiTooManyRequestsError) {
-    const retryAfter = error.response?.headers.get('Retry-After');
-    if (retryAfter) {
-      if (!isNaN(retryAfter as unknown as number)) {
-        this._retryPollingAfter = new Date(Date.now() + (retryAfter as unknown as number) * 1000);
-      } else {
-        const retryAfterDate = new Date(retryAfter);
-        if (retryAfterDate.toString() !== 'Invalid Date') {
-          this._retryPollingAfter = retryAfterDate;
-        }
-      }
-    }
   }
 
   /**
