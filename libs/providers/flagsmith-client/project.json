@@ -1,7 +1,7 @@
 {
   "name": "providers-flagsmith-client",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/providers/flagsmith/src",
+  "sourceRoot": "libs/providers/flagsmith-client/src",
   "projectType": "library",
   "targets": {
     "publish": {
@@ -21,14 +21,14 @@
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["libs/providers/flagsmith/**/*.ts", "libs/providers/flagsmith/package.json"]
+        "lintFilePatterns": ["libs/providers/flagsmith-client/**/*.ts", "libs/providers/flagsmith-client/package.json"]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "libs/providers/flagsmith/jest.config.ts",
+        "jestConfig": "libs/providers/flagsmith-client/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
@@ -42,10 +42,10 @@
       "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "project": "libs/providers/flagsmith/package.json",
+        "project": "libs/providers/flagsmith-client/package.json",
         "outputPath": "dist/libs/providers/flagsmith",
-        "entryFile": "libs/providers/flagsmith/src/index.ts",
-        "tsConfig": "libs/providers/flagsmith/tsconfig.lib.json",
+        "entryFile": "libs/providers/flagsmith-client/src/index.ts",
+        "tsConfig": "libs/providers/flagsmith-client/tsconfig.lib.json",
         "buildableProjectDepsInPackageJsonType": "dependencies",
         "compiler": "tsc",
         "generateExportsField": true,
