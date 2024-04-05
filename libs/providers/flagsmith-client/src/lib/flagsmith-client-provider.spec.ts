@@ -277,7 +277,7 @@ describe('FlagsmithProvider', () => {
       expect(details.reason).toEqual('DEFAULT');
     });
   });
-  describe.only('events', () => {
+  describe('events', () => {
     it('should call the ready handler when initialized', async () => {
       const config = defaultConfig();
       const provider = new FlagsmithClientProvider({ ...config });

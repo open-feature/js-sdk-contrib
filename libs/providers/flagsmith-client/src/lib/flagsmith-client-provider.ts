@@ -9,6 +9,7 @@ import {
   ProviderMetadata,
   ResolutionDetails,
   ResolutionReason,
+  TypeMismatchError,
 } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from 'flagsmith';
 import { IFlagsmith, IInitConfig, IState } from 'flagsmith/types';
@@ -110,9 +111,12 @@ export class FlagsmithClientProvider implements Provider {
       type === 'boolean' ? this._client.hasFeature(flagKey) : this._client.getValue(flagKey),
       type,
     );
+    if (typeof value !== 'undefined' && typeof value !== type) {
+      throw new TypeMismatchError(`flag key ${flagKey} is not of type ${type}`);
+    }
     return {
       value: (typeof value !== type ? defaultValue : value) as T,
-      reason: this.parseReason(value, type),
+      reason: this.parseReason(value),
     } as ResolutionDetails<T>;
   }
 
@@ -120,13 +124,9 @@ export class FlagsmithClientProvider implements Provider {
    * Based on Flagsmith's loading state and feature resolution, determine the Open Feature resolution reason
    * @private
    */
-  private parseReason(value: any, type: FlagType): ResolutionReason {
+  private parseReason(value: unknown): ResolutionReason {
     if (value === undefined) {
       return 'DEFAULT';
-    }
-
-    if (typeof value !== type) {
-      return 'T';
     }
 
     switch (this._client.loadingState?.source) {
