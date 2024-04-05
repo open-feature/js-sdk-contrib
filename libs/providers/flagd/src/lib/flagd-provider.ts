@@ -49,8 +49,8 @@ export class FlagdProvider implements Provider {
     this._service = service
       ? service
       : config.resolverType === 'in-process'
-      ? new InProcessService(config, undefined, logger)
-      : new GRPCService(config, undefined, logger);
+        ? new InProcessService(config, undefined, logger)
+        : new GRPCService(config, undefined, logger);
   }
 
   initialize(): Promise<void> {
