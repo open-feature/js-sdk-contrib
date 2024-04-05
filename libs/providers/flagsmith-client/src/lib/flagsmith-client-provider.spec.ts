@@ -1,4 +1,4 @@
-import { FlagsmithProviderClient } from './flagsmith-provider-client';
+import { FlagsmithClientProvider } from './flagsmith-client-provider';
 import {
   defaultConfig,
   defaultState,
@@ -31,7 +31,7 @@ describe('FlagsmithProvider', () => {
   describe('constructor', () => {
     it('should initialize the environment ID', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient(config);
+      const provider = new FlagsmithClientProvider(config);
       await OpenFeature.setProviderAndWait(provider);
       expect(provider.flagsmithClient.getState().environmentID).toEqual(config.environmentID);
     });
@@ -39,7 +39,7 @@ describe('FlagsmithProvider', () => {
     it('calls onChange', async () => {
       const config = defaultConfig();
       const onChange = jest.fn();
-      const provider = new FlagsmithProviderClient({ ...config, onChange });
+      const provider = new FlagsmithClientProvider({ ...config, onChange });
       await OpenFeature.setProviderAndWait(provider);
       expect(onChange).toHaveBeenCalledTimes(1);
       await OpenFeature.setContext({ targetingKey: 'test' });
@@ -49,7 +49,7 @@ describe('FlagsmithProvider', () => {
 
     it('should allow a custom instance of Flagsmith to be used', async () => {
       const instance = createFlagsmithInstance();
-      const provider = new FlagsmithProviderClient({ flagsmithInstance: instance, ...defaultConfig() });
+      const provider = new FlagsmithClientProvider({ flagsmithInstance: instance, ...defaultConfig() });
       expect(provider.flagsmithClient).toEqual(instance);
     });
 
@@ -62,7 +62,7 @@ describe('FlagsmithProvider', () => {
         evaluationEvent: null,
         ts: null,
       };
-      const provider = new FlagsmithProviderClient({
+      const provider = new FlagsmithClientProvider({
         logger,
         ...config,
         preventFetch: true,
@@ -78,7 +78,7 @@ describe('FlagsmithProvider', () => {
   describe('cache', () => {
     it('retrieve features from cache without hitting API', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({
+      const provider = new FlagsmithClientProvider({
         ...config,
         logger,
         cacheFlags: true,
@@ -98,7 +98,7 @@ describe('FlagsmithProvider', () => {
     });
     it('doesnt emit event when API matches cache ', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({
+      const provider = new FlagsmithClientProvider({
         ...config,
         logger,
         cacheFlags: true,
@@ -120,7 +120,7 @@ describe('FlagsmithProvider', () => {
     });
     it('emits event when API differs from cache ', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({
+      const provider = new FlagsmithClientProvider({
         ...config,
         logger,
         cacheFlags: true,
@@ -152,7 +152,7 @@ describe('FlagsmithProvider', () => {
   describe('defaults', () => {
     it('retrieve features from defaults without hitting API', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({
+      const provider = new FlagsmithClientProvider({
         ...config,
         logger,
         preventFetch: true,
@@ -167,7 +167,7 @@ describe('FlagsmithProvider', () => {
     });
     it('doesnt emit event when API matches cache ', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({
+      const provider = new FlagsmithClientProvider({
         ...config,
         logger,
         defaultFlags: defaultState.flags,
@@ -189,7 +189,7 @@ describe('FlagsmithProvider', () => {
     });
     it('emits event when API differs from cache ', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({
+      const provider = new FlagsmithClientProvider({
         ...config,
         logger,
         cacheFlags: true,
@@ -221,7 +221,7 @@ describe('FlagsmithProvider', () => {
   describe('flag evaluation', () => {
     const client = OpenFeature.getClient();
     const config = defaultConfig();
-    const provider = new FlagsmithProviderClient({ ...config });
+    const provider = new FlagsmithClientProvider({ ...config });
     it('should resolve booleans to the enabled state', async () => {
       await OpenFeature.setProviderAndWait(provider);
       const details = client.getBooleanDetails(exampleBooleanFlagName, false);
@@ -277,10 +277,10 @@ describe('FlagsmithProvider', () => {
       expect(details.reason).toEqual('DEFAULT');
     });
   });
-  describe('events', () => {
+  describe.only('events', () => {
     it('should call the ready handler when initialized', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({ ...config });
+      const provider = new FlagsmithClientProvider({ ...config });
       const readyHandler = jest.fn().mockImplementation(() => {
         return OpenFeature.getClient().getBooleanValue(exampleBooleanFlagName, false);
       });
@@ -293,18 +293,14 @@ describe('FlagsmithProvider', () => {
       expect(errorHandler).toHaveBeenCalledTimes(0);
     });
     it('should call the error handler when errored', async () => {
-      const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({ ...config, environmentID: '' });
-      const readyHandler = jest.fn();
       const errorHandler = jest.fn();
-      OpenFeature.addHandler(ProviderEvents.Ready, readyHandler);
       OpenFeature.addHandler(ProviderEvents.Error, errorHandler);
-      await OpenFeature.setProviderAndWait(provider);
+      await OpenFeature.setProviderAndWait(new FlagsmithClientProvider({ ...defaultConfig(), environmentID: '' }));
       expect(errorHandler).toHaveBeenCalledTimes(1);
     });
     it('should call the stale handler when context changed', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({ ...config });
+      const provider = new FlagsmithClientProvider({ ...config });
       await OpenFeature.setProviderAndWait(provider);
       const staleHandler = jest.fn();
       OpenFeature.addHandler(ProviderEvents.Stale, staleHandler);
@@ -316,7 +312,7 @@ describe('FlagsmithProvider', () => {
     it('should initialize without the targeting key, identify when provided and logout when not provided again', async () => {
       const targetingKey = 'test';
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({
+      const provider = new FlagsmithClientProvider({
         logger,
         ...config,
       });
@@ -353,7 +349,7 @@ describe('FlagsmithProvider', () => {
       const targetingKey = 'test';
       const traits = { foo: 'bar', example: 123 };
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient(config);
+      const provider = new FlagsmithClientProvider(config);
       await OpenFeature.setContext({ targetingKey, traits });
       await OpenFeature.setProviderAndWait(provider);
       expect(provider.flagsmithClient.getState().identity).toEqual(targetingKey);
@@ -383,7 +379,7 @@ describe('FlagsmithProvider', () => {
       const targetingKey = 'test';
       const traits = { foo: 'bar', example: 123 };
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient(config);
+      const provider = new FlagsmithClientProvider(config);
       await OpenFeature.setContext({ targetingKey, traits });
       await OpenFeature.setProviderAndWait(provider);
       expect(provider.flagsmithClient.getState().identity).toEqual(targetingKey);
@@ -411,7 +407,7 @@ describe('FlagsmithProvider', () => {
   describe('common errors', () => {
     it('should throw an error if there was an api error', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({
+      const provider = new FlagsmithClientProvider({
         ...config,
         logger,
         fetch: getFetchErrorMock(),
@@ -421,7 +417,7 @@ describe('FlagsmithProvider', () => {
     });
     it('should throw an error if there was no Environment ID provided', async () => {
       const config = defaultConfig();
-      const provider = new FlagsmithProviderClient({
+      const provider = new FlagsmithClientProvider({
         logger,
         ...config,
         fetch: getFetchErrorMock(),

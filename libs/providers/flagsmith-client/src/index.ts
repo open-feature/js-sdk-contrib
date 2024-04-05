@@ -1,1 +1,1 @@
-export * from './lib/flagsmith-provider-client';
+export * from './lib/flagsmith-client-provider';

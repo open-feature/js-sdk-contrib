@@ -14,9 +14,9 @@ import { createFlagsmithInstance } from 'flagsmith';
 import { IFlagsmith, IInitConfig, IState } from 'flagsmith/types';
 import { FlagType, typeFactory } from './type-factory';
 
-export class FlagsmithProviderClient implements Provider {
+export class FlagsmithClientProvider implements Provider {
   readonly metadata: ProviderMetadata = {
-    name: FlagsmithProviderClient.name,
+    name: FlagsmithClientProvider.name,
   };
 
   readonly runsOn = 'client';
@@ -126,7 +126,7 @@ export class FlagsmithProviderClient implements Provider {
     }
 
     if (typeof value !== type) {
-      return 'ERROR';
+      return 'T';
     }
 
     switch (this._client.loadingState?.source) {

@@ -5,7 +5,7 @@ This provider is an implementation for the [JavaScript SDK](https://docs.flagsmi
 ## Installation
 
 ```
-npm install @openfeature/flagsmith-client-provider @openfeature/web-sdk
+npm install @openfeature/flagsmith-client-provider
 ```
 
 ## Initialising the provider
@@ -48,8 +48,8 @@ In Flagsmith, users are [identified](https://docs.flagsmith.com/clients/javascri
 To identify and set traits you can specify a targetingKey(identity) and optionally a set of traits. This will do the equivalent of ``flagsmith.identify(id, traits)`` or pass these to ``flagsmith.init`` if you are calling this before ``OpenFeature.setProvider``.
 
 ```javascript
-const flagsmithFeatureFlagWebProvider = new FlagsmithProviderClient({
-    environmentID: '<ENVIRONMENT_ID>',
+const flagsmithFeatureFlagWebProvider = new FlagsmithClientProvider({
+  environmentID: '<ENVIRONMENT_ID>',
 });
 await OpenFeature.setContext({ targetingKey, traits });
 OpenFeature.setProvider(flagsmithFeatureFlagWebProvider); // Attach the provider to OpenFeature
