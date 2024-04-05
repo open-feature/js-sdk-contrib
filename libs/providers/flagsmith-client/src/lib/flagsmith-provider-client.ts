@@ -14,11 +14,11 @@ import { createFlagsmithInstance } from 'flagsmith';
 import { IFlagsmith, IInitConfig, IState } from 'flagsmith/types';
 import { FlagType, typeFactory } from './type-factory';
 
-export class FlagsmithProvider implements Provider {
+export class FlagsmithProviderClient implements Provider {
   readonly metadata: ProviderMetadata = {
-    name: FlagsmithProvider.name,
+    name: FlagsmithProviderClient.name,
   };
-  
+
   readonly runsOn = 'client';
   //The Flagsmith Client
   private _client: IFlagsmith;

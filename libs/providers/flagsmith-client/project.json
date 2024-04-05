@@ -1,5 +1,5 @@
 {
-  "name": "providers-flagsmith",
+  "name": "providers-flagsmith-client",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/providers/flagsmith/src",
   "projectType": "library",

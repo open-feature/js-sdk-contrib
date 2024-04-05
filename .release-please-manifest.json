@@ -10,5 +10,5 @@
   "libs/shared/flagd-core": "0.1.11",
   "libs/shared/ofrep-core": "0.0.4-experimental",
   "libs/providers/flipt": "0.1.0",
-  "libs/providers/flagsmith": "0.1.0"
+  "libs/providers/flagsmith-client": "0.1.0"
 }

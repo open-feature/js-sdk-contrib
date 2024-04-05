@@ -5,7 +5,7 @@ This provider is an implementation for the [JavaScript SDK](https://docs.flagsmi
 ## Installation
 
 ```
-npm install @openfeature/flagsmith-provider @openfeature/web-sdk
+npm install @openfeature/flagsmith-client-provider @openfeature/web-sdk
 ```
 
 ## Initialising the provider
@@ -13,7 +13,7 @@ npm install @openfeature/flagsmith-provider @openfeature/web-sdk
 The Flagsmith Provider can be created with the standard [initialization options](https://docs.flagsmith.com/clients/javascript/#example-initialising-the-sdk) and an optional Flagsmith instance to use.
 
 ```javascript
-import { FlagsmithProvider } from '@openfeature/flagsmith-provider';
+import { FlagsmithProvider } from '@openfeature/flagsmith-client-provider';
 import { OpenFeature } from '@openfeature/web-sdk';
 
 const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
@@ -30,7 +30,7 @@ Note: In order to use the React Native implementation of OpenFeature you will ne
 
 ```javascript
 import flagsmith from 'react-native-flagsmith' // Could also be flagsmith/isomorphic, flagsmith-es or createFlagsmithInstance()
-import { FlagsmithProvider } from '@openfeature/flagsmith-provider';
+import { FlagsmithProvider } from '@openfeature/flagsmith-client-provider';
 import { OpenFeature } from '@openfeature/web-sdk';
 
 const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
@@ -46,8 +46,9 @@ OpenFeature.setProvider(flagsmithFeatureFlagWebProvider); // Attach the provider
 In Flagsmith, users are [identified](https://docs.flagsmith.com/clients/javascript/#identifying-users) in order to allow for segmentation and percentage rollouts.
 
 To identify and set traits you can specify a targetingKey(identity) and optionally a set of traits. This will do the equivalent of ``flagsmith.identify(id, traits)`` or pass these to ``flagsmith.init`` if you are calling this before ``OpenFeature.setProvider``.
+
 ```javascript
-const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
+const flagsmithFeatureFlagWebProvider = new FlagsmithProviderClient({
     environmentID: '<ENVIRONMENT_ID>',
 });
 await OpenFeature.setContext({ targetingKey, traits });
