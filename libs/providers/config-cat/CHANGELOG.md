@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.1](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.6.0...config-cat-provider-v0.6.1) (2024-04-05)
+
+
+### 🐛 Bug Fixes
+
+* **config-cat:** remove event emitter type import from config-cat ([#830](https://github.com/open-feature/js-sdk-contrib/issues/830)) ([1c76f63](https://github.com/open-feature/js-sdk-contrib/commit/1c76f63db0c8992325ac645d308e90337529e049))
+
+
+### 🧹 Chore
+
+* Lint Fix Providers ([#837](https://github.com/open-feature/js-sdk-contrib/issues/837)) ([8c6c46b](https://github.com/open-feature/js-sdk-contrib/commit/8c6c46b5f8f72c5a292af7e5ff8ad8d710982554))
+* lock configcat dep ([#827](https://github.com/open-feature/js-sdk-contrib/issues/827)) ([28f25a2](https://github.com/open-feature/js-sdk-contrib/commit/28f25a25cfc6ba3262472c7bad061ae3b256aba3))
+
 ## [0.6.0](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.5.0...config-cat-provider-v0.6.0) (2024-03-16)
 
 
