@@ -31,7 +31,7 @@ jobs:
       - run: npm ci
       - uses: nrwl/nx-set-shas@v3
       # This line is needed for nx affected to work when CI is running on a PR
-      - run: git branch --track main origin/main
+      - run: git branch --track main origin/main || true
 
       - run: npx nx workspace-lint
       - run: if ! npx nx format:check ; then echo "Format check failed. Please run 'npx nx format:write'."; fi
