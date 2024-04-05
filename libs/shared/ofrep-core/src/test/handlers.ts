@@ -187,58 +187,58 @@ export const handlers = [
           },
           { status: 400 },
         );
+      }
 
-        if (errors?.['flagInError']) {
-          return HttpResponse.json<BulkEvaluationResponse>(
-            {
-              flags: [
-                {
-                  key: 'bool-flag',
-                  value: true,
-                  metadata: { context: requestBody.context },
-                  variant: 'variantA',
-                  reason: EvaluationSuccessReason.Static,
-                },
-                {
-                  key: 'parse-error',
-                  errorCode: EvaluationFailureErrorCode.ParseError,
-                  errorDetails: 'custom error details',
-                },
-                {
-                  key: 'flag-not-found',
-                  errorCode: EvaluationFailureErrorCode.FlagNotFound,
-                  errorDetails: 'custom error details',
-                },
-                {
-                  key: 'targeting-key-missing',
-                  errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
-                  errorDetails: 'custom error details',
-                },
-                {
-                  key: 'targeting-key-missing',
-                  errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
-                  errorDetails: 'custom error details',
-                },
-                {
-                  key: 'invalid-context',
-                  errorCode: EvaluationFailureErrorCode.InvalidContext,
-                  errorDetails: 'custom error details',
-                },
-                {
-                  key: 'general-error',
-                  errorCode: EvaluationFailureErrorCode.General,
-                  errorDetails: 'custom error details',
-                },
-                {
-                  key: 'unknown-error',
-                  errorCode: 'UNKNOWN_ERROR' as EvaluationFailureErrorCode,
-                  errorDetails: 'custom error details',
-                },
-              ],
-            },
-            { headers: { etag: '123' } },
-          );
-        }
+      if (errors?.['flagInError']) {
+        return HttpResponse.json<BulkEvaluationResponse>(
+          {
+            flags: [
+              {
+                key: 'bool-flag',
+                value: true,
+                metadata: { context: requestBody.context },
+                variant: 'variantA',
+                reason: EvaluationSuccessReason.Static,
+              },
+              {
+                key: 'parse-error',
+                errorCode: EvaluationFailureErrorCode.ParseError,
+                errorDetails: 'custom error details',
+              },
+              {
+                key: 'flag-not-found',
+                errorCode: EvaluationFailureErrorCode.FlagNotFound,
+                errorDetails: 'custom error details',
+              },
+              {
+                key: 'targeting-key-missing',
+                errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+                errorDetails: 'custom error details',
+              },
+              {
+                key: 'targeting-key-missing',
+                errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+                errorDetails: 'custom error details',
+              },
+              {
+                key: 'invalid-context',
+                errorCode: EvaluationFailureErrorCode.InvalidContext,
+                errorDetails: 'custom error details',
+              },
+              {
+                key: 'general-error',
+                errorCode: EvaluationFailureErrorCode.General,
+                errorDetails: 'custom error details',
+              },
+              {
+                key: 'unknown-error',
+                errorCode: 'UNKNOWN_ERROR' as EvaluationFailureErrorCode,
+                errorDetails: 'custom error details',
+              },
+            ],
+          },
+          { headers: { etag: '123' } },
+        );
       }
 
       const etag = info.request.headers.get('If-None-Match');
