@@ -8,7 +8,7 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "npm run publish-if-not-exists",
-        "cwd": "dist/libs/providers/flagsmith"
+        "cwd": "dist/libs/providers/flagsmith-client"
       },
       "dependsOn": [
         {
@@ -49,7 +49,7 @@
         "buildableProjectDepsInPackageJsonType": "dependencies",
         "compiler": "tsc",
         "generateExportsField": true,
-        "umdName": "flagsmith",
+        "umdName": "flagsmith-client",
         "external": "all",
         "format": ["cjs", "esm"],
         "assets": [
@@ -65,7 +65,7 @@
           },
           {
             "glob": "README.md",
-            "input": "./libs/providers/flagsmith",
+            "input": "./libs/providers/flagsmith-client",
             "output": "./"
           }
         ]
