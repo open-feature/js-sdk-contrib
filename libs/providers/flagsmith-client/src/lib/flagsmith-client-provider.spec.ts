@@ -295,8 +295,16 @@ describe('FlagsmithProvider', () => {
     it('should call the error handler when errored', async () => {
       const errorHandler = jest.fn();
       OpenFeature.addHandler(ProviderEvents.Error, errorHandler);
-      await OpenFeature.setProviderAndWait(new FlagsmithClientProvider({ ...defaultConfig(), environmentID: '' }));
+      OpenFeature.setProvider(new FlagsmithClientProvider({ ...defaultConfig(), environmentID: '' }));
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(null);
+        }, 0);
+      });
       expect(errorHandler).toHaveBeenCalledTimes(1);
+      expect(errorHandler).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Please specify a environment id' }),
+      );
     });
     it('should call the stale handler when context changed', async () => {
       const config = defaultConfig();
@@ -321,7 +329,7 @@ describe('FlagsmithProvider', () => {
       await OpenFeature.setContext({ targetingKey });
       expect(provider.flagsmithClient.getState().identity).toEqual(targetingKey);
       await OpenFeature.setContext({});
-      expect(provider.flagsmithClient.getState().identity).toEqual(undefined);
+      expect(provider.flagsmithClient.getState().identity).toEqual(null);
       expect(config.fetch).toHaveBeenNthCalledWith(
         1,
         `${provider.flagsmithClient.getState().api}flags/`,
@@ -412,8 +420,7 @@ describe('FlagsmithProvider', () => {
         logger,
         fetch: getFetchErrorMock(),
       });
-      await OpenFeature.setProviderAndWait(provider);
-      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Fetch error'));
+      await expect(OpenFeature.setProviderAndWait(provider)).rejects.toThrow();
     });
     it('should throw an error if there was no Environment ID provided', async () => {
       const config = defaultConfig();
@@ -423,8 +430,7 @@ describe('FlagsmithProvider', () => {
         fetch: getFetchErrorMock(),
         environmentID: '',
       });
-      await OpenFeature.setProviderAndWait(provider);
-      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('error invoking action Initialize'));
+      await expect(OpenFeature.setProviderAndWait(provider)).rejects.toThrow('Please specify a environment id');
     });
   });
 });

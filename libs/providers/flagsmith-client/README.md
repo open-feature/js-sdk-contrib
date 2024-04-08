@@ -13,13 +13,13 @@ npm install @openfeature/flagsmith-client-provider
 The Flagsmith Provider can be created with the standard [initialization options](https://docs.flagsmith.com/clients/javascript/#example-initialising-the-sdk) and an optional Flagsmith instance to use.
 
 ```javascript
-import { FlagsmithProvider } from '@openfeature/flagsmith-client-provider';
+import { FlagsmithClientProvider } from '@openfeature/flagsmith-client-provider';
 import { OpenFeature } from '@openfeature/web-sdk';
 
-const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
+const flagsmithClientProvider = new FlagsmithClientProvider({
     environmentID: '<ENVIRONMENT_ID>'
 });
-OpenFeature.setProvider(flagsmithFeatureFlagWebProvider); // Attach the provider to OpenFeature
+OpenFeature.setProvider(flagsmithClientProvider); // Attach the provider to OpenFeature
 ```
 
 ## Usage with React Native, SSR or custom instances
@@ -30,15 +30,15 @@ Note: In order to use the React Native implementation of OpenFeature you will ne
 
 ```javascript
 import flagsmith from 'react-native-flagsmith' // Could also be flagsmith/isomorphic, flagsmith-es or createFlagsmithInstance()
-import { FlagsmithProvider } from '@openfeature/flagsmith-client-provider';
+import { FlagsmithClientProvider } from '@openfeature/flagsmith-client-provider';
 import { OpenFeature } from '@openfeature/web-sdk';
 
-const flagsmithFeatureFlagWebProvider = new FlagsmithProvider({
+const flagsmithClientProvider = new FlagsmithClientProvider({
     environmentID: '<ENVIRONMENT_ID>',
     flagsmithInstance: flagsmith,
     state:serverState
 });
-OpenFeature.setProvider(flagsmithFeatureFlagWebProvider); // Attach the provider to OpenFeature
+OpenFeature.setProvider(flagsmithClientProvider); // Attach the provider to OpenFeature
 ```
 
 ## Identifying and setting Traits
@@ -48,11 +48,11 @@ In Flagsmith, users are [identified](https://docs.flagsmith.com/clients/javascri
 To identify and set traits you can specify a targetingKey(identity) and optionally a set of traits. This will do the equivalent of ``flagsmith.identify(id, traits)`` or pass these to ``flagsmith.init`` if you are calling this before ``OpenFeature.setProvider``.
 
 ```javascript
-const flagsmithFeatureFlagWebProvider = new FlagsmithClientProvider({
+const flagsmithClientProvider = new FlagsmithClientProvider({
   environmentID: '<ENVIRONMENT_ID>',
 });
 await OpenFeature.setContext({ targetingKey, traits });
-OpenFeature.setProvider(flagsmithFeatureFlagWebProvider); // Attach the provider to OpenFeature
+OpenFeature.setProvider(flagsmithClientProvider); // Attach the provider to OpenFeature
 ```
 
 To reset the identity you can simply reset the context. This will do the equivalent of ``flagsmith.logout()`` 

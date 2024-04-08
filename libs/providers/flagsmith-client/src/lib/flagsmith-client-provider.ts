@@ -46,13 +46,14 @@ export class FlagsmithClientProvider implements Provider {
     if (this._client?.initialised) {
       //Already initialised, set the state based on the new context, allow certain context props to be optional
       const defaultState = { ...this._client.getState(), identity: undefined, traits: {} };
+      const isLogout = !!this._client.identity && !identity;
       this._client.identity = identity;
       this._client.setState({
         ...defaultState,
         ...(context || {}),
       });
       this.events.emit(ProviderEvents.Stale, { message: 'context has changed' });
-      return this._client.getFlags();
+      return isLogout ? this._client.logout() : this._client.getFlags();
     }
 
     const serverState = this._config.state;
@@ -65,18 +66,21 @@ export class FlagsmithClientProvider implements Provider {
       ...context,
       identity,
       onChange: (previousFlags, params, loadingState) => {
+        const eventMeta = {
+          metadata: this.getMetadata(),
+          flagsChanged: params.flagsChanged,
+        };
         this.events.emit(ProviderEvents.Ready, {
           message: 'Flags ready',
+          ...eventMeta,
         });
         if (params.flagsChanged) {
           this.events.emit(ProviderEvents.ConfigurationChanged, {
             message: 'Flags changed',
+            ...eventMeta,
           });
         }
         this._config.onChange?.(previousFlags, params, loadingState);
-      },
-      onError: (error) => {
-        this.errorHandler(error, 'Initialize');
       },
     });
   }
@@ -100,6 +104,17 @@ export class FlagsmithClientProvider implements Provider {
 
   resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T) {
     return this.evaluate<T>(flagKey, 'object', defaultValue);
+  }
+
+  /**
+   * Based on Flagsmith's state, return flag metadata
+   * @private
+   */
+  private getMetadata() {
+    return {
+      targetingKey: this._client.identity || '',
+      ...(this._client.getAllTraits() || {}),
+    };
   }
 
   /**
@@ -137,27 +152,6 @@ export class FlagsmithClientProvider implements Provider {
       default:
         return 'STATIC';
     }
-  }
-
-  /**
-   * Handle any unexpected error from Flagsmith SDK calls
-   * @param error - The error thrown
-   * @private
-   */
-  private errorHandler(error: any, action: string) {
-    let errorMessage = `Unknown error ${error}`;
-    Object.getOwnPropertyNames(error);
-    if (typeof error === 'string') {
-      errorMessage = error;
-    } else if (error?.message) {
-      errorMessage = error.message;
-    }
-
-    const fullError = `${this.metadata.name}: error invoking action ${action}. ${errorMessage}`;
-    this._logger?.error(fullError);
-    this.events.emit(ProviderEvents.Error, {
-      message: error.message,
-    });
   }
 
   public get flagsmithClient() {

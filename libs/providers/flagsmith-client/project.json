@@ -43,7 +43,7 @@
       "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/providers/flagsmith-client/package.json",
-        "outputPath": "dist/libs/providers/flagsmith",
+        "outputPath": "dist/libs/providers/flagsmith-client",
         "entryFile": "libs/providers/flagsmith-client/src/index.ts",
         "tsConfig": "libs/providers/flagsmith-client/tsconfig.lib.json",
         "buildableProjectDepsInPackageJsonType": "dependencies",
