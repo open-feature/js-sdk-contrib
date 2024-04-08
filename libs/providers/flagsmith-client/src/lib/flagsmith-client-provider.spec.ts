@@ -131,10 +131,10 @@ describe('FlagsmithProvider', () => {
           ...defaultState,
           flags: {
             ...defaultState.flags,
-            [exampleBooleanFlag!.feature.name]: {
-              id: exampleBooleanFlag!.feature.id,
+            [exampleBooleanFlag.feature.name]: {
+              id: exampleBooleanFlag.feature.id,
               enabled: false,
-              value: exampleBooleanFlag!.feature_state_value,
+              value: exampleBooleanFlag.feature_state_value,
             },
           },
         }),
@@ -200,10 +200,10 @@ describe('FlagsmithProvider', () => {
           ...defaultState,
           flags: {
             ...defaultState.flags,
-            [exampleBooleanFlag!.feature.name]: {
-              id: exampleBooleanFlag!.feature.id,
+            [exampleBooleanFlag.feature.name]: {
+              id: exampleBooleanFlag.feature.id,
               enabled: false,
-              value: exampleBooleanFlag!.feature_state_value,
+              value: exampleBooleanFlag.feature_state_value,
             },
           },
         }),

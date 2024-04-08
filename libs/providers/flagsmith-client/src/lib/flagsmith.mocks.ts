@@ -84,14 +84,14 @@ export const getFetchMock = (response: FeatureResponse[]) => {
   return jest.fn().mockResolvedValue({
     text: async () => JSON.stringify(response),
     status: 200,
-  }) as any;
+  }) as unknown;
 };
 
 export const getFetchErrorMock = () => {
   return jest.fn().mockResolvedValue({
     status: 500,
     text: async () => JSON.stringify({ message: 'Oops there was an error!' }),
-  }) as any;
+  }) as unknown;
 };
 
 export const exampleFlagsmithResponse = [
