@@ -29,7 +29,8 @@
       "@openfeature/hooks-open-telemetry": ["libs/hooks/open-telemetry/src/index.ts"],
       "@openfeature/launchdarkly-client-provider": ["libs/providers/launchdarkly-client/src/index.ts"],
       "@openfeature/ofrep-provider": ["libs/providers/ofrep/src/index.ts"],
-      "@openfeature/ofrep-web-provider": ["libs/providers/ofrep-web/src/index.ts"]
+      "@openfeature/ofrep-web-provider": ["libs/providers/ofrep-web/src/index.ts"],
+      "@openfeature/flagsmith-client-provider": ["libs/shared/flagsmith-client/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
