@@ -32,7 +32,7 @@ export const defaultConfig: () => IInitConfig = () => ({
   fetch: getFetchMock(exampleFlagsmithResponse),
 });
 export const exampleBooleanFlagName = 'example_boolean_flag';
-export const exampleBooleanFlag: FeatureResponse = {
+export const exampleBooleanFlag = {
   feature_state_value: null,
   enabled: true,
   feature: {
@@ -42,7 +42,7 @@ export const exampleBooleanFlag: FeatureResponse = {
 };
 
 export const exampleStringFlagName = 'example_string_flag';
-export const exampleStringFlag: FeatureResponse = {
+export const exampleStringFlag = {
   feature_state_value: 'Hello World',
   enabled: true,
   feature: {
@@ -52,7 +52,7 @@ export const exampleStringFlag: FeatureResponse = {
 };
 
 export const exampleNumericFlagName = 'example_numeric_flag';
-export const exampleNumericFlag: FeatureResponse = {
+export const exampleNumericFlag = {
   feature_state_value: 100,
   enabled: true,
   feature: {
@@ -62,7 +62,7 @@ export const exampleNumericFlag: FeatureResponse = {
 };
 
 export const exampleFloatFlagName = 'example_float_flag';
-export const exampleFloatFlag: FeatureResponse = {
+export const exampleFloatFlag = {
   feature_state_value: 99.999,
   enabled: true,
   feature: {
@@ -72,7 +72,7 @@ export const exampleFloatFlag: FeatureResponse = {
 };
 
 export const exampleJSONFlagName = 'example_json_flag';
-export const exampleJSONFlag: FeatureResponse = {
+export const exampleJSONFlag = {
   feature_state_value: JSON.stringify({ foo: 'bar' }),
   enabled: true,
   feature: {
