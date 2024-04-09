@@ -7,13 +7,13 @@ This provider is designed to use the [OpenFeature Remote Evaluation Protocol (OF
 ### npm
 
 ```sh
-npm install @openfeature/ofrep-web
+npm install @openfeature/ofrep-web-provider
 ```
 
 ### yarn
 
 ```sh
-yarn add @openfeature/ofrep-web @openfeature/ofrep-core @openfeature/web-sdk
+yarn add @openfeature/ofrep-web-provider @openfeature/ofrep-core @openfeature/web-sdk
 ```
 
 > [!NOTE]
