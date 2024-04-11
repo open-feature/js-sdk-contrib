@@ -195,7 +195,7 @@ describe('flagd-core common flag definitions', () => {
 
   it('should support fractional logic', () => {
     const core = new FlagdCore();
-    const flagCfg = `{"flags":{"headerColor":{"state":"ENABLED","variants":{"red":"red","blue":"blue","grey":"grey"},"defaultVariant":"grey", "targeting":{"fractional":[{"var":"email"},["red",50],["blue",50]]}}}}`;
+    const flagCfg = `{"flags":{"headerColor":{"state":"ENABLED","variants":{"red":"red","blue":"blue","grey":"grey"},"defaultVariant":"grey", "targeting":{"fractional":[{"cat":[{"var":"$flagd.flagKey"},{"var":"email"}]},["red",50],["blue",50]]}}}}`;
     core.setConfigurations(flagCfg);
 
     const resolved = core.resolveStringEvaluation('headerColor', 'grey', { email: 'user@openfeature.dev' }, console);
@@ -206,7 +206,7 @@ describe('flagd-core common flag definitions', () => {
 
   it('should support nested fractional logic', () => {
     const core = new FlagdCore();
-    const flagCfg = `{"flags":{"headerColor":{"state":"ENABLED","variants":{"red":"red","blue":"blue","grey":"grey"},"defaultVariant":"grey", "targeting":{"if":[true,{"fractional":[{"var":"email"},["red",50],["blue",50]]}]}}}}`;
+    const flagCfg = `{"flags":{"headerColor":{"state":"ENABLED","variants":{"red":"red","blue":"blue","grey":"grey"},"defaultVariant":"grey", "targeting":{"if":[true,{"fractional":[{"cat":[{"var":"$flagd.flagKey"},{"var":"email"}]},["red",50],["blue",50]]}]}}}}`;
     core.setConfigurations(flagCfg);
 
     const resolved = core.resolveStringEvaluation('headerColor', 'grey', { email: 'user@openfeature.dev' }, console);
