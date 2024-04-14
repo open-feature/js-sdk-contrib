@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.1.1...ofrep-core-v0.1.2) (2024-04-14)
+
+
+### 🐛 Bug Fixes
+
+* OFREP web provider failing because of wrong fetch scope ([72c6f67](https://github.com/open-feature/js-sdk-contrib/commit/72c6f6739342bd35c40d7261c96f9ebf84352fbb))
+
+
+### ✨ New Features
+
+* implement OFREP server provider ([#817](https://github.com/open-feature/js-sdk-contrib/issues/817)) ([5d9f5ff](https://github.com/open-feature/js-sdk-contrib/commit/5d9f5ffa3cebbf54f52f215ccf135edf3ab4cc87))
+* OFREP web provider ([#776](https://github.com/open-feature/js-sdk-contrib/issues/776)) ([9626ef4](https://github.com/open-feature/js-sdk-contrib/commit/9626ef43ae8f5252219b3a9bff51b83c4c5e6230))
+
 ## [0.1.1](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.1.0...ofrep-core-v0.1.1) (2024-04-05)
 
 
