@@ -31,6 +31,7 @@ The NX scaffolding will generate stub tests for you when you create your project
 
 Use `npm run test` to test the entire project.
 Use `npx nx test {MODULE NAME}` to test just a single module.
+Module names can be listed using `npx nx show projects`.
 
 ## Releases
 
