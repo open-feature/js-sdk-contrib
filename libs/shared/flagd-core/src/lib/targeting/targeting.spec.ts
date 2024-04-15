@@ -155,7 +155,7 @@ describe('fractional operator', () => {
 
   it('should evaluate valid rule', () => {
     const input = {
-      fractional: [{ var: 'key' }, ['red', 50], ['blue', 50]],
+      fractional: [{ cat: [{ var: '$flagd.flagKey' }, { var: 'key' }] }, ['red', 50], ['blue', 50]],
     };
 
     expect(targeting.applyTargeting('flagA', input, { key: 'bucketKeyA' })).toBe('red');
@@ -163,7 +163,7 @@ describe('fractional operator', () => {
 
   it('should evaluate valid rule', () => {
     const input = {
-      fractional: [{ var: 'key' }, ['red', 50], ['blue', 50]],
+      fractional: [{ cat: [{ var: '$flagd.flagKey' }, { var: 'key' }] }, ['red', 50], ['blue', 50]],
     };
 
     expect(targeting.applyTargeting('flagA', input, { key: 'bucketKeyB' })).toBe('blue');

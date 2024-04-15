@@ -33,6 +33,32 @@ const evaluateStringFlagWithContext: StepsDefinitionCallbackFunction = ({ given,
   });
 };
 
+const evaluateStringFlagWithFractional: StepsDefinitionCallbackFunction = ({ given, when, and, then }) => {
+  let flagKey: string;
+  let defaultValue: string;
+  const evaluationContext: EvaluationContext = {};
+
+  aFlagProviderIsSet(given);
+  when(/^a string flag with key "(.*)" is evaluated with default value "(.*)"$/, (key, defaultVal) => {
+    flagKey = key;
+    defaultValue = defaultVal;
+  });
+  and(
+    /^a context containing a nested property with outer key "(.*)" and inner key "(.*)", with value (.*)$/,
+    (outerKey: string, innerKey: string, value: string) => {
+      // we have to support string and non-string params in this test (we test invalid context value 3)
+      const valueNoQuotes = value.replaceAll('"', '');
+      evaluationContext[outerKey] = {
+        [innerKey]: parseInt(valueNoQuotes) || valueNoQuotes,
+      };
+    },
+  );
+  then(/^the returned value should be "(.*)"$/, async (expectedValue: string) => {
+    const value = await client.getStringValue(flagKey, defaultValue, evaluationContext);
+    expect(value).toEqual(expectedValue);
+  });
+};
+
 defineFeature(feature, (test) => {
   beforeAll((done) => {
     client.addHandler(ProviderEvents.Ready, async () => {
@@ -46,31 +72,11 @@ defineFeature(feature, (test) => {
 
   test('Evaluator reuse', evaluateStringFlagWithContext);
 
-  test('Fractional operator', ({ given, when, and, then }) => {
-    let flagKey: string;
-    let defaultValue: string;
-    const evaluationContext: EvaluationContext = {};
+  test('Fractional operator', evaluateStringFlagWithFractional);
 
-    aFlagProviderIsSet(given);
-    when(/^a string flag with key "(.*)" is evaluated with default value "(.*)"$/, (key, defaultVal) => {
-      flagKey = key;
-      defaultValue = defaultVal;
-    });
-    and(
-      /^a context containing a nested property with outer key "(.*)" and inner key "(.*)", with value (.*)$/,
-      (outerKey: string, innerKey: string, value: string) => {
-        // we have to support string and non-string params in this test (we test invalid context value 3)
-        const valueNoQuotes = value.replaceAll('"', '');
-        evaluationContext[outerKey] = {
-          [innerKey]: parseInt(valueNoQuotes) || valueNoQuotes,
-        };
-      },
-    );
-    then(/^the returned value should be "(.*)"$/, async (expectedValue: string) => {
-      const value = await client.getStringValue(flagKey, defaultValue, evaluationContext);
-      expect(value).toEqual(expectedValue);
-    });
-  });
+  test('Fractional operator with shared seed', evaluateStringFlagWithFractional);
+
+  test('Second fractional operator with shared seed', evaluateStringFlagWithFractional);
 
   test('Substring operators', evaluateStringFlagWithContext);
 
