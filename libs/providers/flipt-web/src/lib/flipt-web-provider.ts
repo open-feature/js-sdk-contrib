@@ -41,7 +41,7 @@ export class FliptWebProvider implements Provider {
 
   hooks = [];
 
-  constructor(namespace: string = 'default', options?: FliptWebProviderOptions, logger?: Logger) {
+  constructor(namespace = 'default', options?: FliptWebProviderOptions, logger?: Logger) {
     this._namespace = namespace;
     this._options = options;
     this._logger = logger;
