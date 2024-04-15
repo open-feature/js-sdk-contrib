@@ -1,7 +1,6 @@
 export interface FliptWebProviderOptions {
   url?: string;
   authentication?: FliptWebProviderAuthentication;
-  namespace?: string;
   fetcher?: () => Promise<Response>;
 }
 

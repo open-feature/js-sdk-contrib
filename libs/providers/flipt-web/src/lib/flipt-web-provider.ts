@@ -25,6 +25,9 @@ export class FliptWebProvider implements Provider {
   // status of the provider
   private _status: ProviderStatus = ProviderStatus.NOT_READY;
 
+  // namespace is the namespace to use for the evaluation
+  private _namespace: string;
+
   // options is the options provided to the provider
   private _options?: FliptWebProviderOptions;
 
@@ -38,7 +41,8 @@ export class FliptWebProvider implements Provider {
 
   hooks = [];
 
-  constructor(options?: FliptWebProviderOptions, logger?: Logger) {
+  constructor(namespace: string = 'default', options?: FliptWebProviderOptions, logger?: Logger) {
+    this._namespace = namespace;
     this._options = options;
     this._logger = logger;
   }
@@ -70,7 +74,7 @@ export class FliptWebProvider implements Provider {
     }
 
     try {
-      this._client = await FliptEvaluationClient.init(this._options?.namespace || 'default', {
+      this._client = await FliptEvaluationClient.init(this._namespace || 'default', {
         url: this._options?.url || 'http://localhost:8080',
         fetcher: this._options?.fetcher,
         authentication,

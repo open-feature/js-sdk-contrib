@@ -7,7 +7,7 @@ This provider is an implementation on top of the official [Flipt Node Server Sid
 ## Installation
 
 ```
-$ npm install @openfeature/flipt-provider
+npm install @openfeature/flipt-provider
 ```
 
 ### Peer Dependencies
@@ -18,7 +18,7 @@ Please make sure to install `@flipt/flipt-io` at versions >= `1.0.0`, as the cli
 
 The peer dependency will also enforce the above version.
 
-## Example initialization and usage
+## Usage
 
 To initialize the OpenFeature client with Flipt, you can use the following code snippet:
 

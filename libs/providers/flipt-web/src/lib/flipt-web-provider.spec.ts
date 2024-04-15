@@ -16,7 +16,7 @@ describe('FliptWebProvider', () => {
   let provider: FliptWebProvider;
 
   beforeEach(async () => {
-    provider = new FliptWebProvider({ namespace: 'default', url: endpoint, fetcher });
+    provider = new FliptWebProvider('default', { url: endpoint, fetcher });
 
     await provider.initialize();
   });
