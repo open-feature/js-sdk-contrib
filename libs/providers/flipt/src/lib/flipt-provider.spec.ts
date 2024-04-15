@@ -15,7 +15,7 @@ describe('FliptProvider', () => {
   });
 
   beforeAll(async () => {
-    provider = new FliptProvider('default', { url: 'http://localhost:8080' });
+    provider = new FliptProvider('default', { url: endpoint });
 
     await provider.initialize();
   });

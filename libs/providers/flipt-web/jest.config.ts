@@ -5,6 +5,8 @@ export default {
   transform: {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
+  testEnvironment: 'jsdom',
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../../coverage/libs/providers/flipt-web',
+  setupFiles: ['<rootDir>/jest.polyfills.js'],
 };

@@ -69,13 +69,18 @@ export class FliptWebProvider implements Provider {
       authentication = { jwt_token: this._options.authentication.jwtToken };
     }
 
-    this._client = await FliptEvaluationClient.init(this._options?.namespace || 'default', {
-      url: this._options?.url || 'http://localhost:8080',
-      authentication,
-    });
+    try {
+      this._client = await FliptEvaluationClient.init(this._options?.namespace || 'default', {
+        url: this._options?.url || 'http://localhost:8080',
+        fetcher: this._options?.fetcher,
+        authentication,
+      });
+    } catch (e) {
+      throw new GeneralError(getErrorMessage(e));
+    }
   }
 
-  async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+  async onContextChange(_oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     this._globalContext = newContext;
     await this._client?.refresh();
   }
@@ -90,6 +95,15 @@ export class FliptWebProvider implements Provider {
 
     try {
       const resp = this._client?.evaluateBoolean(flagKey, mergedContext.targetingKey ?? '', evalContext);
+
+      if (resp?.status === 'failure') {
+        return {
+          value: defaultValue,
+          errorCode: ErrorCode.GENERAL,
+          errorMessage: resp.error_message,
+          reason: StandardResolutionReasons.ERROR,
+        };
+      }
 
       const result = resp?.result;
 

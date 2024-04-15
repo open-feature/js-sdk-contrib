@@ -23,7 +23,7 @@ components:
     - mateoc
     - sago2k8
   libs/providers/flipt:
-    - yquansah
+    - markphelps
 
 ignored-authors:
   - renovate-bot
