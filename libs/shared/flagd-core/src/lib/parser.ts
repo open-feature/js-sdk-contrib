@@ -1,10 +1,11 @@
+import { Logger, ParseError } from '@openfeature/core';
 import Ajv from 'ajv';
+import flagsSchema from '../../flagd-schemas/json/flags.json';
+import targetingSchema from '../../flagd-schemas/json/targeting.json';
 import { FeatureFlag, Flag } from './feature-flag';
-import flagDefinitionSchema from '../../flagd-schemas/json/flagd-definitions.json';
-import { ParseError } from '@openfeature/core';
 
 const ajv = new Ajv();
-const validate = ajv.compile(flagDefinitionSchema);
+const validate = ajv.addSchema(targetingSchema).compile(flagsSchema);
 
 const evaluatorKey = '$evaluators';
 const bracketReplacer = new RegExp('^[^{]*\\{|}[^}]*$', 'g');
@@ -14,13 +15,17 @@ const errorMessages = 'invalid flagd flag configuration';
 /**
  * Validate and parse flag configurations.
  */
-export function parse(flagCfg: string): Map<string, FeatureFlag> {
+export function parse(flagCfg: string, throwIfSchemaInvalid: boolean, logger?: Logger): Map<string, FeatureFlag> {
   try {
     const transformed = transform(flagCfg);
     const flags: { flags: { [key: string]: Flag } } = JSON.parse(transformed);
     const isValid = validate(flags);
     if (!isValid) {
-      throw new ParseError(errorMessages);
+      const message = `${errorMessages}: ${JSON.stringify(validate.errors, undefined, 2)}`;
+      logger?.warn(message);
+      if (throwIfSchemaInvalid) {
+        throw new ParseError(message);
+      }
     }
     const flagMap = new Map<string, FeatureFlag>();
 

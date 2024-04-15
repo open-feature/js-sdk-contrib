@@ -25,7 +25,7 @@ export class FlagdCore implements Storage {
   private _targeting: Targeting;
 
   constructor(storage?: Storage, logger?: Logger) {
-    this._storage = storage ? storage : new MemoryStorage();
+    this._storage = storage ? storage : new MemoryStorage(logger);
     this._logger = logger ? new SafeLogger(logger) : new DefaultLogger();
     this._targeting = new Targeting(this._logger);
   }

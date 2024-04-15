@@ -1,5 +1,5 @@
+import { FlagNotFoundError, ParseError, StandardResolutionReasons, TypeMismatchError } from '@openfeature/core';
 import { FlagdCore } from './flagd-core';
-import { FlagNotFoundError, GeneralError, StandardResolutionReasons, TypeMismatchError } from '@openfeature/core';
 
 describe('flagd-core resolving', () => {
   describe('truthy variant values', () => {
@@ -132,16 +132,12 @@ describe('flagd-core targeting evaluations', () => {
 describe('flagd-core validations', () => {
   // flags of disabled, invalid variants and missing variant
   const mixFlags =
-    '{"flags":{"myBoolFlag":{"state":"DISABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myIntFlag":{"state":"ENABLED","variants":{"two":2},"defaultVariant":"one"}}}';
+    '{"flags":{"myBoolFlag":{"state":"DISABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"}}}';
   let core: FlagdCore;
 
   beforeAll(() => {
     core = new FlagdCore();
     core.setConfigurations(mixFlags);
-  });
-
-  it('should validate flag type - eval int as boolean', () => {
-    expect(() => core.resolveBooleanEvaluation('myIntFlag', true, {}, console)).toThrow(GeneralError);
   });
 
   it('should throw because the flag does not exist', () => {
@@ -160,10 +156,6 @@ describe('flagd-core validations', () => {
 
   it('should validate variant', () => {
     expect(() => core.resolveStringEvaluation('myStringFlag', 'hello', {}, console)).toThrow(TypeMismatchError);
-  });
-
-  it('should validate variant existence', () => {
-    expect(() => core.resolveNumberEvaluation('myIntFlag', 100, {}, console)).toThrow(GeneralError);
   });
 });
 
@@ -226,11 +218,21 @@ describe('flagd-core common flag definitions', () => {
     expect(resolved.variant).toBe('false');
   });
 
-  it('should throw with invalid targeting rules', () => {
+  it('should throw ParseError with invalid invalid flag state', () => {
     const core = new FlagdCore();
-    const flagCfg = `{"flags":{"isEnabled":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":"false","targeting":{"invalid": ["this is not valid targeting"]}}}}`;
-    core.setConfigurations(flagCfg);
+    const flagCfg = `{"flags":{"isEnabled":{"state":"INVALID","variants":{"true":true,"false":false},"defaultVariant":"false"}}}`;
+    expect(() => core.setConfigurations(flagCfg)).toThrow(ParseError);
+  });
 
-    expect(() => core.resolveBooleanEvaluation('isEnabled', false, {}, console)).toThrow();
+  it('should throw ParseError with invalid invalid flag variants', () => {
+    const core = new FlagdCore();
+    const flagCfg = `{"flags":{"isEnabled":{"state":"ENABLED","variants":"invalid","defaultVariant":"false"}}}`;
+    expect(() => core.setConfigurations(flagCfg)).toThrow(ParseError);
+  });
+
+  it('should throw ParseError with invalid invalid flag defaultVariant', () => {
+    const core = new FlagdCore();
+    const flagCfg = `{"flags":{"isEnabled":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":{}}}}`;
+    expect(() => core.setConfigurations(flagCfg)).toThrow(ParseError);
   });
 });

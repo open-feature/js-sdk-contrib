@@ -1,3 +1,4 @@
+import { Logger } from '@openfeature/core';
 import { FeatureFlag } from './feature-flag';
 import { parse } from './parser';
 
@@ -33,7 +34,7 @@ export interface Storage {
 export class MemoryStorage implements Storage {
   private _flags: Map<string, FeatureFlag>;
 
-  constructor() {
+  constructor(private logger?: Logger) {
     this._flags = new Map<string, FeatureFlag>();
   }
 
@@ -46,7 +47,7 @@ export class MemoryStorage implements Storage {
   }
 
   setConfigurations(cfg: string): string[] {
-    const newFlags = parse(cfg);
+    const newFlags = parse(cfg, false, this.logger);
     const oldFlags = this._flags;
     const added: string[] = [];
     const removed: string[] = [];
