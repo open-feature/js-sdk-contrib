@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-provider-v0.1.2...ofrep-provider-v0.1.3) (2024-04-16)
+
+
+### 🧹 Chore
+
+* update ofrep-core ([#884](https://github.com/open-feature/js-sdk-contrib/issues/884)) ([f663eae](https://github.com/open-feature/js-sdk-contrib/commit/f663eae89fb75628e965eec775d0fccb354e494c))
+
 ## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-provider-v0.1.1...ofrep-provider-v0.1.2) (2024-04-14)
 
 
