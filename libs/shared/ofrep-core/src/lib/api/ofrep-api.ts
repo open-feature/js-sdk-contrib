@@ -106,8 +106,12 @@ export class OFREPApi {
     evaluationRequest?: EvaluationRequest,
     options?: RequestOptions,
   ): Promise<OFREPApiEvaluationResult> {
+    const headers = new Headers(options?.headers);
+    headers.append('Content-Type', 'application/json; charset=utf-8');
+
     const request = new Request(`${this.baseUrl}/ofrep/v1/evaluate/flags/${flagKey}`, {
       ...options,
+      headers,
       method: 'POST',
       body: JSON.stringify(evaluationRequest ?? {}),
     });
