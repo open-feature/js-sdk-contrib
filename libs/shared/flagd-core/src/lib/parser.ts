@@ -4,7 +4,7 @@ import flagsSchema from '../../flagd-schemas/json/flags.json';
 import targetingSchema from '../../flagd-schemas/json/targeting.json';
 import { FeatureFlag, Flag } from './feature-flag';
 
-const ajv = new Ajv();
+const ajv = new Ajv({ strict: false });
 const validate = ajv.addSchema(targetingSchema).compile(flagsSchema);
 
 const evaluatorKey = '$evaluators';
