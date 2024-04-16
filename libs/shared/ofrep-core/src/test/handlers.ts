@@ -17,6 +17,11 @@ export const handlers = [
         throw HttpResponse.text(undefined, { status: 400 });
       }
 
+      const contentTypeHeader = info.request.headers.get('Content-Type');
+      if (contentTypeHeader?.toLowerCase() !== 'application/json; charset=utf-8') {
+        throw HttpResponse.text('Wrong content type', { status: 415 });
+      }
+
       const authHeader = info.request.headers.get('Authorization');
       const expectedAuthHeader = requestBody.context?.['expectedAuthHeader'] ?? null;
 
@@ -113,6 +118,11 @@ export const handlers = [
       const requestBody = await info.request.json();
       if (!requestBody) {
         throw HttpResponse.text(undefined, { status: 400 });
+      }
+
+      const contentTypeHeader = info.request.headers.get('Content-Type');
+      if (contentTypeHeader?.toLowerCase() !== 'application/json; charset=utf-8') {
+        throw HttpResponse.text('Wrong content type', { status: 415 });
       }
 
       const authHeader = info.request.headers.get('Authorization');
