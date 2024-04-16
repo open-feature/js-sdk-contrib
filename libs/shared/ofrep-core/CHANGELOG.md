@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.1.3...ofrep-core-v0.1.4) (2024-04-16)
+
+
+### 🐛 Bug Fixes
+
+* OFREP http set headers ([f0dcf93](https://github.com/open-feature/js-sdk-contrib/commit/f0dcf93ce97d01b79854212919afe5eacd28c860))
+
 ## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.1.2...ofrep-core-v0.1.3) (2024-04-16)
 
 
