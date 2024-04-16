@@ -9,6 +9,7 @@ import {
   ErrorCode,
   TypeMismatchError,
   GeneralError,
+  ProviderFatalError,
 } from '@openfeature/web-sdk';
 import { FliptEvaluationClient } from '@flipt-io/flipt-client-browser';
 import { EvaluationReason, FliptWebProviderOptions } from './models';
@@ -34,9 +35,6 @@ export class FliptWebProvider implements Provider {
   // client is the Flipt client reference
   private _client?: FliptEvaluationClient;
 
-  // globalContext is the context that will be merged with all the evaluations if provided
-  private _globalContext: EvaluationContext = {};
-
   readonly runsOn = 'client';
 
   hooks = [];
@@ -52,16 +50,10 @@ export class FliptWebProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext | undefined): Promise<void> {
-    return Promise.all([this.initializeClient()])
-      .then(() => {
-        this._globalContext = context || {};
-        this._status = ProviderStatus.READY;
-        this._logger?.info('FliptWebProvider initialized');
-      })
-      .catch((error) => {
-        this._status = ProviderStatus.ERROR;
-        this._logger?.error('FliptWebProvider initialization failed', error);
-      });
+    return Promise.all([this.initializeClient()]).then(() => {
+      this._status = ProviderStatus.READY;
+      this._logger?.info('FliptWebProvider initialized');
+    });
   }
 
   async initializeClient() {
@@ -80,12 +72,11 @@ export class FliptWebProvider implements Provider {
         authentication,
       });
     } catch (e) {
-      throw new GeneralError(getErrorMessage(e));
+      throw new ProviderFatalError(getErrorMessage(e));
     }
   }
 
   async onContextChange(_oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
-    this._globalContext = newContext;
     await this._client?.refresh();
   }
 
@@ -94,11 +85,10 @@ export class FliptWebProvider implements Provider {
     defaultValue: boolean,
     context: EvaluationContext,
   ): ResolutionDetails<boolean> {
-    const mergedContext = { ...this._globalContext, ...context };
-    const evalContext: Record<string, string> = transformContext(mergedContext);
+    const evalContext: Record<string, string> = transformContext(context);
 
     try {
-      const resp = this._client?.evaluateBoolean(flagKey, mergedContext.targetingKey ?? '', evalContext);
+      const resp = this._client?.evaluateBoolean(flagKey, context.targetingKey ?? '', evalContext);
 
       if (resp?.status === 'failure') {
         return {
@@ -143,8 +133,7 @@ export class FliptWebProvider implements Provider {
     defaultValue: string,
     context: EvaluationContext,
   ): ResolutionDetails<string> {
-    const mergedContext = { ...this._globalContext, ...context };
-    const value = this.resolveFlagHelper(flagKey, 'string', defaultValue, mergedContext);
+    const value = this.resolveFlagHelper(flagKey, 'string', defaultValue, context);
     return value as ResolutionDetails<string>;
   }
 
@@ -153,8 +142,7 @@ export class FliptWebProvider implements Provider {
     defaultValue: number,
     context: EvaluationContext,
   ): ResolutionDetails<number> {
-    const mergedContext = { ...this._globalContext, ...context };
-    const value = this.resolveFlagHelper(flagKey, 'number', defaultValue, mergedContext);
+    const value = this.resolveFlagHelper(flagKey, 'number', defaultValue, context);
     return value as ResolutionDetails<number>;
   }
 
@@ -163,8 +151,7 @@ export class FliptWebProvider implements Provider {
     defaultValue: U,
     context: EvaluationContext,
   ): ResolutionDetails<U> {
-    const mergedContext = { ...this._globalContext, ...context };
-    const value = this.resolveFlagHelper(flagKey, 'json', defaultValue, mergedContext);
+    const value = this.resolveFlagHelper(flagKey, 'json', defaultValue, context);
     return value as ResolutionDetails<U>;
   }
 
@@ -180,12 +167,7 @@ export class FliptWebProvider implements Provider {
       const resp = this._client?.evaluateVariant(flagKey, context.targetingKey ?? '', evalContext);
 
       if (resp?.status === 'failure') {
-        return {
-          value: defaultValue,
-          errorCode: ErrorCode.GENERAL,
-          errorMessage: resp.error_message,
-          reason: StandardResolutionReasons.ERROR,
-        };
+        throw new GeneralError(resp.error_message);
       }
 
       const result = resp?.result;

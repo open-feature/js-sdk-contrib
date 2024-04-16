@@ -23,16 +23,16 @@ To initialize the OpenFeature client with Flipt, you can use the following code 
 import { FliptWebProvider } from '@openfeature/flipt-web';
 
 const provider = new FliptWebProvider('namespace-of-choice', { url: 'http://your.upstream.flipt.host' });
-OpenFeature.setProviderAndWait(provider);
+await OpenFeature.setProviderAndWait(provider);
 ```
 
 After the provider gets initialized, you can start evaluations of feature flags like so:
 
 ```ts
-const evaluationCtx : EvaluationContext = {
+const evaluationCtx: EvaluationContext = {
   targetingKey: 'myentity',
   email: 'john@flipt.io',
-}
+};
 
 // Set the static context for OpenFeature
 await OpenFeature.setContext(evaluationCtx);
@@ -48,10 +48,10 @@ const details = client.getStringDetails('my-feature', 'default');
 
 You can pass the following options to the `FliptWebProvider` constructor:
 
-| Option name                   | Type   | Default        | Description                                                                                                                                                                                     |
-|-------------------------------|--------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| url                           | string | http://localhost:8080               | URL where your Flipt server is located.                                                                                                                               |
-| authentication               | object |                | (optional) If Flipt is configured to authenticate the requests, you should provide an `authentication` object to the provider. See: [`FliptWebProviderAuthentication`](src/lib/models.ts)|
+| Option name    | Type   | Default                 | Description                                                                                                                                                                               |
+| -------------- | ------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| url            | string | <http://localhost:8080> | URL where your Flipt server is located.                                                                                                                                                   |
+| authentication | object |                         | (optional) If Flipt is configured to authenticate the requests, you should provide an `authentication` object to the provider. See: [`FliptWebProviderAuthentication`](src/lib/models.ts) |
 
 ## Evaluation Context Transformation
 

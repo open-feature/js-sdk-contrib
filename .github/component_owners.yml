@@ -24,6 +24,8 @@ components:
     - sago2k8
   libs/providers/flipt:
     - markphelps
+  libs/providers/flipt-web:
+    - markphelps
 
 ignored-authors:
   - renovate-bot
