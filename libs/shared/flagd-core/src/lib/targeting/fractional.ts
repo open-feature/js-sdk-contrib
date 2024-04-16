@@ -1,4 +1,4 @@
-import { flagdPropertyKey, flagKeyPropertyKey, targetingPropertyKey } from './common';
+import { flagKeyPropertyKey, flagdPropertyKey, targetingPropertyKey } from './common';
 import MurmurHash3 from 'imurmurhash';
 import type { EvaluationContext, EvaluationContextValue, Logger } from '@openfeature/core';
 
@@ -29,7 +29,7 @@ export function fractionalFactory(logger: Logger) {
       bucketBy = args[0];
       buckets = args.slice(1, args.length);
     } else {
-      bucketBy = context[targetingPropertyKey];
+      bucketBy = `${flagdProperties[flagKeyPropertyKey]}${context[targetingPropertyKey]}`;
       if (!bucketBy) {
         logger.debug('Missing targetingKey property, cannot perform fractional targeting');
         return null;
@@ -47,9 +47,8 @@ export function fractionalFactory(logger: Logger) {
       return null;
     }
 
-    const hashKey = flagdProperties[flagKeyPropertyKey] + bucketBy;
     // hash in signed 32 format. Bitwise operation here works in signed 32 hence the conversion
-    const hash = new MurmurHash3(hashKey).result() | 0;
+    const hash = new MurmurHash3(bucketBy).result() | 0;
     const bucket = (Math.abs(hash) / 2147483648) * 100;
 
     let sum = 0;

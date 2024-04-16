@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.11...flagd-core-v0.2.0) (2024-04-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* allow overrides for fractional seed ([#870](https://github.com/open-feature/js-sdk-contrib/issues/870))
+
+### ✨ New Features
+
+* allow overrides for fractional seed ([#870](https://github.com/open-feature/js-sdk-contrib/issues/870)) ([6c376b2](https://github.com/open-feature/js-sdk-contrib/commit/6c376b2f525be04c15b5c3bd32d89cc9c4c66729))
+
 ## [0.1.11](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.1.10...flagd-core-v0.1.11) (2024-02-14)
 
 

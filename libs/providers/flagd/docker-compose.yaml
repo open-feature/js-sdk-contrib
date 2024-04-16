@@ -1,0 +1,25 @@
+services:
+  flagd:
+    build:
+      context: test-harness
+      dockerfile: flagd/Dockerfile
+    ports:
+      - 8013:8013
+  flagd-unstable:
+    build:
+      context: test-harness
+      dockerfile: flagd/Dockerfile.unstable
+    ports:
+      - 8014:8013
+  flagd-sync:
+    build:
+      context: test-harness
+      dockerfile: sync/Dockerfile
+    ports:
+      - 9090:9090
+  flagd-sync-unstable:
+    build:
+      context: test-harness
+      dockerfile: sync/Dockerfile.unstable
+    ports:
+      - 9091:9090
