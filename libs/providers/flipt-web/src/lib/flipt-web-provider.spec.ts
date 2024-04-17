@@ -1,4 +1,4 @@
-import { TypeMismatchError } from '@openfeature/web-sdk';
+import { GeneralError, TypeMismatchError } from '@openfeature/web-sdk';
 import { FliptWebProvider } from './flipt-web-provider';
 import fs from 'fs';
 import path from 'path';
@@ -26,10 +26,10 @@ describe('FliptWebProvider', () => {
   });
 
   describe('method resolveStringEvaluation', () => {
-    it('should return default value for missing value', () => {
-      const value = provider.resolveStringEvaluation('nonExistent', 'default', { fizz: 'buzz' });
-      expect(value).toHaveProperty('value', 'default');
-      expect(value).toHaveProperty('reason', 'ERROR');
+    it('should throw general error for non-existent flag', () => {
+      expect(() => {
+        provider.resolveStringEvaluation('nonExistent', 'default', { fizz: 'buzz' });
+      }).toThrow(GeneralError);
     });
 
     it('should return right value if key exists', () => {
@@ -40,10 +40,10 @@ describe('FliptWebProvider', () => {
   });
 
   describe('method resolveNumberEvaluation', () => {
-    it('should return default value for missing value', () => {
-      const value = provider.resolveNumberEvaluation('nonExistent', 0, { fizz: 'buzz' });
-      expect(value).toHaveProperty('value', 0);
-      expect(value).toHaveProperty('reason', 'ERROR');
+    it('should throw general error for non-existent flag', () => {
+      expect(() => {
+        provider.resolveNumberEvaluation('nonExistent', 1, { fizz: 'buzz' });
+      }).toThrow(GeneralError);
     });
 
     it('should return right value if key exists', () => {
@@ -54,10 +54,10 @@ describe('FliptWebProvider', () => {
   });
 
   describe('method resolveBooleanEvaluation', () => {
-    it('should return default value for missing value', () => {
-      const value = provider.resolveBooleanEvaluation('nonExistent', false, { fizz: 'buzz' });
-      expect(value).toHaveProperty('value', false);
-      expect(value).toHaveProperty('reason', 'ERROR');
+    it('should throw general error for non-existent flag', () => {
+      expect(() => {
+        provider.resolveBooleanEvaluation('nonExistent', false, { fizz: 'buzz' });
+      }).toThrow(GeneralError);
     });
 
     it('should return right value if key exists', () => {
@@ -68,10 +68,10 @@ describe('FliptWebProvider', () => {
   });
 
   describe('method resolveObjectEvaluation', () => {
-    it('should return default value for missing value', () => {
-      const value = provider.resolveObjectEvaluation('nonExistent', { fizz: 'buzz' }, { fizz: 'buzz' });
-      expect(value).toHaveProperty('value', { fizz: 'buzz' });
-      expect(value).toHaveProperty('reason', 'ERROR');
+    it('should throw general error for non-existent flag', () => {
+      expect(() => {
+        provider.resolveObjectEvaluation('nonExistent', {}, { fizz: 'buzz' });
+      }).toThrow(GeneralError);
     });
 
     it('should return right value if key exists', () => {

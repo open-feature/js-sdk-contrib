@@ -23,9 +23,6 @@ export class FliptWebProvider implements Provider {
   // logger is the Open Feature logger to use
   private _logger?: Logger;
 
-  // status of the provider
-  private _status: ProviderStatus = ProviderStatus.NOT_READY;
-
   // namespace is the namespace to use for the evaluation
   private _namespace: string;
 
@@ -45,13 +42,8 @@ export class FliptWebProvider implements Provider {
     this._logger = logger;
   }
 
-  get status() {
-    return this._status;
-  }
-
   async initialize(context?: EvaluationContext | undefined): Promise<void> {
     return Promise.all([this.initializeClient()]).then(() => {
-      this._status = ProviderStatus.READY;
       this._logger?.info('FliptWebProvider initialized');
     });
   }
@@ -91,12 +83,7 @@ export class FliptWebProvider implements Provider {
       const resp = this._client?.evaluateBoolean(flagKey, context.targetingKey ?? '', evalContext);
 
       if (resp?.status === 'failure') {
-        return {
-          value: defaultValue,
-          errorCode: ErrorCode.GENERAL,
-          errorMessage: resp.error_message,
-          reason: StandardResolutionReasons.ERROR,
-        };
+        throw new GeneralError(resp.error_message);
       }
 
       const result = resp?.result;
