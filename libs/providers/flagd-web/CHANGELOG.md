@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.6.0...flagd-web-provider-v0.7.0) (2024-04-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* allow overrides for fractional seed ([#870](https://github.com/open-feature/js-sdk-contrib/issues/870))
+
+### ✨ New Features
+
+* allow overrides for fractional seed ([#870](https://github.com/open-feature/js-sdk-contrib/issues/870)) ([6c376b2](https://github.com/open-feature/js-sdk-contrib/commit/6c376b2f525be04c15b5c3bd32d89cc9c4c66729))
+
+
+### 🧹 Chore
+
+* migrate from bufbuild to connectrpc ([#891](https://github.com/open-feature/js-sdk-contrib/issues/891)) ([df7b89d](https://github.com/open-feature/js-sdk-contrib/commit/df7b89d519da793f64bb6cba0984a7bf4764bafa))
+
 ## [0.6.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.5.1...flagd-web-provider-v0.6.0) (2024-03-19)
 
 
