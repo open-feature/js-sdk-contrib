@@ -1,4 +1,4 @@
-import { CallbackClient, Code, ConnectError, PromiseClient } from '@bufbuild/connect';
+import { CallbackClient, Code, ConnectError, PromiseClient } from '@connectrpc/connect';
 import { Struct } from '@bufbuild/protobuf';
 import {
   Client,

@@ -1,5 +1,5 @@
-import { CallbackClient, createCallbackClient, createPromiseClient, PromiseClient } from '@bufbuild/connect';
-import { createConnectTransport } from '@bufbuild/connect-web';
+import { CallbackClient, createCallbackClient, createPromiseClient, PromiseClient } from '@connectrpc/connect';
+import { createConnectTransport } from '@connectrpc/connect-web';
 import { Struct } from '@bufbuild/protobuf';
 import {
   EvaluationContext,
