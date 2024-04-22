@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.13.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.12.0...flagd-provider-v0.13.0) (2024-04-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* allow overrides for fractional seed ([#870](https://github.com/open-feature/js-sdk-contrib/issues/870))
+
+### ✨ New Features
+
+* allow overrides for fractional seed ([#870](https://github.com/open-feature/js-sdk-contrib/issues/870)) ([6c376b2](https://github.com/open-feature/js-sdk-contrib/commit/6c376b2f525be04c15b5c3bd32d89cc9c4c66729))
+
+
+### 🧹 Chore
+
+* Lint Fix Providers ([#837](https://github.com/open-feature/js-sdk-contrib/issues/837)) ([8c6c46b](https://github.com/open-feature/js-sdk-contrib/commit/8c6c46b5f8f72c5a292af7e5ff8ad8d710982554))
+
 ## [0.12.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.11.1...flagd-provider-v0.12.0) (2024-03-16)
 
 

@@ -26,7 +26,7 @@ The provider needs the base url of the OFREP server for instantiation.
 ```ts
 import { OFREPWebProvider } from '@openfeature/ofrep-web';
 
-OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', pollingInterval: 60000 }));
+OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 60000 }));
 ```
 
 ### HTTP headers

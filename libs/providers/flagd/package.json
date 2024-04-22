@@ -1,12 +1,12 @@
 {
   "name": "@openfeature/flagd-provider",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "scripts": {
     "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
     "current-version": "echo $npm_package_version"
   },
   "dependencies": {
-    "@openfeature/flagd-core": "~0.1.10"
+    "@openfeature/flagd-core": "~0.2.0"
   },
   "peerDependencies": {
     "@grpc/grpc-js": "~1.8.0 || ~1.9.0 || ~1.10.0",

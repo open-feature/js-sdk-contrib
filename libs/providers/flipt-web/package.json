@@ -1,15 +1,20 @@
 {
-  "name": "@openfeature/flagd-core",
-  "version": "0.2.1",
+  "name": "@openfeature/flipt-web-provider",
+  "version": "0.1.0",
+  "dependencies": {
+    "@flipt-io/flipt-client-browser": "^0.0.17",
+    "tslib": "^2.3.0"
+  },
+  "main": "./src/index.js",
+  "typings": "./src/index.d.ts",
   "scripts": {
     "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/core": ">=0.0.16"
+    "@openfeature/web-sdk": "^1.0.0"
   },
-  "dependencies": {
-    "ajv": "^8.12.0",
-    "tslib": "^2.3.0"
+  "devDependencies": {
+    "undici": "^6.13.0"
   }
 }
