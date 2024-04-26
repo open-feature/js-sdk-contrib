@@ -55,6 +55,7 @@ export class FlagdWebProvider implements Provider {
     const { host, port, tls, maxRetries, maxDelay, pathPrefix } = getOptions(options);
     const transport = createConnectTransport({
       baseUrl: `${tls ? 'https' : 'http'}://${host}:${port}/${pathPrefix}`,
+      interceptors: options.interceptors,
     });
     this._promiseClient = promiseClient ? promiseClient : createPromiseClient(Service, transport);
     this._callbackClient = callbackClient ? callbackClient : createCallbackClient(Service, transport);

@@ -1,3 +1,5 @@
+import type { Interceptor } from '@connectrpc/connect';
+
 export interface Options {
   /**
    * The domain name or IP address of flagd.
@@ -39,6 +41,11 @@ export interface Options {
    * @default 0
    */
   maxRetries: number;
+
+  /**
+   * Connect interceptors applied to all calls.
+   */
+  interceptors?: Interceptor[];
 }
 
 export type FlagdProviderOptions = Partial<Options> & Pick<Options, 'host'>;
