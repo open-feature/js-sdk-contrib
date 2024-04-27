@@ -31,6 +31,13 @@
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
+    "libs/shared/flagd-ui-components": {
+      "release-type": "node",
+      "prerelease": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "versioning": "default"
+    },
     "libs/providers/env-var": {
       "release-type": "node",
       "prerelease": true,

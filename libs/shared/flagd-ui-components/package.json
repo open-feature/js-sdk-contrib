@@ -1,0 +1,24 @@
+{
+  "name": "@openfeature/flagd-ui-components-provider",
+  "version": "0.0.1",
+  "dependencies": {
+    "@dynatrace/strato-components": "^0.85.50",
+    "@dynatrace/strato-components-preview": "^0.116.72",
+    "@dynatrace/strato-icons": "^0.39.2",
+    "react": "^18.3.1",
+    "tslib": "^2.3.0"
+  },
+  "main": "./src/index.js",
+  "typings": "./src/index.d.ts",
+  "scripts": {
+    "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
+    "current-version": "echo $npm_package_version"
+  },
+  "peerDependencies": {
+    "@openfeature/web-sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/events": "^3.0.3",
+    "@types/react": "^18.3.1"
+  }
+}
