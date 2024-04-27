@@ -1,1 +1,1 @@
-export * from './lib/flagd-ui-components-provider';
+export * from './lib/components/';

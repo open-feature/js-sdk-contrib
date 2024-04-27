@@ -1,35 +1,31 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { Builder } from '../../src';
+import './App.css';
+import { Attribute } from '../../src/lib/components/context';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [value, setValue] = useState<string>('{}');
+  const variants = ['on', 'off'];
+  const attributes: Attribute[] = [
+    {key: 'email', type: 'string'},
+    {key: 'admin', type: 'boolean'}
+  ];
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '80vw', flexWrap: 'wrap' }}>
+      <Builder attributes={attributes} value={value} onChange={(value) => {
+        setValue(JSON.stringify(JSON.parse(value), undefined, 2));
+      } } variants={variants} />
+      <textarea cols={30} rows={30} style={{ maxWidth: '50%', margin: '5%' }} value={value} onChange={(e) => {
+        try {
+          const value = e.target.value;
+          setValue(value);
+        } catch (err) {
+          setValue('{}');
+        }
+      }}></textarea>
+    </div>
+  );
 }
 
-export default App
+export default App;
