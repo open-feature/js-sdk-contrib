@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.0...flagd-web-provider-v0.7.1) (2024-04-26)
+
+
+### ✨ New Features
+
+* Add interceptors to flagd options. ([#894](https://github.com/open-feature/js-sdk-contrib/issues/894)) ([878b7b6](https://github.com/open-feature/js-sdk-contrib/commit/878b7b6e11853a8dcc2952e5767b7d275de72313))
+
 ## [0.7.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.6.0...flagd-web-provider-v0.7.0) (2024-04-18)
 
 
