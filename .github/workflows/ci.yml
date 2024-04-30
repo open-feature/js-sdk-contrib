@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - uses: bufbuild/buf-setup-action@v1.30.0
+      - uses: bufbuild/buf-setup-action@v1.31.0
         with:
           github_token: ${{ github.token }}
       - run: npm ci
@@ -74,7 +74,7 @@ jobs:
         - name: Install
           run: npm ci
 
-        - uses: bufbuild/buf-setup-action@v1.30.0
+        - uses: bufbuild/buf-setup-action@v1.31.0
           with:
             github_token: ${{ github.token }}
 
