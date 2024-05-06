@@ -49,7 +49,7 @@
     "@nx/rollup": "16.9.1",
     "@nx/web": "16.9.1",
     "@nx/workspace": "16.9.1",
-    "@openfeature/core": "^1.0.0",
+    "@openfeature/core": "^1.1.0",
     "@openfeature/flagd-core": ">=0.1.10",
     "@openfeature/ofrep-core": "^0.1.4",
     "@openfeature/server-sdk": "^1.13.2",
