@@ -13,7 +13,7 @@ npm install @openfeature/ofrep-web-provider
 ### yarn
 
 ```sh
-yarn add @openfeature/ofrep-web-provider @openfeature/ofrep-core @openfeature/web-sdk
+yarn add @openfeature/ofrep-web-provider @openfeature/ofrep-core @openfeature/web-sdk @openfeature/core
 ```
 
 > [!NOTE]
@@ -24,7 +24,7 @@ yarn add @openfeature/ofrep-web-provider @openfeature/ofrep-core @openfeature/we
 The provider needs the base url of the OFREP server for instantiation.
 
 ```ts
-import { OFREPWebProvider } from '@openfeature/ofrep-web';
+import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
 
 OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 60000 }));
 ```
