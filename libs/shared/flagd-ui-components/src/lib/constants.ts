@@ -34,7 +34,7 @@ export const OpTokens: Token[] = [
   { id: '!=', label: 'Not Equals', opType: 'binary' },
   { id: 'in', label: 'In', opType: 'binary' },
   { id: 'starts_with', label: 'Starts With', opType: 'binary' },
-  { id: 'ends_with', label: 'Starts With', opType: 'binary' },
+  { id: 'ends_with', label: 'Ends With', opType: 'binary' },
   { id: '>=', label: 'Equal or Greater Than', opType: 'binary' },
   { id: '>', label: 'Greater Than', opType: 'binary' },
   { id: '<=', label: 'Equal or Less Than', opType: 'binary' },
