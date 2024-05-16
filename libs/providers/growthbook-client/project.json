@@ -1,0 +1,79 @@
+{
+  "name": "providers-growthbook-client",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/providers/growthbook-client/src",
+  "projectType": "library",
+  "targets": {
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/providers/growthbook-client"
+      },
+      "dependsOn": [
+        {
+          "projects": "self",
+          "target": "package"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": [
+          "libs/providers/growthbook-client/**/*.ts",
+          "libs/providers/growthbook-client/package.json"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/providers/growthbook-client/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    },
+    "package": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "project": "libs/providers/growthbook-client/package.json",
+        "outputPath": "dist/libs/providers/growthbook-client",
+        "entryFile": "libs/providers/growthbook-client/src/index.ts",
+        "tsConfig": "libs/providers/growthbook-client/tsconfig.lib.json",
+        "buildableProjectDepsInPackageJsonType": "dependencies",
+        "compiler": "tsc",
+        "generateExportsField": true,
+        "umdName": "growthbook-client",
+        "external": "all",
+        "format": ["cjs", "esm"],
+        "assets": [
+          {
+            "glob": "package.json",
+            "input": "./assets",
+            "output": "./src/"
+          },
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/providers/growthbook-client",
+            "output": "./"
+          }
+        ]
+      }
+    }
+  },
+  "tags": []
+}
