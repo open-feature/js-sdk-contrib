@@ -54,7 +54,7 @@
     "@openfeature/flagd-core": ">=0.1.10",
     "@openfeature/ofrep-core": "^0.1.4",
     "@openfeature/server-sdk": "^1.13.2",
-    "@openfeature/web-sdk": "1.0.3",
+    "@openfeature/web-sdk": "1.1.0",
     "@opentelemetry/sdk-metrics": "^1.15.0",
     "@swc-node/register": "~1.9.0",
     "@swc/cli": "~0.3.0",
