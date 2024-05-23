@@ -14,5 +14,6 @@
   "libs/providers/flipt": "0.1.0",
   "libs/providers/flagsmith-client": "0.1.2",
   "libs/providers/flipt-web": "0.1.0",
+  "libs/providers/multi-provider": "0.1.0",
   "libs/providers/growthbook-client": "0.1.1"
 }

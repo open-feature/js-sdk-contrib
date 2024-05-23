@@ -30,6 +30,7 @@
       "@openfeature/growthbook-client-provider": ["libs/providers/growthbook-client/src/index.ts"],
       "@openfeature/hooks-open-telemetry": ["libs/hooks/open-telemetry/src/index.ts"],
       "@openfeature/launchdarkly-client-provider": ["libs/providers/launchdarkly-client/src/index.ts"],
+      "@openfeature/multi-provider": ["libs/providers/multi-provider/src/index.ts"],
       "@openfeature/ofrep-core": ["libs/shared/ofrep-core/src/index.ts"],
       "@openfeature/ofrep-provider": ["libs/providers/ofrep/src/index.ts"],
       "@openfeature/ofrep-web-provider": ["libs/providers/ofrep-web/src/index.ts"]
