@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.1...flagd-core-v0.2.2) (2024-05-23)
+
+
+### 🐛 Bug Fixes
+
+* update json logic engine and schema ([#914](https://github.com/open-feature/js-sdk-contrib/issues/914)) ([04f0dfd](https://github.com/open-feature/js-sdk-contrib/commit/04f0dfd1427dbd529bd2d650dfa27f25e89f7e07))
+
 ## [0.2.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.0...flagd-core-v0.2.1) (2024-04-16)
 
 
