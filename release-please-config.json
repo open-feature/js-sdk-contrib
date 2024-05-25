@@ -38,7 +38,21 @@
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
+    "libs/shared/config-cat-core": {
+      "release-type": "node",
+      "prerelease": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "versioning": "default"
+    },
     "libs/providers/config-cat": {
+      "release-type": "node",
+      "prerelease": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "versioning": "default"
+    },
+    "libs/providers/config-cat-web": {
       "release-type": "node",
       "prerelease": true,
       "bump-minor-pre-major": true,

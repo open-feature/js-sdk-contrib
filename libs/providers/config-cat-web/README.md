@@ -1,23 +1,23 @@
-# ConfigCat Provider
+# ConfigCat Web Provider
 
 This provider is an implementation for [ConfigCat](https://configcat.com) a managed feature flag service.
 
 ## Installation
 
 ```
-$ npm install @openfeature/config-cat-provider
+$ npm install @openfeature/config-cat-web-provider
 ```
 
 #### Required peer dependencies
 
 The OpenFeature SDK is required as peer dependency.
 
-The minimum required version of `@openfeature/server-sdk` currently is `1.6.0`.
+The minimum required version of `@openfeature/client-sdk` currently is `1.0.0`.
 
 The minimum required version of `configcat-js-ssr` currently is `7.1.2`.
 
 ```
-$ npm install @openfeature/server-sdk configcat-js-ssr
+$ npm install @openfeature/client-sdk configcat-js-ssr
 ```
 
 ## Usage
@@ -32,7 +32,7 @@ The available options can be found in the [ConfigCat JavaScript (SSR) SDK](https
 ### Example using the default configuration
 
 ```javascript
-import { ConfigCatProvider } from '@openfeature/config-cat-provider';
+import { ConfigCatProvider } from '@openfeature/config-cat-web-provider';
 
 const provider = ConfigCatProvider.create('<sdk_key>');
 OpenFeature.setProvider(provider);
@@ -41,9 +41,9 @@ OpenFeature.setProvider(provider);
 ### Example using different polling options and a setupHook
 
 ```javascript
-import { ConfigCatProvider } from '@openfeature/config-cat-provider';
+import { ConfigCatProvider } from '@openfeature/config-cat-web-provider';
 
-const provider = ConfigCatProvider.create('<sdk_key>', PollingMode.LazyLoad, {
+const provider = ConfigCatProvider.create('<sdk_key>', PollingMode.AutoPoll, {
   setupHooks: (hooks) => hooks.on('clientReady', () => console.log('Client is ready!')),
 });
 
@@ -121,8 +121,8 @@ following [OpenFeature events](https://openfeature.dev/specification/types#provi
 
 ## Building
 
-Run `nx package providers-config-cat` to build the library.
+Run `nx package providers-config-cat-web` to build the library.
 
 ## Running unit tests
 
-Run `nx test providers-config-cat` to execute the unit tests via [Jest](https://jestjs.io).
+Run `nx test providers-config-cat-web` to execute the unit tests via [Jest](https://jestjs.io).

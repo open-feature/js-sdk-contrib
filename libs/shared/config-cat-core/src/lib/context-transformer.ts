@@ -1,4 +1,4 @@
-import { EvaluationContext, EvaluationContextValue, TargetingKeyMissingError } from '@openfeature/server-sdk';
+import { EvaluationContext, EvaluationContextValue } from '@openfeature/core';
 import { User as ConfigCatUser } from 'configcat-js-ssr';
 
 function contextValueToString(contextValue: EvaluationContextValue): string | undefined {
@@ -49,11 +49,11 @@ function stringOrUndefined(param?: unknown): string | undefined {
   return undefined;
 }
 
-export function transformContext(context: EvaluationContext): ConfigCatUser | never {
+export function transformContext(context: EvaluationContext): ConfigCatUser | undefined {
   const { targetingKey, email, country, ...attributes } = context;
 
   if (!targetingKey) {
-    throw new TargetingKeyMissingError('ConfigCat evaluation context can only be used if a targetingKey is given');
+    return undefined;
   }
 
   return {

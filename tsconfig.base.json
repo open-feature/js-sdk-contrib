@@ -18,7 +18,9 @@
     "baseUrl": ".",
     "paths": {
       "@js-sdk-contrib/workspace-plugin": ["tools/workspace-plugin/src/index.ts"],
+      "@openfeature/config-cat-core": ["libs/shared/config-cat-core/src/index.ts"],
       "@openfeature/config-cat-provider": ["libs/providers/config-cat/src/index.ts"],
+      "@openfeature/config-cat-web-provider": ["libs/providers/config-cat-web/src/index.ts"],
       "@openfeature/env-var-provider": ["libs/providers/env-var/src/index.ts"],
       "@openfeature/flagd-core": ["libs/shared/flagd-core/src/index.ts"],
       "@openfeature/flagd-provider": ["libs/providers/flagd/src/index.ts"],

@@ -1,15 +1,16 @@
 import {
   EvaluationContext,
+  FlagNotFoundError,
   JsonValue,
   OpenFeatureEventEmitter,
+  Paradigm,
+  ParseError,
   Provider,
   ProviderEvents,
-  ResolutionDetails,
   ProviderNotReadyError,
-  TypeMismatchError,
-  FlagNotFoundError,
-  ParseError,
-} from '@openfeature/server-sdk';
+  ResolutionDetails,
+} from '@openfeature/web-sdk';
+import { TypeMismatchError } from '@openfeature/core';
 import {
   isType,
   PrimitiveType,
@@ -17,15 +18,18 @@ import {
   toResolutionDetails,
   transformContext,
 } from '@openfeature/config-cat-core';
-import { getClient, IConfig, IConfigCatClient } from 'configcat-js-ssr';
+import { getClient, IConfig, IConfigCatClient, IConfigCatClientSnapshot, PollingMode } from 'configcat-js-ssr';
 
-export class ConfigCatProvider implements Provider {
+export class ConfigCatWebProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
   private readonly _clientParameters: Parameters<typeof getClient>;
   private _client?: IConfigCatClient;
+  private _clientSnapshot?: IConfigCatClientSnapshot;
+
+  public runsOn: Paradigm = 'client';
 
   public metadata = {
-    name: ConfigCatProvider.name,
+    name: ConfigCatWebProvider.name,
   };
 
   constructor(...params: Parameters<typeof getClient>) {
@@ -33,13 +37,14 @@ export class ConfigCatProvider implements Provider {
   }
 
   public static create(...params: Parameters<typeof getClient>) {
-    return new ConfigCatProvider(...params);
+    return new ConfigCatWebProvider(...params);
   }
 
   public async initialize(): Promise<void> {
     const originalParameters = this._clientParameters;
     originalParameters[2] ??= {};
 
+    const pollingMode = originalParameters[1];
     const options = originalParameters[2];
     const oldSetupHooks = options.setupHooks;
 
@@ -50,11 +55,15 @@ export class ConfigCatProvider implements Provider {
         this.events.emit(ProviderEvents.Ready);
       });
 
-      hooks.on('configChanged', (projectConfig: IConfig | undefined) =>
+      hooks.on('configChanged', (projectConfig: IConfig | undefined) => {
         this.events.emit(ProviderEvents.ConfigurationChanged, {
           flagsChanged: projectConfig ? Object.keys(projectConfig.settings) : undefined,
-        }),
-      );
+        });
+
+        if (this._client) {
+          this._clientSnapshot = this._client.snapshot();
+        }
+      });
 
       hooks.on('clientError', (message: string, error) => {
         this.events.emit(ProviderEvents.Error, {
@@ -65,8 +74,15 @@ export class ConfigCatProvider implements Provider {
     };
 
     const client = getClient(...originalParameters);
-    await client.waitForReady();
+
+    if (pollingMode !== PollingMode.AutoPoll) {
+      await this._client?.forceRefreshAsync();
+    } else {
+      await client.waitForReady();
+    }
+
     this._client = client;
+    this._clientSnapshot = client.snapshot();
   }
 
   public get configCatClient() {
@@ -77,49 +93,49 @@ export class ConfigCatProvider implements Provider {
     this._client?.dispose();
   }
 
-  async resolveBooleanEvaluation(
+  public resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,
     context: EvaluationContext,
-  ): Promise<ResolutionDetails<boolean>> {
+  ): ResolutionDetails<boolean> {
     return this.evaluate(flagKey, 'boolean', context);
   }
 
-  public async resolveStringEvaluation(
+  public resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
     context: EvaluationContext,
-  ): Promise<ResolutionDetails<string>> {
+  ): ResolutionDetails<string> {
     return this.evaluate(flagKey, 'string', context);
   }
 
-  public async resolveNumberEvaluation(
+  public resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
     context: EvaluationContext,
-  ): Promise<ResolutionDetails<number>> {
+  ): ResolutionDetails<number> {
     return this.evaluate(flagKey, 'number', context);
   }
 
-  public async resolveObjectEvaluation<U extends JsonValue>(
+  public resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
     defaultValue: U,
     context: EvaluationContext,
-  ): Promise<ResolutionDetails<U>> {
-    const objectValue = await this.evaluate(flagKey, 'object', context);
+  ): ResolutionDetails<U> {
+    const objectValue = this.evaluate(flagKey, 'object', context);
     return objectValue as ResolutionDetails<U>;
   }
 
-  protected async evaluate<T extends PrimitiveTypeName>(
+  protected evaluate<T extends PrimitiveTypeName>(
     flagKey: string,
     flagType: T,
     context: EvaluationContext,
-  ): Promise<ResolutionDetails<PrimitiveType<T>>> {
-    if (!this._client) {
+  ): ResolutionDetails<PrimitiveType<T>> {
+    if (!this._clientSnapshot) {
       throw new ProviderNotReadyError('Provider is not initialized');
     }
 
-    const { value, ...evaluationData } = await this._client.getValueDetailsAsync(
+    const { value, ...evaluationData } = this._clientSnapshot.getValueDetails(
       flagKey,
       undefined,
       transformContext(context),
