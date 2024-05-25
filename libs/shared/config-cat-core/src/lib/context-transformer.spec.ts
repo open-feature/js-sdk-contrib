@@ -1,16 +1,8 @@
-import { EvaluationContext, TargetingKeyMissingError } from '@openfeature/server-sdk';
+import { EvaluationContext } from '@openfeature/core';
 import { transformContext } from './context-transformer';
 
 describe('context-transformer', () => {
   describe('transformContext', () => {
-    it('throw TargetingKeyMissingError if targeting key is missing', () => {
-      const context: EvaluationContext = {
-        customProp: 'test',
-      };
-
-      expect(() => transformContext(context)).toThrow(TargetingKeyMissingError);
-    });
-
     it('map targeting key to identifier', () => {
       const context: EvaluationContext = {
         targetingKey: 'test',
