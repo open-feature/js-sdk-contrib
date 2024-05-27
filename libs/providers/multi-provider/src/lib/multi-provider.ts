@@ -142,8 +142,7 @@ export class MultiProvider implements Provider {
       throw new GeneralError('Hook context not available for evaluation');
     }
 
-    const tasks: Promise<boolean>[] = [];
-    const resolutions: ProviderResolutionResult<T>[] = [];
+    const tasks: Promise<[boolean, ProviderResolutionResult<T> | null]>[] = [];
 
     for (const providerEntry of this.providerEntries) {
       const task = this.evaluateProviderEntry(
@@ -154,22 +153,22 @@ export class MultiProvider implements Provider {
         hookContext,
         hookHints,
         context,
-        resolutions,
       );
 
+      tasks.push(task);
+
       if (this.evaluationStrategy.runMode === 'sequential') {
-        const shouldEvaluateNext = await task;
+        const [shouldEvaluateNext] = await task;
         if (!shouldEvaluateNext) {
           break;
         }
       }
-
-      tasks.push(task);
     }
 
-    if (this.evaluationStrategy.runMode === 'parallel') {
-      await Promise.all(tasks);
-    }
+    const results = await Promise.all(tasks);
+    const resolutions = results
+      .map(([_, resolution]) => resolution)
+      .filter((r): r is ProviderResolutionResult<T> => Boolean(r));
 
     const finalResult = this.evaluationStrategy.determineFinalResult({ flagKey, flagType }, context, resolutions);
 
@@ -192,8 +191,7 @@ export class MultiProvider implements Provider {
     hookContext: HookContext,
     hookHints: HookHints,
     context: EvaluationContext,
-    resolutions: ProviderResolutionResult<T>[],
-  ) {
+  ): Promise<[shouldEvaluateNext: boolean, ProviderResolutionResult<T> | null]> {
     let thrownError: unknown;
     let evaluationResult: ResolutionDetails<T> | undefined = undefined;
     const provider = providerEntry.provider;
@@ -206,34 +204,33 @@ export class MultiProvider implements Provider {
     };
 
     if (!this.evaluationStrategy.shouldEvaluateThisProvider(strategyContext, context)) {
-      return true;
+      return [true, null];
     }
+
+    let resolution: ProviderResolutionResult<T>;
 
     try {
       evaluationResult = await this.evaluateProviderAndHooks(flagKey, defaultValue, provider, hookContext, hookHints);
-      resolutions.push({
+      resolution = {
         details: evaluationResult,
         provider: provider,
         providerName: providerEntry.name,
-      });
+      };
     } catch (error: unknown) {
-      resolutions.push({
+      resolution = {
         thrownError: error,
         provider: provider,
         providerName: providerEntry.name,
-      });
+      };
       thrownError = error;
     }
 
-    if (this.evaluationStrategy.runMode === 'sequential') {
-      return this.evaluationStrategy.shouldEvaluateNextProvider(
-        strategyContext,
-        context,
-        evaluationResult,
-        thrownError,
-      );
-    }
-    return true;
+    return [
+      this.evaluationStrategy.runMode === 'sequential'
+        ? this.evaluationStrategy.shouldEvaluateNextProvider(strategyContext, context, evaluationResult, thrownError)
+        : true,
+      resolution,
+    ];
   }
 
   private async evaluateProviderAndHooks<T extends boolean | string | number | JsonValue>(
