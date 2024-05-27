@@ -8,6 +8,6 @@
   "peerDependencies": {
     "@openfeature/web-sdk": "^1.0.0",
     "@openfeature/config-cat-core": "0.1.0",
-    "configcat-js-ssr": ">=8.4.1"
+    "configcat-js-ssr": "^8.4.1"
   }
 }
