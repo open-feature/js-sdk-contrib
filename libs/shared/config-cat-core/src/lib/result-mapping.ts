@@ -11,9 +11,8 @@ export function toResolutionDetails<T extends PrimitiveTypeName>(
     throw new TypeMismatchError(`Requested ${type} flag but the actual value is ${typeof value}`);
   }
 
-  const matchedTargeting = 'matchedEvaluationRule' in data ? data.matchedEvaluationRule : data.matchedTargetingRule;
-  const matchedPercentage =
-    'matchedEvaluationPercentageRule' in data ? data.matchedEvaluationPercentageRule : data.matchedPercentageOption;
+  const matchedTargeting = data.matchedTargetingRule;
+  const matchedPercentage = data.matchedPercentageOption;
 
   const matchedRule = Boolean(matchedTargeting || matchedPercentage);
   const evaluatedReason = matchedRule ? StandardResolutionReasons.TARGETING_MATCH : StandardResolutionReasons.STATIC;
