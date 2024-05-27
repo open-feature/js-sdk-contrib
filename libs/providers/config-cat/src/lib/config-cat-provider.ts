@@ -18,11 +18,14 @@ import {
   transformContext,
 } from '@openfeature/config-cat-core';
 import { getClient, IConfig, IConfigCatClient } from 'configcat-js-ssr';
+import { Paradigm } from '@openfeature/web-sdk';
 
 export class ConfigCatProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
   private readonly _clientParameters: Parameters<typeof getClient>;
   private _client?: IConfigCatClient;
+
+  public runsOn: Paradigm = 'server';
 
   public metadata = {
     name: ConfigCatProvider.name,
