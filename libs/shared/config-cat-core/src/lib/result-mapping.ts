@@ -40,5 +40,5 @@ export type PrimitiveType<T> = T extends 'string'
           : unknown;
 
 export function isType<T extends PrimitiveTypeName>(type: T, value: unknown): value is PrimitiveType<T> {
-  return value !== 'undefined' && typeof value === type;
+  return typeof value !== 'undefined' && typeof value === type;
 }
