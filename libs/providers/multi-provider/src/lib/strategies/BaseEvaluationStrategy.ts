@@ -6,7 +6,7 @@ import {
   ProviderStatus,
   ResolutionDetails,
 } from '@openfeature/server-sdk';
-import { ErrorWithCode } from '@openfeature/multi-provider';
+import { ErrorWithCode } from '../errors';
 
 export type StrategyEvaluationContext = {
   flagKey: string;
@@ -18,12 +18,23 @@ export type StrategyPerProviderContext = StrategyEvaluationContext & {
   providerStatus: ProviderStatus;
 };
 
-export type ProviderResolutionResult<T extends FlagValue> = {
+type ProviderResolutionResultBase = {
   provider: Provider;
   providerName: string;
-  thrownError?: unknown;
-  details?: ResolutionDetails<T>;
 };
+
+export type ProviderResolutionSuccessResult<T extends FlagValue> = ProviderResolutionResultBase & {
+  details: ResolutionDetails<T>;
+};
+
+export type ProviderResolutionErrorResult = ProviderResolutionResultBase & {
+  thrownError: unknown;
+};
+
+export type ProviderResolutionResult<T extends FlagValue> =
+  | ProviderResolutionSuccessResult<T>
+  | ProviderResolutionErrorResult;
+
 export type FinalResult<T extends FlagValue> = {
   details?: ResolutionDetails<T>;
   provider?: Provider;
@@ -67,16 +78,15 @@ export abstract class BaseEvaluationStrategy {
   ): FinalResult<T>;
 
   protected hasError(resolution: ProviderResolutionResult<FlagValue>): boolean {
-    return 'thrownError' in resolution || !!resolution.details?.errorCode;
+    return 'thrownError' in resolution || !!resolution.details.errorCode;
   }
 
   protected collectProviderErrors<T extends FlagValue>(resolutions: ProviderResolutionResult<T>[]): FinalResult<T> {
-    let errors: FinalResult<FlagValue>['errors'] = [];
+    const errors: FinalResult<FlagValue>['errors'] = [];
     for (const resolution of resolutions) {
       if ('thrownError' in resolution) {
         errors.push({ providerName: resolution.providerName, error: resolution.thrownError });
-      }
-      if (resolution.details?.errorCode) {
+      } else if (resolution.details.errorCode) {
         errors.push({
           providerName: resolution.providerName,
           error: new ErrorWithCode(resolution.details.errorCode, resolution.details.errorMessage ?? 'unknown error'),
@@ -86,7 +96,7 @@ export abstract class BaseEvaluationStrategy {
     return { errors };
   }
 
-  protected resolutionToFinalResult<T extends FlagValue>(resolution: ProviderResolutionResult<T>) {
+  protected resolutionToFinalResult<T extends FlagValue>(resolution: ProviderResolutionSuccessResult<T>) {
     return { details: resolution.details, provider: resolution.provider, providerName: resolution.providerName };
   }
 }

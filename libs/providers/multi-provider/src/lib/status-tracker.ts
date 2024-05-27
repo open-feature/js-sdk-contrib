@@ -1,5 +1,5 @@
 import { EventDetails, OpenFeatureEventEmitter, ProviderEvents, ProviderStatus } from '@openfeature/server-sdk';
-import { RegisteredProvider } from '@openfeature/multi-provider';
+import { RegisteredProvider } from './types';
 
 /**
  * Tracks each individual provider's status by listening to emitted events

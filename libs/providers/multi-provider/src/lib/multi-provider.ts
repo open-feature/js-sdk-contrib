@@ -10,25 +10,15 @@ import {
   Logger,
   OpenFeatureEventEmitter,
   Provider,
+  ProviderMetadata,
+  BeforeHookContext,
   ResolutionDetails,
 } from '@openfeature/server-sdk';
-import { BeforeHookContext, ProviderMetadata } from '@openfeature/core';
 import { HookExecutor } from './hook-executor';
-import { constructAggregateError } from './errors';
+import { constructAggregateError, throwAggregateErrorFromPromiseResults } from './errors';
 import { BaseEvaluationStrategy, ProviderResolutionResult, FirstMatchStrategy } from './strategies';
 import { StatusTracker } from './status-tracker';
-
-// Represents an entry in the constructor's provider array which may or may not have a name set
-export type ProviderEntryInput = {
-  provider: Provider;
-  name?: string;
-};
-
-// Represents a processed and "registered" provider entry where a name has been chosen
-export type RegisteredProvider = {
-  name: string;
-  provider: Provider;
-};
+import { ProviderEntryInput, RegisteredProvider } from './types';
 
 export class MultiProvider implements Provider {
   readonly runsOn = 'server';
@@ -76,7 +66,7 @@ export class MultiProvider implements Provider {
         throw new Error('Provider names must be unique');
       }
 
-      providersByName[candidateName] ||= [];
+      providersByName[candidateName] ??= [];
       providersByName[candidateName].push(constructorProvider.provider);
     }
 
@@ -96,11 +86,15 @@ export class MultiProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    await Promise.all(this.providerEntries.map((provider) => provider.provider.initialize?.(context)));
+    const result = await Promise.allSettled(
+      this.providerEntries.map((provider) => provider.provider.initialize?.(context)),
+    );
+    throwAggregateErrorFromPromiseResults(result, this.providerEntries);
   }
 
   async onClose(): Promise<void> {
-    await Promise.all(this.providerEntries.map((provider) => provider.provider.onClose?.()));
+    const result = await Promise.allSettled(this.providerEntries.map((provider) => provider.provider.onClose?.()));
+    throwAggregateErrorFromPromiseResults(result, this.providerEntries);
   }
 
   resolveBooleanEvaluation(
@@ -145,11 +139,11 @@ export class MultiProvider implements Provider {
     const hookHints = this.hookHints.get(context);
 
     if (!hookContext || !hookHints) {
-      throw new GeneralError(`Hook context not available for evaluation`);
+      throw new GeneralError('Hook context not available for evaluation');
     }
 
-    let tasks: Promise<boolean>[] = [];
-    let resolutions: ProviderResolutionResult<T>[] = [];
+    const tasks: Promise<boolean>[] = [];
+    const resolutions: ProviderResolutionResult<T>[] = [];
 
     for (const providerEntry of this.providerEntries) {
       const task = this.evaluateProviderEntry(
@@ -232,11 +226,12 @@ export class MultiProvider implements Provider {
     }
 
     if (this.evaluationStrategy.runMode === 'sequential') {
-      if (
-        !this.evaluationStrategy.shouldEvaluateNextProvider(strategyContext, context, evaluationResult, thrownError)
-      ) {
-        return false;
-      }
+      return this.evaluationStrategy.shouldEvaluateNextProvider(
+        strategyContext,
+        context,
+        evaluationResult,
+        thrownError,
+      );
     }
     return true;
   }

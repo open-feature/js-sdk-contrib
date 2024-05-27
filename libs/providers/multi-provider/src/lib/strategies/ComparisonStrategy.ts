@@ -2,6 +2,7 @@ import {
   BaseEvaluationStrategy,
   FinalResult,
   ProviderResolutionResult,
+  ProviderResolutionSuccessResult,
   StrategyPerProviderContext,
 } from './BaseEvaluationStrategy';
 import { EvaluationContext, FlagValue, Provider } from '@openfeature/server-sdk';
@@ -25,29 +26,29 @@ export class ComparisonStrategy extends BaseEvaluationStrategy {
   override determineFinalResult<T extends FlagValue>(
     strategyContext: StrategyPerProviderContext,
     context: EvaluationContext,
-    resolutions: ProviderResolutionResult<T>[],
+    resolutions: ProviderResolutionSuccessResult<T>[],
   ): FinalResult<T> {
     let value: T | undefined;
-    let fallbackResolution: ProviderResolutionResult<T> | undefined;
+    let fallbackResolution: ProviderResolutionSuccessResult<T> | undefined;
     let mismatch = false;
     for (const resolution of resolutions) {
-      if (resolution.thrownError || resolution.details?.errorCode) {
+      if ('thrownError' in resolution || resolution.details.errorCode) {
         return this.collectProviderErrors(resolutions);
       }
       if (resolution.provider === this.fallbackProvider) {
         fallbackResolution = resolution;
       }
-      if (typeof value !== 'undefined' && value !== resolution.details!.value) {
+      if (typeof value !== 'undefined' && value !== resolution.details.value) {
         mismatch = true;
       } else {
-        value = resolution.details!.value;
+        value = resolution.details.value;
       }
     }
 
     if (mismatch) {
       this.onMismatch?.(resolutions);
       return {
-        details: fallbackResolution!.details!,
+        details: fallbackResolution!.details,
         provider: fallbackResolution!.provider,
       };
     }

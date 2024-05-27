@@ -28,7 +28,7 @@ export class FirstSuccessfulStrategy extends BaseEvaluationStrategy {
     resolutions: ProviderResolutionResult<T>[],
   ): FinalResult<T> {
     const finalResolution = resolutions[resolutions.length - 1];
-    if (this.hasError(finalResolution)) {
+    if ('thrownError' in finalResolution || !!finalResolution.details.errorCode) {
       return this.collectProviderErrors(resolutions);
     }
     return this.resolutionToFinalResult(finalResolution);

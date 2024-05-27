@@ -1,4 +1,6 @@
 import { ErrorCode, GeneralError, OpenFeatureError } from '@openfeature/server-sdk';
+import { PromiseAllSettledResult } from '@opentelemetry/sdk-metrics/build/esnext/utils';
+import { RegisteredProvider } from './types';
 
 export class ErrorWithCode extends OpenFeatureError {
   constructor(
@@ -30,4 +32,22 @@ export const constructAggregateError = (providerErrors: { error: unknown; provid
     `Provider errors occurred: ${errorsWithSource[0].source}: ${errorsWithSource[0].error}`,
     errorsWithSource,
   );
+};
+
+export const throwAggregateErrorFromPromiseResults = (
+  result: PromiseAllSettledResult<unknown>[],
+  providerEntries: RegisteredProvider[],
+) => {
+  const errors = result
+    .map((r, i) => {
+      if (r.status === 'rejected') {
+        return { error: r.reason, providerName: providerEntries[i].name };
+      }
+      return null;
+    })
+    .filter((val): val is { error: unknown; providerName: string } => Boolean(val));
+
+  if (errors.length) {
+    throw constructAggregateError(errors);
+  }
 };
