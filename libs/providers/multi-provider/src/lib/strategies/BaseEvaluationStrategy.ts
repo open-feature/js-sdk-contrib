@@ -1,4 +1,5 @@
 import {
+  ErrorCode,
   EvaluationContext,
   FlagValue,
   FlagValueType,
@@ -77,7 +78,11 @@ export abstract class BaseEvaluationStrategy {
     resolutions: ProviderResolutionResult<T>[],
   ): FinalResult<T>;
 
-  protected hasError(resolution: ProviderResolutionResult<FlagValue>): boolean {
+  protected hasError(resolution: ProviderResolutionResult<FlagValue>): resolution is
+    | ProviderResolutionErrorResult
+    | (ProviderResolutionSuccessResult<FlagValue> & {
+        details: ResolutionDetails<FlagValue> & { errorCode: ErrorCode };
+      }) {
     return 'thrownError' in resolution || !!resolution.details.errorCode;
   }
 

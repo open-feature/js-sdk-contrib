@@ -1,5 +1,4 @@
 import { ErrorCode, GeneralError, OpenFeatureError } from '@openfeature/server-sdk';
-import { PromiseAllSettledResult } from '@opentelemetry/sdk-metrics/build/esnext/utils';
 import { RegisteredProvider } from './types';
 
 export class ErrorWithCode extends OpenFeatureError {
@@ -35,7 +34,7 @@ export const constructAggregateError = (providerErrors: { error: unknown; provid
 };
 
 export const throwAggregateErrorFromPromiseResults = (
-  result: PromiseAllSettledResult<unknown>[],
+  result: PromiseSettledResult<unknown>[],
   providerEntries: RegisteredProvider[],
 ) => {
   const errors = result

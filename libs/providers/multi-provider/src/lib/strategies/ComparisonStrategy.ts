@@ -5,7 +5,7 @@ import {
   ProviderResolutionSuccessResult,
   StrategyPerProviderContext,
 } from './BaseEvaluationStrategy';
-import { EvaluationContext, FlagValue, Provider } from '@openfeature/server-sdk';
+import { EvaluationContext, FlagValue, GeneralError, Provider } from '@openfeature/server-sdk';
 
 /**
  * Evaluate all providers in parallel and compare the results.
@@ -26,17 +26,21 @@ export class ComparisonStrategy extends BaseEvaluationStrategy {
   override determineFinalResult<T extends FlagValue>(
     strategyContext: StrategyPerProviderContext,
     context: EvaluationContext,
-    resolutions: ProviderResolutionSuccessResult<T>[],
+    resolutions: ProviderResolutionResult<T>[],
   ): FinalResult<T> {
     let value: T | undefined;
     let fallbackResolution: ProviderResolutionSuccessResult<T> | undefined;
+    let finalResolution: ProviderResolutionSuccessResult<T> | undefined;
     let mismatch = false;
-    for (const resolution of resolutions) {
-      if ('thrownError' in resolution || resolution.details.errorCode) {
+    for (const [i, resolution] of resolutions.entries()) {
+      if (this.hasError(resolution)) {
         return this.collectProviderErrors(resolutions);
       }
       if (resolution.provider === this.fallbackProvider) {
         fallbackResolution = resolution;
+      }
+      if (i === 0) {
+        finalResolution = resolution;
       }
       if (typeof value !== 'undefined' && value !== resolution.details.value) {
         mismatch = true;
@@ -45,14 +49,22 @@ export class ComparisonStrategy extends BaseEvaluationStrategy {
       }
     }
 
+    if (!fallbackResolution) {
+      throw new GeneralError('Fallback provider not found in resolution results');
+    }
+
+    if (!finalResolution) {
+      throw new GeneralError('Final resolution not found in resolution results');
+    }
+
     if (mismatch) {
       this.onMismatch?.(resolutions);
       return {
-        details: fallbackResolution!.details,
-        provider: fallbackResolution!.provider,
+        details: fallbackResolution.details,
+        provider: fallbackResolution.provider,
       };
     }
 
-    return this.resolutionToFinalResult(resolutions[0]);
+    return this.resolutionToFinalResult(finalResolution);
   }
 }

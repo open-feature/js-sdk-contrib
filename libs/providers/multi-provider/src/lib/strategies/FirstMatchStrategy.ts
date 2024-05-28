@@ -32,7 +32,7 @@ export class FirstMatchStrategy extends BaseEvaluationStrategy {
     resolutions: ProviderResolutionResult<T>[],
   ): FinalResult<T> {
     const finalResolution = resolutions[resolutions.length - 1];
-    if ('thrownError' in finalResolution || !!finalResolution.details.errorCode) {
+    if (this.hasError(finalResolution)) {
       return this.collectProviderErrors(resolutions);
     }
     return this.resolutionToFinalResult(finalResolution);
