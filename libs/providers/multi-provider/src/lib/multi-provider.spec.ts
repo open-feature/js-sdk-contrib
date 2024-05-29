@@ -3,6 +3,7 @@ import {
   DefaultLogger,
   ErrorCode,
   EvaluationContext,
+  FlagNotFoundError,
   FlagValue,
   FlagValueType,
   Hook,
@@ -11,8 +12,8 @@ import {
   OpenFeatureEventEmitter,
   Provider,
   ServerProviderEvents,
+  ProviderMetadata,
 } from '@openfeature/server-sdk';
-import { ProviderMetadata } from '@openfeature/core';
 import { FirstMatchStrategy } from './strategies/FirstMatchStrategy';
 import { FirstSuccessfulStrategy } from './strategies/FirstSuccessfulStrategy';
 import { ComparisonStrategy } from './strategies/ComparisonStrategy';
@@ -520,6 +521,34 @@ describe('MultiProvider', () => {
             errorCode: ErrorCode.FLAG_NOT_FOUND,
             errorMessage: 'flag not found',
           });
+          provider2.resolveBooleanEvaluation.mockResolvedValue({
+            value: true,
+          });
+          const multiProvider = new MultiProvider(
+            [
+              {
+                provider: provider1,
+              },
+              {
+                provider: provider2,
+              },
+              {
+                provider: provider3,
+              },
+            ],
+            new FirstMatchStrategy(),
+          );
+          const result = await callEvaluation(multiProvider, {}, logger);
+          expect(result).toEqual({ value: true });
+          expect(provider2.resolveBooleanEvaluation).toHaveBeenCalled();
+          expect(provider3.resolveBooleanEvaluation).not.toHaveBeenCalled();
+        });
+
+        it('skips providers that throw flag not found until it gets a result, skipping any provider after', async () => {
+          const provider1 = new TestProvider();
+          const provider2 = new TestProvider();
+          const provider3 = new TestProvider();
+          provider1.resolveBooleanEvaluation.mockRejectedValue(new FlagNotFoundError('flag not found'));
           provider2.resolveBooleanEvaluation.mockResolvedValue({
             value: true,
           });

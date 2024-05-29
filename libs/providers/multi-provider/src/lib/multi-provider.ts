@@ -192,7 +192,6 @@ export class MultiProvider implements Provider {
     hookHints: HookHints,
     context: EvaluationContext,
   ): Promise<[shouldEvaluateNext: boolean, ProviderResolutionResult<T> | null]> {
-    let thrownError: unknown;
     let evaluationResult: ResolutionDetails<T> | undefined = undefined;
     const provider = providerEntry.provider;
     const strategyContext = {
@@ -222,12 +221,11 @@ export class MultiProvider implements Provider {
         provider: provider,
         providerName: providerEntry.name,
       };
-      thrownError = error;
     }
 
     return [
       this.evaluationStrategy.runMode === 'sequential'
-        ? this.evaluationStrategy.shouldEvaluateNextProvider(strategyContext, context, evaluationResult, thrownError)
+        ? this.evaluationStrategy.shouldEvaluateNextProvider(strategyContext, context, resolution)
         : true,
       resolution,
     ];

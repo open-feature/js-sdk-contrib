@@ -15,11 +15,10 @@ export class FirstSuccessfulStrategy extends BaseEvaluationStrategy {
   override shouldEvaluateNextProvider<T extends FlagValue>(
     strategyContext: StrategyPerProviderContext,
     context: EvaluationContext,
-    details?: ResolutionDetails<T>,
-    thrownError?: unknown,
+    result: ProviderResolutionResult<T>,
   ): boolean {
     // evaluate next only if there was an error
-    return !!(thrownError || details?.errorCode);
+    return this.hasError(result);
   }
 
   override determineFinalResult<T extends FlagValue>(

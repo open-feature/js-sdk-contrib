@@ -3,6 +3,7 @@ import {
   EvaluationContext,
   FlagValue,
   FlagValueType,
+  OpenFeatureError,
   Provider,
   ProviderStatus,
   ResolutionDetails,
@@ -66,8 +67,7 @@ export abstract class BaseEvaluationStrategy {
   shouldEvaluateNextProvider<T extends FlagValue>(
     strategyContext: StrategyPerProviderContext,
     context: EvaluationContext,
-    details?: ResolutionDetails<T>,
-    thrownError?: unknown,
+    result: ProviderResolutionResult<T>,
   ): boolean {
     return true;
   }
@@ -84,6 +84,12 @@ export abstract class BaseEvaluationStrategy {
         details: ResolutionDetails<FlagValue> & { errorCode: ErrorCode };
       }) {
     return 'thrownError' in resolution || !!resolution.details.errorCode;
+  }
+
+  protected hasErrorWithCode(resolution: ProviderResolutionResult<FlagValue>, code: ErrorCode): boolean {
+    return 'thrownError' in resolution
+      ? (resolution.thrownError as OpenFeatureError)?.code === code
+      : resolution.details.errorCode === code;
   }
 
   protected collectProviderErrors<T extends FlagValue>(resolutions: ProviderResolutionResult<T>[]): FinalResult<T> {
