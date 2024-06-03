@@ -60,7 +60,7 @@ export class MultiProvider implements Provider {
 
     for (const constructorProvider of constructorProviders) {
       const providerName = constructorProvider.provider.metadata.name;
-      let candidateName = constructorProvider.name ?? providerName;
+      const candidateName = constructorProvider.name ?? providerName;
 
       if (constructorProvider.name && providersByName[constructorProvider.name]) {
         throw new Error('Provider names must be unique');

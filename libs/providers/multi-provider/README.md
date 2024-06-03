@@ -17,6 +17,9 @@ local files, database values and SaaS hosted feature management systems.
 $ npm install @openfeature/multi-provider
 ```
 
+> [!TIP]
+> This provider is designed to be used with the [Node.js SDK](https://openfeature.dev/docs/reference/technologies/server/javascript/).
+
 ## Usage
 The Multi-Provider is initialized with an array of providers it should evaluate:
 

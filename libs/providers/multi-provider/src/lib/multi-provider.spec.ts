@@ -267,7 +267,7 @@ describe('MultiProvider', () => {
           logger: logger,
         };
 
-        let weakMap = new WeakMap();
+        const weakMap = new WeakMap();
 
         provider1.hooks = [
           {
@@ -368,7 +368,7 @@ describe('MultiProvider', () => {
           logger: logger,
         };
 
-        let weakMap = new WeakMap();
+        const weakMap = new WeakMap();
 
         provider1.hooks = [
           {
