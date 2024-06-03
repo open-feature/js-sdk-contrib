@@ -267,11 +267,14 @@ describe('MultiProvider', () => {
           logger: logger,
         };
 
+        let weakMap = new WeakMap();
+
         provider1.hooks = [
           {
             before: async (context) => {
               hook1Called = true;
-              expect(context).toBe(hookContext);
+              expect(context).toEqual(hookContext);
+              weakMap.set(context, 'test');
               return { ...context.context, hook1: true };
             },
             after: async (context) => {
@@ -280,13 +283,18 @@ describe('MultiProvider', () => {
                 hook1: true,
                 hook2: true,
               });
+              expect(weakMap.get(context)).toEqual('test');
               after1Called = true;
             },
           },
           {
             before: async (context) => {
               hook2Called = true;
-              expect(context).toBe(hookContext);
+              expect(weakMap.get(context)).toEqual('test');
+              expect(context.context).toEqual({
+                test: true,
+                hook1: true,
+              });
               return { ...context.context, hook2: true };
             },
           },
@@ -295,6 +303,7 @@ describe('MultiProvider', () => {
         provider2.hooks = [
           {
             after: async (context) => {
+              expect(weakMap.get(context)).toBeFalsy();
               expect(context.context).toEqual({
                 test: true,
               });
@@ -339,7 +348,7 @@ describe('MultiProvider', () => {
         expect(after2Called).toBe(true);
       });
 
-      it('runs error hook and finally hook with modified context', async () => {
+      it('runs error hook and finally hook with modified context using same object reference', async () => {
         const provider1 = new TestProvider();
         let hook1Called = false;
         let error1Called = false;
@@ -359,11 +368,14 @@ describe('MultiProvider', () => {
           logger: logger,
         };
 
+        let weakMap = new WeakMap();
+
         provider1.hooks = [
           {
             before: async (context) => {
               hook1Called = true;
-              expect(context).toBe(hookContext);
+              weakMap.set(context, 'exists');
+              expect(context).toEqual(hookContext);
               return { ...context.context, hook1: true };
             },
             error: async (context) => {
@@ -371,6 +383,7 @@ describe('MultiProvider', () => {
                 test: true,
                 hook1: true,
               });
+              expect(weakMap.get(context)).toEqual('exists');
               error1Called = true;
               throw new Error('error hook error');
             },
@@ -379,6 +392,7 @@ describe('MultiProvider', () => {
                 test: true,
                 hook1: true,
               });
+              expect(weakMap.get(context)).toEqual('exists');
               finally1Called = true;
             },
           },
@@ -392,6 +406,7 @@ describe('MultiProvider', () => {
 
         provider1.resolveBooleanEvaluation.mockRejectedValue(new Error('test error'));
 
+        // call the multiprovider before hook to set up the hookcontext
         await multiProvider.hooks[0].before!(hookContext);
         await expect(() => multiProvider.resolveBooleanEvaluation('flag', false, context)).rejects.toThrow();
         expect(hook1Called).toBe(true);

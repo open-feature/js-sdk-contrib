@@ -241,8 +241,12 @@ export class MultiProvider implements Provider {
     let providerContext: EvaluationContext | undefined = undefined;
     let evaluationResult: ResolutionDetails<T>;
 
+    // create a copy of the shared hook context because we're going to mutate the evaluation context
+    const hookContextCopy = { ...hookContext, context: { ...hookContext.context } };
+
     try {
-      providerContext = await this.hookExecutor.beforeHooks(provider.hooks, hookContext, hookHints);
+      // return the modified provider context and mutate the hook context to contain it
+      providerContext = await this.hookExecutor.beforeHooks(provider.hooks, hookContextCopy, hookHints);
 
       evaluationResult = (await this.callProviderResolve(
         provider,
@@ -257,27 +261,13 @@ export class MultiProvider implements Provider {
         flagKey,
       };
 
-      await this.hookExecutor.afterHooks(
-        provider.hooks,
-        { ...hookContext, context: providerContext },
-        afterHookEvalDetails,
-        hookHints,
-      );
+      await this.hookExecutor.afterHooks(provider.hooks, hookContextCopy, afterHookEvalDetails, hookHints);
       return evaluationResult;
     } catch (error: unknown) {
-      await this.hookExecutor.errorHooks(
-        provider.hooks,
-        { ...hookContext, context: providerContext ?? hookContext.context },
-        error,
-        hookHints,
-      );
+      await this.hookExecutor.errorHooks(provider.hooks, hookContextCopy, error, hookHints);
       throw error;
     } finally {
-      await this.hookExecutor.finallyHooks(
-        provider.hooks,
-        { ...hookContext, context: providerContext ?? hookContext.context },
-        hookHints,
-      );
+      await this.hookExecutor.finallyHooks(provider.hooks, hookContextCopy, hookHints);
     }
   }
 

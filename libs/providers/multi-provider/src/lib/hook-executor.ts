@@ -7,18 +7,17 @@ export class HookExecutor {
   constructor(private logger: Logger) {}
 
   async beforeHooks(hooks: Hook[] | undefined, hookContext: HookContext, hints: HookHints) {
-    const newContext = { ...hookContext.context };
     for (const hook of hooks ?? []) {
       // freeze the hookContext
       Object.freeze(hookContext);
 
-      Object.assign(newContext, {
+      Object.assign(hookContext.context, {
         ...(await hook?.before?.(hookContext, Object.freeze(hints))),
       });
     }
 
     // after before hooks, freeze the EvaluationContext.
-    return Object.freeze(newContext);
+    return Object.freeze(hookContext.context);
   }
 
   async afterHooks(
