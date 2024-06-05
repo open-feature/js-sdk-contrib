@@ -1,2 +1,5 @@
 libs/hooks/README.md
 libs/providers/README.md
+node_modules
+dist
+.nx

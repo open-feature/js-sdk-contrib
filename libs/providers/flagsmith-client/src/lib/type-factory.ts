@@ -3,7 +3,7 @@ import { FlagValue } from '@openfeature/web-sdk';
 export type FlagType = 'string' | 'number' | 'object' | 'boolean';
 
 /**
- * Ret a value of the specified type based on the type parameter.
+ * Return a value of the specified type based on the type parameter.
  *
  * @param value - The value to be converted or validated.
  * @param type - The target type for the conversion.
@@ -16,7 +16,7 @@ export const typeFactory = (
   if (value === null) return undefined;
   switch (type) {
     case 'string':
-      return typeof value !== null && typeof value !== 'undefined' ? `${value}` : value;
+      return value !== null && value !== undefined ? `${value}` : value;
     case 'number':
       return typeof value === 'number' ? value : parseFloat(value as string) || value;
     case 'boolean':

@@ -3,6 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/providers/launchdarkly-client/src",
   "projectType": "library",
+  "tags": [],
   "targets": {
     "publish": {
       "executor": "nx:run-commands",
@@ -17,51 +18,28 @@
       ]
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "libs/providers/launchdarkly-client/**/*.ts"
-        ]
-      }
+      "executor": "@nx/eslint:lint"
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "libs/providers/launchdarkly-client/jest.config.ts",
-        "passWithNoTests": true
-      },
-      "configurations": {
-        "ci": {
-          "ci": true,
-          "codeCoverage": true
-        }
+        "jestConfig": "libs/providers/launchdarkly-client/jest.config.ts"
       }
     },
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/providers/launchdarkly-client/package.json",
         "outputPath": "dist/libs/providers/launchdarkly-client",
         "entryFile": "libs/providers/launchdarkly-client/src/index.ts",
         "tsConfig": "libs/providers/launchdarkly-client/tsconfig.lib.json",
-        "buildableProjectDepsInPackageJsonType": "dependencies",
         "compiler": "tsc",
         "generateExportsField": true,
         "umdName": "launchdarkly-client",
         "external": "all",
-        "format": [
-          "cjs",
-          "esm"
-        ],
+        "format": ["cjs", "esm"],
         "assets": [
           {
             "glob": "package.json",
@@ -78,10 +56,8 @@
             "input": "./libs/providers/launchdarkly-client",
             "output": "./"
           }
-        ],
-        "updateBuildableProjectDepsInPackageJson": true
+        ]
       }
     }
-  },
-  "tags": []
+  }
 }

@@ -9,7 +9,7 @@ import {
   updateJson,
 } from '@nx/devkit';
 import { libraryGenerator } from '@nx/js';
-import { Linter } from '@nx/linter';
+import { Linter } from '@nx/eslint';
 
 /**
  * Enforced by the json schema.

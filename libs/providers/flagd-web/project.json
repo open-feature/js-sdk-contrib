@@ -3,6 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/providers/flagd-web/src",
   "projectType": "library",
+  "tags": [],
   "targets": {
     "publish": {
       "executor": "nx:run-commands",
@@ -30,15 +31,7 @@
       }
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "libs/providers/flagd-web/**/*.ts"
-        ]
-      },
+      "executor": "@nx/eslint:lint",
       "dependsOn": [
         {
           "target": "generate"
@@ -47,12 +40,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/providers/flagd-web"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/flagd-web"],
       "options": {
-        "jestConfig": "libs/providers/flagd-web/jest.config.ts",
-        "passWithNoTests": true
+        "jestConfig": "libs/providers/flagd-web/jest.config.ts"
       },
       "dependsOn": [
         {
@@ -75,9 +65,7 @@
     "e2e": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": [
-          "npx jest"
-        ],
+        "commands": ["npx jest"],
         "cwd": "libs/providers/flagd-web/src/e2e",
         "parallel": false
       },
@@ -92,9 +80,7 @@
     },
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/providers/flagd-web/package.json",
         "outputPath": "dist/libs/providers/flagd-web",
@@ -102,13 +88,9 @@
         "tsConfig": "libs/providers/flagd-web/tsconfig.lib.json",
         "compiler": "tsc",
         "generateExportsField": true,
-        "buildableProjectDepsInPackageJsonType": "dependencies",
         "umdName": "flagd-web",
         "external": "all",
-        "format": [
-          "cjs",
-          "esm"
-        ],
+        "format": ["cjs", "esm"],
         "assets": [
           {
             "glob": "package.json",
@@ -125,8 +107,7 @@
             "input": "./libs/providers/flagd-web",
             "output": "./"
           }
-        ],
-        "updateBuildableProjectDepsInPackageJson": true
+        ]
       },
       "dependsOn": [
         {
@@ -134,6 +115,5 @@
         }
       ]
     }
-  },
-  "tags": []
+  }
 }
