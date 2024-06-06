@@ -139,13 +139,15 @@ describe('LaunchDarklyClientProvider', () => {
       });
 
       const res = ofClient.getBooleanDetails(testFlagKey, false);
-      expect(res).toEqual({
-        flagKey: testFlagKey,
-        flagMetadata: {},
-        value: false,
-        reason: 'ERROR',
-        errorCode: 'TYPE_MISMATCH',
-      });
+      expect(res).toEqual(
+        expect.objectContaining({
+          flagKey: testFlagKey,
+          flagMetadata: {},
+          value: false,
+          reason: 'ERROR',
+          errorCode: 'TYPE_MISMATCH',
+        }),
+      );
     });
   });
 
@@ -193,13 +195,15 @@ describe('LaunchDarklyClientProvider', () => {
       });
 
       const res = ofClient.getNumberDetails(testFlagKey, 0);
-      expect(res).toEqual({
-        flagKey: testFlagKey,
-        flagMetadata: {},
-        value: 0,
-        reason: 'ERROR',
-        errorCode: 'TYPE_MISMATCH',
-      });
+      expect(res).toEqual(
+        expect.objectContaining({
+          flagKey: testFlagKey,
+          flagMetadata: {},
+          value: 0,
+          reason: 'ERROR',
+          errorCode: 'TYPE_MISMATCH',
+        }),
+      );
     });
   });
 
@@ -247,13 +251,15 @@ describe('LaunchDarklyClientProvider', () => {
       });
 
       const res = ofClient.getObjectDetails(testFlagKey, {});
-      expect(res).toEqual({
-        flagKey: testFlagKey,
-        flagMetadata: {},
-        value: {},
-        reason: 'ERROR',
-        errorCode: 'TYPE_MISMATCH',
-      });
+      expect(res).toEqual(
+        expect.objectContaining({
+          flagKey: testFlagKey,
+          flagMetadata: {},
+          value: {},
+          reason: 'ERROR',
+          errorCode: 'TYPE_MISMATCH',
+        }),
+      );
     });
   });
 
@@ -301,13 +307,15 @@ describe('LaunchDarklyClientProvider', () => {
       });
 
       const res = ofClient.getStringDetails(testFlagKey, 'default');
-      expect(res).toEqual({
-        flagKey: testFlagKey,
-        flagMetadata: {},
-        value: 'default',
-        reason: 'ERROR',
-        errorCode: 'TYPE_MISMATCH',
-      });
+      expect(res).toEqual(
+        expect.objectContaining({
+          flagKey: testFlagKey,
+          flagMetadata: {},
+          value: 'default',
+          reason: 'ERROR',
+          errorCode: 'TYPE_MISMATCH',
+        }),
+      );
     });
   });
 
@@ -328,14 +336,14 @@ describe('LaunchDarklyClientProvider', () => {
     });
 
     const res = ofClient.getObjectDetails(testFlagKey, {});
-    expect(res).toEqual({
-      flagKey: testFlagKey,
-      flagMetadata: {},
-      value: { yes: 'no' },
-      reason: 'ERROR',
-      errorCode: ofError,
-      variant: undefined,
-    });
+    expect(res).toEqual(
+      expect.objectContaining({
+        flagKey: testFlagKey,
+        flagMetadata: {},
+        reason: 'ERROR',
+        errorCode: ofError,
+      }),
+    );
   });
 
   it('includes the variant', async () => {

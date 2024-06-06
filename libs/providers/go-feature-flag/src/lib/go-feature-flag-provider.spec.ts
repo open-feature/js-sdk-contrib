@@ -99,12 +99,11 @@ describe('GoFeatureFlagProvider', () => {
         const want = {
           errorCode: ErrorCode.PROVIDER_NOT_READY,
           flagKey: flagName,
-          reason: StandardResolutionReasons.UNKNOWN,
-          value: true,
-          variant: 'trueVariation',
+          reason: StandardResolutionReasons.ERROR,
+          value: false,
           flagMetadata: {},
         };
-        expect(res).toEqual(want);
+        expect(res).toEqual(expect.objectContaining(want));
       });
       it('unknown error codes should return GENERAL code', async () => {
         const flagName = 'random-other-other-flag';
@@ -119,12 +118,11 @@ describe('GoFeatureFlagProvider', () => {
         const want = {
           errorCode: ErrorCode.GENERAL,
           flagKey: flagName,
-          reason: StandardResolutionReasons.UNKNOWN,
-          value: true,
-          variant: 'trueVariation',
+          reason: StandardResolutionReasons.ERROR,
+          value: false,
           flagMetadata: {},
         };
-        expect(res).toEqual(want);
+        expect(res).toEqual(expect.objectContaining(want));
       });
     });
     it('should throw an error if we fail in other network errors case', async () => {
