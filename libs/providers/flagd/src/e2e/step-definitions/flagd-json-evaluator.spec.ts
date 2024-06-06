@@ -24,7 +24,8 @@ const evaluateStringFlagWithContext: StepsDefinitionCallbackFunction = ({ given,
     flagKey = key;
     defaultValue = defaultVal;
   });
-  and(/^a context containing a key "(.*)", with value "(.*)"$/, (key: string, value: string) => {
+  // the below has to match quotes strings ("str") and numbers (3) to test an error input
+  and(/^a context containing a key "(.*)", with value "?([^"]*)"?$/, (key: string, value: string) => {
     evaluationContext[key] = value;
   });
   then(/^the returned value should be "(.*)"$/, async (expectedValue: string) => {
