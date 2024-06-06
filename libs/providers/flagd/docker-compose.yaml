@@ -1,25 +1,17 @@
 services:
   flagd:
-    build:
-      context: test-harness
-      dockerfile: flagd/Dockerfile
+    image: ghcr.io/open-feature/flagd-testbed:v0.5.4
     ports:
       - 8013:8013
   flagd-unstable:
-    build:
-      context: test-harness
-      dockerfile: flagd/Dockerfile.unstable
+    image: ghcr.io/open-feature/flagd-testbed-unstable:v0.5.4
     ports:
       - 8014:8013
   flagd-sync:
-    build:
-      context: test-harness
-      dockerfile: sync/Dockerfile
+    image: ghcr.io/open-feature/sync-testbed:v0.5.4
     ports:
       - 9090:9090
   flagd-sync-unstable:
-    build:
-      context: test-harness
-      dockerfile: sync/Dockerfile.unstable
+    image: ghcr.io/open-feature/sync-testbed-unstable:v0.5.4
     ports:
       - 9091:9090
