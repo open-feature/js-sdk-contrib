@@ -1,4 +1,4 @@
-import { FlagdProviderOptions, getConfig } from './configuration';
+import { Config, FlagdProviderOptions, getConfig } from './configuration';
 import { DEFAULT_MAX_CACHE_SIZE } from './constants';
 
 describe('Configuration', () => {
@@ -76,5 +76,42 @@ describe('Configuration', () => {
   it('should ignore an valid port set as an environment variable', () => {
     process.env['FLAGD_PORT'] = 'invalid number';
     expect(getConfig()).toStrictEqual(expect.objectContaining({ port: 8013 }));
+  });
+
+  describe('port handling', () => {
+    describe('for "in-process" evaluation', () => {
+      const resolverType = 'in-process';
+      const port = 8015;
+      it('should use default in-process port if resolver type is set per envVar and no port is provided', () => {
+        process.env['FLAGD_RESOLVER'] = resolverType;
+        expect(getConfig()).toStrictEqual(expect.objectContaining({ port, resolverType }));
+      });
+      it('should use default in-process port if resolver type is set per options and no port is provided', () => {
+        const options: Partial<Config> = { resolverType };
+        expect(getConfig(options)).toStrictEqual(expect.objectContaining({ port, resolverType }));
+      });
+      it('should use provided port if resolver type is set per options and port', () => {
+        const port = 1111;
+        const options: Partial<Config> = { resolverType, port };
+        expect(getConfig(options)).toStrictEqual(expect.objectContaining({ port, resolverType }));
+      });
+    });
+    describe('for "rpc" evaluation', () => {
+      const resolverType = 'rpc';
+      const port = 8013;
+      it('should use default in-process port if resolver type is set per envVar and no port is provided', () => {
+        process.env['FLAGD_RESOLVER'] = resolverType;
+        expect(getConfig()).toStrictEqual(expect.objectContaining({ port, resolverType }));
+      });
+      it('should use default in-process port if resolver type is set per options and no port is provided', () => {
+        const options: Partial<Config> = { resolverType };
+        expect(getConfig(options)).toStrictEqual(expect.objectContaining({ port, resolverType }));
+      });
+      it('should use provided port if resolver type is set per options and port', () => {
+        const port = 1111;
+        const options: Partial<Config> = { resolverType, port };
+        expect(getConfig(options)).toStrictEqual(expect.objectContaining({ port, resolverType }));
+      });
+    });
   });
 });

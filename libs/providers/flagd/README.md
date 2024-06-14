@@ -27,17 +27,23 @@ Options can be defined in the constructor or as environment variables. Construct
 
 ### Available Configuration Options
 
-| Option name                            | Environment variable name      | Type    | Default   | Supported values |
-| -------------------------------------- | ------------------------------ | ------- | --------- | ---------------- |
-| host                                   | FLAGD_HOST                     | string  | localhost |                  |
-| port                                   | FLAGD_PORT                     | number  | 8013      |                  |
-| tls                                    | FLAGD_TLS                      | boolean | false     |                  |
-| socketPath                             | FLAGD_SOCKET_PATH              | string  | -         |                  |
-| resolverType                           | FLAGD_RESOLVER                 | string  | rpc       | rpc, in-process  |
-| offlineFlagSourcePath                  | FLAGD_OFFLINE_FLAG_SOURCE_PATH | string  | -         |                  |
-| selector                               | FLAGD_SOURCE_SELECTOR          | string  | -         |                  |
-| cache                                  | FLAGD_CACHE                    | string  | lru       | lru, disabled    |
-| maxCacheSize                           | FLAGD_MAX_CACHE_SIZE           | int     | 1000      |                  |
+| Option name                            | Environment variable name      | Type    | Default                                                        | Supported values |
+| -------------------------------------- | ------------------------------ | ------- |----------------------------------------------------------------| ---------------- |
+| host                                   | FLAGD_HOST                     | string  | localhost                                                      |                  |
+| port                                   | FLAGD_PORT                     | number  | [resolver specific defaults](#resolver-type-specific-defaults) |                  |
+| tls                                    | FLAGD_TLS                      | boolean | false                                                          |                  |
+| socketPath                             | FLAGD_SOCKET_PATH              | string  | -                                                              |                  |
+| resolverType                           | FLAGD_RESOLVER                 | string  | rpc                                                            | rpc, in-process  |
+| offlineFlagSourcePath                  | FLAGD_OFFLINE_FLAG_SOURCE_PATH | string  | -                                                              |                  |
+| selector                               | FLAGD_SOURCE_SELECTOR          | string  | -                                                              |                  |
+| cache                                  | FLAGD_CACHE                    | string  | lru                                                            | lru, disabled    |
+| maxCacheSize                           | FLAGD_MAX_CACHE_SIZE           | int     | 1000                                                           |                  |
+
+#### Resolver type-specific Defaults
+
+| Option name                            | Environment variable name      |  in-process | rpc  | default |
+| -------------------------------------- | ------------------------------ |-------------|------|---------|
+| port                                   | FLAGD_PORT                     |  8015       | 8013 | 8013    |
 
 Below are examples of usage patterns.
 
@@ -72,7 +78,7 @@ Flag configurations for evaluation are obtained via gRPC protocol using [sync pr
   }))
 ```
 
-In the above example, the provider expects a flag sync service implementation to be available at `localhost:8013` (default host and port).
+In the above example, the provider expects a flag sync service implementation to be available at `localhost:8015` (default host and port).
 
 In-process resolver can also work in an offline mode.
 To enable this mode, you should provide a valid flag configuration file with the option `offlineFlagSourcePath`.

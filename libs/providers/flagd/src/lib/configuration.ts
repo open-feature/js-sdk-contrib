@@ -72,15 +72,17 @@ export interface Config {
 
 export type FlagdProviderOptions = Partial<Config>;
 
-const DEFAULT_CONFIG: Config = {
+const DEFAULT_CONFIG: Omit<Config, 'port' | 'resolverType'> = {
   host: 'localhost',
-  port: 8013,
   tls: false,
-  resolverType: 'rpc',
   selector: '',
   cache: 'lru',
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
 };
+
+const DEFAULT_RPC_CONFIG: Config = { ...DEFAULT_CONFIG, resolverType: 'rpc', port: 8013 };
+
+const DEFAULT_IN_PROCESS_CONFIG: Config = { ...DEFAULT_CONFIG, resolverType: 'in-process', port: 8015 };
 
 enum ENV_VAR {
   FLAGD_HOST = 'FLAGD_HOST',
@@ -125,9 +127,14 @@ const getEnvVarConfig = (): Partial<Config> => ({
 });
 
 export function getConfig(options: FlagdProviderOptions = {}) {
+  const envVarConfig = getEnvVarConfig();
+  const defaultConfig =
+    options.resolverType == 'in-process' || envVarConfig.resolverType == 'in-process'
+      ? DEFAULT_IN_PROCESS_CONFIG
+      : DEFAULT_RPC_CONFIG;
   return {
-    ...DEFAULT_CONFIG,
-    ...getEnvVarConfig(),
+    ...defaultConfig,
+    ...envVarConfig,
     ...options,
   };
 }
