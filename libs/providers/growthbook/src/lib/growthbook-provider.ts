@@ -65,8 +65,7 @@ export class GrowthbookProvider implements Provider {
     context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
     if (!isEmpty(context)) {
-      // Add flag evaluation context and merge with existing context
-      await this.client.setAttributes({ ...this.client.getAttributes(), ...context });
+      await this.client.setAttributes(context);
     }
 
     const res = this.client.evalFeature(flagKey);
@@ -80,8 +79,7 @@ export class GrowthbookProvider implements Provider {
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
     if (!isEmpty(context)) {
-      // Add flag evaluation context and merge with existing context
-      await this.client.setAttributes({ ...this.client.getAttributes(), ...context });
+      await this.client.setAttributes(context);
     }
 
     const res = this.client.evalFeature(flagKey);
@@ -95,8 +93,7 @@ export class GrowthbookProvider implements Provider {
     context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
     if (!isEmpty(context)) {
-      // Add flag evaluation context and merge with existing context
-      await this.client.setAttributes({ ...this.client.getAttributes(), ...context });
+      await this.client.setAttributes(context);
     }
 
     const res = this.client.evalFeature(flagKey);
@@ -110,8 +107,7 @@ export class GrowthbookProvider implements Provider {
     context: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
     if (!isEmpty(context)) {
-      // Add flag evaluation context and merge with existing context
-      await this.client.setAttributes({ ...this.client.getAttributes(), ...context });
+      await this.client.setAttributes(context);
     }
 
     const res = this.client.evalFeature(flagKey);
