@@ -164,7 +164,7 @@ export class GoffApiController {
         timeout: this.timeout,
       });
     } catch (e) {
-      throw new CollectorError('impossible to send the data to the collector', e as Error);
+      throw new CollectorError(`impossible to send the data to the collector: ${e}`);
     }
   }
 

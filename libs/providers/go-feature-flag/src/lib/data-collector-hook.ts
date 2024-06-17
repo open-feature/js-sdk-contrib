@@ -18,8 +18,7 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // collectUnCachedEvent (optional) set to true if you want to send all events not only the cached evaluations.
   collectUnCachedEvaluation?: boolean;
-  // @ts-ignore
-  private bgScheduler?: ReturnType<setInterval>;
+  private bgScheduler?: NodeJS.Timeout | number;
   // dataCollectorBuffer contains all the FeatureEvents that we need to send to the relay-proxy for data collection.
   private dataCollectorBuffer?: FeatureEvent<any>[];
   // dataFlushInterval interval time (in millisecond) we use to call the relay proxy to collect data.

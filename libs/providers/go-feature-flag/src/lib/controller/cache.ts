@@ -34,7 +34,7 @@ export class CacheController {
   set(
     flagKey: string,
     evaluationContext: EvaluationContext,
-    evaluationResponse: { resolutionDetails: ResolutionDetails<any>; isCacheable: boolean }
+    evaluationResponse: { resolutionDetails: ResolutionDetails<any>; isCacheable: boolean },
   ) {
     if (this.options.disableCache) {
       return;
