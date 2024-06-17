@@ -1,13 +1,7 @@
 import { ErrorCode, EvaluationContextValue } from '@openfeature/server-sdk';
 
-/**
- * GoFeatureFlagUser is the representation of a user for GO Feature Flag
- * the key is used to do the repartition in GO Feature Flag this is the only
- * mandatory field when calling the API.
- */
-export interface GoFeatureFlagUser {
+export interface GOFFEvaluationContext {
   key: string;
-  anonymous?: boolean;
   custom?: {
     [key: string]: EvaluationContextValue;
   };
@@ -19,7 +13,7 @@ export interface GoFeatureFlagUser {
  * The default value is used if something is failing.
  */
 export interface GoFeatureFlagProxyRequest<T> {
-  user: GoFeatureFlagUser;
+  evaluationContext: GOFFEvaluationContext;
   defaultValue: T;
 }
 
@@ -35,7 +29,7 @@ export interface GoFeatureFlagProxyResponse<T> {
   version?: string;
   reason: string | GOFeatureFlagResolutionReasons;
   metadata: Record<string, string | number | boolean>;
-  errorCode?: ErrorCode | GOFeatureFlagErrorCode;
+  errorCode?: ErrorCode;
   cacheable: boolean;
 }
 
@@ -73,13 +67,15 @@ export interface GoFeatureFlagProviderOptions {
 
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
   disableDataCollection?: boolean;
+
+  // pollInterval is the time in milliseconds to wait between we call the endpoint to detect configuration changes API
+  // If a negative number is provided, the provider will not poll.
+  // Default: 30000
+  pollInterval?: number; // in milliseconds
 }
 
 // GOFeatureFlagResolutionReasons allows to extends resolution reasons
 export declare enum GOFeatureFlagResolutionReasons {}
-
-// GOFeatureFlagErrorCode allows to extends error codes
-export declare enum GOFeatureFlagErrorCode {}
 
 export interface DataCollectorRequest<T> {
   events: FeatureEvent<T>[];
@@ -103,9 +99,6 @@ export interface DataCollectorResponse {
 }
 
 export interface DataCollectorHookOptions {
-  endpoint: string;
-  timeout?: number; // in millisecond
-
   // dataFlushInterval (optional) interval time (in millisecond) we use to call the relay proxy to collect data.
   // The parameter is used only if the cache is enabled, otherwise the collection of the data is done directly
   // when calling the evaluation API.
@@ -114,4 +107,10 @@ export interface DataCollectorHookOptions {
 
   // collectUnCachedEvent (optional) set to true if you want to send all events not only the cached evaluations.
   collectUnCachedEvaluation?: boolean;
+}
+
+export enum ConfigurationChange {
+  FLAG_CONFIGURATION_INITIALIZED,
+  FLAG_CONFIGURATION_UPDATED,
+  FLAG_CONFIGURATION_NOT_CHANGED,
 }

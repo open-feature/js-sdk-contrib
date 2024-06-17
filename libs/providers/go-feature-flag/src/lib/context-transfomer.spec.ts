@@ -1,5 +1,5 @@
 import { EvaluationContext } from '@openfeature/server-sdk';
-import { GoFeatureFlagUser } from './model';
+import { GOFFEvaluationContext } from './model';
 import { transformContext } from './context-transformer';
 
 describe('contextTransformer', () => {
@@ -7,9 +7,8 @@ describe('contextTransformer', () => {
     const got = transformContext({
       targetingKey: 'user-key',
     } as EvaluationContext);
-    const want: GoFeatureFlagUser = {
+    const want: GOFFEvaluationContext = {
       key: 'user-key',
-      anonymous: false,
       custom: {},
     };
     expect(got).toEqual(want);
@@ -20,10 +19,9 @@ describe('contextTransformer', () => {
       targetingKey: 'user-key',
       anonymous: true,
     } as EvaluationContext);
-    const want: GoFeatureFlagUser = {
+    const want: GOFFEvaluationContext = {
       key: 'user-key',
-      anonymous: true,
-      custom: {},
+      custom: { anonymous: true },
     };
     expect(got).toEqual(want);
   });
@@ -36,10 +34,10 @@ describe('contextTransformer', () => {
       email: 'john.doe@gofeatureflag.org',
     } as EvaluationContext);
 
-    const want: GoFeatureFlagUser = {
+    const want: GOFFEvaluationContext = {
       key: 'dd3027562879ff6857cc6b8b88ced570546d7c0c',
-      anonymous: true,
       custom: {
+        anonymous: true,
         firstname: 'John',
         lastname: 'Doe',
         email: 'john.doe@gofeatureflag.org',
@@ -56,13 +54,13 @@ describe('contextTransformer', () => {
       email: 'john.doe@gofeatureflag.org',
     } as EvaluationContext);
 
-    const want: GoFeatureFlagUser = {
+    const want: GOFFEvaluationContext = {
       key: 'user-key',
-      anonymous: true,
       custom: {
         firstname: 'John',
         lastname: 'Doe',
         email: 'john.doe@gofeatureflag.org',
+        anonymous: true,
       },
     };
     expect(got).toEqual(want);

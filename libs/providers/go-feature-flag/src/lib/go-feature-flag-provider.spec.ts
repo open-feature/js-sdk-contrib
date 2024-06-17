@@ -1,7 +1,13 @@
 /**
  * @jest-environment node
  */
-import { Client, ErrorCode, OpenFeature, ProviderStatus, StandardResolutionReasons } from '@openfeature/server-sdk';
+import {
+  Client,
+  ErrorCode,
+  OpenFeature,
+  ServerProviderStatus,
+  StandardResolutionReasons
+} from '@openfeature/server-sdk';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { GoFeatureFlagProvider } from './go-feature-flag-provider';
@@ -21,9 +27,9 @@ describe('GoFeatureFlagProvider', () => {
     version: '1.0.0',
     metadata: {
       description: 'a description of the flag',
-      issue_number: 1,
+      issue_number: 1
     },
-    cacheable: true,
+    cacheable: true
   };
 
   let goff: GoFeatureFlagProvider;
@@ -43,7 +49,7 @@ describe('GoFeatureFlagProvider', () => {
     axiosMock.reset();
     axiosMock.resetHistory();
     goff = new GoFeatureFlagProvider({ endpoint });
-    OpenFeature.setProvider('test-provider', goff);
+    await OpenFeature.setProviderAndWait('test-provider', goff);
     cli = OpenFeature.getClient('test-provider');
   });
 
@@ -65,7 +71,7 @@ describe('GoFeatureFlagProvider', () => {
         flagKey: flagName,
         reason: StandardResolutionReasons.ERROR,
         value: false,
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -81,7 +87,7 @@ describe('GoFeatureFlagProvider', () => {
         flagKey: flagName,
         reason: StandardResolutionReasons.ERROR,
         value: false,
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -94,6 +100,7 @@ describe('GoFeatureFlagProvider', () => {
           value: true,
           variationType: 'trueVariation',
           errorCode: ErrorCode.PROVIDER_NOT_READY,
+          reason: StandardResolutionReasons.ERROR
         } as GoFeatureFlagProxyResponse<boolean>);
         const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
         const want = {
@@ -101,7 +108,7 @@ describe('GoFeatureFlagProvider', () => {
           flagKey: flagName,
           reason: StandardResolutionReasons.ERROR,
           value: false,
-          flagMetadata: {},
+          flagMetadata: {}
         };
         expect(res).toEqual(expect.objectContaining(want));
       });
@@ -113,6 +120,7 @@ describe('GoFeatureFlagProvider', () => {
           value: true,
           variationType: 'trueVariation',
           errorCode: 'NOT-AN-SDK-ERROR',
+          reason: StandardResolutionReasons.ERROR
         } as unknown as GoFeatureFlagProxyResponse<boolean>);
         const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
         const want = {
@@ -120,7 +128,7 @@ describe('GoFeatureFlagProvider', () => {
           flagKey: flagName,
           reason: StandardResolutionReasons.ERROR,
           value: false,
-          flagMetadata: {},
+          flagMetadata: {}
         };
         expect(res).toEqual(expect.objectContaining(want));
       });
@@ -133,11 +141,11 @@ describe('GoFeatureFlagProvider', () => {
       const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
       const want = {
         errorCode: ErrorCode.GENERAL,
-        errorMessage: `unknown error while retrieving flag ${flagName} for user ${targetingKey}: Error: Network Error`,
+        errorMessage: `unknown error while retrieving flag ${flagName} for evaluation context ${targetingKey}: Error: Network Error`,
         flagKey: flagName,
         reason: StandardResolutionReasons.ERROR,
         value: false,
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -149,7 +157,7 @@ describe('GoFeatureFlagProvider', () => {
       axiosMock.onPost(dns).reply(200, {
         value: 'sdk-default',
         variationType: 'trueVariation',
-        errorCode: ErrorCode.FLAG_NOT_FOUND,
+        errorCode: ErrorCode.FLAG_NOT_FOUND
       } as GoFeatureFlagProxyResponse<string>);
       const res = await cli.getStringDetails(flagName, 'sdk-default', { targetingKey });
       const want = {
@@ -158,7 +166,7 @@ describe('GoFeatureFlagProvider', () => {
         flagKey: flagName,
         reason: StandardResolutionReasons.ERROR,
         value: 'sdk-default',
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -174,7 +182,7 @@ describe('GoFeatureFlagProvider', () => {
         flagKey: flagName,
         reason: StandardResolutionReasons.ERROR,
         value: 'sdk-default',
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -189,7 +197,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<boolean>);
       const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
       const want = {
@@ -197,47 +205,14 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         value: true,
         variant: 'trueVariation',
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
-    it('provider should start not ready', async () => {
-      const goff = new GoFeatureFlagProvider({ endpoint });
-      expect(goff.status).toEqual(ProviderStatus.NOT_READY);
-    });
     it('provider should be ready after after setting the provider to Open Feature', async () => {
-      expect(goff.status).toEqual(ProviderStatus.READY);
-    });
-    it('should return an error if calling evaluation with provider not ready', async () => {
-      const flagName = 'random-flag';
-      const targetingKey = 'user-key';
-      const dns = `${endpoint}v1/feature/${flagName}/eval`;
-
-      axiosMock.onPost(dns).reply(200, validBoolResponse);
-      axiosMock.onPost(dataCollectorEndpoint).reply(500, {});
-
-      const goff = new GoFeatureFlagProvider(
-        {
-          endpoint,
-          flagCacheTTL: 3000,
-          flagCacheSize: 100,
-          dataFlushInterval: 2000, // in milliseconds
-        },
-        testLogger,
-      );
-
-      expect(goff.status).toEqual(ProviderStatus.NOT_READY);
-      const got = await goff.resolveBooleanEvaluation(flagName, false, { targetingKey });
-      const want = {
-        errorCode: ErrorCode.PROVIDER_NOT_READY,
-        errorMessage: 'Provider in a status that does not allow to serve flag: NOT_READY',
-        reason: StandardResolutionReasons.ERROR,
-        value: false,
-      };
-      expect(got).toEqual(want);
+      expect(cli.providerStatus).toEqual(ServerProviderStatus.READY);
     });
   });
-
   describe('resolveBooleanEvaluation', () => {
     it('should throw an error if we expect a boolean and got another type', async () => {
       const flagName = 'random-flag';
@@ -246,7 +221,7 @@ describe('GoFeatureFlagProvider', () => {
 
       axiosMock.onPost(dns).reply(200, {
         value: 'true',
-        variationType: 'trueVariation',
+        variationType: 'trueVariation'
       } as GoFeatureFlagProxyResponse<string>);
       const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
       const want = {
@@ -255,7 +230,7 @@ describe('GoFeatureFlagProvider', () => {
         flagKey: flagName,
         reason: StandardResolutionReasons.ERROR,
         value: false,
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -271,7 +246,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<boolean>);
 
       const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -280,7 +255,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         value: true,
         flagMetadata: {},
-        variant: 'trueVariation',
+        variant: 'trueVariation'
       };
       expect(res).toEqual(want);
     });
@@ -295,7 +270,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.SPLIT,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<boolean>);
 
       const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -304,7 +279,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.SPLIT,
         value: true,
         flagMetadata: {},
-        variant: 'trueVariation',
+        variant: 'trueVariation'
       };
       expect(res).toEqual(want);
     });
@@ -319,14 +294,14 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.DISABLED,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<boolean>);
       const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
       const want = {
         flagKey: flagName,
         reason: StandardResolutionReasons.DISABLED,
         value: false,
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -339,7 +314,7 @@ describe('GoFeatureFlagProvider', () => {
 
       axiosMock.onPost(dns).reply(200, {
         value: true,
-        variationType: 'trueVariation',
+        variationType: 'trueVariation'
       } as GoFeatureFlagProxyResponse<boolean>);
 
       const res = await cli.getStringDetails(flagName, 'false', { targetingKey });
@@ -349,7 +324,7 @@ describe('GoFeatureFlagProvider', () => {
         errorMessage: `Flag value ${flagName} had unexpected type boolean, expected string.`,
         errorCode: ErrorCode.TYPE_MISMATCH,
         value: 'false',
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -364,7 +339,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<string>);
 
       const res = await cli.getStringDetails(flagName, 'default', { targetingKey });
@@ -373,7 +348,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         value: 'true value',
         variant: 'trueVariation',
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -388,7 +363,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.SPLIT,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<string>);
 
       const res = await cli.getStringDetails(flagName, 'default', { targetingKey });
@@ -397,7 +372,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.SPLIT,
         value: 'true value',
         variant: 'trueVariation',
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -412,7 +387,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.DISABLED,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<string>);
 
       const res = await cli.getStringDetails(flagName, 'randomDefaultValue', { targetingKey });
@@ -420,7 +395,7 @@ describe('GoFeatureFlagProvider', () => {
         flagKey: flagName,
         reason: StandardResolutionReasons.DISABLED,
         value: 'randomDefaultValue',
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -433,7 +408,7 @@ describe('GoFeatureFlagProvider', () => {
 
       axiosMock.onPost(dns).reply(200, {
         value: true,
-        variationType: 'trueVariation',
+        variationType: 'trueVariation'
       } as GoFeatureFlagProxyResponse<boolean>);
 
       const res = await cli.getNumberDetails(flagName, 14, { targetingKey });
@@ -443,7 +418,7 @@ describe('GoFeatureFlagProvider', () => {
         errorCode: ErrorCode.TYPE_MISMATCH,
         errorMessage: `Flag value ${flagName} had unexpected type boolean, expected number.`,
         value: 14,
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -458,7 +433,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<number>);
 
       const res = await cli.getNumberDetails(flagName, 14, { targetingKey });
@@ -467,7 +442,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         value: 14,
         variant: 'trueVariation',
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -482,7 +457,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.SPLIT,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<number>);
 
       const res = await cli.getNumberDetails(flagName, 14, { targetingKey });
@@ -491,7 +466,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.SPLIT,
         value: 14,
         variant: 'trueVariation',
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -506,7 +481,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.DISABLED,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<number>);
 
       const res = await cli.getNumberDetails(flagName, 14, { targetingKey });
@@ -514,7 +489,7 @@ describe('GoFeatureFlagProvider', () => {
         flagKey: flagName,
         reason: StandardResolutionReasons.DISABLED,
         value: 14,
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -527,7 +502,7 @@ describe('GoFeatureFlagProvider', () => {
 
       axiosMock.onPost(dns).reply(200, {
         value: true,
-        variationType: 'trueVariation',
+        variationType: 'trueVariation'
       } as GoFeatureFlagProxyResponse<boolean>);
 
       const res = await cli.getObjectDetails(flagName, {}, { targetingKey });
@@ -537,7 +512,7 @@ describe('GoFeatureFlagProvider', () => {
         errorCode: ErrorCode.TYPE_MISMATCH,
         errorMessage: `Flag value ${flagName} had unexpected type boolean, expected object.`,
         value: {},
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -552,7 +527,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<object>);
 
       const res = await cli.getObjectDetails(flagName, { key: 'default' }, { targetingKey });
@@ -561,7 +536,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         value: { key: true },
         flagMetadata: {},
-        variant: 'trueVariation',
+        variant: 'trueVariation'
       };
       expect(res).toEqual(want);
     });
@@ -576,7 +551,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.SPLIT,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<object>);
 
       const res = await cli.getObjectDetails(flagName, { key: 'default' }, { targetingKey });
@@ -585,7 +560,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.SPLIT,
         value: { key: true },
         flagMetadata: {},
-        variant: 'trueVariation',
+        variant: 'trueVariation'
       };
       expect(res).toEqual(want);
     });
@@ -600,7 +575,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.DISABLED,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<object>);
 
       const res = await cli.getObjectDetails(flagName, { key: 'default' }, { targetingKey });
@@ -608,7 +583,7 @@ describe('GoFeatureFlagProvider', () => {
         flagKey: flagName,
         reason: StandardResolutionReasons.DISABLED,
         value: { key: 'default' },
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -623,7 +598,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<object>);
 
       const res = await cli.getObjectDetails(flagName, { key: 'default' }, { targetingKey });
@@ -632,7 +607,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.TARGETING_MATCH,
         value: ['1', '2'],
         flagMetadata: {},
-        variant: 'trueVariation',
+        variant: 'trueVariation'
       };
       expect(res).toEqual(want);
     });
@@ -647,7 +622,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.SPLIT,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<object>);
 
       const res = await cli.getObjectDetails(flagName, { key: 'default' }, { targetingKey });
@@ -656,7 +631,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.SPLIT,
         value: ['1', '2'],
         flagMetadata: {},
-        variant: 'trueVariation',
+        variant: 'trueVariation'
       };
       expect(res).toEqual(want);
     });
@@ -671,7 +646,7 @@ describe('GoFeatureFlagProvider', () => {
         reason: StandardResolutionReasons.DISABLED,
         failed: false,
         trackEvents: true,
-        version: '1.0.0',
+        version: '1.0.0'
       } as GoFeatureFlagProxyResponse<object>);
 
       const res = await cli.getObjectDetails(flagName, ['key', '124'], { targetingKey });
@@ -679,7 +654,7 @@ describe('GoFeatureFlagProvider', () => {
         flagKey: flagName,
         reason: StandardResolutionReasons.DISABLED,
         value: ['key', '124'],
-        flagMetadata: {},
+        flagMetadata: {}
       };
       expect(res).toEqual(want);
     });
@@ -697,9 +672,9 @@ describe('GoFeatureFlagProvider', () => {
         version: '1.0.0',
         metadata: {
           description: 'a description of the flag',
-          issue_number: 1,
+          issue_number: 1
         },
-        cacheable: true,
+        cacheable: true
       } as GoFeatureFlagProxyResponse<boolean>);
 
       const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -710,8 +685,8 @@ describe('GoFeatureFlagProvider', () => {
         variant: 'trueVariation',
         flagMetadata: {
           description: 'a description of the flag',
-          issue_number: 1,
-        },
+          issue_number: 1
+        }
       };
       expect(res).toEqual(want);
     });
@@ -727,9 +702,9 @@ describe('GoFeatureFlagProvider', () => {
         endpoint,
         flagCacheTTL: 3000,
         flagCacheSize: 1,
-        disableDataCollection: true,
+        disableDataCollection: true
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       const got1 = await cli.getBooleanDetails(flagName, false, { targetingKey });
       const got2 = await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -747,9 +722,9 @@ describe('GoFeatureFlagProvider', () => {
       const goff = new GoFeatureFlagProvider({
         endpoint,
         disableCache: true,
-        disableDataCollection: true,
+        disableDataCollection: true
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       const got1 = await cli.getBooleanDetails(flagName, false, { targetingKey });
       const got2 = await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -768,9 +743,9 @@ describe('GoFeatureFlagProvider', () => {
       const goff = new GoFeatureFlagProvider({
         endpoint,
         flagCacheSize: 1,
-        disableDataCollection: true,
+        disableDataCollection: true
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName1, false, { targetingKey });
       await cli.getBooleanDetails(flagName2, false, { targetingKey });
@@ -786,9 +761,9 @@ describe('GoFeatureFlagProvider', () => {
       const goff = new GoFeatureFlagProvider({
         endpoint,
         flagCacheSize: 1,
-        disableDataCollection: true,
+        disableDataCollection: true
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -804,9 +779,9 @@ describe('GoFeatureFlagProvider', () => {
         endpoint,
         flagCacheSize: 1,
         disableDataCollection: true,
-        flagCacheTTL: 200,
+        flagCacheTTL: 200
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await new Promise((r) => setTimeout(r, 300));
@@ -825,9 +800,9 @@ describe('GoFeatureFlagProvider', () => {
       const goff = new GoFeatureFlagProvider({
         endpoint,
         flagCacheSize: 1,
-        disableDataCollection: true,
+        disableDataCollection: true
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName1, false, { targetingKey });
       await cli.getBooleanDetails(flagName2, false, { targetingKey });
@@ -841,9 +816,9 @@ describe('GoFeatureFlagProvider', () => {
       const goff = new GoFeatureFlagProvider({
         endpoint,
         flagCacheSize: 1,
-        disableDataCollection: true,
+        disableDataCollection: true
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName1, false, { targetingKey, email: 'foo.bar@gofeatureflag.org' });
       await cli.getBooleanDetails(flagName1, false, { targetingKey, email: 'bar.foo@gofeatureflag.org' });
@@ -861,10 +836,10 @@ describe('GoFeatureFlagProvider', () => {
         endpoint,
         flagCacheTTL: 3000,
         flagCacheSize: 100,
-        dataFlushInterval: 1000, // in milliseconds
+        dataFlushInterval: 1000 // in milliseconds
       });
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, goff);
+      await OpenFeature.setProviderAndWait(providerName, goff);
       const cli = OpenFeature.getClient(providerName);
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -883,10 +858,10 @@ describe('GoFeatureFlagProvider', () => {
             key: 'random-flag',
             value: true,
             variation: 'trueVariation',
-            userKey: 'user-key',
-          },
+            userKey: 'user-key'
+          }
         ],
-        meta: { provider: 'open-feature-js-sdk' },
+        meta: { provider: 'open-feature-js-sdk' }
       };
       expect(want).toEqual(got);
     });
@@ -901,10 +876,10 @@ describe('GoFeatureFlagProvider', () => {
         endpoint,
         flagCacheTTL: 3000,
         flagCacheSize: 100,
-        dataFlushInterval: 100, // in milliseconds
+        dataFlushInterval: 100 // in milliseconds
       });
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, goff);
+      await OpenFeature.setProviderAndWait(providerName, goff);
       const cli = OpenFeature.getClient(providerName);
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -923,10 +898,10 @@ describe('GoFeatureFlagProvider', () => {
         endpoint,
         flagCacheTTL: 3000,
         flagCacheSize: 100,
-        dataFlushInterval: 100, // in milliseconds
+        dataFlushInterval: 100 // in milliseconds
       });
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, goff);
+      await OpenFeature.setProviderAndWait(providerName, goff);
       const cli = OpenFeature.getClient(providerName);
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -951,10 +926,10 @@ describe('GoFeatureFlagProvider', () => {
         endpoint,
         flagCacheTTL: 3000,
         flagCacheSize: 100,
-        dataFlushInterval: 200, // in milliseconds
+        dataFlushInterval: 200 // in milliseconds
       });
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, goff);
+      await OpenFeature.setProviderAndWait(providerName, goff);
       const cli = OpenFeature.getClient(providerName);
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -977,12 +952,12 @@ describe('GoFeatureFlagProvider', () => {
           endpoint,
           flagCacheTTL: 3000,
           flagCacheSize: 100,
-          dataFlushInterval: 2000, // in milliseconds
+          dataFlushInterval: 2000 // in milliseconds
         },
-        testLogger,
+        testLogger
       );
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, goff);
+      await OpenFeature.setProviderAndWait(providerName, goff);
       const cli = OpenFeature.getClient(providerName);
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -990,8 +965,59 @@ describe('GoFeatureFlagProvider', () => {
 
       expect(testLogger.inMemoryLogger['error'].length).toBe(1);
       expect(testLogger.inMemoryLogger['error']).toContain(
-        'impossible to send the data to the collector: Error: Request failed with status code 500',
+        'Error: impossible to send the data to the collector: Error: Request failed with status code 500'
       );
+    });
+  });
+  describe('polling', () => {
+    it('should_stop_calling_flag_change_if_receive_404', async () => {
+      const providerName = expect.getState().currentTestName || 'test';
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        disableDataCollection: false,
+        pollInterval: 100,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100
+      });
+      await OpenFeature.setProviderAndWait(providerName, goff);
+      const flagName = 'random-flag';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      axiosMock.onGet(`${endpoint}v1/flag/change`).reply(404);
+      await new Promise((r) => setTimeout(r, 1000));
+
+      const nbCall = axiosMock.history['get'].filter((i) => i.url === `${endpoint}v1/flag/change`).length;
+      expect(nbCall).toBe(1);
+    });
+    it('should not get cached value if flag configuration changed', async () => {
+      const providerName = expect.getState().currentTestName || 'test';
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        disableDataCollection: false,
+        pollInterval: 500,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100
+      });
+      await OpenFeature.setProviderAndWait(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      axiosMock.onGet(`${endpoint}v1/flag/change`).replyOnce(200, {}, { etag: '123' });
+      axiosMock.onGet(`${endpoint}v1/flag/change`).replyOnce(200, {}, { etag: '456' });
+      axiosMock.onGet(`${endpoint}v1/flag/change`).reply(304);
+
+      const res1 = await cli.getBooleanDetails(flagName, false, { targetingKey });
+      expect(res1.reason).toEqual(StandardResolutionReasons.TARGETING_MATCH);
+      const res2 = await cli.getBooleanDetails(flagName, false, { targetingKey });
+      expect(res2.reason).toEqual(StandardResolutionReasons.CACHED);
+      await new Promise((r) => setTimeout(r, 1000));
+      const res3 = await cli.getBooleanDetails(flagName, false, { targetingKey });
+      expect(res3.reason).toEqual(StandardResolutionReasons.TARGETING_MATCH);
     });
   });
 });
