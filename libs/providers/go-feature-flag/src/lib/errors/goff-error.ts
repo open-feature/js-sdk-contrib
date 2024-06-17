@@ -1,3 +1,1 @@
-class GoFeatureFlagError extends Error {}
-
-export { GoFeatureFlagError };
+export class GoFeatureFlagError extends Error {}
