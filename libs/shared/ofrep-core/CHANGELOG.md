@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.1.4...ofrep-core-v0.1.5) (2024-06-18)
+
+
+### ✨ New Features
+
+* support relative baseUrls ([#950](https://github.com/open-feature/js-sdk-contrib/issues/950)) ([ceb42cb](https://github.com/open-feature/js-sdk-contrib/commit/ceb42cb335518963a3ca5d21f15f9b439c481f2f))
+
 ## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.1.3...ofrep-core-v0.1.4) (2024-04-16)
 
 
