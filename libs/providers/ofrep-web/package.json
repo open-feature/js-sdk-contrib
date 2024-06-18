@@ -12,6 +12,6 @@
   },
   "peerDependencies": {
     "@openfeature/web-sdk": ">=0.4.0",
-    "@openfeature/ofrep-core": "^0.1.4"
+    "@openfeature/ofrep-core": "^0.1.5"
   }
 }
