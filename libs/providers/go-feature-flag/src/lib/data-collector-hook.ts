@@ -14,10 +14,9 @@ import { GoffApiController } from './controller/goff-api';
 const defaultTargetingKey = 'undefined-targetingKey';
 
 export class GoFeatureFlagDataCollectorHook implements Hook {
-  // bgSchedulerId contains the id of the setInterval that is running.
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // collectUnCachedEvent (optional) set to true if you want to send all events not only the cached evaluations.
   collectUnCachedEvaluation?: boolean;
+  // bgSchedulerId contains the id of the setInterval that is running.
   private bgScheduler?: NodeJS.Timeout | number;
   // dataCollectorBuffer contains all the FeatureEvents that we need to send to the relay-proxy for data collection.
   private dataCollectorBuffer?: FeatureEvent<any>[];
