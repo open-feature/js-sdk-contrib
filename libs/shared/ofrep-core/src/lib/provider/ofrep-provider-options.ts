@@ -5,9 +5,26 @@ export type HttpHeaderMap = Record<string, string>;
 export type HttpHeaders = HttpHeaderList | HttpHeaderMap;
 
 export type OFREPProviderBaseOptions = {
+  /**
+   * Base URL for OFREP requests. Relative paths are supported.
+   * For example, if your OFREP instance is available at
+   * "https://host.com/path/{ofrep-api}" , you should set this to
+   * "https://host.com/path" or "/path" (if your app and OFREP instance
+   * share the same origin).
+   */
   baseUrl: string;
+  /**
+   * Optional fetch implementation
+   */
   fetchImplementation?: FetchAPI;
+  /**
+   * Optional Headers supplier function.
+   * @returns HttpHeaders
+   */
   headersFactory?: () => HttpHeaders;
+  /**
+   * Optional static headers.
+   */
   headers?: HttpHeaders;
 };
 

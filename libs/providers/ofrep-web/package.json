@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/ofrep-web-provider",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "dependencies": {
     "tslib": "^2.3.0"
   },
@@ -12,6 +12,6 @@
   },
   "peerDependencies": {
     "@openfeature/web-sdk": ">=0.4.0",
-    "@openfeature/ofrep-core": "^0.1.4"
+    "@openfeature/ofrep-core": "^0.1.5"
   }
 }

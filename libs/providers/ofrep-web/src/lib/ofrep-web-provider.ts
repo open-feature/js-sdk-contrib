@@ -64,13 +64,6 @@ export class OFREPWebProvider implements Provider {
   private _pollingIntervalId?: number;
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
-    try {
-      // Cannot use URL.canParse as it is only available from Node 19.x
-      new URL(options.baseUrl);
-    } catch {
-      throw new Error(`The given OFREP URL "${options.baseUrl}" is not a valid URL.`);
-    }
-
     this._options = options;
     this._logger = logger;
     this._etag = null;
