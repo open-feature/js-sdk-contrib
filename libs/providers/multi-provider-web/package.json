@@ -11,6 +11,6 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/web-sdk": "^1.6.0"
+    "@openfeature/web-sdk": "^1.2.1"
   }
 }
