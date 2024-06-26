@@ -1,95 +1,50 @@
 import {
-  ErrorCode,
   EvaluationContext,
-  FlagNotFoundError,
   Hook,
   JsonValue,
   Logger,
+  OpenFeatureEventEmitter,
   Provider,
-  ProviderStatus,
   ResolutionDetails,
+  ServerProviderEvents,
   StandardResolutionReasons,
-  TypeMismatchError,
 } from '@openfeature/server-sdk';
-import axios from 'axios';
-import { transformContext } from './context-transformer';
-import { ProxyNotReady } from './errors/proxyNotReady';
-import { ProxyTimeout } from './errors/proxyTimeout';
-import { UnknownError } from './errors/unknownError';
-import { Unauthorized } from './errors/unauthorized';
-import { LRUCache } from 'lru-cache';
-import {
-  GoFeatureFlagProviderOptions,
-  GoFeatureFlagProxyRequest,
-  GoFeatureFlagProxyResponse,
-  GoFeatureFlagUser,
-} from './model';
+import { ConfigurationChange, GoFeatureFlagProviderOptions } from './model';
 import { GoFeatureFlagDataCollectorHook } from './data-collector-hook';
-import hash from 'object-hash';
+import { GoffApiController } from './controller/goff-api';
+import { CacheController } from './controller/cache';
+import { ConfigurationChangeEndpointNotFound } from './errors/configuration-change-endpoint-not-found';
 
 // GoFeatureFlagProvider is the official Open-feature provider for GO Feature Flag.
 export class GoFeatureFlagProvider implements Provider {
   metadata = {
     name: GoFeatureFlagProvider.name,
   };
-
-  // endpoint of your go-feature-flag relay proxy instance
-  private readonly endpoint: string;
-
-  // timeout in millisecond before we consider the request as a failure
-  private readonly timeout: number;
-
-  // cache contains the local cache used in the provider to avoid calling the relay-proxy for every evaluation
-  private readonly cache?: LRUCache<string, ResolutionDetails<any>>;
-
-  // cacheTTL is the time we keep the evaluation in the cache before we consider it as obsolete.
-  // If you want to keep the value forever you can set the FlagCacheTTL field to -1
-  private readonly cacheTTL?: number;
-
+  readonly runsOn = 'server';
+  events = new OpenFeatureEventEmitter();
+  hooks?: Hook[];
+  private DEFAULT_POLL_INTERVAL = 30000;
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
-  private readonly disableDataCollection: boolean;
-
+  private readonly _disableDataCollection: boolean;
   // dataCollectorHook is the hook used to send the data to the GO Feature Flag data collector API.
-  private readonly dataCollectorHook?: GoFeatureFlagDataCollectorHook;
+  private readonly _dataCollectorHook?: GoFeatureFlagDataCollectorHook;
+  // goffApiController is the controller used to communicate with the GO Feature Flag relay-proxy API.
+  private readonly _goffApiController: GoffApiController;
+  // cacheController is the controller used to cache the evaluation of the flags.
+  private readonly _cacheController?: CacheController;
+  private _pollingIntervalId?: number;
+  private _pollingInterval: number;
 
-  // logger is the Open Feature logger to use
-  private logger?: Logger;
-
-  // _status is the variable keeping the status of the provider internally.
-  private _status: ProviderStatus = ProviderStatus.NOT_READY;
-
-  readonly hooks?: Hook[];
   constructor(options: GoFeatureFlagProviderOptions, logger?: Logger) {
-    this.timeout = options.timeout || 0; // default is 0 = no timeout
-    this.endpoint = options.endpoint;
-
-    if (!options.disableDataCollection) {
-      this.dataCollectorHook = new GoFeatureFlagDataCollectorHook(
-        {
-          endpoint: this.endpoint,
-          timeout: this.timeout,
-          dataFlushInterval: options.dataFlushInterval,
-        },
-        logger,
-      );
-      this.hooks = [this.dataCollectorHook];
-    }
-
-    this.cacheTTL = options.flagCacheTTL !== undefined && options.flagCacheTTL !== 0 ? options.flagCacheTTL : 1000 * 60;
-
-    this.disableDataCollection = options.disableDataCollection || false;
-    this.logger = logger;
-
-    // Add API key to the headers
-    if (options.apiKey) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${options.apiKey}`;
-    }
-
-    if (!options.disableCache) {
-      const cacheSize =
-        options.flagCacheSize !== undefined && options.flagCacheSize !== 0 ? options.flagCacheSize : 10000;
-      this.cache = new LRUCache({ maxSize: cacheSize, sizeCalculation: () => 1 });
-    }
+    this._goffApiController = new GoffApiController(options);
+    this._dataCollectorHook = new GoFeatureFlagDataCollectorHook(
+      { dataFlushInterval: options.dataFlushInterval },
+      this._goffApiController,
+      logger,
+    );
+    this._disableDataCollection = options.disableDataCollection || false;
+    this._cacheController = new CacheController(options, logger);
+    this._pollingInterval = options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
   }
 
   /**
@@ -97,22 +52,24 @@ export class GoFeatureFlagProvider implements Provider {
    * It will start the background process for data collection to be able to run every X ms.
    */
   async initialize() {
-    if (!this.disableDataCollection) {
-      this.dataCollectorHook?.init();
+    if (!this._disableDataCollection && this._dataCollectorHook) {
+      this.hooks = [this._dataCollectorHook];
+      this._dataCollectorHook.init();
     }
-    this._status = ProviderStatus.READY;
-  }
 
-  get status() {
-    return this._status;
+    if (this._pollingInterval > 0) {
+      this.startPolling();
+    }
   }
 
   /**
    * onClose is called everytime OpenFeature.Close() function is called.
-   * It will terminate gracefully the provider and ensure that all the data are send to the relay-proxy.
+   * It will gracefully terminate the provider and ensure that all the data are sent to the relay-proxy.
    */
   async onClose() {
-    await this.dataCollectorHook?.close();
+    this.stopPolling();
+    this._cacheController?.clear();
+    await this._dataCollectorHook?.close();
   }
 
   /**
@@ -132,12 +89,7 @@ export class GoFeatureFlagProvider implements Provider {
     defaultValue: boolean,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
-    return this.resolveEvaluationGoFeatureFlagProxy<boolean>(
-      flagKey,
-      defaultValue,
-      transformContext(context),
-      'boolean',
-    );
+    return this.resolveEvaluationGoFeatureFlagProxy<boolean>(flagKey, defaultValue, context, 'boolean');
   }
 
   /**
@@ -157,7 +109,7 @@ export class GoFeatureFlagProvider implements Provider {
     defaultValue: string,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
-    return this.resolveEvaluationGoFeatureFlagProxy<string>(flagKey, defaultValue, transformContext(context), 'string');
+    return this.resolveEvaluationGoFeatureFlagProxy<string>(flagKey, defaultValue, context, 'string');
   }
 
   /**
@@ -177,7 +129,7 @@ export class GoFeatureFlagProvider implements Provider {
     defaultValue: number,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
-    return this.resolveEvaluationGoFeatureFlagProxy<number>(flagKey, defaultValue, transformContext(context), 'number');
+    return this.resolveEvaluationGoFeatureFlagProxy<number>(flagKey, defaultValue, context, 'number');
   }
 
   /**
@@ -197,7 +149,7 @@ export class GoFeatureFlagProvider implements Provider {
     defaultValue: U,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
-    return this.resolveEvaluationGoFeatureFlagProxy<U>(flagKey, defaultValue, transformContext(context), 'object');
+    return this.resolveEvaluationGoFeatureFlagProxy<U>(flagKey, defaultValue, context, 'object');
   }
 
   /**
@@ -206,7 +158,7 @@ export class GoFeatureFlagProvider implements Provider {
    * This is the same call for all types of flags so this function also checks if the return call is the one expected.
    * @param flagKey - name of your feature flag key.
    * @param defaultValue - default value is used if we are not able to evaluate the flag for this user.
-   * @param user - the user against who we will evaluate the flag.
+   * @param evaluationContext - the evaluationContext against who we will evaluate the flag.
    * @param expectedType - the type we expect the result to be
    * @return {Promise<ResolutionDetails<T>>} An object containing the result of the flag evaluation by GO Feature Flag.
    * @throws {ProxyNotReady} When we are not able to communicate with the relay-proxy
@@ -218,99 +170,49 @@ export class GoFeatureFlagProvider implements Provider {
   async resolveEvaluationGoFeatureFlagProxy<T>(
     flagKey: string,
     defaultValue: T,
-    user: GoFeatureFlagUser,
+    evaluationContext: EvaluationContext,
     expectedType: string,
   ): Promise<ResolutionDetails<T>> {
-    // Check if the provider is ready to serve
-    if (this._status === ProviderStatus.NOT_READY) {
-      return {
-        value: defaultValue,
-        reason: StandardResolutionReasons.ERROR,
-        errorCode: ErrorCode.PROVIDER_NOT_READY,
-        errorMessage: `Provider in a status that does not allow to serve flag: ${this.status}`,
-      };
+    const cacheValue = this._cacheController?.get(flagKey, evaluationContext);
+    if (cacheValue) {
+      cacheValue.reason = StandardResolutionReasons.CACHED;
+      return cacheValue;
     }
 
-    const cacheKey = `${flagKey}-${hash(user)}`;
-    // check if flag is available in the cache
-    if (this.cache !== undefined) {
-      const cacheValue = this.cache.get(cacheKey);
-      if (cacheValue !== undefined) {
-        cacheValue.reason = StandardResolutionReasons.CACHED;
-        return cacheValue;
+    const evaluationResponse = await this._goffApiController.evaluate(
+      flagKey,
+      defaultValue,
+      evaluationContext,
+      expectedType,
+    );
+
+    this._cacheController?.set(flagKey, evaluationContext, evaluationResponse);
+    return evaluationResponse.resolutionDetails;
+  }
+
+  private startPolling() {
+    this._pollingIntervalId = setInterval(async () => {
+      try {
+        const res = await this._goffApiController.configurationHasChanged();
+        if (res === ConfigurationChange.FLAG_CONFIGURATION_UPDATED) {
+          this.events?.emit(ServerProviderEvents.ConfigurationChanged, { message: 'Flags updated' });
+          this._cacheController?.clear();
+        }
+      } catch (error) {
+        if (error instanceof ConfigurationChangeEndpointNotFound && this._pollingIntervalId) {
+          this.stopPolling();
+        }
       }
+    }, this._pollingInterval) as unknown as number;
+  }
+
+  /**
+   * Stop polling for flag updates
+   * @private
+   */
+  private stopPolling() {
+    if (this._pollingIntervalId) {
+      clearInterval(this._pollingIntervalId);
     }
-
-    const request: GoFeatureFlagProxyRequest<T> = { user, defaultValue };
-    // build URL to access to the endpoint
-    const endpointURL = new URL(this.endpoint);
-    endpointURL.pathname = `v1/feature/${flagKey}/eval`;
-
-    let apiResponseData: GoFeatureFlagProxyResponse<T>;
-    try {
-      const response = await axios.post<GoFeatureFlagProxyResponse<T>>(endpointURL.toString(), request, {
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        timeout: this.timeout,
-      });
-      apiResponseData = response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status == 401) {
-        throw new Unauthorized('invalid token used to contact GO Feature Flag relay proxy instance');
-      }
-      // Impossible to contact the relay-proxy
-      if (axios.isAxiosError(error) && (error.code === 'ECONNREFUSED' || error.response?.status === 404)) {
-        throw new ProxyNotReady(`impossible to call go-feature-flag relay proxy on ${endpointURL}`, error);
-      }
-
-      // Timeout when calling the API
-      if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
-        throw new ProxyTimeout(`impossible to retrieve the ${flagKey} on time`, error);
-      }
-
-      throw new UnknownError(`unknown error while retrieving flag ${flagKey} for user ${user.key}`, error);
-    }
-
-    // Check that we received the expectedType
-    if (typeof apiResponseData.value !== expectedType) {
-      throw new TypeMismatchError(
-        `Flag value ${flagKey} had unexpected type ${typeof apiResponseData.value}, expected ${expectedType}.`,
-      );
-    }
-
-    // Case of the flag is not found
-    if (apiResponseData.errorCode === ErrorCode.FLAG_NOT_FOUND) {
-      throw new FlagNotFoundError(`Flag ${flagKey} was not found in your configuration`);
-    }
-
-    // Case of the flag is disabled
-    if (apiResponseData.reason === StandardResolutionReasons.DISABLED) {
-      // we don't set a variant since we are using the default value, and we are not able to know
-      // which variant it is.
-      return { value: defaultValue, reason: apiResponseData.reason };
-    }
-
-    const sdkResponse: ResolutionDetails<T> = {
-      value: apiResponseData.value,
-      variant: apiResponseData.variationType,
-      reason: apiResponseData.reason?.toString() || 'UNKNOWN',
-      flagMetadata: apiResponseData.metadata || undefined,
-    };
-    if (Object.values(ErrorCode).includes(apiResponseData.errorCode as ErrorCode)) {
-      sdkResponse.errorCode = ErrorCode[apiResponseData.errorCode as ErrorCode];
-    } else if (apiResponseData.errorCode) {
-      sdkResponse.errorCode = ErrorCode.GENERAL;
-    }
-
-    if (this.cache !== undefined && apiResponseData.cacheable) {
-      if (this.cacheTTL === -1) {
-        this.cache.set(cacheKey, sdkResponse);
-      } else {
-        this.cache.set(cacheKey, sdkResponse, { ttl: this.cacheTTL });
-      }
-    }
-    return sdkResponse;
   }
 }

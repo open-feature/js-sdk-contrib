@@ -3,49 +3,37 @@ import {
   FlagValue,
   Hook,
   HookContext,
-  HookHints,
   Logger,
   StandardResolutionReasons,
 } from '@openfeature/server-sdk';
-import { DataCollectorHookOptions, DataCollectorRequest, DataCollectorResponse, FeatureEvent } from './model';
+import { DataCollectorHookOptions, FeatureEvent } from './model';
 import { copy } from 'copy-anything';
-import axios from 'axios';
+import { CollectorError } from './errors/collector-error';
+import { GoffApiController } from './controller/goff-api';
 
 const defaultTargetingKey = 'undefined-targetingKey';
-export class GoFeatureFlagDataCollectorHook implements Hook {
-  // bgSchedulerId contains the id of the setInterval that is running.
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  private bgScheduler?: ReturnType<setInterval>;
 
+export class GoFeatureFlagDataCollectorHook implements Hook {
+  // collectUnCachedEvent (optional) set to true if you want to send all events not only the cached evaluations.
+  collectUnCachedEvaluation?: boolean;
+  // bgSchedulerId contains the id of the setInterval that is running.
+  private bgScheduler?: NodeJS.Timeout | number;
   // dataCollectorBuffer contains all the FeatureEvents that we need to send to the relay-proxy for data collection.
   private dataCollectorBuffer?: FeatureEvent<any>[];
-
   // dataFlushInterval interval time (in millisecond) we use to call the relay proxy to collect data.
   private readonly dataFlushInterval: number;
-
   // dataCollectorMetadata are the metadata used when calling the data collector endpoint
   private readonly dataCollectorMetadata: Record<string, string> = {
     provider: 'open-feature-js-sdk',
   };
-
-  // endpoint of your go-feature-flag relay proxy instance
-  private readonly endpoint: string;
-
-  // timeout in millisecond before we consider the request as a failure
-  private readonly timeout: number;
-
+  private readonly goffApiController: GoffApiController;
   // logger is the Open Feature logger to use
   private logger?: Logger;
 
-  // collectUnCachedEvent (optional) set to true if you want to send all events not only the cached evaluations.
-  collectUnCachedEvaluation?: boolean;
-
-  constructor(options: DataCollectorHookOptions, logger?: Logger) {
+  constructor(options: DataCollectorHookOptions, goffApiController: GoffApiController, logger?: Logger) {
     this.dataFlushInterval = options.dataFlushInterval || 1000 * 60;
-    this.endpoint = options.endpoint;
-    this.timeout = options.timeout || 0; // default is 0 = no timeout
     this.logger = logger;
+    this.goffApiController = goffApiController;
     this.collectUnCachedEvaluation = options.collectUnCachedEvaluation;
   }
 
@@ -65,29 +53,18 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
    * central service in charge of collecting the data.
    */
   async callGoffDataCollection() {
-    if (this.dataCollectorBuffer?.length === 0) {
-      return;
-    }
-
     const dataToSend = copy(this.dataCollectorBuffer) || [];
     this.dataCollectorBuffer = [];
-
-    const request: DataCollectorRequest<boolean> = { events: dataToSend, meta: this.dataCollectorMetadata };
-    const endpointURL = new URL(this.endpoint);
-    endpointURL.pathname = 'v1/data/collector';
-
     try {
-      await axios.post<DataCollectorResponse>(endpointURL.toString(), request, {
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        timeout: this.timeout,
-      });
+      await this.goffApiController.collectData(dataToSend, this.dataCollectorMetadata);
     } catch (e) {
-      this.logger?.error(`impossible to send the data to the collector: ${e}`);
-      // if we have an issue calling the collector we put the data back in the buffer
+      if (!(e instanceof CollectorError)) {
+        throw e;
+      }
+      this.logger?.error(e);
+      // if we have an issue calling the collector, we put the data back in the buffer
       this.dataCollectorBuffer = [...this.dataCollectorBuffer, ...dataToSend];
+      return;
     }
   }
 

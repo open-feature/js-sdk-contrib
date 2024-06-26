@@ -1,7 +1,13 @@
 /**
  * @jest-environment node
  */
-import { Client, ErrorCode, OpenFeature, ProviderStatus, StandardResolutionReasons } from '@openfeature/server-sdk';
+import {
+  Client,
+  ErrorCode,
+  OpenFeature,
+  ServerProviderStatus,
+  StandardResolutionReasons,
+} from '@openfeature/server-sdk';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { GoFeatureFlagProvider } from './go-feature-flag-provider';
@@ -43,7 +49,7 @@ describe('GoFeatureFlagProvider', () => {
     axiosMock.reset();
     axiosMock.resetHistory();
     goff = new GoFeatureFlagProvider({ endpoint });
-    OpenFeature.setProvider('test-provider', goff);
+    await OpenFeature.setProviderAndWait('test-provider', goff);
     cli = OpenFeature.getClient('test-provider');
   });
 
@@ -94,6 +100,7 @@ describe('GoFeatureFlagProvider', () => {
           value: true,
           variationType: 'trueVariation',
           errorCode: ErrorCode.PROVIDER_NOT_READY,
+          reason: StandardResolutionReasons.ERROR,
         } as GoFeatureFlagProxyResponse<boolean>);
         const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
         const want = {
@@ -113,6 +120,7 @@ describe('GoFeatureFlagProvider', () => {
           value: true,
           variationType: 'trueVariation',
           errorCode: 'NOT-AN-SDK-ERROR',
+          reason: StandardResolutionReasons.ERROR,
         } as unknown as GoFeatureFlagProxyResponse<boolean>);
         const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
         const want = {
@@ -133,7 +141,7 @@ describe('GoFeatureFlagProvider', () => {
       const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
       const want = {
         errorCode: ErrorCode.GENERAL,
-        errorMessage: `unknown error while retrieving flag ${flagName} for user ${targetingKey}: Error: Network Error`,
+        errorMessage: `unknown error while retrieving flag ${flagName} for evaluation context ${targetingKey}: Error: Network Error`,
         flagKey: flagName,
         reason: StandardResolutionReasons.ERROR,
         value: false,
@@ -201,43 +209,10 @@ describe('GoFeatureFlagProvider', () => {
       };
       expect(res).toEqual(want);
     });
-    it('provider should start not ready', async () => {
-      const goff = new GoFeatureFlagProvider({ endpoint });
-      expect(goff.status).toEqual(ProviderStatus.NOT_READY);
-    });
     it('provider should be ready after after setting the provider to Open Feature', async () => {
-      expect(goff.status).toEqual(ProviderStatus.READY);
-    });
-    it('should return an error if calling evaluation with provider not ready', async () => {
-      const flagName = 'random-flag';
-      const targetingKey = 'user-key';
-      const dns = `${endpoint}v1/feature/${flagName}/eval`;
-
-      axiosMock.onPost(dns).reply(200, validBoolResponse);
-      axiosMock.onPost(dataCollectorEndpoint).reply(500, {});
-
-      const goff = new GoFeatureFlagProvider(
-        {
-          endpoint,
-          flagCacheTTL: 3000,
-          flagCacheSize: 100,
-          dataFlushInterval: 2000, // in milliseconds
-        },
-        testLogger,
-      );
-
-      expect(goff.status).toEqual(ProviderStatus.NOT_READY);
-      const got = await goff.resolveBooleanEvaluation(flagName, false, { targetingKey });
-      const want = {
-        errorCode: ErrorCode.PROVIDER_NOT_READY,
-        errorMessage: 'Provider in a status that does not allow to serve flag: NOT_READY',
-        reason: StandardResolutionReasons.ERROR,
-        value: false,
-      };
-      expect(got).toEqual(want);
+      expect(cli.providerStatus).toEqual(ServerProviderStatus.READY);
     });
   });
-
   describe('resolveBooleanEvaluation', () => {
     it('should throw an error if we expect a boolean and got another type', async () => {
       const flagName = 'random-flag';
@@ -729,7 +704,7 @@ describe('GoFeatureFlagProvider', () => {
         flagCacheSize: 1,
         disableDataCollection: true,
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       const got1 = await cli.getBooleanDetails(flagName, false, { targetingKey });
       const got2 = await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -749,7 +724,7 @@ describe('GoFeatureFlagProvider', () => {
         disableCache: true,
         disableDataCollection: true,
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       const got1 = await cli.getBooleanDetails(flagName, false, { targetingKey });
       const got2 = await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -770,7 +745,7 @@ describe('GoFeatureFlagProvider', () => {
         flagCacheSize: 1,
         disableDataCollection: true,
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName1, false, { targetingKey });
       await cli.getBooleanDetails(flagName2, false, { targetingKey });
@@ -788,7 +763,7 @@ describe('GoFeatureFlagProvider', () => {
         flagCacheSize: 1,
         disableDataCollection: true,
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -806,7 +781,7 @@ describe('GoFeatureFlagProvider', () => {
         disableDataCollection: true,
         flagCacheTTL: 200,
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await new Promise((r) => setTimeout(r, 300));
@@ -827,7 +802,7 @@ describe('GoFeatureFlagProvider', () => {
         flagCacheSize: 1,
         disableDataCollection: true,
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName1, false, { targetingKey });
       await cli.getBooleanDetails(flagName2, false, { targetingKey });
@@ -843,7 +818,7 @@ describe('GoFeatureFlagProvider', () => {
         flagCacheSize: 1,
         disableDataCollection: true,
       });
-      OpenFeature.setProvider('test-provider-cache', goff);
+      await OpenFeature.setProviderAndWait('test-provider-cache', goff);
       const cli = OpenFeature.getClient('test-provider-cache');
       await cli.getBooleanDetails(flagName1, false, { targetingKey, email: 'foo.bar@gofeatureflag.org' });
       await cli.getBooleanDetails(flagName1, false, { targetingKey, email: 'bar.foo@gofeatureflag.org' });
@@ -864,7 +839,7 @@ describe('GoFeatureFlagProvider', () => {
         dataFlushInterval: 1000, // in milliseconds
       });
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, goff);
+      await OpenFeature.setProviderAndWait(providerName, goff);
       const cli = OpenFeature.getClient(providerName);
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -904,7 +879,7 @@ describe('GoFeatureFlagProvider', () => {
         dataFlushInterval: 100, // in milliseconds
       });
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, goff);
+      await OpenFeature.setProviderAndWait(providerName, goff);
       const cli = OpenFeature.getClient(providerName);
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -926,7 +901,7 @@ describe('GoFeatureFlagProvider', () => {
         dataFlushInterval: 100, // in milliseconds
       });
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, goff);
+      await OpenFeature.setProviderAndWait(providerName, goff);
       const cli = OpenFeature.getClient(providerName);
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -954,7 +929,7 @@ describe('GoFeatureFlagProvider', () => {
         dataFlushInterval: 200, // in milliseconds
       });
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, goff);
+      await OpenFeature.setProviderAndWait(providerName, goff);
       const cli = OpenFeature.getClient(providerName);
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -982,7 +957,7 @@ describe('GoFeatureFlagProvider', () => {
         testLogger,
       );
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, goff);
+      await OpenFeature.setProviderAndWait(providerName, goff);
       const cli = OpenFeature.getClient(providerName);
       await cli.getBooleanDetails(flagName, false, { targetingKey });
       await cli.getBooleanDetails(flagName, false, { targetingKey });
@@ -990,8 +965,59 @@ describe('GoFeatureFlagProvider', () => {
 
       expect(testLogger.inMemoryLogger['error'].length).toBe(1);
       expect(testLogger.inMemoryLogger['error']).toContain(
-        'impossible to send the data to the collector: Error: Request failed with status code 500',
+        'Error: impossible to send the data to the collector: Error: Request failed with status code 500',
       );
+    });
+  });
+  describe('polling', () => {
+    it('should_stop_calling_flag_change_if_receive_404', async () => {
+      const providerName = expect.getState().currentTestName || 'test';
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        disableDataCollection: false,
+        pollInterval: 100,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+      });
+      await OpenFeature.setProviderAndWait(providerName, goff);
+      const flagName = 'random-flag';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      axiosMock.onGet(`${endpoint}v1/flag/change`).reply(404);
+      await new Promise((r) => setTimeout(r, 1000));
+
+      const nbCall = axiosMock.history['get'].filter((i) => i.url === `${endpoint}v1/flag/change`).length;
+      expect(nbCall).toBe(1);
+    });
+    it('should not get cached value if flag configuration changed', async () => {
+      const providerName = expect.getState().currentTestName || 'test';
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        disableDataCollection: false,
+        pollInterval: 100,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+      });
+      await OpenFeature.setProviderAndWait(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      axiosMock.onGet(`${endpoint}v1/flag/change`).replyOnce(200, {}, { etag: '123' });
+      axiosMock.onGet(`${endpoint}v1/flag/change`).replyOnce(200, {}, { etag: '456' });
+      axiosMock.onGet(`${endpoint}v1/flag/change`).reply(304);
+
+      const res1 = await cli.getBooleanDetails(flagName, false, { targetingKey });
+      expect(res1.reason).toEqual(StandardResolutionReasons.TARGETING_MATCH);
+      const res2 = await cli.getBooleanDetails(flagName, false, { targetingKey });
+      expect(res2.reason).toEqual(StandardResolutionReasons.CACHED);
+      await new Promise((r) => setTimeout(r, 1000));
+      const res3 = await cli.getBooleanDetails(flagName, false, { targetingKey });
+      expect(res3.reason).toEqual(StandardResolutionReasons.TARGETING_MATCH);
     });
   });
 });
