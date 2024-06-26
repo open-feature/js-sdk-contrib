@@ -173,12 +173,10 @@ export class GoFeatureFlagProvider implements Provider {
     evaluationContext: EvaluationContext,
     expectedType: string,
   ): Promise<ResolutionDetails<T>> {
-    if (this._cacheController?.get(flagKey, evaluationContext) !== undefined) {
-      const cacheValue = this._cacheController.get(flagKey, evaluationContext);
-      if (cacheValue !== undefined) {
-        cacheValue.reason = StandardResolutionReasons.CACHED;
-        return cacheValue;
-      }
+    const cacheValue = this._cacheController?.get(flagKey, evaluationContext);
+    if (cacheValue) {
+      cacheValue.reason = StandardResolutionReasons.CACHED;
+      return cacheValue;
     }
 
     const evaluationResponse = await this._goffApiController.evaluate(
