@@ -67,10 +67,9 @@ export class GoFeatureFlagProvider implements Provider {
    * It will gracefully terminate the provider and ensure that all the data are sent to the relay-proxy.
    */
   async onClose() {
+    this.stopPolling();
     this._cacheController?.clear();
     await this._dataCollectorHook?.close();
-    this.stopPolling();
-    this.events.emit(ServerProviderEvents.Error, { message: 'Provider closed' });
   }
 
   /**
