@@ -17,7 +17,7 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
   // collectUnCachedEvent (optional) set to true if you want to send all events not only the cached evaluations.
   collectUnCachedEvaluation?: boolean;
   // bgSchedulerId contains the id of the setInterval that is running.
-  private bgScheduler?: NodeJS.Timeout | number;
+  private bgScheduler?: number;
   // dataCollectorBuffer contains all the FeatureEvents that we need to send to the relay-proxy for data collection.
   private dataCollectorBuffer?: FeatureEvent<any>[];
   // dataFlushInterval interval time (in millisecond) we use to call the relay proxy to collect data.
