@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.1](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.0...go-feature-flag-provider-v0.7.1) (2024-06-26)
+
+
+### ✨ New Features
+
+* **gofeatureflag:** Clear cache if configuration changes + provider refactoring ([#947](https://github.com/open-feature/js-sdk-contrib/issues/947)) ([338123f](https://github.com/open-feature/js-sdk-contrib/commit/338123fadb3e421d9fce3eaf9a7a7ecbbd5961ea))
+
+
+### 🧹 Chore
+
+* loosen some test assertions, fix e2e matcher ([#933](https://github.com/open-feature/js-sdk-contrib/issues/933)) ([8def607](https://github.com/open-feature/js-sdk-contrib/commit/8def6072c5d29eaf81d7262b6878cb3d6ff40483))
+
 ## [0.7.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.6.2...go-feature-flag-provider-v0.7.0) (2024-03-25)
 
 
