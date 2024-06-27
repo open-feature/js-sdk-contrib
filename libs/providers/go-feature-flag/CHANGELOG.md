@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.1...go-feature-flag-provider-v0.7.2) (2024-06-27)
+
+
+### 🐛 Bug Fixes
+
+* **gofeatureflag:** remove NodeJS.timeout because it fails eslint ([#961](https://github.com/open-feature/js-sdk-contrib/issues/961)) ([e448577](https://github.com/open-feature/js-sdk-contrib/commit/e448577b6bf2a625a2844ccc326c6c05e6041299))
+
 ## [0.7.1](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.0...go-feature-flag-provider-v0.7.1) (2024-06-26)
 
 
