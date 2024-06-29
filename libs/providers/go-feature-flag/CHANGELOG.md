@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.3](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.2...go-feature-flag-provider-v0.7.3) (2024-06-29)
+
+
+### 🐛 Bug Fixes
+
+* **gofeatureflag:** Error when receiving an empty string errorCode ([#973](https://github.com/open-feature/js-sdk-contrib/issues/973)) ([e17b99e](https://github.com/open-feature/js-sdk-contrib/commit/e17b99ec7328e35760175ed100a2e13be20079b7))
+
 ## [0.7.2](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.1...go-feature-flag-provider-v0.7.2) (2024-06-27)
 
 
