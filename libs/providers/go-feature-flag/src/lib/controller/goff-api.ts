@@ -207,6 +207,9 @@ export class GoffApiController {
   }
 
   private convertErrorCode(errorCode: ErrorCode | undefined): ErrorCode | undefined {
+    if ((errorCode as string) === '') {
+      return undefined;
+    }
     if (errorCode === undefined) {
       return undefined;
     }

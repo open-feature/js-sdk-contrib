@@ -259,6 +259,41 @@ describe('GoFeatureFlagProvider', () => {
       };
       expect(res).toEqual(want);
     });
+
+    it('fix version 0.7.2', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, {
+        trackEvents: true,
+        variationType: 'True',
+        failed: false,
+        version: '',
+        reason: 'TARGETING_MATCH',
+        errorCode: '',
+        value: true,
+        cacheable: true,
+        metadata: {
+          description: 'this is a test',
+          pr_link: 'https://github.com/thomaspoignant/go-feature-flag/pull/916',
+        },
+      });
+
+      const res = await cli.getBooleanDetails(flagName, false, { targetingKey });
+      const want = {
+        flagKey: flagName,
+        reason: StandardResolutionReasons.TARGETING_MATCH,
+        value: true,
+        flagMetadata: {
+          description: 'this is a test',
+          pr_link: 'https://github.com/thomaspoignant/go-feature-flag/pull/916',
+        },
+        variant: 'True',
+      };
+      expect(res).toEqual(want);
+    });
+
     it('should resolve a valid boolean flag with SPLIT reason', async () => {
       const flagName = 'random-flag';
       const targetingKey = 'user-key';
