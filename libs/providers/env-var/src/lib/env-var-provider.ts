@@ -25,6 +25,8 @@ export class EnvVarProvider implements Provider {
     name: 'environment variable',
   };
 
+  readonly runsOn = 'server';
+
   private readonly options: Config;
 
   // use the constructor for provider-specific configuration
