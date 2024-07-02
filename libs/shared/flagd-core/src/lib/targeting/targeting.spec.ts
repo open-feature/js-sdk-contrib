@@ -228,4 +228,15 @@ describe('fractional operator should validate', () => {
 
     expect(targeting.applyTargeting('flagA', input, { targetingKey: 'key' })).toBe(null);
   });
+
+  it('buckets properties to have variant and fraction', () => {
+    const input = {
+      fractional: [
+        ['red', 45, 1256],
+        ['blue', 4, 455],
+      ],
+    };
+
+    expect(targeting.applyTargeting('flagA', input, { targetingKey: 'key' })).toBe(null);
+  });
 });

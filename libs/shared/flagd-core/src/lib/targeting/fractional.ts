@@ -86,7 +86,7 @@ function toBucketingList(from: unknown[]): {
       throw new Error('Invalid bucket entries');
     }
 
-    if (entry.length == 0) {
+    if (entry.length == 0 || entry.length > 2) {
       throw new Error('Invalid bucketing entry. Requires at least a variant');
     }
 
