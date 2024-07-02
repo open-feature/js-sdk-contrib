@@ -52,10 +52,10 @@ export function fractionalFactory(logger: Logger) {
     const bucket = (Math.abs(hash) / 2147483648) * 100;
 
     let sum = 0;
-    for (let i = 0; i < bucketingList.length; i++) {
-      const bucketEntry = bucketingList[i];
+    for (let i = 0; i < bucketingList.fractions.length; i++) {
+      const bucketEntry = bucketingList.fractions[i];
 
-      sum += bucketEntry.fraction;
+      sum += relativeWeight(bucketingList.totalWeight, bucketEntry.fraction);
 
       if (sum >= bucket) {
         return bucketEntry.variant;
@@ -66,36 +66,45 @@ export function fractionalFactory(logger: Logger) {
   };
 }
 
-function toBucketingList(from: unknown[]): { variant: string; fraction: number }[] {
+function relativeWeight(totalWeight: number, weight: number): number {
+  if (weight == 0) {
+    return 0;
+  }
+  return (weight * 100) / totalWeight;
+}
+function toBucketingList(from: unknown[]): {
+  fractions: { variant: string; fraction: number }[];
+  totalWeight: number;
+} {
   // extract bucketing options
   const bucketingArray: { variant: string; fraction: number }[] = [];
 
-  let bucketSum = 0;
+  let totalWeight = 0;
   for (let i = 0; i < from.length; i++) {
     const entry = from[i];
     if (!Array.isArray(entry)) {
       throw new Error('Invalid bucket entries');
     }
 
-    if (entry.length != 2) {
-      throw new Error('Invalid bucketing entry. Require two values - variant and percentage');
+    if (entry.length == 0 || entry.length > 2) {
+      throw new Error('Invalid bucketing entry. Requires at least a variant');
     }
 
     if (typeof entry[0] !== 'string') {
       throw new Error('Bucketing require variant to be present in string format');
     }
 
-    if (typeof entry[1] !== 'number') {
-      throw new Error('Bucketing require bucketing percentage to be present');
+    let weight = 1;
+    if (entry.length >= 2) {
+      if (typeof entry[1] !== 'number') {
+        throw new Error('Bucketing require bucketing percentage to be present');
+      }
+      weight = entry[1];
     }
 
-    bucketingArray.push({ fraction: entry[1], variant: entry[0] });
-    bucketSum += entry[1];
+    bucketingArray.push({ fraction: weight, variant: entry[0] });
+    totalWeight += weight;
   }
 
-  if (bucketSum != 100) {
-    throw new Error('Bucketing sum must add up to 100');
-  }
-
-  return bucketingArray;
+  return { fractions: bucketingArray, totalWeight };
 }

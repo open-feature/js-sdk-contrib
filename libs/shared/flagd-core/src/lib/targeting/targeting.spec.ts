@@ -179,6 +179,14 @@ describe('fractional operator', () => {
 
     expect(targeting.applyTargeting('flagA', input, { targetingKey: 'bucketKeyB' })).toBe('blue');
   });
+
+  it('should evaluate valid rule with targeting key although one does not have a fraction', () => {
+    const input = {
+      fractional: [['red', 1], ['blue']],
+    };
+
+    expect(targeting.applyTargeting('flagA', input, { targetingKey: 'bucketKeyB' })).toBe('blue');
+  });
 });
 
 describe('fractional operator should validate', () => {
@@ -188,11 +196,33 @@ describe('fractional operator should validate', () => {
     targeting = new Targeting(logger);
   });
 
-  it('bucket sum to be 100', () => {
+  it('bucket sum with sum bigger than 100', () => {
     const input = {
       fractional: [
         ['red', 55],
         ['blue', 55],
+      ],
+    };
+
+    expect(targeting.applyTargeting('flagA', input, { targetingKey: 'key' })).toBe('blue');
+  });
+
+  it('bucket sum with sum lower than 100', () => {
+    const input = {
+      fractional: [
+        ['red', 45],
+        ['blue', 45],
+      ],
+    };
+
+    expect(targeting.applyTargeting('flagA', input, { targetingKey: 'key' })).toBe('blue');
+  });
+
+  it('buckets properties to have variant and fraction', () => {
+    const input = {
+      fractional: [
+        ['red', 50],
+        [100, 50],
       ],
     };
 
@@ -202,8 +232,8 @@ describe('fractional operator should validate', () => {
   it('buckets properties to have variant and fraction', () => {
     const input = {
       fractional: [
-        ['red', 50],
-        [100, 50],
+        ['red', 45, 1256],
+        ['blue', 4, 455],
       ],
     };
 
