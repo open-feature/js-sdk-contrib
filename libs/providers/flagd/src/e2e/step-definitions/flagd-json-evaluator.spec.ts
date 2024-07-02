@@ -75,6 +75,27 @@ defineFeature(feature, (test) => {
 
   test('Fractional operator', evaluateStringFlagWithFractional);
 
+  test('Fractional operator shorthand', ({ given, when, and, then }) => {
+    let flagKey: string;
+    let defaultValue: string;
+    let details: EvaluationDetails<string>;
+
+    aFlagProviderIsSet(given);
+
+    when(/^a string flag with key "(.*)" is evaluated with default value "(.*)"$/, (key, defaultVal) => {
+      flagKey = key;
+      defaultValue = defaultVal;
+    });
+
+    and(/^a context containing a targeting key with value (.*)$/, async (targetingKeyValue) => {
+      details = await client.getStringDetails(flagKey, defaultValue, { targetingKey: targetingKeyValue });
+    });
+
+    then(/^the returned value should be "(.*)"$/, (expectedValue) => {
+      expect(details.value).toEqual(expectedValue);
+    });
+  });
+
   test('Fractional operator with shared seed', evaluateStringFlagWithFractional);
 
   test('Second fractional operator with shared seed', evaluateStringFlagWithFractional);
