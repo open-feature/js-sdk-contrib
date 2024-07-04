@@ -87,7 +87,7 @@ defineFeature(feature, (test) => {
       defaultValue = defaultVal;
     });
 
-    and(/^a context containing a targeting key with value (.*)$/, async (targetingKeyValue) => {
+    and(/^a context containing a targeting key with value "(.*)"$/, async (targetingKeyValue) => {
       details = await client.getStringDetails(flagKey, defaultValue, { targetingKey: targetingKeyValue });
     });
 
