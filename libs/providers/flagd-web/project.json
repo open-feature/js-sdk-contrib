@@ -58,18 +58,6 @@
         }
       ]
     },
-    "pullTestHarness": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "git submodule update --init spec",
-          "rm -f -r ./src/e2e/features/*",
-          "cp -v ./spec/specification/assets/gherkin/evaluation.feature ./src/e2e/features/"
-        ],
-        "cwd": "libs/providers/flagd-web",
-        "parallel": false
-      }
-    },
     "e2e": {
       "executor": "nx:run-commands",
       "options": {
@@ -84,7 +72,7 @@
           "target": "generate"
         },
         {
-          "target": "pullTestHarness"
+          "target": "flagd-core:pullTestHarness"
         }
       ]
     },

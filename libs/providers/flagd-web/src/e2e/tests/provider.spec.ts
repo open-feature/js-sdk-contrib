@@ -1,9 +1,9 @@
 import assert from 'assert';
 import { OpenFeature } from '@openfeature/web-sdk';
-import { FLAGD_NAME, IMAGE_VERSION } from '../constants';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { FlagdWebProvider } from '../../lib/flagd-web-provider';
-import { evaluation } from '../step-definitions/evaluation';
+import { autoBindSteps, loadFeature } from 'jest-cucumber';
+import { flagStepDefinitions, GHERKIN_EVALUATION_FEATURE, IMAGE_VERSION } from '@openfeature/flagd-core';
 
 // register the flagd provider before the tests.
 async function setup() {
@@ -24,8 +24,10 @@ async function setup() {
     }),
   );
   assert(
-    OpenFeature.providerMetadata.name === FLAGD_NAME,
-    new Error(`Expected ${FLAGD_NAME} provider to be configured, instead got: ${OpenFeature.providerMetadata.name}`),
+    OpenFeature.providerMetadata.name === FlagdWebProvider.name,
+    new Error(
+      `Expected ${FlagdWebProvider.name} provider to be configured, instead got: ${OpenFeature.providerMetadata.name}`,
+    ),
   );
   console.log('flagd provider configured!');
   return containers;
@@ -42,5 +44,7 @@ describe('web provider', () => {
       container.stop();
     }
   });
-  evaluation();
+
+  const features = [loadFeature(GHERKIN_EVALUATION_FEATURE)];
+  autoBindSteps(features, [flagStepDefinitions]);
 });

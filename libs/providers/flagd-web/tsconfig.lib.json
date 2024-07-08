@@ -8,6 +8,6 @@
     "allowSyntheticDefaultImports": true,
   },
   "include": ["**/*.ts"],
-  "exclude": ["jest.config.ts", "**/*.spec.ts", "**/*.test.ts"]
+  "exclude": ["jest.config.ts", "**/*.spec.ts", "**/*.test.ts", "src/e2e/"]
 
 }
