@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.2...flagd-core-v0.2.3) (2024-07-08)
+
+
+### ✨ New Features
+
+* Change fractional custom op from percentage-based to relative weighting. [#946](https://github.com/open-feature/js-sdk-contrib/issues/946) ([#954](https://github.com/open-feature/js-sdk-contrib/issues/954)) ([0e9bc84](https://github.com/open-feature/js-sdk-contrib/commit/0e9bc842cf09de12e8445dcb4e0e8b3623c66099))
+
+
+### 🧹 Chore
+
+* update flagd json schema ([#994](https://github.com/open-feature/js-sdk-contrib/issues/994)) ([95fc808](https://github.com/open-feature/js-sdk-contrib/commit/95fc8089641049a6edee3bcbac303f38fbc3fa26))
+
 ## [0.2.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.1...flagd-core-v0.2.2) (2024-05-23)
 
 
