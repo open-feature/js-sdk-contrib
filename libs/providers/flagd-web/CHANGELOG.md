@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.1...flagd-web-provider-v0.7.2) (2024-07-08)
+
+
+### ✨ New Features
+
+* Change fractional custom op from percentage-based to relative weighting. [#946](https://github.com/open-feature/js-sdk-contrib/issues/946) ([#954](https://github.com/open-feature/js-sdk-contrib/issues/954)) ([0e9bc84](https://github.com/open-feature/js-sdk-contrib/commit/0e9bc842cf09de12e8445dcb4e0e8b3623c66099))
+
 ## [0.7.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.0...flagd-web-provider-v0.7.1) (2024-04-26)
 
 
