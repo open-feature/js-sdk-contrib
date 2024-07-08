@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.13.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.0...flagd-provider-v0.13.1) (2024-07-08)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update dependency @openfeature/flagd-core to ~0.2.0 ([#880](https://github.com/open-feature/js-sdk-contrib/issues/880)) ([f15909f](https://github.com/open-feature/js-sdk-contrib/commit/f15909ff6fb32fd423233ad77d57f21b265ec61a))
+
+
+### ✨ New Features
+
+* Change fractional custom op from percentage-based to relative weighting. [#946](https://github.com/open-feature/js-sdk-contrib/issues/946) ([#954](https://github.com/open-feature/js-sdk-contrib/issues/954)) ([0e9bc84](https://github.com/open-feature/js-sdk-contrib/commit/0e9bc842cf09de12e8445dcb4e0e8b3623c66099))
+* Default port to 8015 if in-process resolver is used. [#936](https://github.com/open-feature/js-sdk-contrib/issues/936) ([#937](https://github.com/open-feature/js-sdk-contrib/issues/937)) ([53c4077](https://github.com/open-feature/js-sdk-contrib/commit/53c4077f84a1976d69c3846a0049619a1dfa6607))
+
+
+### 🧹 Chore
+
+* fix e2e test ([#977](https://github.com/open-feature/js-sdk-contrib/issues/977)) ([29a6735](https://github.com/open-feature/js-sdk-contrib/commit/29a673553f93ecae1adcec0d3d23a6e77363d3f5))
+* fix fractional tests ([#984](https://github.com/open-feature/js-sdk-contrib/issues/984)) ([6a54935](https://github.com/open-feature/js-sdk-contrib/commit/6a54935f3bbff99d1abc8599f667cda7b0a6efe4))
+* loosen some test assertions, fix e2e matcher ([#933](https://github.com/open-feature/js-sdk-contrib/issues/933)) ([8def607](https://github.com/open-feature/js-sdk-contrib/commit/8def6072c5d29eaf81d7262b6878cb3d6ff40483))
+* remove explicit dep, use root ([#917](https://github.com/open-feature/js-sdk-contrib/issues/917)) ([a8c0be1](https://github.com/open-feature/js-sdk-contrib/commit/a8c0be1810a4baef62fcd453a57acd3edd3155d0))
+
 ## [0.13.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.12.0...flagd-provider-v0.13.0) (2024-04-17)
 
 

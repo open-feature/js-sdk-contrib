@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.1.5...ofrep-web-provider-v0.2.0) (2024-07-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* resolver signatures changes for easier overrides, cache exposure ([#990](https://github.com/open-feature/js-sdk-contrib/issues/990))
+
+### ✨ New Features
+
+* resolver signatures changes for easier overrides, cache exposure ([#990](https://github.com/open-feature/js-sdk-contrib/issues/990)) ([deb67c1](https://github.com/open-feature/js-sdk-contrib/commit/deb67c15d043ae0c7cf545ef15c6bb641067d105))
+
 ## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.1.4...ofrep-web-provider-v0.1.5) (2024-06-18)
 
 
