@@ -1,4 +1,24 @@
 import {
+  InvalidContextError,
+  ParseError,
+  StandardResolutionReasons,
+  TargetingKeyMissingError,
+} from '@openfeature/core';
+import {
+  EvaluationFailureErrorCode,
+  EvaluationRequest,
+  EvaluationResponse,
+  OFREPApi,
+  OFREPApiFetchError,
+  OFREPApiTooManyRequestsError,
+  OFREPApiUnauthorizedError,
+  OFREPForbiddenError,
+  RequestOptions,
+  handleEvaluationError,
+  isEvaluationFailureResponse,
+  isEvaluationSuccessResponse,
+} from '@openfeature/ofrep-core';
+import {
   ClientProviderEvents,
   EvaluationContext,
   FlagMetadata,
@@ -15,30 +35,10 @@ import {
   ResolutionDetails,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
-import { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
-import {
-  EvaluationFailureErrorCode,
-  EvaluationRequest,
-  EvaluationResponse,
-  handleEvaluationError,
-  isEvaluationFailureResponse,
-  isEvaluationSuccessResponse,
-  OFREPApi,
-  OFREPApiFetchError,
-  OFREPApiTooManyRequestsError,
-  OFREPApiUnauthorizedError,
-  OFREPForbiddenError,
-  RequestOptions,
-} from '@openfeature/ofrep-core';
-import {
-  InvalidContextError,
-  ParseError,
-  StandardResolutionReasons,
-  TargetingKeyMissingError,
-} from '@openfeature/core';
-import { isResolutionError, ResolutionError } from './model/resolution-error';
 import { BulkEvaluationStatus, EvaluateFlagsResponse } from './model/evaluate-flags-response';
-import { InMemoryCache } from './model/in-memory-cache';
+import { FlagCache } from './model/in-memory-cache';
+import { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
+import { isResolutionError } from './model/resolution-error';
 
 export class OFREPWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 30000;
@@ -47,19 +47,18 @@ export class OFREPWebProvider implements Provider {
     name: 'OpenFeature Remote Evaluation Protocol Web Provider',
   };
   readonly runsOn = 'client';
-  events = new OpenFeatureEventEmitter();
-  hooks?: Hook[] | undefined;
+  readonly events = new OpenFeatureEventEmitter();
+  readonly hooks?: Hook[] | undefined;
 
   // logger is the Open Feature logger to use
   private _logger?: Logger;
   // _options is the options used to configure the provider.
   private _options: OFREPWebProviderOptions;
-
   private _ofrepAPI: OFREPApi;
   private _etag: string | null;
   private _pollingInterval: number;
   private _retryPollingAfter: Date | undefined;
-  private _cache: InMemoryCache = {};
+  private _flagCache: FlagCache = {};
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
 
@@ -72,10 +71,17 @@ export class OFREPWebProvider implements Provider {
   }
 
   /**
+   * Returns a shallow copy of the flag cache, which is updated at initialization/context-change/configuration-change once the flags are re-evaluated.
+   */
+  get flagCache(): FlagCache {
+    return { ...this._flagCache };
+  }
+
+  /**
    * Initialize the provider, it will evaluate the flags and start the polling if it is not disabled.
    * @param context - the context to use for the evaluation
    */
-  async initialize?(context?: EvaluationContext | undefined): Promise<void> {
+  async initialize(context?: EvaluationContext | undefined): Promise<void> {
     try {
       this._context = context;
       await this._evaluateFlags(context);
@@ -92,19 +98,37 @@ export class OFREPWebProvider implements Provider {
       throw error;
     }
   }
-
-  resolveBooleanEvaluation(flagKey: string): ResolutionDetails<boolean> {
+  /* eslint-disable @typescript-eslint/no-unused-vars*/
+  /* to make overrides easier we keep these unused vars */
+  resolveBooleanEvaluation(
+    flagKey: string,
+    defaultValue: boolean,
+    context: EvaluationContext,
+  ): ResolutionDetails<boolean> {
     return this.evaluate(flagKey, 'boolean');
   }
-  resolveStringEvaluation(flagKey: string): ResolutionDetails<string> {
+  resolveStringEvaluation(
+    flagKey: string,
+    defaultValue: string,
+    context: EvaluationContext,
+  ): ResolutionDetails<string> {
     return this.evaluate(flagKey, 'string');
   }
-  resolveNumberEvaluation(flagKey: string): ResolutionDetails<number> {
+  resolveNumberEvaluation(
+    flagKey: string,
+    defaultValue: number,
+    context: EvaluationContext,
+  ): ResolutionDetails<number> {
     return this.evaluate(flagKey, 'number');
   }
-  resolveObjectEvaluation<T extends JsonValue>(flagKey: string): ResolutionDetails<T> {
+  resolveObjectEvaluation<T extends JsonValue>(
+    flagKey: string,
+    defaultValue: T,
+    context: EvaluationContext,
+  ): ResolutionDetails<T> {
     return this.evaluate(flagKey, 'object');
   }
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   /**
    * onContextChange is called when the context changes, it will re-evaluate the flags with the new context
@@ -183,7 +207,7 @@ export class OFREPWebProvider implements Provider {
       }
 
       const bulkSuccessResp = response.value;
-      const newCache: InMemoryCache = {};
+      const newCache: FlagCache = {};
 
       bulkSuccessResp.flags?.forEach((evalResp: EvaluationResponse) => {
         if (isEvaluationFailureResponse(evalResp)) {
@@ -203,8 +227,8 @@ export class OFREPWebProvider implements Provider {
           };
         }
       });
-      const listUpdatedFlags = this._getListUpdatedFlags(this._cache, newCache);
-      this._cache = newCache;
+      const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
+      this._flagCache = newCache;
       this._etag = response.httpResponse?.headers.get('etag');
       return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
     } catch (error) {
@@ -222,7 +246,7 @@ export class OFREPWebProvider implements Provider {
    * @param newCache
    * @private
    */
-  private _getListUpdatedFlags(oldCache: InMemoryCache, newCache: InMemoryCache): string[] {
+  private _getListUpdatedFlags(oldCache: FlagCache, newCache: FlagCache): string[] {
     const changedKeys: string[] = [];
     const oldKeys = Object.keys(oldCache);
     const newKeys = Object.keys(newCache);
@@ -251,7 +275,7 @@ export class OFREPWebProvider implements Provider {
    * @private
    */
   private evaluate<T extends FlagValue>(flagKey: string, type: string): ResolutionDetails<T> {
-    const resolved = this._cache[flagKey];
+    const resolved = this._flagCache[flagKey];
     if (!resolved) {
       throw new FlagNotFoundError(`flag key ${flagKey} not found in cache`);
     }
