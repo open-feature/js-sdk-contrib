@@ -71,7 +71,11 @@ describe('rpc', () => {
   afterAll(async () => {
     await OpenFeature.close();
     for (const container of containers) {
-      container.stop();
+      try {
+        await container.stop();
+      } catch {
+        console.warn(`Failed to stop container ${container.getName()}`);
+      }
     }
   });
   evaluation();
