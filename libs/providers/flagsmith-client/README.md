@@ -36,7 +36,7 @@ import { OpenFeature } from '@openfeature/web-sdk';
 const flagsmithClientProvider = new FlagsmithClientProvider({
     environmentID: '<ENVIRONMENT_ID>',
     flagsmithInstance: flagsmith,
-    state:serverState
+    state: serverState,
 });
 OpenFeature.setProvider(flagsmithClientProvider); // Attach the provider to OpenFeature
 ```
@@ -51,7 +51,12 @@ To identify and set traits you can specify a targetingKey(identity) and optional
 const flagsmithClientProvider = new FlagsmithClientProvider({
   environmentID: '<ENVIRONMENT_ID>',
 });
-await OpenFeature.setContext({ targetingKey, traits });
+await OpenFeature.setContext({
+  targetingKey: 'my-identity-id',
+  traits: {
+    myTraitKey: 'my-trait-value',
+  },
+});
 OpenFeature.setProvider(flagsmithClientProvider); // Attach the provider to OpenFeature
 ```
 
