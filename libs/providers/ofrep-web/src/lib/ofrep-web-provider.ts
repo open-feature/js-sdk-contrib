@@ -54,7 +54,6 @@ export class OFREPWebProvider implements Provider {
   private _logger?: Logger;
   // _options is the options used to configure the provider.
   private _options: OFREPWebProviderOptions;
-  private _flagCache: FlagCache = {};
   private _ofrepAPI: OFREPApi;
   private _etag: string | null;
   private _pollingInterval: number;
@@ -72,7 +71,7 @@ export class OFREPWebProvider implements Provider {
   }
 
   /**
-   * Returns a shallow copy of the flag cache, which is updated at initialization after flags are re-evaluated on context and configuration changes.
+   * Returns a shallow copy of the flag cache, which is updated at initialization/context-change/configuration-change once the flags are re-evaluated.
    */
   get flagCache(): FlagCache {
     return { ...this._flagCache };
