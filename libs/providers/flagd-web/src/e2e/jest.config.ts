@@ -1,7 +1,7 @@
 export default {
   displayName: 'providers-flagd-web-e2e',
   transform: {
-    '^.+\\.[tj]s$': ['ts-jest', { tsConfig: './tsconfig.lib.json' }],
+    '^.+\\.[tj]s$': ['ts-jest', { tsconfig: './tsconfig.lib.json' }],
   },
   moduleNameMapper: {
     '^(.*)\\.js$': ['$1.js', '$1.ts', '$1'],
@@ -9,7 +9,7 @@ export default {
   testEnvironment: 'node',
   preset: 'ts-jest',
   clearMocks: true,
-  setupFiles: ['./setup.ts'],
+  setupFiles: [],
   verbose: true,
   silent: false,
 };

@@ -21,9 +21,7 @@
       "options": {
         "commands": [
           "git submodule update --init schemas",
-          "rm -f -r ./src/proto",
-          "cd schemas && buf generate buf.build/open-feature/flagd --template protobuf/buf.gen.ts-connect.yaml",
-          "mv -v ./proto ./src"
+          "npx buf generate buf.build/open-feature/flagd --template schemas/protobuf/buf.gen.ts-connect.yaml --output ./src/lib"
         ],
         "cwd": "libs/providers/flagd-web",
         "parallel": false
@@ -76,7 +74,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "npx jest"
+          "npx jest --detectOpenHandles --runInBand"
         ],
         "cwd": "libs/providers/flagd-web/src/e2e",
         "parallel": false
