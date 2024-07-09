@@ -21,9 +21,7 @@
       "options": {
         "commands": [
           "git submodule update --init schemas",
-          "rm -f -r ./src/proto",
-          "cd schemas && buf generate buf.build/open-feature/flagd --template protobuf/buf.gen.ts.yaml",
-          "mv -v ./proto ./src"
+          "npx buf generate buf.build/open-feature/flagd --template schemas/protobuf/buf.gen.ts.yaml --output ./src/lib"
         ],
         "cwd": "libs/providers/flagd",
         "parallel": false
@@ -78,8 +76,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "npx jest --setupFiles './setup-rpc-provider.ts' --runInBand --detectOpenHandles",
-          "npx jest --setupFiles './setup-in-process-provider.ts' --runInBand --detectOpenHandles"
+          "npx jest --runInBand --detectOpenHandles"
         ],
         "cwd": "libs/providers/flagd/src/e2e",
         "parallel": false

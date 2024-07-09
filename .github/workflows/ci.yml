@@ -25,9 +25,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - uses: bufbuild/buf-setup-action@v1.32.0
-        with:
-          github_token: ${{ github.token }}
       - run: npm ci
       - uses: nrwl/nx-set-shas@v3
       # This line is needed for nx affected to work when CI is running on a PR
@@ -42,24 +39,6 @@ jobs:
   e2e:
       runs-on: ubuntu-latest
 
-      services:
-        flagd:
-          image: ghcr.io/open-feature/flagd-testbed:v0.5.6
-          ports:
-            - 8013:8013
-        flagd-unstable:
-          image: ghcr.io/open-feature/flagd-testbed-unstable:v0.5.6
-          ports:
-            - 8014:8013
-        sync:
-          image: ghcr.io/open-feature/sync-testbed:v0.5.6
-          ports:
-            - 9090:9090
-        sync-unstable:
-          image: ghcr.io/open-feature/sync-testbed-unstable:v0.5.6
-          ports:
-            - 9091:9090
-
       steps:
         - uses: actions/checkout@v4
           with:
@@ -73,10 +52,6 @@ jobs:
 
         - name: Install
           run: npm ci
-
-        - uses: bufbuild/buf-setup-action@v1.32.0
-          with:
-            github_token: ${{ github.token }}
 
         - name: e2e
           run: npm run e2e
