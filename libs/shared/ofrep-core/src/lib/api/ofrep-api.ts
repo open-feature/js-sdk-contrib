@@ -127,7 +127,10 @@ export class OFREPApi {
     throw new OFREPApiUnexpectedResponseError(response, 'The OFREP response does not match the expected format');
   }
 
-  public async postBulkEvaluateFlags(requestBody?: EvaluationRequest, etag: string | null = null): Promise<OFREPApiBulkEvaluationResult> {
+  public async postBulkEvaluateFlags(
+    requestBody?: EvaluationRequest,
+    etag: string | null = null,
+  ): Promise<OFREPApiBulkEvaluationResult> {
     let url = `${this.baseOptions.baseUrl}/ofrep/v1/evaluate/flags`;
     if (this.baseOptions.query) {
       url = url + `?${this.baseOptions.query.toString()}`;
