@@ -1,30 +1,16 @@
-import {
-  ErrorCode,
-  EvaluationContext,
-  JsonValue,
-  Provider,
-  ResolutionDetails,
-  StandardResolutionReasons,
-  TypeMismatchError,
-} from '@openfeature/server-sdk';
+import { GeneralError } from '@openfeature/core';
 import {
   EvaluationFlagValue,
-  handleEvaluationError,
-  HttpHeaders,
-  mergeHeaders,
   OFREPApi,
   OFREPApiEvaluationResult,
   OFREPApiTooManyRequestsError,
   OFREPProviderBaseOptions,
-  RequestOptions,
-  toRequestOptions,
+  handleEvaluationError,
   toResolutionDetails,
 } from '@openfeature/ofrep-core';
-import { GeneralError } from '@openfeature/core';
+import { EvaluationContext, JsonValue, Provider, ResolutionDetails, TypeMismatchError } from '@openfeature/server-sdk';
 
-export type OFREPProviderOptions = Omit<OFREPProviderBaseOptions, 'headersFactory'> & {
-  headersFactory?: () => Promise<HttpHeaders> | HttpHeaders;
-};
+export type OFREPProviderOptions = OFREPProviderBaseOptions;
 
 export class OFREPProvider implements Provider {
   private notBefore: Date | null = null;
@@ -43,7 +29,7 @@ export class OFREPProvider implements Provider {
       throw new Error(`The given OFREP URL "${this.options.baseUrl}" is not a valid URL.`);
     }
 
-    this.ofrepApi = new OFREPApi(options.baseUrl, options.fetchImplementation);
+    this.ofrepApi = new OFREPApi(options, options.fetchImplementation);
   }
 
   public async resolveBooleanEvaluation(
@@ -91,7 +77,7 @@ export class OFREPProvider implements Provider {
     }
 
     try {
-      const result = await this.ofrepApi.postEvaluateFlags(flagKey, { context }, await this.baseRequestOptions());
+      const result = await this.ofrepApi.postEvaluateFlag(flagKey, { context });
       return this.toResolutionDetails(result, defaultValue);
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError) {
@@ -114,13 +100,5 @@ export class OFREPProvider implements Provider {
     }
 
     return toResolutionDetails(result.value);
-  }
-
-  private async baseRequestOptions(): Promise<RequestOptions> {
-    const { headers, headersFactory, ...restOptions } = this.options;
-    return {
-      ...toRequestOptions(restOptions),
-      headers: mergeHeaders(headers, await headersFactory?.()),
-    };
   }
 }

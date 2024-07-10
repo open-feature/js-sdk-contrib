@@ -1,8 +1,4 @@
-import { FetchAPI, RequestOptions } from '../api';
-
-export type HttpHeaderList = [name: string, value: string][];
-export type HttpHeaderMap = Record<string, string>;
-export type HttpHeaders = HttpHeaderList | HttpHeaderMap;
+import { FetchAPI } from '../api';
 
 export type OFREPProviderBaseOptions = {
   /**
@@ -21,26 +17,27 @@ export type OFREPProviderBaseOptions = {
    * Optional Headers supplier function.
    * @returns HttpHeaders
    */
-  headersFactory?: () => HttpHeaders;
+  headersFactory?: () => Promise<[string, string][]>;
   /**
    * Optional static headers.
    */
-  headers?: HttpHeaders;
+  headers?: [string, string][];
+  /**
+   * Optional static query params.
+   */
+  query?: URLSearchParams;
 };
 
-export function toRequestOptions(options: OFREPProviderBaseOptions): RequestOptions {
-  return {
-    headers: mergeHeaders(options.headers, options.headersFactory?.()),
-  };
-}
-
-export function mergeHeaders(...headersLists: Array<HttpHeaders | undefined>): HttpHeaderList {
-  return headersLists.reduce<HttpHeaderList>(
-    (merged, currentHeaders) => (currentHeaders ? merged.concat(toHeaderList(currentHeaders)) : merged),
-    [],
-  );
-}
-
-export function toHeaderList(headers: HttpHeaders): HttpHeaderList {
-  return Array.isArray(headers) ? headers : Object.entries(headers);
+/**
+ * Builds headers from static and factory, as well as default content type
+ * @param options options
+ * @returns built headers
+ */
+export async function buildHeaders(options?: OFREPProviderBaseOptions, etag: string | null = null): Promise<Headers> {
+  return new Headers([
+    ['Content-Type', 'application/json; charset=utf-8'],
+    ...(options?.headers || []),
+    ...((await options?.headersFactory?.()) || []),
+    ...(etag ? ([['If-None-Match', etag]] as [string, string][]) : []),
+  ]);
 }

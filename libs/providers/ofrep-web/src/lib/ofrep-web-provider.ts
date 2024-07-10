@@ -13,7 +13,6 @@ import {
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
   OFREPForbiddenError,
-  RequestOptions,
   handleEvaluationError,
   isEvaluationFailureResponse,
   isEvaluationSuccessResponse,
@@ -66,7 +65,7 @@ export class OFREPWebProvider implements Provider {
     this._options = options;
     this._logger = logger;
     this._etag = null;
-    this._ofrepAPI = new OFREPApi(this._options.baseUrl, this._options.fetchImplementation);
+    this._ofrepAPI = new OFREPApi(this._options, this._options.fetchImplementation);
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
   }
 
@@ -189,14 +188,8 @@ export class OFREPWebProvider implements Provider {
       const evalReq: EvaluationRequest = {
         context,
       };
-      const options: RequestOptions = {
-        headers: new Headers({
-          'Content-Type': 'application/json',
-        }),
-        ...(this._etag !== null ? { headers: { 'If-None-Match': this._etag } } : {}),
-      };
 
-      const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, options);
+      const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, this._etag);
       if (response.httpStatus === 304) {
         // nothing has changed since last time, we are doing nothing
         return { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [] };

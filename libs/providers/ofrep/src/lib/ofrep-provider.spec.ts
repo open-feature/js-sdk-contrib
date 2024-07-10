@@ -54,7 +54,7 @@ describe('OFREPProvider should', () => {
       OFREPApiUnauthorizedError,
     );
 
-    const providerWithAuth = new OFREPProvider({ ...defaultOptions, headers: { Authorization: 'secret' } });
+    const providerWithAuth = new OFREPProvider({ ...defaultOptions, headers: [['Authorization', 'secret']] });
     const flag = await providerWithAuth.resolveBooleanEvaluation('my-flag', false, { expectedAuthHeader: 'secret' });
     expect(flag.value).toEqual(true);
   });
@@ -154,7 +154,7 @@ describe('OFREPProvider should', () => {
 
     const providerWithAuth = new OFREPProvider({
       ...defaultOptions,
-      headersFactory: () => [['Authorization', 'secret']],
+      headersFactory: () => Promise.resolve([['Authorization', 'secret']]),
     });
     const flag = await providerWithAuth.resolveBooleanEvaluation('my-flag', false, { expectedAuthHeader: 'secret' });
     expect(flag.value).toEqual(true);
