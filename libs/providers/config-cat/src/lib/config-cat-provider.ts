@@ -17,12 +17,17 @@ import {
   toResolutionDetails,
   transformContext,
 } from '@openfeature/config-cat-core';
-import { getClient, IConfig, IConfigCatClient } from 'configcat-js-ssr';
+import { getClient, IConfig, IConfigCatClient, OptionsForPollingMode } from 'configcat-js-ssr';
 import { Paradigm } from '@openfeature/web-sdk';
+import { PollingMode } from 'configcat-common';
 
-export class ConfigCatProvider implements Provider {
+export class ConfigCatProvider<TMode extends PollingMode, TOptions extends OptionsForPollingMode<TMode>>
+  implements Provider
+{
   public readonly events = new OpenFeatureEventEmitter();
-  private readonly _clientParameters: Parameters<typeof getClient>;
+  private readonly _sdkKey: string;
+  private readonly _pollingMode?: TMode;
+  private readonly _configCatOptions?: OptionsForPollingMode<TMode>;
   private _client?: IConfigCatClient;
 
   public runsOn: Paradigm = 'server';
@@ -31,20 +36,23 @@ export class ConfigCatProvider implements Provider {
     name: ConfigCatProvider.name,
   };
 
-  constructor(...params: Parameters<typeof getClient>) {
-    this._clientParameters = params;
+  constructor(sdkKey: string, pollingMode?: TMode, options?: TOptions) {
+    this._sdkKey = sdkKey;
+    this._pollingMode = pollingMode;
+    this._configCatOptions = options;
   }
 
-  public static create(...params: Parameters<typeof getClient>) {
-    return new ConfigCatProvider(...params);
+  public static create<TMode extends PollingMode, TOptions extends OptionsForPollingMode<TMode>>(
+    sdkKey: string,
+    pollingMode?: TMode,
+    options?: TOptions,
+  ): ConfigCatProvider<TMode, TOptions> {
+    return new ConfigCatProvider(sdkKey, pollingMode, options);
   }
 
   public async initialize(): Promise<void> {
-    const originalParameters = this._clientParameters;
-    originalParameters[2] ??= {};
-
-    const options = originalParameters[2];
-    const oldSetupHooks = options.setupHooks;
+    const options = this._configCatOptions ?? ({} as TOptions);
+    const oldSetupHooks = this._configCatOptions?.setupHooks;
 
     options.setupHooks = (hooks) => {
       oldSetupHooks?.(hooks);
@@ -67,7 +75,7 @@ export class ConfigCatProvider implements Provider {
       });
     };
 
-    const client = getClient(...originalParameters);
+    const client = getClient(this._sdkKey, this._pollingMode, this._configCatOptions);
     await client.waitForReady();
     this._client = client;
   }

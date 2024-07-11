@@ -26,8 +26,9 @@ The ConfigCat provider uses the [ConfigCat JavaScript (SSR) SDK](https://configc
 
 It can either be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create``` or
 the ```ConfigCatProvider``` constructor.
-
 The available options can be found in the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
+
+The ConfigCat Web Provider only supports the `AutoPolling` mode because it caches all evaluation data to support synchronous evaluation of feature flags.
 
 ### Example using the default configuration
 
@@ -68,6 +69,17 @@ The following shows how the attributes are mapped:
 | country                             | country              | no       |
 | _Any Other_                         | custom               | no       |
 
+The custom types are mapped the following way:
+
+| OpenFeature EvaluationContext Field Type | ConfigCat User Field Type |
+|------------------------------------------|---------------------------|
+| string                                   | string                    |
+| number                                   | number                    |
+| boolean                                  | string                    |
+| Array<string>                            | Array<string>             |
+| Array                                    | Array                     |
+| object                                   | string                    |
+
 The following example shows the conversion between an OpenFeature Evaluation Context and the corresponding ConfigCat
 User:
 
@@ -85,6 +97,10 @@ User:
     "prop1": "1",
     "prop2": 2
   },
+  "customStringArray": [
+    "one",
+    "two"
+  ],
   "customArray": [
     1,
     "2",
@@ -103,8 +119,12 @@ User:
   "custom": {
     "customString": "customString",
     "customBoolean": "true",
-    "customNumber": "1",
+    "customNumber": 1,
     "customObject": "{\"prop1\":\"1\",\"prop2\":2}",
+    "customStringArray": [
+      "one",
+      "two"
+    ],
     "customArray": "[1,\"2\",false]"
   }
 }

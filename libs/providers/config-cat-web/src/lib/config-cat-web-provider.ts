@@ -18,11 +18,19 @@ import {
   toResolutionDetails,
   transformContext,
 } from '@openfeature/config-cat-core';
-import { getClient, IConfig, IConfigCatClient, IConfigCatClientSnapshot, PollingMode } from 'configcat-js-ssr';
+import {
+  getClient,
+  IConfig,
+  IConfigCatClient,
+  IConfigCatClientSnapshot,
+  OptionsForPollingMode,
+  PollingMode,
+} from 'configcat-js-ssr';
 
 export class ConfigCatWebProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
-  private readonly _clientParameters: Parameters<typeof getClient>;
+  private readonly _sdkKey: string;
+  private readonly _configCatOptions: OptionsForPollingMode<PollingMode.AutoPoll>;
   private _client?: IConfigCatClient;
   private _clientSnapshot?: IConfigCatClientSnapshot;
 
@@ -32,20 +40,17 @@ export class ConfigCatWebProvider implements Provider {
     name: ConfigCatWebProvider.name,
   };
 
-  constructor(...params: Parameters<typeof getClient>) {
-    this._clientParameters = params;
+  constructor(sdkKey: string, options: OptionsForPollingMode<PollingMode.AutoPoll> = {}) {
+    this._sdkKey = sdkKey;
+    this._configCatOptions = options;
   }
 
-  public static create(...params: Parameters<typeof getClient>) {
-    return new ConfigCatWebProvider(...params);
+  public static create(sdkKey: string, options: OptionsForPollingMode<PollingMode.AutoPoll> = {}) {
+    return new ConfigCatWebProvider(sdkKey, options);
   }
 
   public async initialize(): Promise<void> {
-    const originalParameters = this._clientParameters;
-    originalParameters[2] ??= {};
-
-    const pollingMode = originalParameters[1];
-    const options = originalParameters[2];
+    const options = this._configCatOptions;
     const oldSetupHooks = options.setupHooks;
 
     options.setupHooks = (hooks) => {
@@ -73,13 +78,8 @@ export class ConfigCatWebProvider implements Provider {
       });
     };
 
-    const client = getClient(...originalParameters);
-
-    if (pollingMode !== PollingMode.AutoPoll) {
-      await this._client?.forceRefreshAsync();
-    } else {
-      await client.waitForReady();
-    }
+    const client = getClient(this._sdkKey, PollingMode.AutoPoll, this._configCatOptions);
+    await client.waitForReady();
 
     this._client = client;
     this._clientSnapshot = client.snapshot();

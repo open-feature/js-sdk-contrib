@@ -51,7 +51,7 @@ describe('context-transformer', () => {
       expect(transformContext(context)).toEqual(user);
     });
 
-    it('map custom property with number to string', () => {
+    it('map custom property with number to number', () => {
       const context: EvaluationContext = {
         targetingKey: 'test',
         customNumber: 1,
@@ -60,7 +60,7 @@ describe('context-transformer', () => {
       const user = {
         identifier: context['targetingKey'],
         custom: {
-          customNumber: '1',
+          customNumber: 1,
         },
       };
 
@@ -102,7 +102,23 @@ describe('context-transformer', () => {
       expect(transformContext(context)).toEqual(user);
     });
 
-    it('map custom property with array to JSON string', () => {
+    it('map custom property with string array to string array', () => {
+      const context: EvaluationContext = {
+        targetingKey: 'test',
+        customArray: ['one', 'two', 'three'],
+      };
+
+      const user = {
+        identifier: context['targetingKey'],
+        custom: {
+          customArray: ['one', 'two', 'three'],
+        },
+      };
+
+      expect(transformContext(context)).toEqual(user);
+    });
+
+    it('map custom property with mixed array to JSON string', () => {
       const context: EvaluationContext = {
         targetingKey: 'test',
         customArray: [1, '2', false],
@@ -140,7 +156,7 @@ describe('context-transformer', () => {
         custom: {
           customString: 'customString',
           customBoolean: 'true',
-          customNumber: '1',
+          customNumber: 1,
           customObject: '{"prop1":"1","prop2":2}',
           customArray: '[1,"2",false]',
         },

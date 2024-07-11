@@ -1,44 +1,27 @@
 import { EvaluationContext, EvaluationContextValue } from '@openfeature/core';
-import { User as ConfigCatUser } from 'configcat-js-ssr';
+import { User as ConfigCatUser, UserAttributeValue } from 'configcat-common';
 
-function contextValueToString(contextValue: EvaluationContextValue): string | undefined {
-  if (typeof contextValue === 'string') {
-    return contextValue;
+function toUserAttributeValue(value: EvaluationContextValue): UserAttributeValue {
+  if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
+    return value;
+  } else if (Array.isArray(value) && value.every((item) => typeof item === 'string')) {
+    return value as ReadonlyArray<string>;
   }
-
-  if (typeof contextValue === 'boolean' || typeof contextValue === 'number' || contextValue === null) {
-    return String(contextValue);
-  }
-
-  if (typeof contextValue === 'undefined') {
-    return contextValue;
-  }
-
-  if (contextValue instanceof Date) {
-    return contextValue.toISOString();
-  }
-
-  return JSON.stringify(contextValue);
+  return JSON.stringify(value);
 }
 
-function transformContextValues(contextValue: EvaluationContextValue): ConfigCatUser['custom'] {
-  if (contextValue === null) {
+function transformCustomContextValues(contextValue: EvaluationContextValue): ConfigCatUser['custom'] {
+  if (typeof contextValue !== 'object' || contextValue === null) {
     return {};
   }
 
-  if (typeof contextValue !== 'object' || Array.isArray(contextValue)) {
-    const value = contextValueToString(contextValue);
-    return value ? { value } : {};
-  }
-
-  if (contextValue instanceof Date) {
-    return { value: contextValue.toISOString() };
-  }
-
-  return Object.entries(contextValue).reduce<ConfigCatUser['custom']>((context, [key, value]) => {
-    const transformedValue = contextValueToString(value);
-    return transformedValue ? { ...context, [key]: transformedValue } : context;
-  }, {});
+  return Object.entries(contextValue).reduce<ConfigCatUser['custom']>(
+    (context, [key, value]) => {
+      const transformedValue = toUserAttributeValue(value);
+      return transformedValue ? { ...context, [key]: transformedValue } : context;
+    },
+    {} as ConfigCatUser['custom'],
+  );
 }
 
 function stringOrUndefined(param?: unknown): string | undefined {
@@ -60,6 +43,6 @@ export function transformContext(context: EvaluationContext): ConfigCatUser | un
     identifier: targetingKey,
     email: stringOrUndefined(email),
     country: stringOrUndefined(country),
-    custom: transformContextValues(attributes),
+    custom: transformCustomContextValues(attributes),
   };
 }
