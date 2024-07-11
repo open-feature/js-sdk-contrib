@@ -21,9 +21,7 @@ import { getClient, IConfig, IConfigCatClient, OptionsForPollingMode } from 'con
 import { Paradigm } from '@openfeature/web-sdk';
 import { PollingMode } from 'configcat-common';
 
-export class ConfigCatProvider<TMode extends PollingMode, TOptions extends OptionsForPollingMode<TMode>>
-  implements Provider
-{
+export class ConfigCatProvider<TMode extends PollingMode = PollingMode> implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
   private readonly _sdkKey: string;
   private readonly _pollingMode?: TMode;
@@ -36,22 +34,22 @@ export class ConfigCatProvider<TMode extends PollingMode, TOptions extends Optio
     name: ConfigCatProvider.name,
   };
 
-  constructor(sdkKey: string, pollingMode?: TMode, options?: TOptions) {
+  constructor(sdkKey: string, pollingMode?: TMode, options?: OptionsForPollingMode<TMode>) {
     this._sdkKey = sdkKey;
     this._pollingMode = pollingMode;
     this._configCatOptions = options;
   }
 
-  public static create<TMode extends PollingMode, TOptions extends OptionsForPollingMode<TMode>>(
+  public static create<TMode extends PollingMode>(
     sdkKey: string,
     pollingMode?: TMode,
-    options?: TOptions,
-  ): ConfigCatProvider<TMode, TOptions> {
+    options?: OptionsForPollingMode<TMode>,
+  ): ConfigCatProvider<TMode> {
     return new ConfigCatProvider(sdkKey, pollingMode, options);
   }
 
   public async initialize(): Promise<void> {
-    const options = this._configCatOptions ?? ({} as TOptions);
+    const options = this._configCatOptions ?? ({} as OptionsForPollingMode<TMode>);
     const oldSetupHooks = this._configCatOptions?.setupHooks;
 
     options.setupHooks = (hooks) => {
