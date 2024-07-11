@@ -100,12 +100,14 @@ export const handlers = [
         );
       }
 
+      const scopeValue = new URL(info.request.url).searchParams.get('scope');
+
       return HttpResponse.json<EvaluationResponse>({
         key: info.params.key,
         reason: requestBody.context?.targetingKey
           ? EvaluationSuccessReason.TargetingMatch
           : EvaluationSuccessReason.Static,
-        variant: 'default',
+        variant: scopeValue ? 'scoped' : 'default',
         value: true,
         metadata: { context: requestBody.context },
       });
@@ -299,22 +301,31 @@ export const handlers = [
         return new HttpResponse(undefined, { status: 304 }) as StrictResponse<undefined>;
       }
 
+      const scopeValue = new URL(info.request.url).searchParams.get('scope');
+
       return HttpResponse.json<BulkEvaluationResponse>(
         {
-          flags: [
-            {
-              key: 'bool-flag',
-              value: true,
-              metadata: { context: requestBody.context },
-              variant: 'variantA',
-              reason: EvaluationSuccessReason.Static,
-            },
-            {
-              key: 'object-flag',
-              value: { complex: true, nested: { also: true } },
-              metadata: { context: requestBody.context },
-            },
-          ],
+          flags: scopeValue
+            ? [
+                {
+                  key: 'other-flag',
+                  value: true,
+                },
+              ]
+            : [
+                {
+                  key: 'bool-flag',
+                  value: true,
+                  metadata: { context: requestBody.context },
+                  variant: 'variantA',
+                  reason: EvaluationSuccessReason.Static,
+                },
+                {
+                  key: 'object-flag',
+                  value: { complex: true, nested: { also: true } },
+                  metadata: { context: requestBody.context },
+                },
+              ],
         },
         { headers: { etag: '123' } },
       );

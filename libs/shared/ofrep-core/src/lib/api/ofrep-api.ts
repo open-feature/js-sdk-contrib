@@ -1,40 +1,40 @@
 import {
-  EvaluationRequest,
-  OFREPApiBulkEvaluationResult,
-  OFREPApiEvaluationResult,
-  OFREPEvaluationErrorHttpStatus,
-  OFREPEvaluationErrorHttpStatuses,
-  OFREPEvaluationSuccessHttpStatus,
-  OFREPEvaluationSuccessHttpStatuses,
-  isEvaluationFailureResponse,
-  isEvaluationSuccessResponse,
-  isBulkEvaluationFailureResponse,
-  isBulkEvaluationSuccessResponse,
-  EvaluationFailureErrorCode,
-  OFREPApiEvaluationFailureResult,
-  OFREPApiBulkEvaluationFailureResult,
-  EvaluationSuccessResponse,
-  EvaluationFlagValue,
-} from '../model';
-import {
-  OFREPApiFetchError,
-  OFREPApiUnexpectedResponseError,
-  OFREPApiTooManyRequestsError,
-  OFREPApiUnauthorizedError,
-  OFREPForbiddenError,
-} from './errors';
-import {
   FlagMetadata,
   FlagNotFoundError,
   GeneralError,
   InvalidContextError,
   ParseError,
-  TargetingKeyMissingError,
   ResolutionDetails,
+  TargetingKeyMissingError,
 } from '@openfeature/core';
+import {
+  EvaluationFailureErrorCode,
+  EvaluationFlagValue,
+  EvaluationRequest,
+  EvaluationSuccessResponse,
+  OFREPApiBulkEvaluationFailureResult,
+  OFREPApiBulkEvaluationResult,
+  OFREPApiEvaluationFailureResult,
+  OFREPApiEvaluationResult,
+  OFREPEvaluationErrorHttpStatus,
+  OFREPEvaluationErrorHttpStatuses,
+  OFREPEvaluationSuccessHttpStatus,
+  OFREPEvaluationSuccessHttpStatuses,
+  isBulkEvaluationFailureResponse,
+  isBulkEvaluationSuccessResponse,
+  isEvaluationFailureResponse,
+  isEvaluationSuccessResponse,
+} from '../model';
+import { OFREPProviderBaseOptions, buildHeaders } from '../provider';
+import {
+  OFREPApiFetchError,
+  OFREPApiTooManyRequestsError,
+  OFREPApiUnauthorizedError,
+  OFREPApiUnexpectedResponseError,
+  OFREPForbiddenError,
+} from './errors';
 
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
-export type RequestOptions = Omit<RequestInit, 'method' | 'body'>;
 
 function isomorphicFetch(): FetchAPI {
   // We need to do this, as fetch needs the window as scope in the browser: https://fetch.spec.whatwg.org/#concept-request-window
@@ -51,9 +51,10 @@ function isomorphicFetch(): FetchAPI {
 
 export class OFREPApi {
   private static readonly jsonRegex = new RegExp(/application\/[^+]*[+]?(json);?.*/, 'i');
+  private _etag?: string;
 
   constructor(
-    private baseUrl: string,
+    private baseOptions: OFREPProviderBaseOptions,
     private fetchImplementation: FetchAPI = isomorphicFetch(),
   ) {}
 
@@ -101,17 +102,17 @@ export class OFREPApi {
     }
   }
 
-  public async postEvaluateFlags(
+  public async postEvaluateFlag(
     flagKey: string,
     evaluationRequest?: EvaluationRequest,
-    options?: RequestOptions,
   ): Promise<OFREPApiEvaluationResult> {
-    const headers = new Headers(options?.headers);
-    headers.set('Content-Type', 'application/json; charset=utf-8');
+    let url = `${this.baseOptions.baseUrl}/ofrep/v1/evaluate/flags/${flagKey}`;
+    if (this.baseOptions.query) {
+      url = url + `?${this.baseOptions.query.toString()}`;
+    }
 
-    const request = new Request(`${this.baseUrl}/ofrep/v1/evaluate/flags/${flagKey}`, {
-      ...options,
-      headers,
+    const request = new Request(url, {
+      headers: await buildHeaders(this.baseOptions),
       method: 'POST',
       body: JSON.stringify(evaluationRequest ?? {}),
     });
@@ -127,17 +128,18 @@ export class OFREPApi {
   }
 
   public async postBulkEvaluateFlags(
-    evaluationRequest?: EvaluationRequest,
-    options?: RequestOptions,
+    requestBody?: EvaluationRequest,
+    etag: string | null = null,
   ): Promise<OFREPApiBulkEvaluationResult> {
-    const headers = new Headers(options?.headers);
-    headers.set('Content-Type', 'application/json; charset=utf-8');
+    let url = `${this.baseOptions.baseUrl}/ofrep/v1/evaluate/flags`;
+    if (this.baseOptions.query) {
+      url = url + `?${this.baseOptions.query.toString()}`;
+    }
 
-    const request = new Request(`${this.baseUrl}/ofrep/v1/evaluate/flags`, {
-      ...options,
-      headers: headers,
+    const request = new Request(url, {
+      headers: await buildHeaders(this.baseOptions, etag),
       method: 'POST',
-      body: JSON.stringify(evaluationRequest ?? {}),
+      body: JSON.stringify(requestBody ?? {}),
     });
 
     const { response, body } = await this.doFetchRequest(request);

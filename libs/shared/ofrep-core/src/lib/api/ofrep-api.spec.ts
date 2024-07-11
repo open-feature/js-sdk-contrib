@@ -25,7 +25,7 @@ describe('OFREPApi', () => {
   });
   beforeEach(() => {
     jest.useFakeTimers();
-    api = new OFREPApi('https://localhost:8080');
+    api = new OFREPApi({ baseUrl: 'https://localhost:8080' });
   });
   afterEach(() => {
     jest.runOnlyPendingTimers();
@@ -38,31 +38,31 @@ describe('OFREPApi', () => {
 
   describe('postEvaluateFlags should', () => {
     it('throw OFREPApiFetchError on network error', async () => {
-      await expect(() => api.postEvaluateFlags('my-flag', { context: { errors: { network: true } } })).rejects.toThrow(
+      await expect(() => api.postEvaluateFlag('my-flag', { context: { errors: { network: true } } })).rejects.toThrow(
         OFREPApiFetchError,
       );
     });
 
     it('throw OFREPApiUnexpectedResponseError on any error code without EvaluationFailureResponse body', async () => {
       await expect(() =>
-        api.postEvaluateFlags('my-flag', { context: { errors: { generic400: true } } }),
+        api.postEvaluateFlag('my-flag', { context: { errors: { generic400: true } } }),
       ).rejects.toThrow(OFREPApiUnexpectedResponseError);
     });
 
     it('throw OFREPForbiddenError on 401 response', async () => {
-      await expect(() => api.postEvaluateFlags('my-flag', { context: { errors: { 401: true } } })).rejects.toThrow(
+      await expect(() => api.postEvaluateFlag('my-flag', { context: { errors: { 401: true } } })).rejects.toThrow(
         OFREPApiUnauthorizedError,
       );
     });
 
     it('throw OFREPForbiddenError on 403 response', async () => {
-      await expect(() => api.postEvaluateFlags('my-flag', { context: { errors: { 403: true } } })).rejects.toThrow(
+      await expect(() => api.postEvaluateFlag('my-flag', { context: { errors: { 403: true } } })).rejects.toThrow(
         OFREPForbiddenError,
       );
     });
 
     it('throw OFREPApiTooManyRequestsError on 429 response', async () => {
-      await expect(() => api.postEvaluateFlags('my-flag', { context: { errors: { 429: true } } })).rejects.toThrow(
+      await expect(() => api.postEvaluateFlag('my-flag', { context: { errors: { 429: true } } })).rejects.toThrow(
         OFREPApiTooManyRequestsError,
       );
     });
@@ -71,7 +71,7 @@ describe('OFREPApi', () => {
       jest.setSystemTime(new Date('2018-01-27'));
 
       try {
-        await api.postEvaluateFlags('my-flag', { context: { errors: { 429: true } } });
+        await api.postEvaluateFlag('my-flag', { context: { errors: { 429: true } } });
       } catch (error) {
         if (!(error instanceof OFREPApiTooManyRequestsError)) {
           throw new Error('Expected OFREPApiTooManyRequestsError');
@@ -86,7 +86,7 @@ describe('OFREPApi', () => {
       jest.setSystemTime(new Date('2018-01-27'));
 
       try {
-        await api.postEvaluateFlags('my-flag', { context: { errors: { 429: 'Sat, 27 Jan 2018 07:28:00 GMT' } } });
+        await api.postEvaluateFlag('my-flag', { context: { errors: { 429: 'Sat, 27 Jan 2018 07:28:00 GMT' } } });
       } catch (error) {
         if (!(error instanceof OFREPApiTooManyRequestsError)) {
           throw new Error('Expected OFREPApiTooManyRequestsError');
@@ -101,7 +101,7 @@ describe('OFREPApi', () => {
       jest.setSystemTime(new Date('2018-01-27'));
 
       try {
-        await api.postEvaluateFlags('my-flag', { context: { errors: { 429: 'abcdefg' } } });
+        await api.postEvaluateFlag('my-flag', { context: { errors: { 429: 'abcdefg' } } });
       } catch (error) {
         if (!(error instanceof OFREPApiTooManyRequestsError)) {
           throw new Error('Expected OFREPApiTooManyRequestsError');
@@ -113,12 +113,12 @@ describe('OFREPApi', () => {
     });
 
     it('send empty request body if context is not given', async () => {
-      const result = await api.postEvaluateFlags('my-flag');
+      const result = await api.postEvaluateFlag('my-flag');
       expect(result.httpStatus).toEqual(200);
     });
 
     it('send evaluation context in request body', async () => {
-      const result = await api.postEvaluateFlags('context-in-metadata', {
+      const result = await api.postEvaluateFlag('context-in-metadata', {
         context: {
           targetingKey: 'user-1',
           key1: 'value1',
@@ -138,12 +138,12 @@ describe('OFREPApi', () => {
     });
 
     it('return HTTP status in result', async () => {
-      const result = await api.postEvaluateFlags('my-flag');
+      const result = await api.postEvaluateFlag('my-flag');
       expect(result.httpStatus).toEqual(200);
     });
 
     it('return EvaluationFailureResponse response as value on HTTP 400', async () => {
-      const result = await api.postEvaluateFlags('my-flag', { context: { errors: { notFound: true } } });
+      const result = await api.postEvaluateFlag('my-flag', { context: { errors: { notFound: true } } });
       if (result.httpStatus !== 404) {
         throw new Error('Received unexpected HTTP status');
       }
@@ -155,7 +155,7 @@ describe('OFREPApi', () => {
     });
 
     it('return EvaluationFailureResponse response as value on HTTP 400', async () => {
-      const result = await api.postEvaluateFlags('my-flag', { context: { errors: { notFound: true } } });
+      const result = await api.postEvaluateFlag('my-flag', { context: { errors: { notFound: true } } });
       if (result.httpStatus !== 404) {
         throw new Error('Received unexpected HTTP status');
       }
@@ -167,7 +167,7 @@ describe('OFREPApi', () => {
     });
 
     it('determine value type based on HTTP status', async () => {
-      const result = await api.postEvaluateFlags('my-flag');
+      const result = await api.postEvaluateFlag('my-flag');
       expect(result.httpStatus).toEqual(200);
 
       // This is to check if the value type is determined by http status code
@@ -179,13 +179,30 @@ describe('OFREPApi', () => {
     });
 
     it('return EvaluationSuccessResponse response as value on successful evaluation', async () => {
-      const result = await api.postEvaluateFlags('my-flag', { context: { targetingKey: 'user' } });
+      const result = await api.postEvaluateFlag('my-flag', { context: { targetingKey: 'user' } });
       expect(result.httpStatus).toEqual(200);
       expect(result.value).toEqual({
         key: 'my-flag',
         reason: EvaluationSuccessReason.TargetingMatch,
         value: true,
         variant: 'default',
+        metadata: {
+          context: {
+            targetingKey: 'user',
+          },
+        },
+      } satisfies EvaluationSuccessResponse);
+    });
+
+    it('send query params with request', async () => {
+      api = new OFREPApi({ baseUrl: 'https://localhost:8080', query: new URLSearchParams({ scope: '123' }) });
+      const result = await api.postEvaluateFlag('my-flag', { context: { targetingKey: 'user' } });
+      expect(result.httpStatus).toEqual(200);
+      expect(result.value).toEqual({
+        key: 'my-flag',
+        reason: EvaluationSuccessReason.TargetingMatch,
+        value: true,
+        variant: 'scoped',
         metadata: {
           context: {
             targetingKey: 'user',
@@ -302,9 +319,24 @@ describe('OFREPApi', () => {
     });
 
     it('return BulkEvaluationNotModified response as value on 304', async () => {
-      const result = await api.postBulkEvaluateFlags(undefined, { headers: [['If-None-Match', '1234']] });
+      api = new OFREPApi({ baseUrl: 'https://localhost:8080', headers: [['If-None-Match', '1234']] });
+      const result = await api.postBulkEvaluateFlags(undefined);
       expect(result.httpStatus).toEqual(304);
       expect(result.value).not.toBeDefined();
+    });
+
+    it('send query params with request', async () => {
+      api = new OFREPApi({ baseUrl: 'https://localhost:8080', query: new URLSearchParams({ scope: '123' }) });
+      const result = await api.postBulkEvaluateFlags();
+      expect(result.httpStatus).toEqual(200);
+      expect(result.value).toEqual({
+        flags: [
+          {
+            key: 'other-flag',
+            value: true,
+          },
+        ],
+      });
     });
 
     it('return BulkEvaluationSuccessResponse response as value on successful evaluation', async () => {
