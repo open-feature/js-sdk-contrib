@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.1.5...ofrep-core-v0.2.0) (2024-07-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* use native headers, optional query params ([#1003](https://github.com/open-feature/js-sdk-contrib/issues/1003))
+
+### ✨ New Features
+
+* use native headers, optional query params ([#1003](https://github.com/open-feature/js-sdk-contrib/issues/1003)) ([383f4f3](https://github.com/open-feature/js-sdk-contrib/commit/383f4f310d0eeed8a72f73ed8a539aeab46e3177))
+
 ## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.1.4...ofrep-core-v0.1.5) (2024-06-18)
 
 
