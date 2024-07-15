@@ -32,7 +32,7 @@ export class ConfigCatProvider implements Provider {
     name: ConfigCatProvider.name,
   };
 
-  constructor(clientFactory: (provider: ConfigCatProvider) => IConfigCatClient) {
+  protected constructor(clientFactory: (provider: ConfigCatProvider) => IConfigCatClient) {
     this._clientFactory = clientFactory;
   }
 
