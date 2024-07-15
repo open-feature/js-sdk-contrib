@@ -21,7 +21,7 @@ import { getClient, IConfig, IConfigCatClient, OptionsForPollingMode } from 'con
 import { Paradigm } from '@openfeature/web-sdk';
 import { PollingMode } from 'configcat-common';
 
-export class ConfigCatProvider<TMode extends PollingMode = PollingMode> implements Provider {
+export class ConfigCatProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
   private readonly _sdkKey: string;
   private readonly _pollingMode?: TMode;
