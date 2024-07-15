@@ -2,7 +2,6 @@ import { ConfigCatProvider } from './config-cat-provider';
 import { ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/core';
 import { ProviderEvents } from '@openfeature/server-sdk';
 import {
-  ClientCacheState,
   createConsoleLogger,
   createFlagOverridesFromMap,
   HookEvents,
@@ -72,39 +71,6 @@ describe('ConfigCatProvider', () => {
   });
 
   describe('events', () => {
-    it('should emit PROVIDER_READY event', () => {
-      const handler = jest.fn();
-      provider.events.addHandler(ProviderEvents.Ready, handler);
-      configCatEmitter.emit('clientReady', ClientCacheState.HasCachedFlagDataOnly);
-      expect(handler).toHaveBeenCalled();
-    });
-
-    it('should emit PROVIDER_READY event on initialization', async () => {
-      const newProvider = ConfigCatProvider.create('__another_key__', PollingMode.ManualPoll, {
-        logger: createConsoleLogger(LogLevel.Off),
-        offline: true,
-        flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
-      });
-
-      const handler = jest.fn();
-      newProvider.events.addHandler(ProviderEvents.Ready, handler);
-      await newProvider.initialize();
-
-      expect(handler).toHaveBeenCalled();
-    });
-
-    it('should emit PROVIDER_READY event without options', async () => {
-      const newProvider = ConfigCatProvider.create('__yet_another_key__', PollingMode.ManualPoll, {
-        flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
-      });
-
-      const handler = jest.fn();
-      newProvider.events.addHandler(ProviderEvents.Ready, handler);
-      await newProvider.initialize();
-
-      expect(handler).toHaveBeenCalled();
-    });
-
     it('should emit PROVIDER_CONFIGURATION_CHANGED event', () => {
       const handler = jest.fn();
       const eventData = { settings: { myFlag: {} as ISettingUnion }, salt: undefined, segments: [] };

@@ -22,17 +22,14 @@ import {
   getClient,
   IConfig,
   IConfigCatClient,
-  IConfigCatClientSnapshot,
   OptionsForPollingMode,
   PollingMode,
 } from 'configcat-js-ssr';
 
 export class ConfigCatWebProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
-  private readonly _sdkKey: string;
-  private readonly _configCatOptions: OptionsForPollingMode<PollingMode.AutoPoll>;
+  private readonly _clientFactory: (provider: ConfigCatWebProvider) => IConfigCatClient;
   private _client?: IConfigCatClient;
-  private _clientSnapshot?: IConfigCatClientSnapshot;
 
   public runsOn: Paradigm = 'client';
 
@@ -40,48 +37,42 @@ export class ConfigCatWebProvider implements Provider {
     name: ConfigCatWebProvider.name,
   };
 
-  constructor(sdkKey: string, options?: OptionsForPollingMode<PollingMode.AutoPoll>) {
-    this._sdkKey = sdkKey;
-    // Let's create a shallow copy to not mess up caller's options object in `initialize()`.
-    this._configCatOptions = options ? { ...options } : {};
+  constructor(clientFactory: (provider: ConfigCatWebProvider) => IConfigCatClient) {
+    this._clientFactory = clientFactory;
   }
 
   public static create(sdkKey: string, options: OptionsForPollingMode<PollingMode.AutoPoll> = {}) {
-    return new ConfigCatWebProvider(sdkKey, options);
+    // Let's create a shallow copy to not mess up caller's options object.
+    options = options ? { ...options } : {};
+
+    return new ConfigCatWebProvider((provider) => {
+      const oldSetupHooks = options?.setupHooks;
+
+      options.setupHooks = (hooks) => {
+        oldSetupHooks?.(hooks);
+
+        hooks.on('configChanged', (projectConfig: IConfig | undefined) =>
+          provider.events.emit(ProviderEvents.ConfigurationChanged, {
+            flagsChanged: projectConfig ? Object.keys(projectConfig.settings) : undefined,
+          }),
+        );
+
+        hooks.on('clientError', (message: string, error) => {
+          provider.events.emit(ProviderEvents.Error, {
+            message: message,
+            metadata: error,
+          });
+        });
+      };
+
+      return getClient(sdkKey, PollingMode.AutoPoll, options);
+    });
   }
 
   public async initialize(): Promise<void> {
-    const options = this._configCatOptions;
-    const oldSetupHooks = options.setupHooks;
-
-    options.setupHooks = (hooks) => {
-      oldSetupHooks?.(hooks);
-
-
-      hooks.on('configChanged', (projectConfig: IConfig | undefined) => {
-        this.events.emit(ProviderEvents.ConfigurationChanged, {
-          flagsChanged: projectConfig ? Object.keys(projectConfig.settings) : undefined,
-        });
-
-        if (this._client) {
-          this._clientSnapshot = this._client.snapshot();
-        }
-      });
-
-      hooks.on('clientError', (message: string, error) => {
-        this.events.emit(ProviderEvents.Error, {
-          message: message,
-          metadata: error,
-        });
-      });
-    };
-
-    const client = getClient(this._sdkKey, PollingMode.AutoPoll, this._configCatOptions);
+    const client = this._clientFactory(this);
     await client.waitForReady();
-
     this._client = client;
-    this._clientSnapshot = client.snapshot();
-    this.events.emit(ProviderEvents.Ready);
   }
 
   public get configCatClient() {
@@ -130,15 +121,13 @@ export class ConfigCatWebProvider implements Provider {
     flagType: T,
     context: EvaluationContext,
   ): ResolutionDetails<PrimitiveType<T>> {
-    if (!this._clientSnapshot) {
+    if (!this._client) {
       throw new ProviderNotReadyError('Provider is not initialized');
     }
 
-    const { value, ...evaluationData } = this._clientSnapshot.getValueDetails(
-      flagKey,
-      undefined,
-      transformContext(context),
-    );
+    const { value, ...evaluationData } = this._client
+      .snapshot()
+      .getValueDetails(flagKey, undefined, transformContext(context));
 
     if (typeof value === 'undefined') {
       throw new FlagNotFoundError();
