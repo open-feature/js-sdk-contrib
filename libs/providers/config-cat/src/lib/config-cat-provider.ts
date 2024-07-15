@@ -36,12 +36,30 @@ export class ConfigCatProvider implements Provider {
     this._clientFactory = clientFactory;
   }
 
-  public static create<TMode extends PollingMode>(
-    sdkKey: string,
-    pollingMode?: TMode,
-    options?: OptionsForPollingMode<TMode>,
-  ): ConfigCatProvider<TMode> {
-    return new ConfigCatProvider(sdkKey, pollingMode, options);
+    // Let's create a shallow copy to not mess up caller's options object.
+    options = options ? { ...options } : {} as OptionsForPollingMode<TMode>;
+    return new ConfigCatProvider((provider) => {
+      const oldSetupHooks = options?.setupHooks;
+  
+      options.setupHooks = (hooks) => {
+        oldSetupHooks?.(hooks);
+  
+        hooks.on('configChanged', (projectConfig: IConfig | undefined) =>
+          provider.events.emit(ProviderEvents.ConfigurationChanged, {
+            flagsChanged: projectConfig ? Object.keys(projectConfig.settings) : undefined,
+          }),
+        );
+  
+        hooks.on('clientError', (message: string, error) => {
+          provider.events.emit(ProviderEvents.Error, {
+            message: message,
+            metadata: error,
+          });
+        });
+      };
+
+      return getClient(sdkKey, pollingMode, options);
+    });
   }
 
   public async initialize(): Promise<void> {
