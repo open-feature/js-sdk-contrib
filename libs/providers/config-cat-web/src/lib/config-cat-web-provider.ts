@@ -81,6 +81,7 @@ export class ConfigCatWebProvider implements Provider {
 
     this._client = client;
     this._clientSnapshot = client.snapshot();
+    this.events.emit(ProviderEvents.Ready);
   }
 
   public get configCatClient() {
