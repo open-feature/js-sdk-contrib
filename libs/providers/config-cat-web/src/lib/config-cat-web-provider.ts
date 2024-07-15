@@ -35,7 +35,7 @@ export class ConfigCatWebProvider implements Provider {
     this._clientFactory = clientFactory;
   }
 
-  public static create(sdkKey: string, options: OptionsForPollingMode<PollingMode.AutoPoll> = {}) {
+  public static create(sdkKey: string, options?: OptionsForPollingMode<PollingMode.AutoPoll>) {
     // Let's create a shallow copy to not mess up caller's options object.
     options = options ? { ...options } : {};
 
