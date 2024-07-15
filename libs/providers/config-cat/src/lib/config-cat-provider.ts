@@ -32,10 +32,8 @@ export class ConfigCatProvider implements Provider {
     name: ConfigCatProvider.name,
   };
 
-  constructor(sdkKey: string, pollingMode?: TMode, options?: OptionsForPollingMode<TMode>) {
-    this._sdkKey = sdkKey;
-    this._pollingMode = pollingMode;
-    this._configCatOptions = options;
+  constructor(clientFactory: (provider: ConfigCatProvider) => IConfigCatClient) {
+    this._clientFactory = clientFactory;
   }
 
   public static create<TMode extends PollingMode>(
