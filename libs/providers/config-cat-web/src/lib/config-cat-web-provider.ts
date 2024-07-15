@@ -57,9 +57,6 @@ export class ConfigCatWebProvider implements Provider {
     options.setupHooks = (hooks) => {
       oldSetupHooks?.(hooks);
 
-      hooks.on('clientReady', () => {
-        this.events.emit(ProviderEvents.Ready);
-      });
 
       hooks.on('configChanged', (projectConfig: IConfig | undefined) => {
         this.events.emit(ProviderEvents.ConfigurationChanged, {
