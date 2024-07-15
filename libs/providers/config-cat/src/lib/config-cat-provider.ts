@@ -23,9 +23,7 @@ import { PollingMode } from 'configcat-common';
 
 export class ConfigCatProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
-  private readonly _sdkKey: string;
-  private readonly _pollingMode?: TMode;
-  private readonly _configCatOptions?: OptionsForPollingMode<TMode>;
+  private _clientFactory: (provider: ConfigCatProvider) => IConfigCatClient;
   private _client?: IConfigCatClient;
 
   public runsOn: Paradigm = 'server';
