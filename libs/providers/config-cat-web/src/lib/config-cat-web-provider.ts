@@ -31,7 +31,7 @@ export class ConfigCatWebProvider implements Provider {
     name: ConfigCatWebProvider.name,
   };
 
-  constructor(clientFactory: (provider: ConfigCatWebProvider) => IConfigCatClient) {
+  protected constructor(clientFactory: (provider: ConfigCatWebProvider) => IConfigCatClient) {
     this._clientFactory = clientFactory;
   }
 
