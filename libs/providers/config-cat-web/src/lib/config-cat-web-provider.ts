@@ -18,13 +18,7 @@ import {
   toResolutionDetails,
   transformContext,
 } from '@openfeature/config-cat-core';
-import {
-  getClient,
-  IConfig,
-  IConfigCatClient,
-  OptionsForPollingMode,
-  PollingMode,
-} from 'configcat-js-ssr';
+import { getClient, IConfig, IConfigCatClient, OptionsForPollingMode, PollingMode } from 'configcat-js-ssr';
 
 export class ConfigCatWebProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
