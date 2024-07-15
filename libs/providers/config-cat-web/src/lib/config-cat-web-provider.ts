@@ -40,9 +40,10 @@ export class ConfigCatWebProvider implements Provider {
     name: ConfigCatWebProvider.name,
   };
 
-  constructor(sdkKey: string, options: OptionsForPollingMode<PollingMode.AutoPoll> = {}) {
+  constructor(sdkKey: string, options?: OptionsForPollingMode<PollingMode.AutoPoll>) {
     this._sdkKey = sdkKey;
-    this._configCatOptions = options;
+    // Let's create a shallow copy to not mess up caller's options object in `initialize()`.
+    this._configCatOptions = options ? { ...options } : {};
   }
 
   public static create(sdkKey: string, options: OptionsForPollingMode<PollingMode.AutoPoll> = {}) {
