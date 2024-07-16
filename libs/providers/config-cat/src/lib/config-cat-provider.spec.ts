@@ -1,5 +1,5 @@
 import { ConfigCatProvider } from './config-cat-provider';
-import { ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/core';
+import { FlagNotFoundError, ParseError, TypeMismatchError } from '@openfeature/core';
 import { ProviderEvents } from '@openfeature/server-sdk';
 import {
   createConsoleLogger,
@@ -94,6 +94,20 @@ describe('ConfigCatProvider', () => {
         message: eventData[0],
         metadata: eventData[1],
       });
+    });
+
+    it('should emit PROVIDER_READY event after successful evaluation during ERROR condition', async () => {
+      const errorHandler = jest.fn();
+      provider.events.addHandler(ProviderEvents.Error, errorHandler);
+
+      configCatEmitter.emit('clientError', 'error', { error: 'error' });
+      expect(errorHandler).toHaveBeenCalled();
+
+      const readyHandler = jest.fn();
+      provider.events.addHandler(ProviderEvents.Ready, readyHandler);
+
+      await provider.resolveBooleanEvaluation('booleanTrue', false, { targetingKey });
+      expect(readyHandler).toHaveBeenCalled();
     });
   });
 

@@ -23,6 +23,7 @@ import { getClient, IConfig, IConfigCatClient, OptionsForPollingMode, PollingMod
 export class ConfigCatWebProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
   private readonly _clientFactory: (provider: ConfigCatWebProvider) => IConfigCatClient;
+  private _hasError = false;
   private _client?: IConfigCatClient;
 
   public runsOn: Paradigm = 'client';
@@ -52,6 +53,7 @@ export class ConfigCatWebProvider implements Provider {
         );
 
         hooks.on('clientError', (message: string, error) => {
+          provider._hasError = true;
           provider.events.emit(ProviderEvents.Error, {
             message: message,
             metadata: error,
@@ -122,6 +124,11 @@ export class ConfigCatWebProvider implements Provider {
     const { value, ...evaluationData } = this._client
       .snapshot()
       .getValueDetails(flagKey, undefined, transformContext(context));
+
+    if (this._hasError && !evaluationData.errorMessage && !evaluationData.errorException) {
+      this._hasError = false;
+      this.events.emit(ProviderEvents.Ready);
+    }
 
     if (typeof value === 'undefined') {
       throw new FlagNotFoundError();
