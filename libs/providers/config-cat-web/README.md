@@ -43,7 +43,7 @@ OpenFeature.setProvider(provider);
 ```javascript
 import { ConfigCatProvider } from '@openfeature/config-cat-web-provider';
 
-const provider = ConfigCatProvider.create('<sdk_key>', PollingMode.AutoPoll, {
+const provider = ConfigCatProvider.create('<sdk_key>', {
   setupHooks: (hooks) => hooks.on('clientReady', () => console.log('Client is ready!')),
 });
 
