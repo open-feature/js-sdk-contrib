@@ -24,8 +24,7 @@ $ npm install @openfeature/client-sdk configcat-js-ssr
 
 The ConfigCat provider uses the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
 
-It can either be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create``` or
-the ```ConfigCatProvider``` constructor.
+It can be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create```.
 The available options can be found in the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
 
 The ConfigCat Web Provider only supports the `AutoPolling` mode because it caches all evaluation data to support synchronous evaluation of feature flags.
