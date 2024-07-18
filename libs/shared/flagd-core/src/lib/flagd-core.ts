@@ -12,6 +12,7 @@ import {
   Logger,
   SafeLogger,
   DefaultLogger,
+  EvaluationDetails,
 } from '@openfeature/core';
 import { Targeting } from './targeting/targeting';
 import { FeatureFlag } from './feature-flag';
@@ -122,9 +123,35 @@ export class FlagdCore implements Storage {
   }
 
   /**
+   * Resolve the flag evaluation for all enabled flags.
+   * @param evalCtx - The evaluation context to be used for targeting.
+   * @param logger - The logger to be used to troubleshoot targeting errors. Overrides the default logger.
+   * @returns - The list of evaluation details for all enabled flags.
+   */
+  resolveAll(evalCtx?: EvaluationContext, logger?: Logger): EvaluationDetails<JsonValue>[] {
+    const values: EvaluationDetails<JsonValue>[] = [];
+    for (const [key, flag] of this.getFlags()) {
+      try {
+        if (flag.state === 'DISABLED') {
+          continue;
+        }
+        const result = this.resolve('any', key, flag.defaultVariant, evalCtx, logger);
+        values.push({
+          ...result,
+          flagKey: key,
+          flagMetadata: Object.freeze(result.flagMetadata ?? {}),
+        });
+      } catch (e) {
+        this._logger.error(`Error resolving flag ${key}: ${(e as Error).message}`);
+      }
+    }
+    return values;
+  }
+
+  /**
    * Resolves the value of a flag based on the specified type type.
    * @template T - The type of the flag value.
-   * @param {FlagValueType} type - The type of the flag value.
+   * @param {FlagValueType} type - The type of the flag value. Use 'any' to skip type validation.
    * @param {string} flagKey - The key of the flag.
    * @param {T} defaultValue - The default value of the flag.
    * @param {EvaluationContext} evalCtx - The evaluation context for targeting rules.
@@ -135,7 +162,7 @@ export class FlagdCore implements Storage {
    * @throws {GeneralError} - If the variant specified in the flag is not found.
    */
   resolve<T extends FlagValue>(
-    type: FlagValueType,
+    type: FlagValueType | 'any',
     flagKey: string,
     _: T,
     evalCtx: EvaluationContext = {},
@@ -188,7 +215,7 @@ export class FlagdCore implements Storage {
       throw new GeneralError(`Variant ${variant} not found in flag with key ${flagKey}`);
     }
 
-    if (typeof resolvedVariant !== type) {
+    if (type !== 'any' && typeof resolvedVariant !== type) {
       throw new TypeMismatchError(
         `Evaluated type of the flag ${flagKey} does not match. Expected ${type}, got ${typeof resolvedVariant}`,
       );
