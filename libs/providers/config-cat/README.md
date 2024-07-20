@@ -22,11 +22,11 @@ $ npm install @openfeature/server-sdk configcat-node
 
 ## Usage
 
-The ConfigCat provider uses the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
+The ConfigCat provider uses the [ConfigCat JavaScript SDK](https://configcat.com/docs/sdk-reference/js/).
 
 It can be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create```.
 
-The available options can be found in the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
+The available options can be found in the [ConfigCat JavaScript SDK](https://configcat.com/docs/sdk-reference/js/).
 
 ### Example using the default configuration
 
@@ -50,6 +50,12 @@ OpenFeature.setProvider(provider);
 ```
 
 ## Evaluation Context
+
+The OpenFeature Evaluation Context is mapped to the [ConfigCat user object](https://configcat.com/docs/advanced/user-object/).
+
+The [ConfigCat user object](https://configcat.com/docs/advanced/user-object/) has three known attributes,
+and allows for additional attributes.
+The following shows how the attributes are mapped:
 
 | OpenFeature EvaluationContext Field | ConfigCat User Field | Required |
 |-------------------------------------|----------------------|----------|

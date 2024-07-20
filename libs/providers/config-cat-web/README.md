@@ -22,10 +22,10 @@ $ npm install @openfeature/client-sdk configcat-js-ssr
 
 ## Usage
 
-The ConfigCat provider uses the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
+The ConfigCat provider uses the [ConfigCat JavaScript SSR SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
 
 It can be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create```.
-The available options can be found in the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
+The available options can be found in the [ConfigCat JavaScript SSR SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
 
 The ConfigCat Web Provider only supports the `AutoPolling` mode because it caches all evaluation data to support synchronous evaluation of feature flags.
 
@@ -52,13 +52,10 @@ OpenFeature.setProvider(provider);
 
 ## Evaluation Context
 
-ConfigCat only supports string values in its "evaluation
-context", [there known as User Object](https://configcat.com/docs/advanced/user-object/).
+The OpenFeature Evaluation Context is mapped to the [ConfigCat user object](https://configcat.com/docs/advanced/user-object/).
 
-This means that every value is converted to a string. This is trivial for numbers and booleans. Objects and arrays are
-converted to JSON strings that can be interpreted in ConfigCat.
-
-ConfigCat has three known attributes, and allows for additional attributes.
+The [ConfigCat user object](https://configcat.com/docs/advanced/user-object/) has three known attributes,
+and allows for additional attributes.
 The following shows how the attributes are mapped:
 
 | OpenFeature EvaluationContext Field | ConfigCat User Field | Required |

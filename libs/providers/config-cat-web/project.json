@@ -53,7 +53,6 @@
         "outputPath": "dist/libs/providers/config-cat-web",
         "entryFile": "libs/providers/config-cat-web/src/index.ts",
         "tsConfig": "libs/providers/config-cat-web/tsconfig.lib.json",
-        "buildableProjectDepsInPackageJsonType": "dependencies",
         "compiler": "tsc",
         "generateExportsField": true,
         "umdName": "config-cat",
@@ -79,6 +78,7 @@
             "output": "./"
           }
         ],
+        "buildableProjectDepsInPackageJsonType": "dependencies",
         "updateBuildableProjectDepsInPackageJson": true
       }
     }
