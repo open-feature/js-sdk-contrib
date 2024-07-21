@@ -1,19 +1,17 @@
 {
-  "name": "providers-config-cat",
+  "name": "config-cat-core",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/providers/config-cat/src",
+  "sourceRoot": "libs/shared/config-cat-core/src",
   "projectType": "library",
   "targets": {
     "publish": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npm run publish-if-not-exists",
-        "cwd": "dist/libs/providers/config-cat"
+        "cwd": "dist/libs/shared/config-cat-core"
       },
       "dependsOn": [
-        {
-          "target": "package"
-        }
+        "build"
       ]
     },
     "lint": {
@@ -23,7 +21,7 @@
       ],
       "options": {
         "lintFilePatterns": [
-          "libs/providers/config-cat/**/*.ts"
+          "libs/shared/config-cat-core/**/*.ts"
         ]
       }
     },
@@ -33,7 +31,7 @@
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
-        "jestConfig": "libs/providers/config-cat/jest.config.ts",
+        "jestConfig": "libs/shared/config-cat-core/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
@@ -49,13 +47,14 @@
         "{options.outputPath}"
       ],
       "options": {
-        "project": "libs/providers/config-cat/package.json",
-        "outputPath": "dist/libs/providers/config-cat",
-        "entryFile": "libs/providers/config-cat/src/index.ts",
-        "tsConfig": "libs/providers/config-cat/tsconfig.lib.json",
+        "project": "libs/shared/config-cat-core/package.json",
+        "outputPath": "dist/libs/shared/config-cat-core",
+        "entryFile": "libs/shared/config-cat-core/src/index.ts",
+        "tsConfig": "libs/shared/config-cat-core/tsconfig.lib.json",
         "compiler": "tsc",
         "generateExportsField": true,
-        "umdName": "config-cat",
+        "buildableProjectDepsInPackageJsonType": "dependencies",
+        "umdName": "config-cat-core",
         "external": "all",
         "format": [
           "cjs",
@@ -74,11 +73,10 @@
           },
           {
             "glob": "README.md",
-            "input": "./libs/providers/config-cat",
+            "input": "./libs/shared/config-cat-core",
             "output": "./"
           }
         ],
-        "buildableProjectDepsInPackageJsonType": "dependencies",
         "updateBuildableProjectDepsInPackageJson": true
       }
     }

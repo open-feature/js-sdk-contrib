@@ -1,14 +1,14 @@
 {
-  "name": "providers-config-cat",
+  "name": "providers-config-cat-web",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/providers/config-cat/src",
+  "sourceRoot": "libs/providers/config-cat-web/src",
   "projectType": "library",
   "targets": {
     "publish": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npm run publish-if-not-exists",
-        "cwd": "dist/libs/providers/config-cat"
+        "cwd": "dist/libs/providers/config-cat-web"
       },
       "dependsOn": [
         {
@@ -23,7 +23,7 @@
       ],
       "options": {
         "lintFilePatterns": [
-          "libs/providers/config-cat/**/*.ts"
+          "libs/providers/config-cat-web/**/*.ts"
         ]
       }
     },
@@ -33,7 +33,7 @@
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
-        "jestConfig": "libs/providers/config-cat/jest.config.ts",
+        "jestConfig": "libs/providers/config-cat-web/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
@@ -49,10 +49,10 @@
         "{options.outputPath}"
       ],
       "options": {
-        "project": "libs/providers/config-cat/package.json",
-        "outputPath": "dist/libs/providers/config-cat",
-        "entryFile": "libs/providers/config-cat/src/index.ts",
-        "tsConfig": "libs/providers/config-cat/tsconfig.lib.json",
+        "project": "libs/providers/config-cat-web/package.json",
+        "outputPath": "dist/libs/providers/config-cat-web",
+        "entryFile": "libs/providers/config-cat-web/src/index.ts",
+        "tsConfig": "libs/providers/config-cat-web/tsconfig.lib.json",
         "compiler": "tsc",
         "generateExportsField": true,
         "umdName": "config-cat",
@@ -74,7 +74,7 @@
           },
           {
             "glob": "README.md",
-            "input": "./libs/providers/config-cat",
+            "input": "./libs/providers/config-cat-web",
             "output": "./"
           }
         ],
