@@ -5,11 +5,11 @@
 
 ### ⚠ BREAKING CHANGES
 
-* implement config cat web provider ([#918](https://github.com/open-feature/js-sdk-contrib/issues/918))
+* make interface similar to config-cat-web ([#918](https://github.com/open-feature/js-sdk-contrib/issues/918))
 
 ### ✨ New Features
 
-* implement config cat web provider ([#918](https://github.com/open-feature/js-sdk-contrib/issues/918)) ([e280014](https://github.com/open-feature/js-sdk-contrib/commit/e280014f8998dd2e5f2b7700f0d24842eeafab5f))
+* make interface similar to config-cat-web ([#918](https://github.com/open-feature/js-sdk-contrib/issues/918)) ([e280014](https://github.com/open-feature/js-sdk-contrib/commit/e280014f8998dd2e5f2b7700f0d24842eeafab5f))
 
 ## [0.6.1](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.6.0...config-cat-provider-v0.6.1) (2024-04-05)
 
