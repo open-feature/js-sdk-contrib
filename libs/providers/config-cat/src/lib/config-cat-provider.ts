@@ -5,6 +5,7 @@ import {
   Provider,
   ProviderEvents,
   ResolutionDetails,
+  Paradigm,
   ProviderNotReadyError,
   TypeMismatchError,
   FlagNotFoundError,
@@ -17,7 +18,6 @@ import {
   toResolutionDetails,
   transformContext,
 } from '@openfeature/config-cat-core';
-import { Paradigm } from '@openfeature/web-sdk';
 import { PollingMode } from 'configcat-common';
 import { IConfigCatClient, getClient, IConfig, OptionsForPollingMode } from 'configcat-node';
 

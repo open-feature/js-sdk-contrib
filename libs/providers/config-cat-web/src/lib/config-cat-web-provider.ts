@@ -9,8 +9,8 @@ import {
   ProviderEvents,
   ProviderNotReadyError,
   ResolutionDetails,
+  TypeMismatchError,
 } from '@openfeature/web-sdk';
-import { TypeMismatchError } from '@openfeature/core';
 import {
   isType,
   PrimitiveType,

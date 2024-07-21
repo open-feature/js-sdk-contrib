@@ -1,6 +1,4 @@
 import { ConfigCatWebProvider } from './config-cat-web-provider';
-import { ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/core';
-import { ProviderEvents } from '@openfeature/server-sdk';
 import {
   createConsoleLogger,
   createFlagOverridesFromMap,
@@ -10,6 +8,7 @@ import {
   OverrideBehaviour,
 } from 'configcat-js-ssr';
 import { EventEmitter } from 'events';
+import { ProviderEvents, ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/web-sdk';
 
 describe('ConfigCatWebProvider', () => {
   const targetingKey = 'abc';
