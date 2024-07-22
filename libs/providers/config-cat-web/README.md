@@ -14,7 +14,7 @@ The OpenFeature SDK is required as peer dependency.
 
 The minimum required version of `@openfeature/web-sdk` currently is `1.0.0`.
 
-The minimum required version of `configcat-js-ssr` currently is `7.1.2`.
+The minimum required version of `configcat-js-ssr` currently is `8.4.1`.
 
 ```
 $ npm install @openfeature/client-sdk configcat-js-ssr
@@ -25,7 +25,7 @@ $ npm install @openfeature/client-sdk configcat-js-ssr
 The ConfigCat provider uses the [ConfigCat JavaScript SSR SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
 
 It can be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create```.
-The available options can be found in the [ConfigCat JavaScript SSR SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
+The available options can be found in the [ConfigCat JavaScript SSR SDK](https://configcat.com/docs/sdk-reference/js-ssr/#creating-the-configcat-client).
 
 The ConfigCat Web Provider only supports the `AutoPolling` mode because it caches all evaluation data to support synchronous evaluation of feature flags.
 
