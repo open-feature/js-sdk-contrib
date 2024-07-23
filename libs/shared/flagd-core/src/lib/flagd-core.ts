@@ -135,7 +135,7 @@ export class FlagdCore implements Storage {
         if (flag.state === 'DISABLED') {
           continue;
         }
-        const result = this.resolve('any', key, flag.defaultVariant, evalCtx, logger);
+        const result = this.evaluate(key, evalCtx, logger);
         values.push({
           ...result,
           flagKey: key,
@@ -162,12 +162,31 @@ export class FlagdCore implements Storage {
    * @throws {GeneralError} - If the variant specified in the flag is not found.
    */
   resolve<T extends FlagValue>(
-    type: FlagValueType | 'any',
+    type: FlagValueType,
     flagKey: string,
     _: T,
     evalCtx: EvaluationContext = {},
     logger?: Logger,
   ): ResolutionDetails<T> {
+    const { value, reason, variant } = this.evaluate(flagKey, evalCtx, logger);
+
+    if (typeof value !== type) {
+      throw new TypeMismatchError(
+        `Evaluated type of the flag ${flagKey} does not match. Expected ${type}, got ${typeof value}`,
+      );
+    }
+
+    return {
+      value: value as T,
+      reason,
+      variant,
+    };
+  }
+
+  /**
+   * Evaluates the flag and returns the resolved value regardless of the type.
+   */
+  private evaluate(flagKey: string, evalCtx: EvaluationContext = {}, logger?: Logger): ResolutionDetails<JsonValue> {
     logger ??= this._logger;
     const flag = this._storage.getFlag(flagKey);
     // flag exist check
@@ -215,14 +234,8 @@ export class FlagdCore implements Storage {
       throw new GeneralError(`Variant ${variant} not found in flag with key ${flagKey}`);
     }
 
-    if (type !== 'any' && typeof resolvedVariant !== type) {
-      throw new TypeMismatchError(
-        `Evaluated type of the flag ${flagKey} does not match. Expected ${type}, got ${typeof resolvedVariant}`,
-      );
-    }
-
     return {
-      value: resolvedVariant as T,
+      value: resolvedVariant,
       reason,
       variant,
     };
