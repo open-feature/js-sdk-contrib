@@ -151,7 +151,7 @@ export class FlagdCore implements Storage {
   /**
    * Resolves the value of a flag based on the specified type type.
    * @template T - The type of the flag value.
-   * @param {FlagValueType} type - The type of the flag value. Use 'any' to skip type validation.
+   * @param {FlagValueType} type - The type of the flag value.
    * @param {string} flagKey - The key of the flag.
    * @param {T} defaultValue - The default value of the flag.
    * @param {EvaluationContext} evalCtx - The evaluation context for targeting rules.
