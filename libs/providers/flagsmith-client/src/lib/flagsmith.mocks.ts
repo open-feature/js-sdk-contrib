@@ -33,7 +33,7 @@ export const defaultConfig: () => IInitConfig = () => ({
 });
 export const exampleBooleanFlagName = 'example_boolean_flag';
 export const exampleBooleanFlag = {
-  feature_state_value: null,
+  feature_state_value: true,
   enabled: true,
   feature: {
     id: 1,
