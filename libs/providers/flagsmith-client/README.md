@@ -88,11 +88,11 @@ following [OpenFeature events](https://openfeature.dev/specification/types#provi
 
 ## Building
 
-Run `nx package providers-flagsmith` to build the library.
+Run `nx package providers-flagsmith-client` to build the library.
 
 ## Running unit tests
 
-Run `nx test providers-flagsmith` to execute the unit tests via [Jest](https://jestjs.io).
+Run `nx test providers-flagsmith-client` to execute the unit tests via [Jest](https://jestjs.io).
 
 ## Examples
 
