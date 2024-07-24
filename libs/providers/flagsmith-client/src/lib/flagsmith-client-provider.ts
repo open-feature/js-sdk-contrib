@@ -90,8 +90,8 @@ export class FlagsmithClientProvider implements Provider {
     return this.initialize(newContext);
   }
 
-  resolveBooleanEvaluation(flagKey: string) {
-    return this.evaluate<boolean>(flagKey, 'boolean', false);
+  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean) {
+    return this.evaluate<boolean>(flagKey, 'boolean', defaultValue);
   }
 
   resolveStringEvaluation(flagKey: string, defaultValue: string) {
