@@ -122,10 +122,7 @@ export class FlagsmithClientProvider implements Provider {
    * @private
    */
   private evaluate<T extends FlagValue>(flagKey: string, type: FlagType, defaultValue: T) {
-    const value = typeFactory(
-      type === 'boolean' ? this._client.hasFeature(flagKey) : this._client.getValue(flagKey),
-      type,
-    );
+    const value = typeFactory(this._client.getValue(flagKey), type);
     if (typeof value !== 'undefined' && typeof value !== type) {
       throw new TypeMismatchError(`flag key ${flagKey} is not of type ${type}`);
     }
