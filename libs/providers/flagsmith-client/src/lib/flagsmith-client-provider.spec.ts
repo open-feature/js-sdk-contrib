@@ -133,8 +133,8 @@ describe('FlagsmithProvider', () => {
             ...defaultState.flags,
             [exampleBooleanFlag.feature.name]: {
               id: exampleBooleanFlag.feature.id,
-              enabled: false,
-              value: exampleBooleanFlag.feature_state_value,
+              enabled: exampleBooleanFlag.enabled,
+              value: false,
             },
           },
         }),
@@ -202,8 +202,8 @@ describe('FlagsmithProvider', () => {
             ...defaultState.flags,
             [exampleBooleanFlag.feature.name]: {
               id: exampleBooleanFlag.feature.id,
-              enabled: false,
-              value: exampleBooleanFlag.feature_state_value,
+              enabled: exampleBooleanFlag.enabled,
+              value: false,
             },
           },
         }),
@@ -222,9 +222,9 @@ describe('FlagsmithProvider', () => {
     const client = OpenFeature.getClient();
     const config = defaultConfig();
     const provider = new FlagsmithClientProvider({ ...config });
-    it('should resolve booleans to the enabled state', async () => {
+    it('should resolve boolean values', async () => {
       await OpenFeature.setProviderAndWait(provider);
-      const details = client.getBooleanDetails(exampleBooleanFlagName, false);
+      const details = client.getBooleanDetails(exampleBooleanFlagName, true);
       expect(details.value).toEqual(true);
       expect(details.reason).toEqual('STATIC');
     });
