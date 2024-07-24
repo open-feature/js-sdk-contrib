@@ -270,10 +270,16 @@ describe('FlagsmithProvider', () => {
       expect(details.value).toEqual(0);
       expect(details.reason).toEqual('ERROR');
     });
-    it('should use defaults for flags that do not exist', async () => {
+    it('should use defaults for number flags that do not exist', async () => {
       await OpenFeature.setProviderAndWait(provider);
       const details = client.getNumberDetails('dont exist', 0);
       expect(details.value).toEqual(0);
+      expect(details.reason).toEqual('DEFAULT');
+    });
+    it('should use defaults for boolean flags that do not exist', async () => {
+      await OpenFeature.setProviderAndWait(provider);
+      const details = client.getBooleanDetails('dont exist', false);
+      expect(details.value).toEqual(false);
       expect(details.reason).toEqual('DEFAULT');
     });
   });
