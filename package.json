@@ -88,7 +88,7 @@
     "testcontainers": "10.10.4",
     "ts-jest": "29.2.3",
     "ts-node": "10.9.2",
-    "typescript": "5.5.3",
+    "typescript": "5.5.4",
     "undici": "^5.0.0"
   }
 }
