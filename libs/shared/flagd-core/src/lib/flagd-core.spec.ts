@@ -38,6 +38,11 @@ describe('flagd-core resolving', () => {
       expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
       expect(resolved.variant).toBe('object1');
     });
+
+    it('should resolve all flags', () => {
+      const resolved = core.resolveAll({}, console);
+      expect(resolved).toMatchSnapshot();
+    });
   });
 
   describe('falsy variant values', () => {
@@ -75,6 +80,11 @@ describe('flagd-core resolving', () => {
       expect(resolved.value).toStrictEqual({});
       expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
       expect(resolved.variant).toBe('object1');
+    });
+
+    it('should resolve all flags', () => {
+      const resolved = core.resolveAll({}, console);
+      expect(resolved).toMatchSnapshot();
     });
   });
 });
@@ -156,6 +166,12 @@ describe('flagd-core validations', () => {
 
   it('should validate variant', () => {
     expect(() => core.resolveStringEvaluation('myStringFlag', 'hello', {}, console)).toThrow(TypeMismatchError);
+  });
+
+  it('should only resolve enabled flags', () => {
+    const resolved = core.resolveAll({}, console);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]).toHaveProperty('flagKey', 'myStringFlag');
   });
 });
 

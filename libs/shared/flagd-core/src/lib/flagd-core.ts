@@ -12,6 +12,7 @@ import {
   Logger,
   SafeLogger,
   DefaultLogger,
+  EvaluationDetails,
 } from '@openfeature/core';
 import { Targeting } from './targeting/targeting';
 import { FeatureFlag } from './feature-flag';
@@ -122,6 +123,32 @@ export class FlagdCore implements Storage {
   }
 
   /**
+   * Resolve the flag evaluation for all enabled flags.
+   * @param evalCtx - The evaluation context to be used for targeting.
+   * @param logger - The logger to be used to troubleshoot targeting errors. Overrides the default logger.
+   * @returns - The list of evaluation details for all enabled flags.
+   */
+  resolveAll(evalCtx?: EvaluationContext, logger?: Logger): EvaluationDetails<JsonValue>[] {
+    const values: EvaluationDetails<JsonValue>[] = [];
+    for (const [key, flag] of this.getFlags()) {
+      try {
+        if (flag.state === 'DISABLED') {
+          continue;
+        }
+        const result = this.evaluate(key, evalCtx, logger);
+        values.push({
+          ...result,
+          flagKey: key,
+          flagMetadata: Object.freeze(result.flagMetadata ?? {}),
+        });
+      } catch (e) {
+        this._logger.error(`Error resolving flag ${key}: ${(e as Error).message}`);
+      }
+    }
+    return values;
+  }
+
+  /**
    * Resolves the value of a flag based on the specified type type.
    * @template T - The type of the flag value.
    * @param {FlagValueType} type - The type of the flag value.
@@ -141,6 +168,25 @@ export class FlagdCore implements Storage {
     evalCtx: EvaluationContext = {},
     logger?: Logger,
   ): ResolutionDetails<T> {
+    const { value, reason, variant } = this.evaluate(flagKey, evalCtx, logger);
+
+    if (typeof value !== type) {
+      throw new TypeMismatchError(
+        `Evaluated type of the flag ${flagKey} does not match. Expected ${type}, got ${typeof value}`,
+      );
+    }
+
+    return {
+      value: value as T,
+      reason,
+      variant,
+    };
+  }
+
+  /**
+   * Evaluates the flag and returns the resolved value regardless of the type.
+   */
+  private evaluate(flagKey: string, evalCtx: EvaluationContext = {}, logger?: Logger): ResolutionDetails<JsonValue> {
     logger ??= this._logger;
     const flag = this._storage.getFlag(flagKey);
     // flag exist check
@@ -188,14 +234,8 @@ export class FlagdCore implements Storage {
       throw new GeneralError(`Variant ${variant} not found in flag with key ${flagKey}`);
     }
 
-    if (typeof resolvedVariant !== type) {
-      throw new TypeMismatchError(
-        `Evaluated type of the flag ${flagKey} does not match. Expected ${type}, got ${typeof resolvedVariant}`,
-      );
-    }
-
     return {
-      value: resolvedVariant as T,
+      value: resolvedVariant,
       reason,
       variant,
     };

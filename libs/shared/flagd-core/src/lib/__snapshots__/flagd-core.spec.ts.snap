@@ -1,0 +1,111 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`flagd-core resolving falsy variant values should resolve all flags 1`] = `
+[
+  {
+    "flagKey": "myBoolFlag",
+    "flagMetadata": {},
+    "reason": "STATIC",
+    "value": false,
+    "variant": "off",
+  },
+  {
+    "flagKey": "myStringFlag",
+    "flagMetadata": {},
+    "reason": "STATIC",
+    "value": "",
+    "variant": "key1",
+  },
+  {
+    "flagKey": "myFloatFlag",
+    "flagMetadata": {},
+    "reason": "STATIC",
+    "value": 0,
+    "variant": "zero",
+  },
+  {
+    "flagKey": "myIntFlag",
+    "flagMetadata": {},
+    "reason": "STATIC",
+    "value": 0,
+    "variant": "zero",
+  },
+  {
+    "flagKey": "myObjectFlag",
+    "flagMetadata": {},
+    "reason": "STATIC",
+    "value": {},
+    "variant": "object1",
+  },
+  {
+    "flagKey": "fibAlgo",
+    "flagMetadata": {},
+    "reason": "DEFAULT",
+    "value": "recursive",
+    "variant": "recursive",
+  },
+  {
+    "flagKey": "targetedFlag",
+    "flagMetadata": {},
+    "reason": "DEFAULT",
+    "value": "AAA",
+    "variant": "first",
+  },
+]
+`;
+
+exports[`flagd-core resolving truthy variant values should resolve all flags 1`] = `
+[
+  {
+    "flagKey": "myBoolFlag",
+    "flagMetadata": {},
+    "reason": "STATIC",
+    "value": true,
+    "variant": "on",
+  },
+  {
+    "flagKey": "myStringFlag",
+    "flagMetadata": {},
+    "reason": "STATIC",
+    "value": "val1",
+    "variant": "key1",
+  },
+  {
+    "flagKey": "myFloatFlag",
+    "flagMetadata": {},
+    "reason": "STATIC",
+    "value": 1.23,
+    "variant": "one",
+  },
+  {
+    "flagKey": "myIntFlag",
+    "flagMetadata": {},
+    "reason": "STATIC",
+    "value": 1,
+    "variant": "one",
+  },
+  {
+    "flagKey": "myObjectFlag",
+    "flagMetadata": {},
+    "reason": "STATIC",
+    "value": {
+      "key": "val",
+    },
+    "variant": "object1",
+  },
+  {
+    "flagKey": "fibAlgo",
+    "flagMetadata": {},
+    "reason": "DEFAULT",
+    "value": "recursive",
+    "variant": "recursive",
+  },
+  {
+    "flagKey": "targetedFlag",
+    "flagMetadata": {},
+    "reason": "DEFAULT",
+    "value": "AAA",
+    "variant": "first",
+  },
+]
+`;
