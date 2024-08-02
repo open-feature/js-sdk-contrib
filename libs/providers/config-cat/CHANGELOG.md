@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.1](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.7.0...config-cat-provider-v0.7.1) (2024-07-23)
+
+
+### 📚 Documentation
+
+* A few corrections to ConfigCat providers' README.md ([#1014](https://github.com/open-feature/js-sdk-contrib/issues/1014)) ([3b24653](https://github.com/open-feature/js-sdk-contrib/commit/3b24653854643c827bddccb12aeb59e61204202d))
+
+## [0.7.0](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.6.1...config-cat-provider-v0.7.0) (2024-07-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* make interface similar to config-cat-web ([#918](https://github.com/open-feature/js-sdk-contrib/issues/918))
+
+### ✨ New Features
+
+* make interface similar to config-cat-web ([#918](https://github.com/open-feature/js-sdk-contrib/issues/918)) ([e280014](https://github.com/open-feature/js-sdk-contrib/commit/e280014f8998dd2e5f2b7700f0d24842eeafab5f))
+
 ## [0.6.1](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.6.0...config-cat-provider-v0.6.1) (2024-04-05)
 
 

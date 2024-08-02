@@ -1,5 +1,4 @@
-import { ConfigCatProvider } from './config-cat-provider';
-import { ProviderEvents, ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/web-sdk';
+import { ConfigCatWebProvider } from './config-cat-web-provider';
 import {
   createConsoleLogger,
   createFlagOverridesFromMap,
@@ -7,14 +6,14 @@ import {
   ISettingUnion,
   LogLevel,
   OverrideBehaviour,
-  PollingMode,
 } from 'configcat-js-ssr';
 import { EventEmitter } from 'events';
+import { ProviderEvents, ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/web-sdk';
 
-describe('ConfigCatProvider', () => {
+describe('ConfigCatWebProvider', () => {
   const targetingKey = 'abc';
 
-  let provider: ConfigCatProvider;
+  let provider: ConfigCatWebProvider;
   let configCatEmitter: EventEmitter<HookEvents>;
 
   const values = {
@@ -29,7 +28,7 @@ describe('ConfigCatProvider', () => {
   };
 
   beforeAll(async () => {
-    provider = ConfigCatProvider.create('__key__', PollingMode.ManualPoll, {
+    provider = ConfigCatWebProvider.create('__key__', {
       logger: createConsoleLogger(LogLevel.Off),
       offline: true,
       flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
@@ -46,12 +45,12 @@ describe('ConfigCatProvider', () => {
     await provider.onClose();
   });
 
-  it('should be an instance of ConfigCatProvider', () => {
-    expect(provider).toBeInstanceOf(ConfigCatProvider);
+  it('should be an instance of ConfigCatWebProvider', () => {
+    expect(provider).toBeInstanceOf(ConfigCatWebProvider);
   });
 
   it('should dispose the configcat client on provider closing', async () => {
-    const newProvider = ConfigCatProvider.create('__another_key__', PollingMode.AutoPoll, {
+    const newProvider = ConfigCatWebProvider.create('__another_key__', {
       logger: createConsoleLogger(LogLevel.Off),
       offline: true,
       flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
@@ -111,82 +110,70 @@ describe('ConfigCatProvider', () => {
   });
 
   describe('method resolveBooleanEvaluation', () => {
-    it('should throw FlagNotFoundError if type is different than expected', async () => {
-      await expect(provider.resolveBooleanEvaluation('nonExistent', false, { targetingKey })).rejects.toThrow(
+    it('should throw FlagNotFoundError if type is different than expected', () => {
+      expect(() => provider.resolveBooleanEvaluation('nonExistent', false, { targetingKey })).toThrow(
         FlagNotFoundError,
       );
     });
 
-    it('should return right value if key exists', async () => {
-      const value = await provider.resolveBooleanEvaluation('booleanTrue', false, { targetingKey });
+    it('should return right value if key exists', () => {
+      const value = provider.resolveBooleanEvaluation('booleanTrue', false, { targetingKey });
       expect(value).toHaveProperty('value', values.booleanTrue);
     });
 
-    it('should throw TypeMismatchError if type is different than expected', async () => {
-      await expect(provider.resolveBooleanEvaluation('number1', false, { targetingKey })).rejects.toThrow(
-        TypeMismatchError,
-      );
+    it('should throw TypeMismatchError if type is different than expected', () => {
+      expect(() => provider.resolveBooleanEvaluation('number1', false, { targetingKey })).toThrow(TypeMismatchError);
     });
   });
 
   describe('method resolveStringEvaluation', () => {
     it('should throw FlagNotFoundError if type is different than expected', async () => {
-      await expect(provider.resolveStringEvaluation('nonExistent', 'nonExistent', { targetingKey })).rejects.toThrow(
+      expect(() => provider.resolveStringEvaluation('nonExistent', 'nonExistent', { targetingKey })).toThrow(
         FlagNotFoundError,
       );
     });
 
-    it('should return right value if key exists', async () => {
-      const value = await provider.resolveStringEvaluation('stringTest', 'default', { targetingKey });
+    it('should return right value if key exists', () => {
+      const value = provider.resolveStringEvaluation('stringTest', 'default', { targetingKey });
       expect(value).toHaveProperty('value', values.stringTest);
     });
 
     it('should throw TypeMismatchError if type is different than expected', async () => {
-      await expect(provider.resolveStringEvaluation('number1', 'default', { targetingKey })).rejects.toThrow(
-        TypeMismatchError,
-      );
+      expect(() => provider.resolveStringEvaluation('number1', 'default', { targetingKey })).toThrow(TypeMismatchError);
     });
   });
 
   describe('method resolveNumberEvaluation', () => {
     it('should throw FlagNotFoundError if type is different than expected', async () => {
-      await expect(provider.resolveNumberEvaluation('nonExistent', 0, { targetingKey })).rejects.toThrow(
-        FlagNotFoundError,
-      );
+      expect(() => provider.resolveNumberEvaluation('nonExistent', 0, { targetingKey })).toThrow(FlagNotFoundError);
     });
 
-    it('should return right value if key exists', async () => {
-      const value = await provider.resolveNumberEvaluation('number1', 0, { targetingKey });
+    it('should return right value if key exists', () => {
+      const value = provider.resolveNumberEvaluation('number1', 0, { targetingKey });
       expect(value).toHaveProperty('value', values.number1);
     });
 
-    it('should throw TypeMismatchError if type is different than expected', async () => {
-      await expect(provider.resolveNumberEvaluation('stringTest', 0, { targetingKey })).rejects.toThrow(
-        TypeMismatchError,
-      );
+    it('should throw TypeMismatchError if type is different than expected', () => {
+      expect(() => provider.resolveNumberEvaluation('stringTest', 0, { targetingKey })).toThrow(TypeMismatchError);
     });
   });
 
   describe('method resolveObjectEvaluation', () => {
-    it('should throw FlagNotFoundError if type is different than expected', async () => {
-      await expect(provider.resolveObjectEvaluation('nonExistent', false, { targetingKey })).rejects.toThrow(
-        FlagNotFoundError,
-      );
+    it('should throw FlagNotFoundError if type is different than expected', () => {
+      expect(() => provider.resolveObjectEvaluation('nonExistent', false, { targetingKey })).toThrow(FlagNotFoundError);
     });
 
-    it('should return right value if key exists', async () => {
-      const value = await provider.resolveObjectEvaluation('jsonValid', {}, { targetingKey });
+    it('should return right value if key exists', () => {
+      const value = provider.resolveObjectEvaluation('jsonValid', {}, { targetingKey });
       expect(value).toHaveProperty('value', JSON.parse(values.jsonValid));
     });
 
-    it('should throw ParseError if string is not valid JSON', async () => {
-      await expect(provider.resolveObjectEvaluation('jsonInvalid', {}, { targetingKey })).rejects.toThrow(ParseError);
+    it('should throw ParseError if string is not valid JSON', () => {
+      expect(() => provider.resolveObjectEvaluation('jsonInvalid', {}, { targetingKey })).toThrow(ParseError);
     });
 
-    it('should throw TypeMismatchError if string is only a JSON primitive', async () => {
-      await expect(provider.resolveObjectEvaluation('jsonPrimitive', {}, { targetingKey })).rejects.toThrow(
-        TypeMismatchError,
-      );
+    it('should throw TypeMismatchError if string is only a JSON primitive', () => {
+      expect(() => provider.resolveObjectEvaluation('jsonPrimitive', {}, { targetingKey })).toThrow(TypeMismatchError);
     });
   });
 });
