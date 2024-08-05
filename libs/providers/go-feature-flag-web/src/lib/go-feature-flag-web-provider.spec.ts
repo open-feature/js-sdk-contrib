@@ -140,10 +140,6 @@ describe('GoFeatureFlagWebProvider', () => {
   });
 
   describe('flag evaluation', () => {
-    /**
-     * TODO: reactivate this test when the issue "web-sdk: onContextChange not called for named provider" is solved.\
-     * Issue link: https://github.com/open-feature/js-sdk/issues/488
-     */
     it('should change evaluation value if context has changed', async () => {
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider('test-provider', defaultProvider);
@@ -321,6 +317,34 @@ describe('GoFeatureFlagWebProvider', () => {
         errorMessage: 'flag key not-exist not found in cache',
       };
       expect(got).toEqual(want);
+    });
+
+    it('should have apiKey as header if set in the provider', async () => {
+      const apiKeyProvider = new GoFeatureFlagWebProvider(
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          apiKey: 'my-api-key',
+        },
+        logger,
+      );
+
+      const flagKey = 'bool-flag';
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait('test-provider', apiKeyProvider);
+      const client = OpenFeature.getClient('test-provider');
+      await websocketMockServer.connected;
+      client.getBooleanDetails(flagKey, false);
+      const lastCall = fetchMock.lastCall(allFlagsEndpoint);
+      expect(lastCall).not.toBeUndefined();
+      if (lastCall) {
+        const headers = lastCall[1]?.headers as never;
+        expect(headers).not.toBeUndefined();
+        expect(headers['Authorization']).toBe('Bearer my-api-key');
+        return;
+      }
+      expect(true).toBe(false);
     });
   });
 
