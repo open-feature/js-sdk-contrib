@@ -270,19 +270,13 @@ export class GoFeatureFlagWebProvider implements Provider {
       : endpointURL.pathname + '/' + path;
 
     const request: GoFeatureFlagAllFlagRequest = { evaluationContext: transformContext(context) };
-    const headers = new Headers({
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    });
-    if (this._apiKey) {
-      headers.set('Authorization', `Bearer ${this._apiKey}`);
-    }
-
     const init: RequestInit = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        // we had the authorization header only if we have an API Key
+        ...(this._apiKey ? { Authorization: `Bearer ${this._apiKey}` } : {}),
       },
       body: JSON.stringify(request),
     };
