@@ -5,6 +5,10 @@ components:
     - toddbaert
   libs/providers/config-cat:
     - lukas-reining
+    - adams85
+  libs/providers/config-cat-web:
+    - lukas-reining
+    - adams85
   libs/providers/env-var:
     - beeme1mr
     - toddbaert
