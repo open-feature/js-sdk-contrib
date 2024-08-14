@@ -124,6 +124,7 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
         entryFile: `${projectRoot}/src/index.ts`,
         tsConfig: `${projectRoot}/tsconfig.lib.json`,
         buildableProjectDepsInPackageJsonType: 'dependencies',
+        updateBuildableProjectDepsInPackageJson: true,
         compiler: 'tsc',
         generateExportsField: true,
         umdName,
