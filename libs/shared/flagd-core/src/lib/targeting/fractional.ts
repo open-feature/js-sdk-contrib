@@ -29,12 +29,12 @@ export function fractionalFactory(logger: Logger) {
       bucketBy = args[0];
       buckets = args.slice(1, args.length);
     } else {
-      bucketBy = `${flagdProperties[flagKeyPropertyKey]}${context[targetingPropertyKey]}`;
-      if (!bucketBy) {
+      const targetingKey = context[targetingPropertyKey];
+      if (!targetingKey) {
         logger.debug('Missing targetingKey property, cannot perform fractional targeting');
         return null;
       }
-
+      bucketBy = `${flagdProperties[flagKeyPropertyKey]}${targetingKey}`;
       buckets = args;
     }
 
