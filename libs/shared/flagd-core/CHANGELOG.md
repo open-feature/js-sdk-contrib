@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.4...flagd-core-v0.2.5) (2024-08-30)
+
+
+### 🐛 Bug Fixes
+
+* **flagd:** improve targeting key check in fractional operator ([#1048](https://github.com/open-feature/js-sdk-contrib/issues/1048)) ([7d82649](https://github.com/open-feature/js-sdk-contrib/commit/7d8264994b62f00d2f3e6b88e98ecf2c85ea8b87))
+
 ## [0.2.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.3...flagd-core-v0.2.4) (2024-08-02)
 
 
