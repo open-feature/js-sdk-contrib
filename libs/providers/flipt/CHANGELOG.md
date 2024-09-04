@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.1](https://github.com/open-feature/js-sdk-contrib/compare/flipt-provider-v0.1.0...flipt-provider-v0.1.1) (2024-09-04)
+
+
+### 🐛 Bug Fixes
+
+* **flipt:** return the correct default value when provided in Flipt ([#1052](https://github.com/open-feature/js-sdk-contrib/issues/1052)) ([28bffa5](https://github.com/open-feature/js-sdk-contrib/commit/28bffa5f91278db0e1f4b4361d483403b626e2b9))
+
+
+### 📚 Documentation
+
+* update flipt-io peer dependency ([#1046](https://github.com/open-feature/js-sdk-contrib/issues/1046)) ([00c9e87](https://github.com/open-feature/js-sdk-contrib/commit/00c9e8739808fa9b889d890968fb1f276b99a6fe))
+
 ## [0.1.0](https://github.com/open-feature/js-sdk-contrib/compare/flipt-provider-v0.0.2...flipt-provider-v0.1.0) (2024-03-29)
 
 
