@@ -169,7 +169,7 @@ export class FliptProvider implements Provider {
         };
       }
 
-      if (!variantEvaluation.match) {
+      if (!variantEvaluation.match && variantEvaluation.reason != 'DEFAULT_EVALUATION_REASON') {
         return {
           value: defaultValue,
           reason: StandardResolutionReasons.DEFAULT,

@@ -193,6 +193,27 @@ describe('FliptProvider', () => {
       expect(value).toHaveProperty('value', { hello: 'world' });
     });
 
+    it('should return right value for default value', async () => {
+      fetchMock.post(
+        variantEndpoint,
+        {
+          match: false,
+          segmentKeys: [],
+          reason: 'DEFAULT_EVALUATION_REASON',
+          variantKey: '10',
+          variantAttachment: `{"hello": "world"}`,
+          requestId: '0f39483c-d52b-42b4-adbb-40b98bc7058d',
+          requestDurationMillis: 0.409,
+          timestamp: '2024-01-15T18:51:50.629551Z',
+          flagKey: 'flag_json',
+        },
+        { overwriteRoutes: true },
+      );
+
+      const value = await provider.resolveObjectEvaluation('flag_json', {}, { fizz: 'buzz' });
+      expect(value).toHaveProperty('value', { hello: 'world' });
+    });
+
     it('should throw TypeMismatchError on non-number value', async () => {
       fetchMock.post(
         variantEndpoint,
