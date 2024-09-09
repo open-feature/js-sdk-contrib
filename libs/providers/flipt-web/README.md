@@ -20,7 +20,7 @@ npm install @openfeature/web-sdk @openfeature/flipt-web-provider
 To initialize the OpenFeature client with Flipt, you can use the following code snippet:
 
 ```ts
-import { FliptWebProvider } from '@openfeature/flipt-web';
+import { FliptWebProvider } from '@openfeature/flipt-web-provider';
 
 const provider = new FliptWebProvider('namespace-of-choice', { url: 'http://your.upstream.flipt.host' });
 await OpenFeature.setProviderAndWait(provider);
