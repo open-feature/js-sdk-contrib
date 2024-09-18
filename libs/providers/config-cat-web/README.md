@@ -1,6 +1,6 @@
 # ConfigCat Web Provider
 
-This provider is an implementation for [ConfigCat](https://configcat.com) a managed feature flag service.
+This is an OpenFeature provider implementation for using [ConfigCat](https://configcat.com), a managed feature flag service in JavaScript frontend applications.
 
 ## Installation
 
@@ -14,10 +14,10 @@ The OpenFeature SDK is required as peer dependency.
 
 The minimum required version of `@openfeature/web-sdk` currently is `1.0.0`.
 
-The minimum required version of `configcat-js-ssr` currently is `8.4.1`.
+The minimum required version of `configcat-js-ssr` currently is `8.4.3`.
 
 ```
-$ npm install @openfeature/client-sdk configcat-js-ssr
+$ npm install @openfeature/web-sdk configcat-js-ssr
 ```
 
 ## Usage
@@ -32,29 +32,45 @@ The ConfigCat Web Provider only supports the `AutoPolling` mode because it cache
 ### Example using the default configuration
 
 ```javascript
+import { OpenFeature } from "@openfeature/web-sdk";
 import { ConfigCatWebProvider } from '@openfeature/config-cat-web-provider';
 
+// Create and set the provider.
 const provider = ConfigCatWebProvider.create('<sdk_key>');
-OpenFeature.setProvider(provider);
+await OpenFeature.setProviderAndWait(provider);
+
+// Create a client instance to evaluate feature flags.
+const client = OpenFeature.getClient();
+
+const value = await client.getBooleanValue('isAwesomeFeatureEnabled', false);
+console.log(`isAwesomeFeatureEnabled: ${value}`);
+
+// On application shutdown, clean up the OpenFeature provider and the underlying ConfigCat client.
+await OpenFeature.clearProviders();
 ```
 
-### Example using different polling options and a setupHook
+### Example using custom configuration
 
 ```javascript
+import { OpenFeature } from "@openfeature/web-sdk";
 import { ConfigCatWebProvider } from '@openfeature/config-cat-web-provider';
+import { createConsoleLogger, LogLevel } from 'configcat-js-ssr';
 
+// Create and set the provider.
 const provider = ConfigCatWebProvider.create('<sdk_key>', {
+  logger: createConsoleLogger(LogLevel.Info),
   setupHooks: (hooks) => hooks.on('clientReady', () => console.log('Client is ready!')),
 });
+await OpenFeature.setProviderAndWait(provider);
 
-OpenFeature.setProvider(provider);
+// ...
 ```
 
 ## Evaluation Context
 
-The OpenFeature Evaluation Context is mapped to the [ConfigCat user object](https://configcat.com/docs/advanced/user-object/).
+The OpenFeature Evaluation Context is mapped to the [ConfigCat User Object](https://configcat.com/docs/advanced/user-object/).
 
-The [ConfigCat user object](https://configcat.com/docs/advanced/user-object/) has three known attributes,
+The [ConfigCat User Object](https://configcat.com/docs/advanced/user-object/) has three predefined attributes,
 and allows for additional attributes.
 The following shows how the attributes are mapped:
 
