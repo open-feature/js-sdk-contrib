@@ -14,7 +14,7 @@ The OpenFeature SDK is required as peer dependency.
 
 The minimum required version of `@openfeature/web-sdk` currently is `1.0.0`.
 
-The minimum required version of `configcat-js-ssr` currently is `8.4.1`.
+The minimum required version of `configcat-js-ssr` currently is `8.4.3`.
 
 ```
 $ npm install @openfeature/web-sdk configcat-js-ssr

@@ -14,7 +14,7 @@ The OpenFeature SDK is required as peer dependency.
 
 The minimum required version of `@openfeature/server-sdk` currently is `1.13.5`.
 
-The minimum required version of `configcat-node` currently is `11.0.0`.
+The minimum required version of `configcat-node` currently is `11.3.1`.
 
 ```
 $ npm install @openfeature/server-sdk configcat-node

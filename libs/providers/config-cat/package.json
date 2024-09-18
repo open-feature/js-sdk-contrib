@@ -7,6 +7,6 @@
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.13.5",
-    "configcat-node": "^11.0.0"
+    "configcat-node": "^11.3.1"
   }
 }
