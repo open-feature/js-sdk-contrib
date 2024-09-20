@@ -129,6 +129,7 @@ export class FlagdCore implements Storage {
    * @returns - The list of evaluation details for all enabled flags.
    */
   resolveAll(evalCtx?: EvaluationContext, logger?: Logger): EvaluationDetails<JsonValue>[] {
+    logger ??= this._logger;
     const values: EvaluationDetails<JsonValue>[] = [];
     for (const [key, flag] of this.getFlags()) {
       try {
@@ -142,7 +143,7 @@ export class FlagdCore implements Storage {
           flagMetadata: Object.freeze(result.flagMetadata ?? {}),
         });
       } catch (e) {
-        this._logger.error(`Error resolving flag ${key}: ${(e as Error).message}`);
+        logger.error(`Error resolving flag ${key}: ${(e as Error).message}`);
       }
     }
     return values;
