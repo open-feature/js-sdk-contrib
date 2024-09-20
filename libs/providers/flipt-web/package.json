@@ -2,7 +2,7 @@
   "name": "@openfeature/flipt-web-provider",
   "version": "0.1.0",
   "dependencies": {
-    "@flipt-io/flipt-client-browser": "^0.0.17",
+    "@flipt-io/flipt-client-browser": "^0.0.19",
     "tslib": "^2.3.0"
   },
   "main": "./src/index.js",

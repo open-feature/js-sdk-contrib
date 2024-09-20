@@ -1,7 +1,6 @@
 import { ConfigCatProvider } from './config-cat-provider';
-import { ParseError, ProviderEvents, ProviderStatus, TypeMismatchError } from '@openfeature/server-sdk';
+import { ProviderEvents, ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/web-sdk';
 import {
-  ClientCacheState,
   createConsoleLogger,
   createFlagOverridesFromMap,
   HookEvents,
@@ -70,66 +69,7 @@ describe('ConfigCatProvider', () => {
     expect(clientDisposeSpy).toHaveBeenCalled();
   });
 
-  describe('status', () => {
-    it('should be NOT_READY before initialization and READY after successful initialization', async () => {
-      const newProvider = ConfigCatProvider.create('wrong_key', PollingMode.ManualPoll, {
-        logger: createConsoleLogger(LogLevel.Off),
-        offline: true,
-        flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
-      });
-
-      expect(newProvider.status).toEqual(ProviderStatus.NOT_READY);
-      await newProvider.initialize();
-      expect(newProvider.status).toEqual(ProviderStatus.READY);
-    });
-
-    it('should set status to ERROR if an error occurs', async () => {
-      configCatEmitter.emit('clientError', 'Error');
-      expect(provider.status).toEqual(ProviderStatus.ERROR);
-    });
-
-    it('should set status back to READY if client switches back to ready after an error occured', async () => {
-      configCatEmitter.emit('clientError', 'Error');
-      expect(provider.status).toEqual(ProviderStatus.ERROR);
-      configCatEmitter.emit('clientReady', ClientCacheState.HasCachedFlagDataOnly);
-      expect(provider.status).toEqual(ProviderStatus.READY);
-    });
-  });
-
   describe('events', () => {
-    it('should emit PROVIDER_READY event', () => {
-      const handler = jest.fn();
-      provider.events.addHandler(ProviderEvents.Ready, handler);
-      configCatEmitter.emit('clientReady', ClientCacheState.HasCachedFlagDataOnly);
-      expect(handler).toHaveBeenCalled();
-    });
-
-    it('should emit PROVIDER_READY event on initialization', async () => {
-      const newProvider = ConfigCatProvider.create('__another_key__', PollingMode.ManualPoll, {
-        logger: createConsoleLogger(LogLevel.Off),
-        offline: true,
-        flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
-      });
-
-      const handler = jest.fn();
-      newProvider.events.addHandler(ProviderEvents.Ready, handler);
-      await newProvider.initialize();
-
-      expect(handler).toHaveBeenCalled();
-    });
-
-    it('should emit PROVIDER_READY event without options', async () => {
-      const newProvider = ConfigCatProvider.create('__yet_another_key__', PollingMode.ManualPoll, {
-        flagOverrides: createFlagOverridesFromMap(values, OverrideBehaviour.LocalOnly),
-      });
-
-      const handler = jest.fn();
-      newProvider.events.addHandler(ProviderEvents.Ready, handler);
-      await newProvider.initialize();
-
-      expect(handler).toHaveBeenCalled();
-    });
-
     it('should emit PROVIDER_CONFIGURATION_CHANGED event', () => {
       const handler = jest.fn();
       const eventData = { settings: { myFlag: {} as ISettingUnion }, salt: undefined, segments: [] };
@@ -154,12 +94,27 @@ describe('ConfigCatProvider', () => {
         metadata: eventData[1],
       });
     });
+
+    it('should emit PROVIDER_READY event after successful evaluation during ERROR condition', async () => {
+      const errorHandler = jest.fn();
+      provider.events.addHandler(ProviderEvents.Error, errorHandler);
+
+      configCatEmitter.emit('clientError', 'error', { error: 'error' });
+      expect(errorHandler).toHaveBeenCalled();
+
+      const readyHandler = jest.fn();
+      provider.events.addHandler(ProviderEvents.Ready, readyHandler);
+
+      await provider.resolveBooleanEvaluation('booleanTrue', false, { targetingKey });
+      expect(readyHandler).toHaveBeenCalled();
+    });
   });
 
   describe('method resolveBooleanEvaluation', () => {
-    it('should return default value for missing value', async () => {
-      const value = await provider.resolveBooleanEvaluation('nonExistent', false, { targetingKey });
-      expect(value).toHaveProperty('value', false);
+    it('should throw FlagNotFoundError if type is different than expected', async () => {
+      await expect(provider.resolveBooleanEvaluation('nonExistent', false, { targetingKey })).rejects.toThrow(
+        FlagNotFoundError,
+      );
     });
 
     it('should return right value if key exists', async () => {
@@ -175,9 +130,10 @@ describe('ConfigCatProvider', () => {
   });
 
   describe('method resolveStringEvaluation', () => {
-    it('should return default value for missing value', async () => {
-      const value = await provider.resolveStringEvaluation('nonExistent', 'default', { targetingKey });
-      expect(value).toHaveProperty('value', 'default');
+    it('should throw FlagNotFoundError if type is different than expected', async () => {
+      await expect(provider.resolveStringEvaluation('nonExistent', 'nonExistent', { targetingKey })).rejects.toThrow(
+        FlagNotFoundError,
+      );
     });
 
     it('should return right value if key exists', async () => {
@@ -193,9 +149,10 @@ describe('ConfigCatProvider', () => {
   });
 
   describe('method resolveNumberEvaluation', () => {
-    it('should return default value for missing value', async () => {
-      const value = await provider.resolveNumberEvaluation('nonExistent', 0, { targetingKey });
-      expect(value).toHaveProperty('value', 0);
+    it('should throw FlagNotFoundError if type is different than expected', async () => {
+      await expect(provider.resolveNumberEvaluation('nonExistent', 0, { targetingKey })).rejects.toThrow(
+        FlagNotFoundError,
+      );
     });
 
     it('should return right value if key exists', async () => {
@@ -211,9 +168,10 @@ describe('ConfigCatProvider', () => {
   });
 
   describe('method resolveObjectEvaluation', () => {
-    it('should return default value for missing value', async () => {
-      const value = await provider.resolveObjectEvaluation('nonExistent', {}, { targetingKey });
-      expect(value).toHaveProperty('value', {});
+    it('should throw FlagNotFoundError if type is different than expected', async () => {
+      await expect(provider.resolveObjectEvaluation('nonExistent', false, { targetingKey })).rejects.toThrow(
+        FlagNotFoundError,
+      );
     });
 
     it('should return right value if key exists', async () => {

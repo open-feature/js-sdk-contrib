@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.4...flagd-core-v0.2.5) (2024-08-30)
+
+
+### 🐛 Bug Fixes
+
+* **flagd:** improve targeting key check in fractional operator ([#1048](https://github.com/open-feature/js-sdk-contrib/issues/1048)) ([7d82649](https://github.com/open-feature/js-sdk-contrib/commit/7d8264994b62f00d2f3e6b88e98ecf2c85ea8b87))
+
+## [0.2.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.3...flagd-core-v0.2.4) (2024-08-02)
+
+
+### ✨ New Features
+
+* **flagd-core:** add bulk evaluation method ([#1010](https://github.com/open-feature/js-sdk-contrib/issues/1010)) ([52aebed](https://github.com/open-feature/js-sdk-contrib/commit/52aebedc0033ce273b707adcc57e80e765cc98e9))
+
+
+### 🧹 Chore
+
+* removing build dependencies and using testcontainers for container spin up ([#982](https://github.com/open-feature/js-sdk-contrib/issues/982)) ([2d64331](https://github.com/open-feature/js-sdk-contrib/commit/2d6433101b76ba9ad266095fe31b58314f82a105))
+
 ## [0.2.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.2...flagd-core-v0.2.3) (2024-07-08)
 
 

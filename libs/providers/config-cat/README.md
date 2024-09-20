@@ -1,6 +1,6 @@
 # ConfigCat Provider
 
-This provider is an implementation for [ConfigCat](https://configcat.com) a managed feature flag service.
+This is an OpenFeature provider implementation for using [ConfigCat](https://configcat.com), a managed feature flag service in Node.js applications.
 
 ## Installation
 
@@ -12,54 +12,65 @@ $ npm install @openfeature/config-cat-provider
 
 The OpenFeature SDK is required as peer dependency.
 
-The minimum required version of `@openfeature/server-sdk` currently is `1.6.0`.
+The minimum required version of `@openfeature/server-sdk` currently is `1.13.5`.
 
-The minimum required version of `configcat-js-ssr` currently is `7.1.2`.
+The minimum required version of `configcat-node` currently is `11.3.1`.
 
 ```
-$ npm install @openfeature/server-sdk configcat-js-ssr
+$ npm install @openfeature/server-sdk configcat-node
 ```
 
 ## Usage
 
-The ConfigCat provider uses the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
-This means that the provider can be used in both server (e.g. Node.js) and client (browser) applications.
+The ConfigCat provider uses the [ConfigCat Node.js SDK](https://configcat.com/docs/sdk-reference/node/).
 
-It can either be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create``` or
-the ```ConfigCatProvider``` constructor.
+It can be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create```.
 
-The available options can be found in the [ConfigCat JavaScript (SSR) SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
+The available options can be found in the [ConfigCat Node.js SDK](https://configcat.com/docs/sdk-reference/node/#creating-the-configcat-client).
 
 ### Example using the default configuration
 
 ```javascript
+import { OpenFeature } from "@openfeature/server-sdk";
 import { ConfigCatProvider } from '@openfeature/config-cat-provider';
 
+// Create and set the provider.
 const provider = ConfigCatProvider.create('<sdk_key>');
-OpenFeature.setProvider(provider);
+await OpenFeature.setProviderAndWait(provider);
+
+// Obtain a client instance and evaluate feature flags.
+const client = OpenFeature.getClient();
+
+const value = await client.getBooleanValue('isAwesomeFeatureEnabled', false);
+console.log(`isAwesomeFeatureEnabled: ${value}`);
+
+// On application shutdown, clean up the OpenFeature provider and the underlying ConfigCat client.
+await OpenFeature.clearProviders();
 ```
 
-### Example using different polling options and a setupHook
+### Example using a different polling mode and custom configuration
 
 ```javascript
+import { OpenFeature } from "@openfeature/server-sdk";
 import { ConfigCatProvider } from '@openfeature/config-cat-provider';
+import { createConsoleLogger, LogLevel, PollingMode } from 'configcat-node';
 
+// Create and set the provider.
 const provider = ConfigCatProvider.create('<sdk_key>', PollingMode.LazyLoad, {
+  logger: createConsoleLogger(LogLevel.Info),
   setupHooks: (hooks) => hooks.on('clientReady', () => console.log('Client is ready!')),
 });
+await OpenFeature.setProviderAndWait(provider);
 
-OpenFeature.setProvider(provider);
+// ...
 ```
 
 ## Evaluation Context
 
-ConfigCat only supports string values in its "evaluation
-context", [there known as User Object](https://configcat.com/docs/advanced/user-object/).
+The OpenFeature Evaluation Context is mapped to the [ConfigCat User Object](https://configcat.com/docs/advanced/user-object/).
 
-This means that every value is converted to a string. This is trivial for numbers and booleans. Objects and arrays are
-converted to JSON strings that can be interpreted in ConfigCat.
-
-ConfigCat has three known attributes, and allows for additional attributes.
+The [ConfigCat User Object](https://configcat.com/docs/advanced/user-object/) has three predefined attributes,
+and allows for additional attributes.
 The following shows how the attributes are mapped:
 
 | OpenFeature EvaluationContext Field | ConfigCat User Field | Required |
@@ -68,6 +79,17 @@ The following shows how the attributes are mapped:
 | email                               | email                | no       |
 | country                             | country              | no       |
 | _Any Other_                         | custom               | no       |
+
+The custom types are mapped the following way:
+
+| OpenFeature EvaluationContext Field Type      | ConfigCat User Field Type |
+|-----------------------------------------------|---------------------------|
+| string                                        | string                    |
+| number                                        | number                    |
+| boolean                                       | string                    |
+| Array<string>                                 | Array<string>             |
+| Array                                         | Array                     |
+| object                                        | string                    |
 
 The following example shows the conversion between an OpenFeature Evaluation Context and the corresponding ConfigCat
 User:
@@ -86,6 +108,7 @@ User:
     "prop1": "1",
     "prop2": 2
   },
+  "customStringArray": ["one", "two"],
   "customArray": [
     1,
     "2",
@@ -104,8 +127,9 @@ User:
   "custom": {
     "customString": "customString",
     "customBoolean": "true",
-    "customNumber": "1",
+    "customNumber": 1,
     "customObject": "{\"prop1\":\"1\",\"prop2\":2}",
+    "customStringArray": ["one", "two"],
     "customArray": "[1,\"2\",false]"
   }
 }

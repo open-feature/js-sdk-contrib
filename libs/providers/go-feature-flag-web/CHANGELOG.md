@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.0...go-feature-flag-web-provider-v0.2.1) (2024-08-05)
+
+
+### 🐛 Bug Fixes
+
+* **go-feature-flag-web:** Set API Key in headers ([#1030](https://github.com/open-feature/js-sdk-contrib/issues/1030)) ([31a8adb](https://github.com/open-feature/js-sdk-contrib/commit/31a8adbedbdf655a87593f7dd87e611f64f4a8b1))
+
 ## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.1.6...go-feature-flag-web-provider-v0.2.0) (2024-03-25)
 
 

@@ -50,6 +50,7 @@
         "entryFile": "libs/providers/growthbook-client/src/index.ts",
         "tsConfig": "libs/providers/growthbook-client/tsconfig.lib.json",
         "buildableProjectDepsInPackageJsonType": "dependencies",
+        "updateBuildableProjectDepsInPackageJson": true,
         "compiler": "tsc",
         "generateExportsField": true,
         "umdName": "growthbook-client",

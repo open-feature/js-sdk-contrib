@@ -14,7 +14,7 @@ $ npm install @openfeature/flipt-provider
 
 Both the OpenFeature SDK and the Flipt Node Server SDK are required as peer dependencies.
 
-Please make sure to install `@flipt/flipt-io` at versions >= `1.0.0`, as the client API is different in earlier versions.
+Please make sure to install `@flipt-io/flipt` at versions >= `1.0.0`, as the client API is different in earlier versions.
 
 The peer dependency will also enforce the above version.
 

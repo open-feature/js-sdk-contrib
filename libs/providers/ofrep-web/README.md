@@ -38,7 +38,7 @@ The provider can use headers from either a static header map or a custom header 
 Headers can be given as a list of tuples or as a map of headers.
 
 ```ts
-import { OFREPWebProvider } from '@openfeature/ofrep-web';
+import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
 
 OpenFeature.setProvider(
   new OFREPWebProvider({
@@ -52,7 +52,7 @@ OpenFeature.setProvider(
 ```
 
 ```ts
-import { OFREPWebProvider } from '@openfeature/ofrep-web';
+import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
 
 OpenFeature.setProvider(
   new OFREPWebProvider({
@@ -69,7 +69,7 @@ The header factory is evaluated before every flag evaluation which makes it poss
 The following shows an example of loading a token and using it as bearer token.
 
 ```ts
-import { OFREPWebProvider } from '@openfeature/ofrep-web';
+import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
 
 OpenFeature.setProvider(
   new OFREPWebProvider({
@@ -87,7 +87,7 @@ OpenFeature.setProvider(
 If needed, a custom fetch implementation can be injected, if e.g. the platform does not have fetch built in.
 
 ```ts
-import { OFREPWebProvider } from '@openfeature/ofrep-web';
+import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
 import { fetchPolyfill } from 'some-fetch-polyfill';
 
 OpenFeature.setProvider(

@@ -187,6 +187,17 @@ describe('fractional operator', () => {
 
     expect(targeting.applyTargeting('flagA', input, { targetingKey: 'bucketKeyB' })).toBe('blue');
   });
+
+  it('should return null if targeting key is missing', () => {
+    const input = {
+      fractional: [
+        ['red', 1],
+        ['blue', 1],
+      ],
+    };
+
+    expect(targeting.applyTargeting('flagA', input, {})).toBe(null);
+  });
 });
 
 describe('fractional operator should validate', () => {
