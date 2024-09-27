@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.2...config-cat-web-provider-v0.1.3) (2024-09-20)
+
+
+### 🐛 Bug Fixes
+
+* **config-cat-web:** Fix code examples in README.md ([#1050](https://github.com/open-feature/js-sdk-contrib/issues/1050)) ([0b6179b](https://github.com/open-feature/js-sdk-contrib/commit/0b6179b9cb16cce592be6c2fbe86dbacce5adc1f))
+* **config-cat:** Revise readme ([#1054](https://github.com/open-feature/js-sdk-contrib/issues/1054)) ([7e1dd72](https://github.com/open-feature/js-sdk-contrib/commit/7e1dd72a1450a9982b340afda62d34379d1b3f16))
+
 ## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.1...config-cat-web-provider-v0.1.2) (2024-08-22)
 
 
