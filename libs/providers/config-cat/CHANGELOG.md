@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.7.1...config-cat-provider-v0.7.2) (2024-09-20)
+
+
+### 🐛 Bug Fixes
+
+* **config-cat:** Revise readme ([#1054](https://github.com/open-feature/js-sdk-contrib/issues/1054)) ([7e1dd72](https://github.com/open-feature/js-sdk-contrib/commit/7e1dd72a1450a9982b340afda62d34379d1b3f16))
+
 ## [0.7.1](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.7.0...config-cat-provider-v0.7.1) (2024-07-23)
 
 
