@@ -72,7 +72,7 @@
     "axios-mock-adapter": "1.22.0",
     "babel-preset-minify": "0.5.2",
     "@bufbuild/buf": "^1.34.0",
-    "eslint": "8.57.0",
+    "eslint": "8.57.1",
     "eslint-config-prettier": "8.10.0",
     "eslint-plugin-prettier": "^5.0.1",
     "fetch-mock-jest": "^1.5.1",
