@@ -58,25 +58,11 @@
         }
       ]
     },
-    "pullTestHarness": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "git submodule update --init spec",
-          "git submodule update --init flagd-testbed",
-          "rm -f -r ./src/e2e/features/*",
-          "cp -v ./spec/specification/assets/gherkin/evaluation.feature ./src/e2e/features/",
-          "cp -v ./flagd-testbed/gherkin/*.feature ./src/e2e/features/"
-        ],
-        "cwd": "libs/providers/flagd",
-        "parallel": false
-      }
-    },
     "e2e": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "npx jest --runInBand --detectOpenHandles"
+          "npx jest"
         ],
         "cwd": "libs/providers/flagd/src/e2e",
         "parallel": false
@@ -86,7 +72,7 @@
           "target": "generate"
         },
         {
-          "target": "pullTestHarness"
+          "target": "flagd-core:pullTestHarness"
         }
       ]
     },
