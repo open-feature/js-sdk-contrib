@@ -6,6 +6,6 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/core": "<=1.0.0"
+    "@openfeature/core": "<=1.4.0"
   }
 }
