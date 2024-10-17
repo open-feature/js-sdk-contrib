@@ -4,9 +4,7 @@ import {
   JsonValue,
   ResolutionDetails,
   Logger,
-  ProviderStatus,
   StandardResolutionReasons,
-  ErrorCode,
   TypeMismatchError,
   GeneralError,
   ProviderFatalError,
@@ -80,13 +78,7 @@ export class FliptWebProvider implements Provider {
     const evalContext: Record<string, string> = transformContext(context);
 
     try {
-      const resp = this._client?.evaluateBoolean(flagKey, context.targetingKey ?? '', evalContext);
-
-      if (resp?.status === 'failure') {
-        throw new GeneralError(resp.error_message);
-      }
-
-      const result = resp?.result;
+      const result = this._client?.evaluateBoolean(flagKey, context.targetingKey ?? '', evalContext);
 
       switch (result?.reason) {
         case EvaluationReason.DEFAULT:
@@ -151,13 +143,7 @@ export class FliptWebProvider implements Provider {
     const evalContext: Record<string, string> = transformContext(context);
 
     try {
-      const resp = this._client?.evaluateVariant(flagKey, context.targetingKey ?? '', evalContext);
-
-      if (resp?.status === 'failure') {
-        throw new GeneralError(resp.error_message);
-      }
-
-      const result = resp?.result;
+      const result = this._client?.evaluateVariant(flagKey, context.targetingKey ?? '', evalContext);
 
       if (result?.reason === EvaluationReason.FLAG_DISABLED) {
         return {
@@ -175,7 +161,7 @@ export class FliptWebProvider implements Provider {
 
       const flagValue: PrimitiveType | U = validateFlagType(
         flagType,
-        flagType === 'json' ? result.variant_attachment : result.variant_key,
+        flagType === 'json' ? result.variantAttachment : result.variantKey,
       );
 
       return {
