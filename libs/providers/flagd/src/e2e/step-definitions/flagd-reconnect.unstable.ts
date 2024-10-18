@@ -22,26 +22,36 @@ export function flagdRecconnectUnstable() {
       });
     });
 
-    test('Provider reconnection', ({ given, when, then, and }) => {
-      given('a flagd provider is set', () => {
-        // handled in beforeAll
-      });
-      when('a PROVIDER_READY handler and a PROVIDER_ERROR handler are added', () => {
-        client.addHandler(ProviderEvents.Error, () => {
-          errorRunCount++;
+    describe('retry', () => {
+      /**
+       * This describe block and retry settings are calibrated to gRPC's retry time
+       * and our testing container's restart cadence.
+       */
+      const retryTimes = 240;
+      const retryDelayMs = 1000;
+      jest.retryTimes(retryTimes);
+
+      test('Provider reconnection', ({ given, when, then, and }) => {
+        given('a flagd provider is set', () => {
+          // handled in beforeAll
         });
-      });
-      then('the PROVIDER_READY handler must run when the provider connects', async () => {
-        // should already be at 1 from `beforeAll`
-        expect(readyRunCount).toEqual(1);
-      });
-      and("the PROVIDER_ERROR handler must run when the provider's connection is lost", async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        expect(errorRunCount).toBeGreaterThan(0);
-      });
-      and('when the connection is reestablished the PROVIDER_READY handler must run again', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        expect(readyRunCount).toBeGreaterThan(1);
+        when('a PROVIDER_READY handler and a PROVIDER_ERROR handler are added', () => {
+          client.addHandler(ProviderEvents.Error, () => {
+            errorRunCount++;
+          });
+        });
+        then('the PROVIDER_READY handler must run when the provider connects', async () => {
+          // should already be at 1 from `beforeAll`
+          expect(readyRunCount).toEqual(1);
+        });
+        and("the PROVIDER_ERROR handler must run when the provider's connection is lost", async () => {
+          await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+          expect(errorRunCount).toBeGreaterThan(0);
+        });
+        and('when the connection is reestablished the PROVIDER_READY handler must run again', async () => {
+          await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+          expect(readyRunCount).toBeGreaterThan(1);
+        });
       });
     });
 
