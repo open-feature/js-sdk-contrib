@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.13.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.1...flagd-provider-v0.13.2) (2024-10-18)
+
+
+### 🧹 Chore
+
+* **deps:** update dependency @grpc/grpc-js to ~1.8.0 || ~1.9.0 || ~1.10.0 || ~1.11.0 ([#1023](https://github.com/open-feature/js-sdk-contrib/issues/1023)) ([f2247d3](https://github.com/open-feature/js-sdk-contrib/commit/f2247d3adfa33b0b5bcc7d07184d6c6bca534ee6))
+* **deps:** update dependency @grpc/grpc-js to ~1.8.0 || ~1.9.0 || ~1.10.0 || ~1.11.0 || ~1.12.0 ([#1064](https://github.com/open-feature/js-sdk-contrib/issues/1064)) ([1e8eca8](https://github.com/open-feature/js-sdk-contrib/commit/1e8eca8409e4e09196b9044a97268972ddd66c2f))
+* **deps:** update ghcr.io/open-feature/flagd-testbed docker tag to v0.5.13 ([#1068](https://github.com/open-feature/js-sdk-contrib/issues/1068)) ([75c5b10](https://github.com/open-feature/js-sdk-contrib/commit/75c5b10feec2165c6f2f176bcde011e78f9791d0))
+* **deps:** update ghcr.io/open-feature/flagd-testbed-unstable docker tag to v0.5.13 ([#1073](https://github.com/open-feature/js-sdk-contrib/issues/1073)) ([bfadf65](https://github.com/open-feature/js-sdk-contrib/commit/bfadf65eebf8002bf4761a7ae223027295cc545c))
+* **deps:** update ghcr.io/open-feature/sync-testbed docker tag to v0.5.13 ([#1074](https://github.com/open-feature/js-sdk-contrib/issues/1074)) ([194bafb](https://github.com/open-feature/js-sdk-contrib/commit/194bafbabcdea7e02001754377ba72c16d10d759))
+* **deps:** update ghcr.io/open-feature/sync-testbed-unstable docker tag to v0.5.13 ([#1075](https://github.com/open-feature/js-sdk-contrib/issues/1075)) ([3a97b36](https://github.com/open-feature/js-sdk-contrib/commit/3a97b36bf77b813effbf80d00e4a87b54e7de320))
+* removing build dependencies and using testcontainers for container spin up ([#982](https://github.com/open-feature/js-sdk-contrib/issues/982)) ([2d64331](https://github.com/open-feature/js-sdk-contrib/commit/2d6433101b76ba9ad266095fe31b58314f82a105))
+
 ## [0.13.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.0...flagd-provider-v0.13.1) (2024-07-08)
 
 
