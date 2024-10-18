@@ -12,6 +12,6 @@ services:
     ports:
       - 9090:9090
   flagd-sync-unstable:
-    image: ghcr.io/open-feature/sync-testbed-unstable:v0.5.6
+    image: ghcr.io/open-feature/sync-testbed-unstable:v0.5.13
     ports:
       - 9091:9090
