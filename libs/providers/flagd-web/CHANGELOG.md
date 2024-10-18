@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.2...flagd-web-provider-v0.7.3) (2024-10-18)
+
+
+### 🧹 Chore
+
+* removing build dependencies and using testcontainers for container spin up ([#982](https://github.com/open-feature/js-sdk-contrib/issues/982)) ([2d64331](https://github.com/open-feature/js-sdk-contrib/commit/2d6433101b76ba9ad266095fe31b58314f82a105))
+
 ## [0.7.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.1...flagd-web-provider-v0.7.2) (2024-07-08)
 
 
