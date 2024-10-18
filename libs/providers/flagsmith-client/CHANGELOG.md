@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/flagsmith-client-provider-v0.1.2...flagsmith-client-provider-v0.1.3) (2024-10-18)
+
+
+### 📚 Documentation
+
+* **flagsmith:** Show example traits and targeting key ([#989](https://github.com/open-feature/js-sdk-contrib/issues/989)) ([1585b60](https://github.com/open-feature/js-sdk-contrib/commit/1585b60672290f0170d68534f12a90d10e31899f))
+
 ## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/flagsmith-client-provider-v0.1.1...flagsmith-client-provider-v0.1.2) (2024-04-08)
 
 
