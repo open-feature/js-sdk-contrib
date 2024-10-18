@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/flagd-provider",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "scripts": {
     "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
     "current-version": "echo $npm_package_version"
