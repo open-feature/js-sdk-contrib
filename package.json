@@ -14,7 +14,7 @@
   },
   "private": true,
   "dependencies": {
-    "@bufbuild/protobuf": "^1.2.0",
+    "@bufbuild/protobuf": "^2.0.0",
     "@connectrpc/connect": "^1.4.0",
     "@connectrpc/connect-web": "^1.4.0",
     "@flipt-io/flipt": "^1.0.0",
