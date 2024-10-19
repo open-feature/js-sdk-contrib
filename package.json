@@ -85,7 +85,7 @@
     "msw": "^2.2.3",
     "nx": "16.9.1",
     "prettier": "^3.0.3",
-    "testcontainers": "10.11.0",
+    "testcontainers": "10.13.2",
     "ts-jest": "29.2.5",
     "ts-node": "10.9.2",
     "typescript": "5.5.4",
