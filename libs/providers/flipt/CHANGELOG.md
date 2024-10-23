@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/flipt-provider-v0.1.1...flipt-provider-v0.1.2) (2024-10-23)
+
+
+### 🧹 Chore
+
+* update flipt-node provider ([#1071](https://github.com/open-feature/js-sdk-contrib/issues/1071)) ([9bbd1eb](https://github.com/open-feature/js-sdk-contrib/commit/9bbd1eb3f0bdf252b157dc0d59242d17f588d6f6))
+
 ## [0.1.1](https://github.com/open-feature/js-sdk-contrib/compare/flipt-provider-v0.1.0...flipt-provider-v0.1.1) (2024-09-04)
 
 
