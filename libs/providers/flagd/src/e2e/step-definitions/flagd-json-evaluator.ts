@@ -1,7 +1,7 @@
 import { EvaluationContext, EvaluationDetails, OpenFeature, ProviderEvents } from '@openfeature/server-sdk';
 import { defineFeature, loadFeature } from 'jest-cucumber';
 import { StepsDefinitionCallbackFunction } from 'jest-cucumber/dist/src/feature-definition-creation';
-import { E2E_CLIENT_NAME } from '../constants';
+import { E2E_CLIENT_NAME } from '@openfeature/flagd-core';
 
 export function flagdJsonEvaluator() {
   // load the feature file.

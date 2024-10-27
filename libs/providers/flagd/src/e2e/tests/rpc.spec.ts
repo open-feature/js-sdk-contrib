@@ -4,13 +4,12 @@ import { FlagdProvider } from '../../lib/flagd-provider';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import {
-  E2E_CLIENT_NAME,
   FLAGD_NAME,
   GHERKIN_EVALUATION_FEATURE,
   GHERKIN_FLAGD_FEATURE,
   GHERKIN_FLAGD_JSON_EVALUATOR_FEATURE,
-  IMAGE_VERSION,
 } from '../constants';
+import { E2E_CLIENT_NAME, IMAGE_VERSION } from '@openfeature/flagd-core';
 import { flagStepDefinitions } from '../step-definitions';
 
 // register the flagd provider before the tests.
@@ -22,10 +21,7 @@ async function setup() {
     .withExposedPorts(8013)
     .start();
   containers.push(stable);
-  await OpenFeature.setProviderAndWait(
-    E2E_CLIENT_NAME,
-    new FlagdProvider({ cache: 'disabled', port: stable.getFirstMappedPort() }),
-  );
+  OpenFeature.setProvider(E2E_CLIENT_NAME, new FlagdProvider({ cache: 'disabled', port: stable.getFirstMappedPort() }));
 
   assert(
     OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name === FLAGD_NAME,

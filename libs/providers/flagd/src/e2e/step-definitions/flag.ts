@@ -8,7 +8,7 @@ import {
   ProviderEvents,
   StandardResolutionReasons,
 } from '@openfeature/server-sdk';
-import { E2E_CLIENT_NAME } from '../constants';
+import { E2E_CLIENT_NAME } from '@openfeature/flagd-core';
 
 export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then }) => {
   let flagKey: string;

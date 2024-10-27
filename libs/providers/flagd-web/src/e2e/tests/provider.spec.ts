@@ -3,8 +3,9 @@ import { OpenFeature } from '@openfeature/web-sdk';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { FlagdWebProvider } from '../../lib/flagd-web-provider';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
-import { E2E_CLIENT_NAME, FLAGD_NAME, GHERKIN_EVALUATION_FEATURE, IMAGE_VERSION } from '../constants';
+import { FLAGD_NAME, GHERKIN_EVALUATION_FEATURE } from '../constants';
 import { flagStepDefinitions } from '../step-definitions';
+import { E2E_CLIENT_NAME, IMAGE_VERSION } from '@openfeature/flagd-core';
 
 // register the flagd provider before the tests.
 async function setup() {
@@ -22,10 +23,7 @@ async function setup() {
     tls: false,
     maxRetries: -1,
   });
-  await OpenFeature.setProviderAndWait(
-    E2E_CLIENT_NAME,
-    flagdWebProvider,
-  );
+  await OpenFeature.setProviderAndWait(E2E_CLIENT_NAME, flagdWebProvider);
   assert(
     OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name === FLAGD_NAME,
     new Error(

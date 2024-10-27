@@ -8,7 +8,7 @@ import {
   ProviderEvents,
   StandardResolutionReasons,
 } from '@openfeature/web-sdk';
-import { E2E_CLIENT_NAME } from '../constants';
+import { E2E_CLIENT_NAME } from '@openfeature/flagd-core';
 
 export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then }) => {
   let flagKey: string;
@@ -286,8 +286,8 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     await new Promise((resolve) => setTimeout(resolve, 3000));
   });
 
-  then('the PROVIDER_CONFIGURATION_CHANGED handler must run', () => {
-    expect(ran).toBeTruthy();
+  then('the PROVIDER_CONFIGURATION_CHANGED handler must run', async () => {
+    expect(await ran).toBeTruthy();
   });
 
   and(/^the event details must indicate "(.*)" was altered$/, (flagName) => {

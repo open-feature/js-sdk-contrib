@@ -4,12 +4,12 @@ import { FlagdProvider } from '../../lib/flagd-provider';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import {
-  UNSTABLE_CLIENT_NAME,
-  UNAVAILABLE_CLIENT_NAME,
   FLAGD_NAME,
   GHERKIN_FLAGD_RECONNECT_FEATURE,
-  IMAGE_VERSION,
+  UNAVAILABLE_CLIENT_NAME,
+  UNSTABLE_CLIENT_NAME,
 } from '../constants';
+import { IMAGE_VERSION } from '@openfeature/flagd-core';
 import { reconnectStepDefinitions } from '../step-definitions';
 
 // register the flagd provider before the tests.
@@ -21,7 +21,7 @@ async function setup() {
     .withExposedPorts(9090)
     .start();
   containers.push(unstable);
-  OpenFeature.setProvider(
+  await OpenFeature.setProviderAndWait(
     UNSTABLE_CLIENT_NAME,
     new FlagdProvider({ resolverType: 'in-process', host: 'localhost', port: unstable.getFirstMappedPort() }),
   );
@@ -52,6 +52,7 @@ async function setup() {
 }
 
 jest.setTimeout(30000);
+
 describe('in process', () => {
   let containers: StartedTestContainer[] = [];
   beforeAll(async () => {
