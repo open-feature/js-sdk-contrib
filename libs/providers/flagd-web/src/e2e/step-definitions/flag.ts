@@ -277,7 +277,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
         //if (details?.flagsChanged?.length) {
         //  flagsChanged = details?.flagsChanged;
 
-          resolve(true);
+        resolve(true);
         //}
       });
     });
