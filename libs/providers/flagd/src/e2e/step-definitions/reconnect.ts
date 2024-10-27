@@ -31,7 +31,6 @@ export const reconnectStepDefinitions: StepDefinitions = ({ given, and, when, th
     client.addHandler(ProviderEvents.Error, () => {
       errorRunCount++;
     });
-
   });
   then('the PROVIDER_READY handler must run when the provider connects', async () => {
     // should already be at 1 from `beforeAll`
