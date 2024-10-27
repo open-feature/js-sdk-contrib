@@ -22,7 +22,10 @@ async function setup() {
     .withExposedPorts(8013)
     .start();
   containers.push(stable);
-  OpenFeature.setProvider(E2E_CLIENT_NAME, new FlagdProvider({ cache: 'disabled', port: stable.getFirstMappedPort() }));
+  await OpenFeature.setProviderAndWait(
+    E2E_CLIENT_NAME,
+    new FlagdProvider({ cache: 'disabled', port: stable.getFirstMappedPort() }),
+  );
 
   assert(
     OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name === FLAGD_NAME,

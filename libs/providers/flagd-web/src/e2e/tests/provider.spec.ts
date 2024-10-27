@@ -1,14 +1,10 @@
 import assert from 'assert';
-import { Client, OpenFeature } from '@openfeature/web-sdk';
+import { OpenFeature } from '@openfeature/web-sdk';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { FlagdWebProvider } from '../../lib/flagd-web-provider';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
-import {
-  E2E_CLIENT_NAME,
-  flagStepDefinitions,
-  GHERKIN_EVALUATION_FEATURE,
-  IMAGE_VERSION,
-} from '@openfeature/flagd-core';
+import { E2E_CLIENT_NAME, FLAGD_NAME, GHERKIN_EVALUATION_FEATURE, IMAGE_VERSION } from '../constants';
+import { flagStepDefinitions } from '../step-definitions';
 
 // register the flagd provider before the tests.
 async function setup() {
@@ -20,17 +16,18 @@ async function setup() {
     .withExposedPorts(8013)
     .start();
   containers.push(stable);
-  OpenFeature.setProvider(
+  const flagdWebProvider = new FlagdWebProvider({
+    host: stable.getHost(),
+    port: stable.getMappedPort(8013),
+    tls: false,
+    maxRetries: -1,
+  });
+  await OpenFeature.setProviderAndWait(
     E2E_CLIENT_NAME,
-    new FlagdWebProvider({
-      host: stable.getHost(),
-      port: stable.getMappedPort(8013),
-      tls: false,
-      maxRetries: -1,
-    }),
+    flagdWebProvider,
   );
   assert(
-    OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name === E2E_CLIENT_NAME,
+    OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name === FLAGD_NAME,
     new Error(
       `Expected ${E2E_CLIENT_NAME} provider to be configured, instead got: ${OpenFeature.providerMetadata.name}`,
     ),

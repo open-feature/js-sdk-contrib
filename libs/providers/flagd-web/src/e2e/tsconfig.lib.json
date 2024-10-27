@@ -1,12 +1,10 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2015", "DOM"],
     "outDir": "../../../dist/out-tsc",
     "declaration": true,
     "types": ["jest"],
     "allowSyntheticDefaultImports": true,
-    "allowJs" :true,
-    "resolveJsonModule": true
   }
 }

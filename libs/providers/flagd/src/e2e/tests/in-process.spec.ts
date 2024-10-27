@@ -23,7 +23,7 @@ async function setup() {
     .withExposedPorts(9090)
     .start();
   containers.push(stable);
-  OpenFeature.setProvider(
+  await OpenFeature.setProviderAndWait(
     E2E_CLIENT_NAME,
     new FlagdProvider({ resolverType: 'in-process', host: 'localhost', port: stable.getFirstMappedPort() }),
   );
