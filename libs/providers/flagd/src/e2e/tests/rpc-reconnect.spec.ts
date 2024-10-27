@@ -4,13 +4,13 @@ import { FlagdProvider } from '../../lib/flagd-provider';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import {
-  FLAGD_NAME,
-  IMAGE_VERSION,
-  UNAVAILABLE_CLIENT_NAME,
   UNSTABLE_CLIENT_NAME,
-  reconnectStepDefinitions,
+  UNAVAILABLE_CLIENT_NAME,
+  FLAGD_NAME,
   GHERKIN_FLAGD_RECONNECT_FEATURE,
-} from '@openfeature/flagd-core';
+  IMAGE_VERSION,
+} from '../constants';
+import { reconnectStepDefinitions } from '../step-definitions';
 
 // register the flagd provider before the tests.
 async function setup() {

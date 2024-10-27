@@ -6,12 +6,12 @@ import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import {
   E2E_CLIENT_NAME,
   FLAGD_NAME,
-  IMAGE_VERSION,
-  flagStepDefinitions,
-  GHERKIN_FLAGD_FEATURE,
   GHERKIN_EVALUATION_FEATURE,
+  GHERKIN_FLAGD_FEATURE,
   GHERKIN_FLAGD_JSON_EVALUATOR_FEATURE,
-} from '@openfeature/flagd-core';
+  IMAGE_VERSION,
+} from '../constants';
+import { flagStepDefinitions } from '../step-definitions';
 
 // register the flagd provider before the tests.
 async function setup() {
