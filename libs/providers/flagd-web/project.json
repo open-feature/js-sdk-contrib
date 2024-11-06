@@ -62,7 +62,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "npx jest --detectOpenHandles --runInBand"
+          "npx jest"
         ],
         "cwd": "libs/providers/flagd-web/src/e2e",
         "parallel": false
