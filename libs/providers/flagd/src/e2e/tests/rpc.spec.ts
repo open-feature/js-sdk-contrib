@@ -36,7 +36,7 @@ async function setup() {
   return containers;
 }
 
-describe('in process', () => {
+describe('rpc', () => {
   let containers: StartedTestContainer[] = [];
   beforeAll(async () => {
     containers = await setup();
