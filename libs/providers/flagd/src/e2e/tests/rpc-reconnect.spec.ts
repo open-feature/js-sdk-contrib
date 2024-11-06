@@ -48,7 +48,7 @@ async function setup() {
 }
 
 jest.setTimeout(30000);
-describe('in process', () => {
+describe('rpc', () => {
   let containers: StartedTestContainer[] = [];
   beforeAll(async () => {
     containers = await setup();
