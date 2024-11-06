@@ -255,12 +255,10 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     },
   );
 
-  let ran: Promise<boolean>;
+  let ran: boolean;
   when('a PROVIDER_READY handler is added', () => {
-    ran = new Promise<boolean>((resolve) => {
-      client.addHandler(ProviderEvents.Ready, async () => {
-        resolve(true);
-      });
+    client.addHandler(ProviderEvents.Ready, async () => {
+      ran = true;
     });
   });
   then('the PROVIDER_READY handler must run', () => {
@@ -268,18 +266,18 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
   });
 
   when('a PROVIDER_CONFIGURATION_CHANGED handler is added', () => {
-    ran = new Promise<boolean>((resolve) => {
-      client.addHandler(ProviderEvents.ConfigurationChanged, async (details) => {
-        // file writes are not atomic, so we get a few events in quick succession from the testbed
-        // some will not contain changes, this tolerates that; at least 1 should have our change
+    client.addHandler(ProviderEvents.ConfigurationChanged, async (details) => {
+      // file writes are not atomic, so we get a few events in quick succession from the testbed
+      // some will not contain changes, this tolerates that; at least 1 should have our change
 
-        // All Flags are changed we do not provide a list of changed flags, that is the nature of the web sdk
-        //if (details?.flagsChanged?.length) {
-        //  flagsChanged = details?.flagsChanged;
+      // TODO: enable this for testing of issue
+      //if (details?.flagsChanged?.length) {
+      //  flagsChanged = details?.flagsChanged;
+      //  ran = true;
+      //}
 
-        resolve(true);
-        //}
-      });
+      // TODO: remove this for testing of issue
+      ran = true;
     });
   });
 
@@ -289,11 +287,11 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
   });
 
   then('the PROVIDER_CONFIGURATION_CHANGED handler must run', async () => {
-    expect(await ran).toBeTruthy();
+    expect(ran).toBeTruthy();
   });
 
   and(/^the event details must indicate "(.*)" was altered$/, (flagName) => {
-    // All Flags are changed we do not provide a list of changed flags, that is the nature of the web sdk
+    // TODO: enable this for testing of issue
     //expect(flagsChanged).toContain(flagName);
   });
 

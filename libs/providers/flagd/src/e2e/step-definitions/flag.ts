@@ -284,12 +284,10 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     },
   );
 
-  let ran: Promise<boolean>;
+  let ran: boolean;
   when('a PROVIDER_READY handler is added', () => {
-    ran = new Promise<boolean>((resolve) => {
-      client.addHandler(ProviderEvents.Ready, async () => {
-        resolve(true);
-      });
+    client.addHandler(ProviderEvents.Ready, async () => {
+      ran = true;
     });
   });
   then('the PROVIDER_READY handler must run', () => {
@@ -297,16 +295,14 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
   });
 
   when('a PROVIDER_CONFIGURATION_CHANGED handler is added', () => {
-    ran = new Promise<boolean>((resolve) => {
-      client.addHandler(ProviderEvents.ConfigurationChanged, async (details) => {
-        // file writes are not atomic, so we get a few events in quick succession from the testbed
-        // some will not contain changes, this tolerates that; at least 1 should have our change
-        if (details?.flagsChanged?.length) {
-          flagsChanged = details?.flagsChanged;
+    client.addHandler(ProviderEvents.ConfigurationChanged, async (details) => {
+      // file writes are not atomic, so we get a few events in quick succession from the testbed
+      // some will not contain changes, this tolerates that; at least 1 should have our change
+      if (details?.flagsChanged?.length) {
+        flagsChanged = details?.flagsChanged;
 
-          resolve(true);
-        }
-      });
+        ran = true;
+      }
     });
   });
 
