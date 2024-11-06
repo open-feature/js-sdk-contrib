@@ -1,39 +1,27 @@
 import assert from 'assert';
 import { OpenFeature } from '@openfeature/server-sdk';
 import { FlagdProvider } from '../../lib/flagd-provider';
+import { GenericContainer, StartedTestContainer } from 'testcontainers';
+import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import {
-  E2E_CLIENT_NAME,
   FLAGD_NAME,
-  UNSTABLE_CLIENT_NAME,
+  GHERKIN_FLAGD_RECONNECT_FEATURE,
   UNAVAILABLE_CLIENT_NAME,
-  IMAGE_VERSION,
+  UNSTABLE_CLIENT_NAME,
 } from '../constants';
-import { evaluation } from '../step-definitions/evaluation';
-import { GenericContainer, StartedTestContainer, TestContainer } from 'testcontainers';
-import { flagd } from '../step-definitions/flagd';
-import { flagdJsonEvaluator } from '../step-definitions/flagd-json-evaluator';
-import { flagdRecconnectUnstable } from '../step-definitions/flagd-reconnect.unstable';
+import { IMAGE_VERSION } from '@openfeature/flagd-core';
+import { reconnectStepDefinitions } from '../step-definitions';
 
 // register the flagd provider before the tests.
 async function setup() {
   const containers: StartedTestContainer[] = [];
 
   console.log('Setting flagd provider...');
-
-  const stable = await new GenericContainer(`ghcr.io/open-feature/sync-testbed:${IMAGE_VERSION}`)
-    .withExposedPorts(9090)
-    .start();
-  containers.push(stable);
-  OpenFeature.setProvider(
-    E2E_CLIENT_NAME,
-    new FlagdProvider({ resolverType: 'in-process', host: 'localhost', port: stable.getFirstMappedPort() }),
-  );
-
   const unstable = await new GenericContainer(`ghcr.io/open-feature/sync-testbed-unstable:${IMAGE_VERSION}`)
     .withExposedPorts(9090)
     .start();
   containers.push(unstable);
-  OpenFeature.setProvider(
+  await OpenFeature.setProviderAndWait(
     UNSTABLE_CLIENT_NAME,
     new FlagdProvider({ resolverType: 'in-process', host: 'localhost', port: unstable.getFirstMappedPort() }),
   );
@@ -41,14 +29,6 @@ async function setup() {
   OpenFeature.setProvider(
     UNAVAILABLE_CLIENT_NAME,
     new FlagdProvider({ resolverType: 'in-process', host: 'localhost', port: 9092 }),
-  );
-  assert(
-    OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name === FLAGD_NAME,
-    new Error(
-      `Expected ${FLAGD_NAME} provider to be configured, instead got: ${
-        OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name
-      }`,
-    ),
   );
   assert(
     OpenFeature.getProviderMetadata(UNSTABLE_CLIENT_NAME).name === FLAGD_NAME,
@@ -66,9 +46,12 @@ async function setup() {
       }`,
     ),
   );
+
   console.log('flagd provider configured!');
   return containers;
 }
+
+jest.setTimeout(30000);
 
 describe('in process', () => {
   let containers: StartedTestContainer[] = [];
@@ -78,11 +61,9 @@ describe('in process', () => {
   afterAll(async () => {
     await OpenFeature.close();
     for (const container of containers) {
-      container.stop();
+      await container.stop();
     }
   });
-  evaluation();
-  flagd();
-  flagdJsonEvaluator();
-  flagdRecconnectUnstable();
+  const features = [loadFeature(GHERKIN_FLAGD_RECONNECT_FEATURE)];
+  autoBindSteps(features, [reconnectStepDefinitions]);
 });

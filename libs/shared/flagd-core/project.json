@@ -14,6 +14,17 @@
         "build"
       ]
     },
+    "pullTestHarness": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "git submodule update --init spec",
+          "git submodule update --init test-harness",
+        ],
+        "cwd": "libs/shared/flagd-core",
+        "parallel": false
+      }
+    },
     "lint": {
       "executor": "@nx/linter:eslint",
       "outputs": [
@@ -45,6 +56,9 @@
       "executor": "@nx/rollup:rollup",
       "outputs": [
         "{options.outputPath}"
+      ],
+      "dependsOn": [
+        "pullTestHarness"
       ],
       "options": {
         "project": "libs/shared/flagd-core/package.json",

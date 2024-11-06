@@ -1,3 +1,5 @@
+import { getGherkinTestPath } from '@openfeature/flagd-core';
+
 export const FLAGD_NAME = 'flagd-web';
 
-export const IMAGE_VERSION = 'v0.5.6';
+export const GHERKIN_EVALUATION_FEATURE = getGherkinTestPath('flagd.feature');
