@@ -143,6 +143,13 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
+    },
+    "libs/providers/unleash-web": {
+      "release-type": "node",
+      "prerelease": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "versioning": "default"
     }
   },
   "changelog-sections": [
