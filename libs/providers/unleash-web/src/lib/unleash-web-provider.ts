@@ -20,8 +20,6 @@ export class UnleashWebProvider implements Provider {
 
   readonly runsOn = 'client';
 
-  hooks = [];
-
   constructor(options: UnleashOptions, logger?: Logger) {
     this._options = options;
     this._logger = logger;
@@ -64,7 +62,6 @@ export class UnleashWebProvider implements Provider {
   }
 
   async onContextChange(_oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
-    this._logger?.info("onContextChange = " + JSON.stringify(newContext));
     let unleashContext = new Map();
     let properties = new Map();
     Object.keys(newContext).forEach((key) => {
@@ -93,14 +90,11 @@ export class UnleashWebProvider implements Provider {
     this._client?.stop();
   }
 
-  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
+  resolveBooleanEvaluation(flagKey: string): ResolutionDetails<boolean> {
     const resp = this._client?.isEnabled(flagKey);
-    this._logger?.debug("resp = " + resp);
     if (typeof resp === 'undefined') {
       throw new FlagNotFoundError();
     }
-    var message = resp ? ' is enabled' : ' is disabled';
-    this._logger?.debug(flagKey + message);
     return {
       value: resp
     }
@@ -111,7 +105,9 @@ export class UnleashWebProvider implements Provider {
   }
 
   resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number> {
-    return this.evaluate(flagKey, defaultValue);
+    let resolutionDetails = this.evaluate(flagKey, defaultValue);
+    resolutionDetails.value = Number(resolutionDetails.value);
+    return resolutionDetails;
   }
 
   resolveObjectEvaluation<U extends JsonValue>(flagKey: string, defaultValue: U): ResolutionDetails<U> {
@@ -120,22 +116,23 @@ export class UnleashWebProvider implements Provider {
 
   private evaluate<T>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
     const evaluatedVariant = this._client?.getVariant(flagKey);
-    let retValue;
+    let value;
     let retVariant
     this._logger?.debug("evaluatedVariant = " + JSON.stringify(evaluatedVariant));
     if (typeof evaluatedVariant === 'undefined') {
       throw new FlagNotFoundError();
     }
+
     if (evaluatedVariant.name === 'disabled') {
-      retValue = defaultValue as T;
+      value = defaultValue as T;
     }
     else {
       retVariant = evaluatedVariant.name;
-      retValue = evaluatedVariant.payload?.value;
+      value = evaluatedVariant.payload?.value;
     }
     return {
       variant: retVariant,
-      value: retValue as T,
+      value: value as T,
     };
   }
 }
