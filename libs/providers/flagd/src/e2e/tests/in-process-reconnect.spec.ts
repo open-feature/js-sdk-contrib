@@ -17,8 +17,8 @@ async function setup() {
   const containers: StartedTestContainer[] = [];
 
   console.log('Setting flagd provider...');
-  const unstable = await new GenericContainer(`ghcr.io/open-feature/sync-testbed-unstable:${IMAGE_VERSION}`)
-    .withExposedPorts(9090)
+  const unstable = await new GenericContainer(`ghcr.io/open-feature/flagd-testbed-unstable:${IMAGE_VERSION}`)
+    .withExposedPorts(8015)
     .start();
   containers.push(unstable);
   await OpenFeature.setProviderAndWait(

@@ -18,8 +18,8 @@ async function setup() {
 
   console.log('Setting flagd provider...');
 
-  const stable = await new GenericContainer(`ghcr.io/open-feature/sync-testbed:${IMAGE_VERSION}`)
-    .withExposedPorts(9090)
+  const stable = await new GenericContainer(`ghcr.io/open-feature/flagd-testbed:${IMAGE_VERSION}`)
+    .withExposedPorts(8015)
     .start();
   containers.push(stable);
   OpenFeature.setProvider(
