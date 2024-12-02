@@ -1,6 +1,25 @@
-import { EvaluationContext, Provider, Logger, JsonValue, FlagNotFoundError, OpenFeatureEventEmitter, ProviderEvents, ResolutionDetails, ProviderFatalError, StandardResolutionReasons } from '@openfeature/web-sdk';
-import { UnleashClient, IConfig, IContext, IMutableContext } from 'unleash-proxy-client';
-import { UnleashOptions, UnleashContextOptions } from './options';
+import {
+  EvaluationContext,
+  Provider,
+  Logger,
+  JsonValue,
+  FlagNotFoundError,
+  OpenFeatureEventEmitter,
+  ProviderEvents,
+  ResolutionDetails,
+  ProviderFatalError,
+  StandardResolutionReasons
+} from '@openfeature/web-sdk';
+import {
+  UnleashClient,
+  IConfig,
+  IContext,
+  IMutableContext
+} from 'unleash-proxy-client';
+import {
+  UnleashOptions,
+  UnleashContextOptions
+} from './options';
 
 export class UnleashWebProvider implements Provider {
   metadata = {
@@ -28,6 +47,7 @@ export class UnleashWebProvider implements Provider {
       url: options.url,
       clientKey: options.clientKey,
       appName: options.appName,
+      refreshInterval: options.refreshInterval,
     };
     this._client = new UnleashClient(config);
   }
@@ -40,23 +60,35 @@ export class UnleashWebProvider implements Provider {
   private async initializeClient() {
     try {
       this.registerEventListeners();
-      this._client?.start();
-      return new Promise<void>((resolve) => {
-            this._client?.on('ready', () => {
-              this._logger?.info('Unleash ready event received');
-              resolve();
-            });
-      });
+      await this._client?.start();
     } catch (e) {
       throw new ProviderFatalError(getErrorMessage(e));
     }
   }
 
   private registerEventListeners() {
+    this._client?.on('ready', () => {
+      this._logger?.info('Unleash ready event received');
+      this.events.emit(ProviderEvents.Ready, {
+        message: 'Ready'
+      });
+    });
     this._client?.on('update', () => {
       this._logger?.info('Unleash update event received');
       this.events.emit(ProviderEvents.ConfigurationChanged, {
         message: 'Flags changed'
+      });
+    });
+    this._client?.on('error', () => {
+      this._logger?.info('Unleash error event received');
+      this.events.emit(ProviderEvents.Error, {
+        message: 'Error'
+      });
+    });
+    this._client?.on('recovered', () => {
+      this._logger?.info('Unleash recovered event received');
+      this.events.emit(ProviderEvents.Ready, {
+        message: 'Recovered'
       });
     });
   }
@@ -65,8 +97,7 @@ export class UnleashWebProvider implements Provider {
     let unleashContext = new Map();
     let properties = new Map();
     Object.keys(newContext).forEach((key) => {
-      this._logger?.info(key + " = " + newContext[key]);
-      switch(key) {
+      switch (key) {
          case "appName":
          case "userId":
          case "environment":
@@ -117,7 +148,7 @@ export class UnleashWebProvider implements Provider {
   private evaluate<T>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
     const evaluatedVariant = this._client?.getVariant(flagKey);
     let value;
-    let retVariant
+    let variant
     this._logger?.debug("evaluatedVariant = " + JSON.stringify(evaluatedVariant));
     if (typeof evaluatedVariant === 'undefined') {
       throw new FlagNotFoundError();
@@ -127,11 +158,11 @@ export class UnleashWebProvider implements Provider {
       value = defaultValue as T;
     }
     else {
-      retVariant = evaluatedVariant.name;
+      variant = evaluatedVariant.name;
       value = evaluatedVariant.payload?.value;
     }
     return {
-      variant: retVariant,
+      variant: variant,
       value: value as T,
     };
   }
