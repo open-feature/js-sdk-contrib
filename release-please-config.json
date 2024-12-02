@@ -116,7 +116,6 @@
       "versioning": "default"
     },
     "libs/providers/flipt-web": {
-      "release-as": "0.1.0",
       "release-type": "node",
       "prerelease": true,
       "bump-minor-pre-major": true,
