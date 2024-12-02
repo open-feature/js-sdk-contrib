@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/flipt-web-provider",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "dependencies": {
     "@flipt-io/flipt-client-browser": "^0.3.1",
     "tslib": "^2.3.0"
