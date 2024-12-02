@@ -1,12 +1,12 @@
 import { GoFeatureFlagWebProvider } from './go-feature-flag-web-provider';
 import {
+  ErrorCode,
   EvaluationContext,
+  EvaluationDetails,
+  JsonValue,
   OpenFeature,
   ProviderEvents,
   StandardResolutionReasons,
-  ErrorCode,
-  EvaluationDetails,
-  JsonValue,
 } from '@openfeature/web-sdk';
 import WS from 'jest-websocket-mock';
 import TestLogger from './test-logger';
@@ -17,6 +17,7 @@ describe('GoFeatureFlagWebProvider', () => {
   let websocketMockServer: WS;
   const endpoint = 'http://localhost:1031/';
   const allFlagsEndpoint = `${endpoint}v1/allflags`;
+  const dataCollectorEndpoint = `${endpoint}v1/data/collector`;
   const websocketEndpoint = 'ws://localhost:1031/ws/v1/flag/change';
   const defaultAllFlagResponse = {
     flags: {
@@ -95,6 +96,7 @@ describe('GoFeatureFlagWebProvider', () => {
     await jest.resetAllMocks();
     websocketMockServer = new WS(websocketEndpoint, { jsonProtocol: true });
     fetchMock.post(allFlagsEndpoint, defaultAllFlagResponse);
+    fetchMock.post(dataCollectorEndpoint, 200);
     defaultProvider = new GoFeatureFlagWebProvider(
       {
         endpoint: endpoint,
@@ -128,6 +130,7 @@ describe('GoFeatureFlagWebProvider', () => {
         endpoint: endpoint,
         apiTimeout: 1000,
         maxRetries: 1,
+        disableDataCollection: true,
       },
       logger,
     );
@@ -449,6 +452,158 @@ describe('GoFeatureFlagWebProvider', () => {
       expect(errorHandler).not.toBeCalled();
       expect(configurationChangedHandler).not.toBeCalled();
       expect(staleHandler).toBeCalled();
+    });
+  });
+
+  describe('data collector testing', () => {
+    it('should call the data collector when closing Open Feature', async () => {
+      const clientName = expect.getState().currentTestName ?? 'test-provider';
+      await OpenFeature.setContext(defaultContext);
+      const p = new GoFeatureFlagWebProvider(
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          dataFlushInterval: 10000,
+          apiKey: 'toto',
+        },
+        logger,
+      );
+
+      OpenFeature.setProvider(clientName, p);
+      const client = OpenFeature.getClient(clientName);
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      client.getBooleanDetails('bool_flag', false);
+      client.getBooleanDetails('bool_flag', false);
+
+      await OpenFeature.close();
+
+      expect(fetchMock.calls(dataCollectorEndpoint).length).toBe(1);
+      expect(fetchMock.lastOptions(dataCollectorEndpoint)?.headers).toEqual({
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: 'Bearer toto',
+      });
+    });
+
+    it('should call the data collector when waiting more than the dataFlushInterval', async () => {
+      const clientName = expect.getState().currentTestName ?? 'test-provider';
+      await OpenFeature.setContext(defaultContext);
+      const p = new GoFeatureFlagWebProvider(
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          dataFlushInterval: 200,
+        },
+        logger,
+      );
+
+      OpenFeature.setProvider(clientName, p);
+      const client = OpenFeature.getClient(clientName);
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      client.getBooleanDetails('bool_flag', false);
+      client.getBooleanDetails('bool_flag', false);
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      expect(fetchMock.calls(dataCollectorEndpoint).length).toBe(1);
+      expect(fetchMock.lastOptions(dataCollectorEndpoint)?.headers).toEqual({
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      });
+      await OpenFeature.close();
+    });
+    it('should call the data collector multiple time while waiting dataFlushInterval time', async () => {
+      const clientName = expect.getState().currentTestName ?? 'test-provider';
+      await OpenFeature.setContext(defaultContext);
+      const p = new GoFeatureFlagWebProvider(
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          dataFlushInterval: 200,
+        },
+        logger,
+      );
+
+      OpenFeature.setProvider(clientName, p);
+      const client = OpenFeature.getClient(clientName);
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      client.getBooleanDetails('bool_flag', false);
+      client.getBooleanDetails('bool_flag', false);
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      client.getBooleanDetails('bool_flag', false);
+      client.getBooleanDetails('bool_flag', false);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      expect(fetchMock.calls(dataCollectorEndpoint).length).toBe(2);
+      await OpenFeature.close();
+    });
+
+    it('should not call the data collector before the dataFlushInterval', async () => {
+      const clientName = expect.getState().currentTestName ?? 'test-provider';
+      await OpenFeature.setContext(defaultContext);
+      const p = new GoFeatureFlagWebProvider(
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          dataFlushInterval: 200,
+        },
+        logger,
+      );
+
+      OpenFeature.setProvider(clientName, p);
+      const client = OpenFeature.getClient(clientName);
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      client.getBooleanDetails('bool_flag', false);
+      client.getBooleanDetails('bool_flag', false);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(fetchMock.calls(dataCollectorEndpoint).length).toBe(0);
+      await OpenFeature.close();
+    });
+
+    it('should have a log when data collector is not available', async () => {
+      const clientName = expect.getState().currentTestName ?? 'test-provider';
+      fetchMock.post(dataCollectorEndpoint, 500, { overwriteRoutes: true });
+      OpenFeature.setContext(defaultContext);
+      const p = new GoFeatureFlagWebProvider(
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          dataFlushInterval: 200,
+        },
+        logger,
+      );
+
+      OpenFeature.setProvider(clientName, p);
+      const client = OpenFeature.getClient(clientName);
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      client.getBooleanDetails('bool_flag', false);
+      client.getBooleanDetails('bool_flag', false);
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      fetchMock.post(dataCollectorEndpoint, 500, { overwriteRoutes: true });
+
+      client.getBooleanDetails('bool_flag', false);
+      client.getBooleanDetails('bool_flag', false);
+      fetchMock.post(dataCollectorEndpoint, 200, { overwriteRoutes: true });
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      const lastBody = fetchMock.lastOptions(dataCollectorEndpoint)?.body;
+      const parsedBody = JSON.parse(lastBody as never);
+      expect(parsedBody['events'].length).toBe(4);
+      await OpenFeature.close();
     });
   });
 });

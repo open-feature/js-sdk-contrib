@@ -2,6 +2,7 @@ import {
   EvaluationContext,
   FlagNotFoundError,
   FlagValue,
+  Hook,
   Logger,
   OpenFeature,
   OpenFeatureEventEmitter,
@@ -20,16 +21,17 @@ import {
   GOFeatureFlagWebsocketResponse,
 } from './model';
 import { transformContext } from './context-transformer';
-import { FetchError } from './fetch-error';
+import { FetchError } from './errors/fetch-error';
+import { GoFeatureFlagDataCollectorHook } from './data-collector-hook';
 
 export class GoFeatureFlagWebProvider implements Provider {
-  private readonly _websocketPath = 'ws/v1/flag/change';
-
   metadata = {
     name: GoFeatureFlagWebProvider.name,
   };
   events = new OpenFeatureEventEmitter();
-
+  // hooks is the list of hooks that are used by the provider
+  hooks?: Hook[];
+  private readonly _websocketPath = 'ws/v1/flag/change';
   // logger is the Open Feature logger to use
   private _logger?: Logger;
   // endpoint of your go-feature-flag relay proxy instance
@@ -38,19 +40,19 @@ export class GoFeatureFlagWebProvider implements Provider {
   private readonly _apiTimeout: number;
   // apiKey is the key used to identify your request in GO Feature Flag
   private readonly _apiKey: string | undefined;
-
   // initial delay in millisecond to wait before retrying to connect
   private readonly _retryInitialDelay;
   // multiplier of _retryInitialDelay after each failure
   private readonly _retryDelayMultiplier;
   // maximum number of retries
   private readonly _maxRetries;
-  // status of the provider
-  private _status: ProviderStatus = ProviderStatus.NOT_READY;
   // _websocket is the reference to the websocket connection
   private _websocket?: WebSocket;
   // _flags is the in memory representation of all the flags.
   private _flags: { [key: string]: ResolutionDetails<FlagValue> } = {};
+  private readonly _dataCollectorHook: GoFeatureFlagDataCollectorHook;
+  // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
+  private readonly _disableDataCollection: boolean;
 
   constructor(options: GoFeatureFlagWebProviderOptions, logger?: Logger) {
     this._logger = logger;
@@ -60,13 +62,22 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._retryDelayMultiplier = options.retryDelayMultiplier || 2;
     this._maxRetries = options.maxRetries || 10;
     this._apiKey = options.apiKey;
+    this._disableDataCollection = options.disableDataCollection || false;
+    this._dataCollectorHook = new GoFeatureFlagDataCollectorHook(options, logger);
   }
+
+  // status of the provider
+  private _status: ProviderStatus = ProviderStatus.NOT_READY;
 
   get status(): ProviderStatus {
     return this._status;
   }
 
   async initialize(context: EvaluationContext): Promise<void> {
+    if (!this._disableDataCollection && this._dataCollectorHook) {
+      this.hooks = [this._dataCollectorHook];
+      this._dataCollectorHook.init();
+    }
     return Promise.all([this.fetchAll(context), this.connectWebsocket()])
       .then(() => {
         this._status = ProviderStatus.READY;
@@ -144,6 +155,37 @@ export class GoFeatureFlagWebProvider implements Provider {
     });
   }
 
+  async onClose(): Promise<void> {
+    if (!this._disableDataCollection && this._dataCollectorHook) {
+      await this._dataCollectorHook?.close();
+    }
+    this._websocket?.close(1000, 'Closing GO Feature Flag provider');
+    return Promise.resolve();
+  }
+
+  async onContextChange(_: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+    this._logger?.debug(`${GoFeatureFlagWebProvider.name}: new context provided: ${newContext}`);
+    this.events.emit(ProviderEvents.Stale, { message: 'context has changed' });
+    await this.retryFetchAll(newContext);
+    this.events.emit(ProviderEvents.Ready, { message: '' });
+  }
+
+  resolveNumberEvaluation(flagKey: string): ResolutionDetails<number> {
+    return this.evaluate(flagKey, 'number');
+  }
+
+  resolveObjectEvaluation<T extends FlagValue>(flagKey: string): ResolutionDetails<T> {
+    return this.evaluate(flagKey, 'object');
+  }
+
+  resolveStringEvaluation(flagKey: string): ResolutionDetails<string> {
+    return this.evaluate(flagKey, 'string');
+  }
+
+  resolveBooleanEvaluation(flagKey: string): ResolutionDetails<boolean> {
+    return this.evaluate(flagKey, 'boolean');
+  }
+
   /**
    * extract flag names from the websocket answer
    */
@@ -184,34 +226,6 @@ export class GoFeatureFlagWebProvider implements Provider {
     this.events.emit(ProviderEvents.Stale, {
       message: 'impossible to get status from GO Feature Flag (websocket connection stopped)',
     });
-  }
-
-  onClose(): Promise<void> {
-    this._websocket?.close(1000, 'Closing GO Feature Flag provider');
-    return Promise.resolve();
-  }
-
-  async onContextChange(_: EvaluationContext, newContext: EvaluationContext): Promise<void> {
-    this._logger?.debug(`${GoFeatureFlagWebProvider.name}: new context provided: ${newContext}`);
-    this.events.emit(ProviderEvents.Stale, { message: 'context has changed' });
-    await this.retryFetchAll(newContext);
-    this.events.emit(ProviderEvents.Ready, { message: '' });
-  }
-
-  resolveNumberEvaluation(flagKey: string): ResolutionDetails<number> {
-    return this.evaluate(flagKey, 'number');
-  }
-
-  resolveObjectEvaluation<T extends FlagValue>(flagKey: string): ResolutionDetails<T> {
-    return this.evaluate(flagKey, 'object');
-  }
-
-  resolveStringEvaluation(flagKey: string): ResolutionDetails<string> {
-    return this.evaluate(flagKey, 'string');
-  }
-
-  resolveBooleanEvaluation(flagKey: string): ResolutionDetails<boolean> {
-    return this.evaluate(flagKey, 'boolean');
   }
 
   private evaluate<T extends FlagValue>(flagKey: string, type: string): ResolutionDetails<T> {
