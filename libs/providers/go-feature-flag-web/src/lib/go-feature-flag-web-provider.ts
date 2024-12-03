@@ -8,7 +8,6 @@ import {
   OpenFeatureEventEmitter,
   Provider,
   ProviderEvents,
-  ProviderStatus,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
@@ -66,13 +65,6 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._dataCollectorHook = new GoFeatureFlagDataCollectorHook(options, logger);
   }
 
-  // status of the provider
-  private _status: ProviderStatus = ProviderStatus.NOT_READY;
-
-  get status(): ProviderStatus {
-    return this._status;
-  }
-
   async initialize(context: EvaluationContext): Promise<void> {
     if (!this._disableDataCollection && this._dataCollectorHook) {
       this.hooks = [this._dataCollectorHook];
@@ -80,14 +72,12 @@ export class GoFeatureFlagWebProvider implements Provider {
     }
     return Promise.all([this.fetchAll(context), this.connectWebsocket()])
       .then(() => {
-        this._status = ProviderStatus.READY;
         this._logger?.debug(`${GoFeatureFlagWebProvider.name}: go-feature-flag provider initialized`);
       })
       .catch((error) => {
         this._logger?.error(
           `${GoFeatureFlagWebProvider.name}: initialization failed, provider is on error, we will try to reconnect: ${error}`,
         );
-        this._status = ProviderStatus.ERROR;
         this.handleFetchErrors(error);
 
         // The initialization of the provider is in a failing state, we unblock the initialize method,
@@ -254,10 +244,8 @@ export class GoFeatureFlagWebProvider implements Provider {
       attempt++;
       try {
         await this.fetchAll(ctx, flagsChanged);
-        this._status = ProviderStatus.READY;
         return;
       } catch (err) {
-        this._status = ProviderStatus.ERROR;
         this.handleFetchErrors(err);
         await new Promise((resolve) => setTimeout(resolve, delay));
         delay *= this._retryDelayMultiplier;
