@@ -25,7 +25,7 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
   constructor(options: GoFeatureFlagWebProviderOptions, logger?: Logger) {
     this.dataFlushInterval = options.dataFlushInterval || 1000 * 60;
     this.logger = logger;
-    this.goffApiController = new GoffApiController(options, logger);
+    this.goffApiController = new GoffApiController(options);
   }
 
   init() {

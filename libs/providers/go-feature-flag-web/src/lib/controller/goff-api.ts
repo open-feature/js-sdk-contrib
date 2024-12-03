@@ -1,6 +1,5 @@
 import { DataCollectorRequest, FeatureEvent, GoFeatureFlagWebProviderOptions } from '../model';
 import { CollectorError } from '../errors/collector-error';
-import { Logger } from '@openfeature/web-sdk';
 
 export class GoffApiController {
   // endpoint of your go-feature-flag relay proxy instance
@@ -10,7 +9,7 @@ export class GoffApiController {
   private readonly timeout: number;
   private options: GoFeatureFlagWebProviderOptions;
 
-  constructor(options: GoFeatureFlagWebProviderOptions, _?: Logger) {
+  constructor(options: GoFeatureFlagWebProviderOptions) {
     this.endpoint = options.endpoint;
     this.timeout = options.apiTimeout ?? 0;
     this.options = options;
