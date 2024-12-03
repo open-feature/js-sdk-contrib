@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FlagValue, ErrorCode, EvaluationContextValue } from '@openfeature/web-sdk';
+import { ErrorCode, EvaluationContextValue, FlagValue } from '@openfeature/web-sdk';
 
 /**
  * GoFeatureFlagEvaluationContext is the representation of a user for GO Feature Flag
@@ -30,6 +30,7 @@ export interface GoFeatureFlagWebProviderOptions {
   endpoint: string;
 
   // timeout is the time in millisecond we wait for an answer from the server.
+  // Default: 10000 ms
   apiTimeout?: number;
 
   // apiKey (optional) If the relay proxy is configured to authenticate the requests, you should provide
@@ -50,6 +51,15 @@ export interface GoFeatureFlagWebProviderOptions {
   // maximum number of retries before considering GO Feature Flag is unreachable
   // Default: 10
   maxRetries?: number;
+
+  // dataFlushInterval (optional) interval time (in millisecond) we use to call the relay proxy to collect data.
+  // The parameter is used only if the cache is enabled, otherwise the collection of the data is done directly
+  // when calling the evaluation API.
+  // default: 1 minute
+  dataFlushInterval?: number;
+
+  // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
+  disableDataCollection?: boolean;
 }
 
 /**
@@ -83,4 +93,22 @@ export interface GOFeatureFlagWebsocketResponse {
   deleted?: { [key: string]: any };
   added?: { [key: string]: any };
   updated?: { [key: string]: any };
+}
+
+export interface DataCollectorRequest<T> {
+  events: FeatureEvent<T>[];
+  meta: Record<string, string>;
+}
+
+export interface FeatureEvent<T> {
+  contextKind: string;
+  creationDate: number;
+  default: boolean;
+  key: string;
+  kind: string;
+  userKey: string;
+  value: T;
+  variation: string;
+  version?: string;
+  source?: string;
 }
