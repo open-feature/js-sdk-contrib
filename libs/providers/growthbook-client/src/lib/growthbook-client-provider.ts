@@ -47,13 +47,9 @@ export class GrowthbookClientProvider implements Provider {
 
     await this.client.init(this._initOptions);
 
-    // Monkey-patch the setPayload function to fire an event
-    const setPayload = this._client.setPayload.bind(this._client);
-
-    this._client.setPayload = async (...args) => {
-      await setPayload(...args);
+    this._client.setRenderer(() => {
       this.events.emit(ProviderEvents.ConfigurationChanged);
-    };
+    });
   }
 
   async onClose(): Promise<void> {
