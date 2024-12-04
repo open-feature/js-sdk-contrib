@@ -5,7 +5,7 @@
   "libs/providers/flagd-web": "0.7.2",
   "libs/providers/env-var": "0.3.1",
   "libs/providers/config-cat": "0.7.2",
-  "libs/providers/launchdarkly-client": "0.3.0",
+  "libs/providers/launchdarkly-client": "0.3.1",
   "libs/providers/go-feature-flag-web": "0.2.2",
   "libs/shared/flagd-core": "0.2.5",
   "libs/shared/ofrep-core": "0.2.0",
