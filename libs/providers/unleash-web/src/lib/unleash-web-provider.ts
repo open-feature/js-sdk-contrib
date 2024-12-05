@@ -8,17 +8,9 @@ import {
   ProviderEvents,
   ResolutionDetails,
   ProviderFatalError,
-  StandardResolutionReasons
 } from '@openfeature/web-sdk';
-import {
-  UnleashClient,
-  IConfig,
-  IContext,
-  IMutableContext
-} from 'unleash-proxy-client';
-import {
-  UnleashConfig
-} from './unleash-web-provider-config';
+import { UnleashClient } from 'unleash-proxy-client';
+import { UnleashConfig } from './unleash-web-provider-config';
 
 export class UnleashWebProvider implements Provider {
   metadata = {
@@ -62,45 +54,45 @@ export class UnleashWebProvider implements Provider {
     this._client?.on('ready', () => {
       this._logger?.info('Unleash ready event received');
       this.events.emit(ProviderEvents.Ready, {
-        message: 'Ready'
+        message: 'Ready',
       });
     });
     this._client?.on('update', () => {
       this._logger?.info('Unleash update event received');
       this.events.emit(ProviderEvents.ConfigurationChanged, {
-        message: 'Flags changed'
+        message: 'Flags changed',
       });
     });
     this._client?.on('error', () => {
       this._logger?.info('Unleash error event received');
       this.events.emit(ProviderEvents.Error, {
-        message: 'Error'
+        message: 'Error',
       });
     });
     this._client?.on('recovered', () => {
       this._logger?.info('Unleash recovered event received');
       this.events.emit(ProviderEvents.Ready, {
-        message: 'Recovered'
+        message: 'Recovered',
       });
     });
   }
 
   async onContextChange(_oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
-    let unleashContext = new Map();
-    let properties = new Map();
+    const unleashContext = new Map();
+    const properties = new Map();
     Object.keys(newContext).forEach((key) => {
       switch (key) {
-         case "appName":
-         case "userId":
-         case "environment":
-         case "remoteAddress":
-         case "sessionId":
-         case "currentTime":
-            unleashContext.set(key, newContext[key]);
-            break;
-         default:
-            properties.set(key, newContext[key]);
-            break;
+        case 'appName':
+        case 'userId':
+        case 'environment':
+        case 'remoteAddress':
+        case 'sessionId':
+        case 'currentTime':
+          unleashContext.set(key, newContext[key]);
+          break;
+        default:
+          properties.set(key, newContext[key]);
+          break;
       }
     });
     unleashContext.set('properties', properties);
@@ -119,8 +111,8 @@ export class UnleashWebProvider implements Provider {
       throw new FlagNotFoundError();
     }
     return {
-      value: resp
-    }
+      value: resp,
+    };
   }
 
   resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
@@ -128,7 +120,7 @@ export class UnleashWebProvider implements Provider {
   }
 
   resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number> {
-    let resolutionDetails = this.evaluate(flagKey, defaultValue);
+    const resolutionDetails = this.evaluate(flagKey, defaultValue);
     resolutionDetails.value = Number(resolutionDetails.value);
     return resolutionDetails;
   }
@@ -140,15 +132,14 @@ export class UnleashWebProvider implements Provider {
   private evaluate<T>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
     const evaluatedVariant = this._client?.getVariant(flagKey);
     let value;
-    let variant
+    let variant;
     if (typeof evaluatedVariant === 'undefined') {
       throw new FlagNotFoundError();
     }
 
     if (evaluatedVariant.name === 'disabled') {
       value = defaultValue as T;
-    }
-    else {
+    } else {
       variant = evaluatedVariant.name;
       value = evaluatedVariant.payload?.value;
     }

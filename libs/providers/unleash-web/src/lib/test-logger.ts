@@ -19,12 +19,12 @@ export default class TestLogger {
   }
 
   info(...args: unknown[]): void {
-    console.log(args)
+    console.log(args);
     this.inMemoryLogger['info'].push(args.join(' '));
   }
 
   debug(...args: unknown[]): void {
-    console.log(args)
+    console.log(args);
     this.inMemoryLogger['debug'].push(args.join(' '));
   }
 

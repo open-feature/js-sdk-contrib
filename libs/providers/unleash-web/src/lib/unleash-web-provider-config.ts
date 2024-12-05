@@ -1,6 +1,3 @@
-import {
-  IConfig
-} from 'unleash-proxy-client';
+import { IConfig } from 'unleash-proxy-client';
 
-export interface UnleashConfig extends IConfig {
-}
+export type UnleashConfig = IConfig;

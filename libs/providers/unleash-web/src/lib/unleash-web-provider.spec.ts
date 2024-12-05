@@ -1,15 +1,6 @@
 import { UnleashWebProvider } from './unleash-web-provider';
 import fetchMock, { enableFetchMocks } from 'jest-fetch-mock';
-import {
-  EvaluationContext,
-  OpenFeature,
-  ProviderEvents,
-  ProviderStatus,
-  StandardResolutionReasons,
-  ErrorCode,
-  EvaluationDetails,
-  JsonValue,
-} from '@openfeature/web-sdk';
+import { ProviderEvents } from '@openfeature/web-sdk';
 
 import testdata from './testdata.json';
 import TestLogger from './test-logger';
@@ -26,16 +17,14 @@ describe('UnleashWebProvider', () => {
   });
 
   it('should be an instance of UnleashWebProvider', async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({"toggles":[]}));
-    provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test',}, logger);
+    fetchMock.mockResponseOnce(JSON.stringify({ toggles: [] }));
+    provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test' }, logger);
     await provider.initialize();
     expect(provider).toBeInstanceOf(UnleashWebProvider);
   });
-
 });
 
 describe('events', () => {
-
   beforeEach(() => {
     fetchMock.resetMocks();
   });
@@ -45,9 +34,8 @@ describe('events', () => {
   });
 
   it('should emit ProviderEvents.ConfigurationChanged and ProviderEvents.Ready events when provider is initialized', async () => {
-    let provider: UnleashWebProvider;
-    fetchMock.mockResponseOnce(JSON.stringify({"toggles":[]}));
-    provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test',}, logger);
+    fetchMock.mockResponseOnce(JSON.stringify({ toggles: [] }));
+    const provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test' }, logger);
 
     const configChangeHandler = jest.fn();
     const readyHandler = jest.fn();
@@ -63,9 +51,8 @@ describe('events', () => {
   });
 
   it('should emit ProviderEvents.Error event when provider errors on initialization', async () => {
-    let provider: UnleashWebProvider;
     fetchMock.mockResponseOnce('{}', { status: 401 });
-    provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test',}, logger);
+    const provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test' }, logger);
     const handler = jest.fn();
     provider.events.addHandler(ProviderEvents.Error, handler);
     await provider.initialize();
@@ -75,12 +62,14 @@ describe('events', () => {
   });
 
   it('should emit ProviderEvents.ConfigurationChanged when the flags change', async () => {
-    let provider: UnleashWebProvider;
-    fetchMock.mockResponseOnce(JSON.stringify({"toggles":[]}));
-    provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test', refreshInterval: 2}, logger);
+    fetchMock.mockResponseOnce(JSON.stringify({ toggles: [] }));
+    const provider = new UnleashWebProvider(
+      { url: endpoint, clientKey: 'clientsecret', appName: 'test', refreshInterval: 2 },
+      logger,
+    );
     await provider.initialize();
     await new Promise<void>((resolve) => {
-      let configChangeHandler = function() {
+      const configChangeHandler = function () {
         resolve();
       };
       provider.events.addHandler(ProviderEvents.ConfigurationChanged, configChangeHandler);
@@ -89,12 +78,14 @@ describe('events', () => {
   });
 
   it('should emit ProviderEvents.Ready when provider recovers from an error', async () => {
-    let provider: UnleashWebProvider;
-    fetchMock.mockResponseOnce(JSON.stringify({"toggles":[]}));
-    provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test', refreshInterval: 2}, logger);
+    fetchMock.mockResponseOnce(JSON.stringify({ toggles: [] }));
+    const provider = new UnleashWebProvider(
+      { url: endpoint, clientKey: 'clientsecret', appName: 'test', refreshInterval: 2 },
+      logger,
+    );
     await provider.initialize();
     await new Promise<void>((resolve) => {
-      let errorHandler = function() {
+      const errorHandler = function () {
         resolve();
       };
       provider.events.addHandler(ProviderEvents.Error, errorHandler);
@@ -102,7 +93,7 @@ describe('events', () => {
     });
 
     await new Promise<void>((resolve) => {
-      let readyHandler = function() {
+      const readyHandler = function () {
         resolve();
       };
       provider.events.addHandler(ProviderEvents.Ready, readyHandler);
@@ -121,7 +112,7 @@ describe('UnleashWebProvider evaluations', () => {
   beforeAll(async () => {
     enableFetchMocks();
     fetchMock.mockResponseOnce(JSON.stringify(testdata));
-    provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test',}, logger);
+    provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test' }, logger);
     await provider.initialize();
   });
 
