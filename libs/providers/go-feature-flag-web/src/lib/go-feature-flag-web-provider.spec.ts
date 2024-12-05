@@ -606,4 +606,22 @@ describe('GoFeatureFlagWebProvider', () => {
       await OpenFeature.close();
     });
   });
+  describe('waitWebsocketFinalStatus', () => {
+    it('should resolve when WebSocket is open', async () => {
+      const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031' });
+      const websocket = new WebSocket(websocketEndpoint);
+
+      const promise = provider.waitWebsocketFinalStatus(websocket);
+      await websocketMockServer.connected;
+
+      await expect(promise).resolves.toBeUndefined();
+    });
+  });
+});
+it('should reject after maximum retries', async () => {
+  const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', maxRetries: 1 });
+  const websocket = new WebSocket('ws://localhost:1031/ws/v1/flag/change');
+  await expect(provider.waitWebsocketFinalStatus(websocket)).rejects.toThrow(
+    'Maximum retries reached while waiting for websocket connection',
+  );
 });

@@ -133,11 +133,16 @@ export class GoFeatureFlagWebProvider implements Provider {
    * @param socket - the websocket you are waiting for
    */
   waitWebsocketFinalStatus(socket: WebSocket): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      let retries = 0;
       const checkConnection = () => {
         if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CLOSED) {
           return resolve();
         }
+        if (retries >= this._maxRetries) {
+          return reject(new Error('Maximum retries reached while waiting for websocket connection'));
+        }
+        retries++;
         // Wait 5 milliseconds before checking again
         setTimeout(checkConnection, 5);
       };
