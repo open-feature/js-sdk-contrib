@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.1...go-feature-flag-web-provider-v0.2.2) (2024-12-03)
+
+
+### ✨ New Features
+
+* **go-feature-flag-web:** Add support for data collection ([#1101](https://github.com/open-feature/js-sdk-contrib/issues/1101)) ([34fcecd](https://github.com/open-feature/js-sdk-contrib/commit/34fcecd78b9cb11b9dbc51d44a345fc24e94f91d))
+
 ## [0.2.1](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.0...go-feature-flag-web-provider-v0.2.1) (2024-08-05)
 
 

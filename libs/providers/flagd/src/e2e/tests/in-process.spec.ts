@@ -1,9 +1,14 @@
 import assert from 'assert';
-import { OpenFeature } from '@openfeature/web-sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
+import { FlagdProvider } from '../../lib/flagd-provider';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
-import { FlagdWebProvider } from '../../lib/flagd-web-provider';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
-import { FLAGD_NAME, GHERKIN_EVALUATION_FEATURE } from '../constants';
+import {
+  FLAGD_NAME,
+  GHERKIN_EVALUATION_FEATURE,
+  GHERKIN_FLAGD_FEATURE,
+  GHERKIN_FLAGD_JSON_EVALUATOR_FEATURE,
+} from '../constants';
 import { flagStepDefinitions } from '../step-definitions';
 import { E2E_CLIENT_NAME, IMAGE_VERSION } from '@openfeature/flagd-core';
 
@@ -14,27 +19,28 @@ async function setup() {
   console.log('Setting flagd provider...');
 
   const stable = await new GenericContainer(`ghcr.io/open-feature/flagd-testbed:${IMAGE_VERSION}`)
-    .withExposedPorts(8013)
+    .withExposedPorts(8015)
     .start();
   containers.push(stable);
-  const flagdWebProvider = new FlagdWebProvider({
-    host: stable.getHost(),
-    port: stable.getMappedPort(8013),
-    tls: false,
-    maxRetries: -1,
-  });
-  await OpenFeature.setProviderAndWait(E2E_CLIENT_NAME, flagdWebProvider);
+  OpenFeature.setProvider(
+    E2E_CLIENT_NAME,
+    new FlagdProvider({ resolverType: 'in-process', host: 'localhost', port: stable.getFirstMappedPort() }),
+  );
+
   assert(
     OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name === FLAGD_NAME,
     new Error(
-      `Expected ${E2E_CLIENT_NAME} provider to be configured, instead got: ${OpenFeature.providerMetadata.name}`,
+      `Expected ${FLAGD_NAME} provider to be configured, instead got: ${
+        OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name
+      }`,
     ),
   );
+
   console.log('flagd provider configured!');
   return containers;
 }
 
-describe('web provider', () => {
+describe('in process', () => {
   let containers: StartedTestContainer[] = [];
   beforeAll(async () => {
     containers = await setup();
@@ -42,10 +48,13 @@ describe('web provider', () => {
   afterAll(async () => {
     await OpenFeature.close();
     for (const container of containers) {
-      container.stop();
+      await container.stop();
     }
   });
-
-  const features = [loadFeature(GHERKIN_EVALUATION_FEATURE)];
+  const features = [
+    loadFeature(GHERKIN_FLAGD_FEATURE),
+    loadFeature(GHERKIN_EVALUATION_FEATURE),
+    loadFeature(GHERKIN_FLAGD_JSON_EVALUATOR_FEATURE),
+  ];
   autoBindSteps(features, [flagStepDefinitions]);
 });
