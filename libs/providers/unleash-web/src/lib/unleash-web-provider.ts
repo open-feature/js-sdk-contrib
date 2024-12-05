@@ -17,9 +17,8 @@ import {
   IMutableContext
 } from 'unleash-proxy-client';
 import {
-  UnleashOptions,
-  UnleashContextOptions
-} from './options';
+  UnleashConfig
+} from './unleash-web-provider-config';
 
 export class UnleashWebProvider implements Provider {
   metadata = {
@@ -31,24 +30,17 @@ export class UnleashWebProvider implements Provider {
   // logger is the OpenFeature logger to use
   private _logger?: Logger;
 
-  // options is the Unleash options provided to the provider
-  private _options?: UnleashOptions;
+  // config is the Unleash config provided to the provider
+  private _config?: UnleashConfig;
 
   // client is the Unleash client reference
   private _client?: UnleashClient;
 
   readonly runsOn = 'client';
 
-  constructor(options: UnleashOptions, logger?: Logger) {
-    this._options = options;
+  constructor(config: UnleashConfig, logger?: Logger) {
+    this._config = config;
     this._logger = logger;
-    // TODO map all available options to unleash config - done minimum for now
-    let config : IConfig = {
-      url: options.url,
-      clientKey: options.clientKey,
-      appName: options.appName,
-      refreshInterval: options.refreshInterval,
-    };
     this._client = new UnleashClient(config);
   }
 
@@ -149,7 +141,6 @@ export class UnleashWebProvider implements Provider {
     const evaluatedVariant = this._client?.getVariant(flagKey);
     let value;
     let variant
-    this._logger?.debug("evaluatedVariant = " + JSON.stringify(evaluatedVariant));
     if (typeof evaluatedVariant === 'undefined') {
       throw new FlagNotFoundError();
     }
