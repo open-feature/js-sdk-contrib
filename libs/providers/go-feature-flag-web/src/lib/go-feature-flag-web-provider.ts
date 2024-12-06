@@ -106,7 +106,9 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._logger?.debug(`${GoFeatureFlagWebProvider.name}: Trying to connect the websocket at ${wsURL}`);
 
     this._websocket = new WebSocket(wsURL);
-    await this.waitWebsocketFinalStatus(this._websocket);
+    await this.waitWebsocketFinalStatus(this._websocket).catch((reason) => {
+      throw new Error(`impossible to connect to the websocket: ${reason}`);
+    });
 
     this._websocket.onopen = (event) => {
       this._logger?.info(`${GoFeatureFlagWebProvider.name}: Websocket to go-feature-flag open: ${event}`);
@@ -134,19 +136,23 @@ export class GoFeatureFlagWebProvider implements Provider {
    */
   waitWebsocketFinalStatus(socket: WebSocket): Promise<void> {
     return new Promise((resolve, reject) => {
-      let retries = 0;
-      const checkConnection = () => {
-        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CLOSED) {
-          return resolve();
+      // wait until the socket is in a stable state or until the timeout is reached
+      const websocketTimeout = this._apiTimeout !== 0 ? this._apiTimeout : 5000;
+      const timeout = setTimeout(() => {
+        if (socket.readyState !== WebSocket.OPEN && socket.readyState !== WebSocket.CLOSED) {
+          reject(`timeout of ${websocketTimeout} ms reached when initializing the websocket`);
         }
-        if (retries >= this._maxRetries) {
-          return reject(new Error('Maximum retries reached while waiting for websocket connection'));
-        }
-        retries++;
-        // Wait 5 milliseconds before checking again
-        setTimeout(checkConnection, 5);
+      }, websocketTimeout);
+
+      socket.onopen = () => {
+        clearTimeout(timeout);
+        resolve();
       };
-      checkConnection();
+
+      socket.onclose = () => {
+        clearTimeout(timeout);
+        resolve();
+      };
     });
   }
 

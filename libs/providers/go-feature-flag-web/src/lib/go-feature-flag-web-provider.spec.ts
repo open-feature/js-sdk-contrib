@@ -89,11 +89,11 @@ describe('GoFeatureFlagWebProvider', () => {
   const logger = new TestLogger();
 
   beforeEach(async () => {
-    await WS.clean();
+    WS.clean();
     await OpenFeature.close();
     fetchMock.mockClear();
     fetchMock.mockReset();
-    await jest.resetAllMocks();
+    jest.resetAllMocks();
     websocketMockServer = new WS(websocketEndpoint, { jsonProtocol: true });
     fetchMock.post(allFlagsEndpoint, defaultAllFlagResponse);
     fetchMock.post(dataCollectorEndpoint, 200);
@@ -109,14 +109,14 @@ describe('GoFeatureFlagWebProvider', () => {
   });
 
   afterEach(async () => {
-    await WS.clean();
+    WS.clean();
     websocketMockServer.close();
     await OpenFeature.close();
-    await OpenFeature.clearHooks();
+    OpenFeature.clearHooks();
     fetchMock.mockClear();
     fetchMock.mockReset();
     await defaultProvider?.onClose();
-    await jest.resetAllMocks();
+    jest.resetAllMocks();
     readyHandler.mockReset();
     errorHandler.mockReset();
     configurationChangedHandler.mockReset();
@@ -145,8 +145,8 @@ describe('GoFeatureFlagWebProvider', () => {
   describe('flag evaluation', () => {
     it('should change evaluation value if context has changed', async () => {
       await OpenFeature.setContext(defaultContext);
-      OpenFeature.setProvider('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
+      await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
+      const client = OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       await new Promise((resolve) => setTimeout(resolve, 5));
 
@@ -168,11 +168,11 @@ describe('GoFeatureFlagWebProvider', () => {
       await OpenFeature.setContext(defaultContext);
       const providerName = expect.getState().currentTestName || 'test';
       OpenFeature.setProvider(providerName, newDefaultProvider());
-      const client = await OpenFeature.getClient(providerName);
+      const client = OpenFeature.getClient(providerName);
       await websocketMockServer.connected;
       // Need to wait before using the mock
       await new Promise((resolve) => setTimeout(resolve, 5));
-      await websocketMockServer.close();
+      websocketMockServer.close();
 
       const got = client.getBooleanDetails('bool_flag', false);
       expect(got.reason).toEqual(StandardResolutionReasons.CACHED);
@@ -183,11 +183,11 @@ describe('GoFeatureFlagWebProvider', () => {
       const providerName = expect.getState().currentTestName || 'test';
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider(providerName, newDefaultProvider());
-      const client = await OpenFeature.getClient(providerName);
+      const client = OpenFeature.getClient(providerName);
       client.addHandler(ProviderEvents.Error, errorHandler);
       // wait the event to be triggered
       await new Promise((resolve) => setTimeout(resolve, 5));
-      expect(errorHandler).toBeCalled();
+      expect(errorHandler).toHaveBeenCalled();
       expect(logger.inMemoryLogger['error'][0]).toEqual(
         'GoFeatureFlagWebProvider: invalid token used to contact GO Feature Flag instance: Error: Request failed with status code 401',
       );
@@ -196,15 +196,15 @@ describe('GoFeatureFlagWebProvider', () => {
     it('should emit an error if we receive a 404 from GO Feature Flag', async () => {
       fetchMock.post(allFlagsEndpoint, 404, { overwriteRoutes: true });
       await OpenFeature.setContext(defaultContext);
-      OpenFeature.setProvider('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
+      await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
+      const client = OpenFeature.getClient('test-provider');
       client.addHandler(ProviderEvents.Ready, readyHandler);
       client.addHandler(ProviderEvents.Error, errorHandler);
       client.addHandler(ProviderEvents.Stale, staleHandler);
       client.addHandler(ProviderEvents.ConfigurationChanged, configurationChangedHandler);
       // wait the event to be triggered
       await new Promise((resolve) => setTimeout(resolve, 5));
-      expect(errorHandler).toBeCalled();
+      expect(errorHandler).toHaveBeenCalled();
       expect(logger.inMemoryLogger['error'][0]).toEqual(
         'GoFeatureFlagWebProvider: impossible to call go-feature-flag relay proxy Error: Request failed with status code 404',
       );
@@ -214,7 +214,7 @@ describe('GoFeatureFlagWebProvider', () => {
       const flagKey = 'bool_flag';
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
+      const client = OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getBooleanDetails(flagKey, false);
       const want: EvaluationDetails<boolean> = {
@@ -233,7 +233,7 @@ describe('GoFeatureFlagWebProvider', () => {
       const flagKey = 'string_flag';
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
+      const client = OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getStringDetails(flagKey, 'false');
       const want: EvaluationDetails<string> = {
@@ -252,7 +252,7 @@ describe('GoFeatureFlagWebProvider', () => {
       const flagKey = 'number_flag';
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
+      const client = OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getNumberDetails(flagKey, 456);
       const want: EvaluationDetails<number> = {
@@ -271,7 +271,7 @@ describe('GoFeatureFlagWebProvider', () => {
       const flagKey = 'object_flag';
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
+      const client = OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getObjectDetails(flagKey, { error: true });
       const want: EvaluationDetails<JsonValue> = {
@@ -290,7 +290,7 @@ describe('GoFeatureFlagWebProvider', () => {
       const flagKey = 'bool_flag';
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
+      const client = OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getStringDetails(flagKey, 'false');
       const want: EvaluationDetails<string> = {
@@ -308,7 +308,7 @@ describe('GoFeatureFlagWebProvider', () => {
       const flagKey = 'not-exist';
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
+      const client = OpenFeature.getClient('test-provider');
       await websocketMockServer.connected;
       const got = client.getBooleanDetails(flagKey, false);
       const want: EvaluationDetails<boolean> = {
@@ -354,8 +354,8 @@ describe('GoFeatureFlagWebProvider', () => {
   describe('eventing', () => {
     it('should call client handler with ProviderEvents.Ready when websocket is connected', async () => {
       // await OpenFeature.setContext(defaultContext); // we deactivate this call because the context is already set, and we want to avoid calling contextChanged function
-      OpenFeature.setProvider('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
+      await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
+      const client = OpenFeature.getClient('test-provider');
       client.addHandler(ProviderEvents.Ready, readyHandler);
       client.addHandler(ProviderEvents.Error, errorHandler);
       client.addHandler(ProviderEvents.Stale, staleHandler);
@@ -365,16 +365,16 @@ describe('GoFeatureFlagWebProvider', () => {
       await websocketMockServer.connected;
       await new Promise((resolve) => setTimeout(resolve, 5));
 
-      expect(readyHandler).toBeCalled();
-      expect(errorHandler).not.toBeCalled();
-      expect(configurationChangedHandler).not.toBeCalled();
-      expect(staleHandler).not.toBeCalled();
+      expect(readyHandler).toHaveBeenCalled();
+      expect(errorHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler).not.toHaveBeenCalled();
+      expect(staleHandler).not.toHaveBeenCalled();
     });
 
     it('should call client handler with ProviderEvents.ConfigurationChanged when websocket is sending update', async () => {
       // await OpenFeature.setContext(defaultContext); // we deactivate this call because the context is already set, and we want to avoid calling contextChanged function
-      OpenFeature.setProvider('test-provider', defaultProvider);
-      const client = await OpenFeature.getClient('test-provider');
+      await OpenFeature.setProviderAndWait('test-provider', defaultProvider);
+      const client = OpenFeature.getClient('test-provider');
 
       client.addHandler(ProviderEvents.Ready, readyHandler);
       client.addHandler(ProviderEvents.Error, errorHandler);
@@ -403,10 +403,10 @@ describe('GoFeatureFlagWebProvider', () => {
       // waiting the call to the API to be successful
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      expect(readyHandler).toBeCalled();
-      expect(errorHandler).not.toBeCalled();
-      expect(configurationChangedHandler).toBeCalled();
-      expect(staleHandler).not.toBeCalled();
+      expect(readyHandler).toHaveBeenCalled();
+      expect(errorHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler).toHaveBeenCalled();
+      expect(staleHandler).not.toHaveBeenCalled();
       expect(configurationChangedHandler.mock.calls[0][0]).toEqual({
         clientName: 'test-provider',
         domain: 'test-provider',
@@ -433,8 +433,8 @@ describe('GoFeatureFlagWebProvider', () => {
         },
         logger,
       );
-      OpenFeature.setProvider('test-provider', provider);
-      const client = await OpenFeature.getClient('test-provider');
+      await OpenFeature.setProviderAndWait('test-provider', provider);
+      const client = OpenFeature.getClient('test-provider');
       client.addHandler(ProviderEvents.Ready, readyHandler);
       client.addHandler(ProviderEvents.Error, errorHandler);
       client.addHandler(ProviderEvents.Stale, staleHandler);
@@ -444,14 +444,14 @@ describe('GoFeatureFlagWebProvider', () => {
       await websocketMockServer.connected;
 
       // Need to wait before using the mock
-      await new Promise((resolve) => setTimeout(resolve, 5));
-      await websocketMockServer.close();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      websocketMockServer.close();
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      expect(readyHandler).toBeCalled();
-      expect(errorHandler).not.toBeCalled();
-      expect(configurationChangedHandler).not.toBeCalled();
-      expect(staleHandler).toBeCalled();
+      expect(readyHandler).toHaveBeenCalled();
+      expect(errorHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler).not.toHaveBeenCalled();
+      expect(staleHandler).toHaveBeenCalled();
     });
   });
 
@@ -470,7 +470,7 @@ describe('GoFeatureFlagWebProvider', () => {
         logger,
       );
 
-      OpenFeature.setProvider(clientName, p);
+      await OpenFeature.setProviderAndWait(clientName, p);
       const client = OpenFeature.getClient(clientName);
       await websocketMockServer.connected;
       await new Promise((resolve) => setTimeout(resolve, 5));
@@ -501,7 +501,7 @@ describe('GoFeatureFlagWebProvider', () => {
         logger,
       );
 
-      OpenFeature.setProvider(clientName, p);
+      await OpenFeature.setProviderAndWait(clientName, p);
       const client = OpenFeature.getClient(clientName);
       await websocketMockServer.connected;
       await new Promise((resolve) => setTimeout(resolve, 5));
@@ -531,7 +531,7 @@ describe('GoFeatureFlagWebProvider', () => {
         logger,
       );
 
-      OpenFeature.setProvider(clientName, p);
+      await OpenFeature.setProviderAndWait(clientName, p);
       const client = OpenFeature.getClient(clientName);
       await websocketMockServer.connected;
       await new Promise((resolve) => setTimeout(resolve, 5));
@@ -559,7 +559,7 @@ describe('GoFeatureFlagWebProvider', () => {
         logger,
       );
 
-      OpenFeature.setProvider(clientName, p);
+      await OpenFeature.setProviderAndWait(clientName, p);
       const client = OpenFeature.getClient(clientName);
       await websocketMockServer.connected;
       await new Promise((resolve) => setTimeout(resolve, 5));
@@ -574,7 +574,7 @@ describe('GoFeatureFlagWebProvider', () => {
     it('should have a log when data collector is not available', async () => {
       const clientName = expect.getState().currentTestName ?? 'test-provider';
       fetchMock.post(dataCollectorEndpoint, 500, { overwriteRoutes: true });
-      OpenFeature.setContext(defaultContext);
+      await OpenFeature.setContext(defaultContext);
       const p = new GoFeatureFlagWebProvider(
         {
           endpoint: endpoint,
@@ -585,7 +585,7 @@ describe('GoFeatureFlagWebProvider', () => {
         logger,
       );
 
-      OpenFeature.setProvider(clientName, p);
+      await OpenFeature.setProviderAndWait(clientName, p);
       const client = OpenFeature.getClient(clientName);
       await websocketMockServer.connected;
       await new Promise((resolve) => setTimeout(resolve, 5));
@@ -606,22 +606,51 @@ describe('GoFeatureFlagWebProvider', () => {
       await OpenFeature.close();
     });
   });
-  describe('waitWebsocketFinalStatus', () => {
-    it('should resolve when WebSocket is open', async () => {
-      const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031' });
-      const websocket = new WebSocket(websocketEndpoint);
+  it('should resolve when WebSocket is open', async () => {
+    const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', apiTimeout: 1000 });
+    await provider.initialize({ targetingKey: 'user-key' });
+    const websocket = new WebSocket(websocketEndpoint);
+    await websocketMockServer.connected;
+    await expect(provider.waitWebsocketFinalStatus(websocket)).resolves.toBeUndefined();
+  });
 
-      const promise = provider.waitWebsocketFinalStatus(websocket);
-      await websocketMockServer.connected;
+  // how can I mock a websocket server to stay in CONNECTING state
+  it('should timeout if websocket stay in CONNECTING state', async () => {
+    const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', apiTimeout: 1000 });
+    await provider.initialize({ targetingKey: 'user-key' });
+    const websocket = new MockWebSocketConnectingState(websocketEndpoint);
 
-      await expect(promise).resolves.toBeUndefined();
-    });
+    // Now you can test the behavior when the WebSocket is in CONNECTING state
+    await expect(provider.waitWebsocketFinalStatus(websocket)).rejects.toBe(
+      'timeout of 1000 ms reached when initializing the websocket',
+    );
   });
 });
-it('should reject after maximum retries', async () => {
-  const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', maxRetries: 1 });
-  const websocket = new WebSocket('ws://localhost:1031/ws/v1/flag/change');
-  await expect(provider.waitWebsocketFinalStatus(websocket)).rejects.toThrow(
-    'Maximum retries reached while waiting for websocket connection',
-  );
-});
+
+class MockWebSocketConnectingState extends WebSocket {
+  constructor(url: string, protocols?: string | string[]) {
+    super(url, protocols);
+  }
+
+  get readyState() {
+    return WebSocket.CONNECTING;
+  }
+
+  set onopen(_: { (this: WebSocket, event: Event): void; (): void }) {
+    // Do nothing to prevent setting the onopen handler
+  }
+
+  set onclose(_: { (): Promise<void>; (): void }) {
+    // Do nothing to prevent setting the onclose handler
+  }
+
+  addEventListener(
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions,
+  ): void {
+    if (type !== 'open' && type !== 'close') {
+      super.addEventListener(type, listener, options);
+    }
+  }
+}
