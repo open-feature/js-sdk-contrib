@@ -1,7 +1,6 @@
 import { UnleashWebProvider } from './unleash-web-provider';
 import fetchMock, { enableFetchMocks } from 'jest-fetch-mock';
-import { ProviderEvents } from '@openfeature/web-sdk';
-
+import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
 import testdata from './testdata.json';
 import TestLogger from './test-logger';
 
@@ -100,6 +99,68 @@ describe('events', () => {
       fetchMock.mockResponseOnce(JSON.stringify(testdata));
     });
   }, 10000);
+});
+
+describe('onContextChange', () => {
+  let provider: UnleashWebProvider;
+
+  beforeEach(async () => {
+    await jest.resetAllMocks();
+    provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test' }, logger);
+    jest.spyOn(provider.unleashClient as any, 'fetchToggles').mockImplementation();
+  });
+
+  afterEach(async () => {
+    await OpenFeature.close();
+  });
+
+  it('sets all unleash context options with no custom properties', async () => {
+    const unleashClientMock = jest.spyOn(provider.unleashClient as any, 'updateContext');
+    await OpenFeature.setProviderAndWait(provider);
+    await OpenFeature.setContext({
+      userId: 'theUserId',
+      appName: 'anAppName',
+      remoteAddress: 'the.remoteAddress',
+      currentTime: '8/12/24 10:10:23',
+      sessionId: '1234-3245-56567',
+      environment: 'dev',
+    });
+    expect(unleashClientMock).toHaveBeenCalledWith({
+      userId: 'theUserId',
+      appName: 'anAppName',
+      remoteAddress: 'the.remoteAddress',
+      currentTime: '8/12/24 10:10:23',
+      sessionId: '1234-3245-56567',
+      environment: 'dev',
+    });
+  });
+
+  it('sets all unleash context options with some custom properties', async () => {
+    const unleashClientMock = jest.spyOn(provider.unleashClient as any, 'updateContext');
+    await OpenFeature.setProviderAndWait(provider);
+    await OpenFeature.setContext({
+      userId: 'theUserId',
+      appName: 'anAppName',
+      remoteAddress: 'the.remoteAddress',
+      currentTime: '8/12/24 10:10:23',
+      sessionId: '1234-3245-56567',
+      environment: 'dev',
+      foo: 'bar',
+      hello: 'world',
+    });
+    expect(unleashClientMock).toHaveBeenCalledWith({
+      userId: 'theUserId',
+      appName: 'anAppName',
+      remoteAddress: 'the.remoteAddress',
+      currentTime: '8/12/24 10:10:23',
+      sessionId: '1234-3245-56567',
+      environment: 'dev',
+      properties: {
+        foo: 'bar',
+        hello: 'world',
+      },
+    });
+  });
 });
 
 describe('UnleashWebProvider evaluations', () => {

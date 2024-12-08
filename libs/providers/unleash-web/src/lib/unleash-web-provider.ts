@@ -36,6 +36,10 @@ export class UnleashWebProvider implements Provider {
     this._client = new UnleashClient(config);
   }
 
+  public get unleashClient() {
+    return this._client;
+  }
+
   async initialize(): Promise<void> {
     await this.initializeClient();
     this._logger?.info('UnleashWebProvider initialized');
@@ -95,7 +99,9 @@ export class UnleashWebProvider implements Provider {
           break;
       }
     });
-    unleashContext.set('properties', properties);
+    if (properties.size > 0) {
+      unleashContext.set('properties', Object.fromEntries(properties));
+    }
     await this._client?.updateContext(Object.fromEntries(unleashContext));
     this._logger?.info('Unleash context updated');
   }
