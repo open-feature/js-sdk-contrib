@@ -63,7 +63,7 @@
     "@types/jest": "29.5.14",
     "@types/lodash.isempty": "^4.4.7",
     "@types/lodash.isequal": "^4.5.6",
-    "@types/node": "20.17.6",
+    "@types/node": "20.17.9",
     "@types/object-hash": "^3.0.0",
     "@types/semver": "^7.5.4",
     "@typescript-eslint/eslint-plugin": "5.62.0",
@@ -85,10 +85,10 @@
     "msw": "^2.2.3",
     "nx": "16.9.1",
     "prettier": "^3.0.3",
-    "testcontainers": "10.13.2",
+    "testcontainers": "10.16.0",
     "ts-jest": "29.2.5",
     "ts-node": "10.9.2",
-    "typescript": "5.6.3",
+    "typescript": "5.7.2",
     "undici": "^5.0.0"
   }
 }
