@@ -7,7 +7,7 @@
   "libs/providers/config-cat": "0.7.2",
   "libs/providers/launchdarkly-client": "0.3.0",
   "libs/providers/go-feature-flag-web": "0.2.2",
-  "libs/shared/flagd-core": "0.2.5",
+  "libs/shared/flagd-core": "0.2.6",
   "libs/shared/ofrep-core": "0.2.0",
   "libs/providers/ofrep": "0.2.0",
   "libs/providers/ofrep-web": "0.3.1",
