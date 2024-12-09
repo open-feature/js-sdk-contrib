@@ -1,0 +1,87 @@
+{
+  "toggles": [
+    {
+      "name": "simpleToggle",
+      "enabled": true,
+      "impressionData": true
+    },
+    {
+      "name": "disabledToggle",
+      "enabled": false,
+      "impressionData": true
+    },
+    {
+      "name": "variantToggleString",
+      "enabled": true,
+      "impressionData": true,
+      "variant": {
+        "name": "string",
+        "payload": {
+          "type": "string",
+          "value": "some-text"
+        },
+        "enabled": true,
+        "feature_enabled": true
+      }
+    },
+    {
+      "name": "variantToggleJson",
+      "enabled": true,
+      "impressionData": true,
+      "variant": {
+        "name": "json",
+        "payload": {
+          "type": "json",
+          "value": "{hello: world}"
+        },
+        "enabled": true,
+        "feature_enabled": true
+      }
+    },
+    {
+      "name": "variantToggleCsv",
+      "enabled": true,
+      "variant": {
+        "name": "csv",
+        "enabled": true,
+        "payload": {
+          "type": "csv",
+          "value": "1,2,3,4"
+        },
+        "feature_enabled": true,
+        "featureEnabled": true
+      },
+      "impressionData": false
+    },
+    {
+      "name": "variantToggleInteger",
+      "enabled": true,
+      "variant": {
+        "name": "number",
+        "enabled": true,
+        "payload": {
+          "type": "number",
+          "value": "3"
+        },
+        "feature_enabled": true,
+        "featureEnabled": true
+      },
+      "impressionData": false
+    },
+    {
+      "name": "variantToggleDouble",
+      "enabled": true,
+      "variant": {
+        "name": "number",
+        "enabled": true,
+        "payload": {
+          "type": "number",
+          "value": "1.2"
+        },
+        "feature_enabled": true,
+        "featureEnabled": true
+      },
+      "impressionData": false
+    }
+  ]
+}
