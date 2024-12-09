@@ -1,6 +1,6 @@
 services:
   flagd:
-    image: ghcr.io/open-feature/flagd-testbed:v0.5.13
+    image: ghcr.io/open-feature/flagd-testbed:v0.5.17
     ports:
       - 8013:8013
   flagd-unstable:
