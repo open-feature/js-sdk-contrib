@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.6](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.5...flagd-core-v0.2.6) (2024-12-09)
+
+
+### 🐛 Bug Fixes
+
+* **flagd-core:** use injected logger ([#1057](https://github.com/open-feature/js-sdk-contrib/issues/1057)) ([4e21b83](https://github.com/open-feature/js-sdk-contrib/commit/4e21b836b62b6f26ee966c8f0ff6fd876a3e353a))
+
+
+### 🧹 Chore
+
+* various gherkin improvements for e2e tests ([#1008](https://github.com/open-feature/js-sdk-contrib/issues/1008)) ([40abd8e](https://github.com/open-feature/js-sdk-contrib/commit/40abd8eca76b47bb5c084b377302821968acd19c))
+
 ## [0.2.5](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.4...flagd-core-v0.2.5) (2024-08-30)
 
 
