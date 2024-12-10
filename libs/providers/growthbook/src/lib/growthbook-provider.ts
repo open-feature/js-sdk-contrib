@@ -1,4 +1,4 @@
-import { Context, GrowthBook, InitOptions } from '@growthbook/growthbook';
+import { Context, GrowthBook, GrowthBookClient, InitOptions } from '@growthbook/growthbook';
 import {
   EvaluationContext,
   Provider,
