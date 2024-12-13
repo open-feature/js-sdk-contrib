@@ -42,6 +42,7 @@ export class LaunchDarklyClientProvider implements Provider {
 
   private readonly ldOptions: LDOptions | undefined;
   private readonly logger: Logger;
+  private readonly initializationTimeout?: number;
   private _client?: LDClient;
 
   public events = new OpenFeatureEventEmitter();
@@ -62,13 +63,14 @@ export class LaunchDarklyClientProvider implements Provider {
 
   constructor(
     private readonly envKey: string,
-    { logger, ...ldOptions }: LaunchDarklyProviderOptions,
+    { logger, initializationTimeout, ...ldOptions }: LaunchDarklyProviderOptions,
   ) {
     if (logger) {
       this.logger = logger;
     } else {
       this.logger = basicLogger({ level: 'info' });
     }
+    this.initializationTimeout = initializationTimeout;
     this.ldOptions = { ...ldOptions, logger: this.logger };
   }
 
@@ -92,7 +94,7 @@ export class LaunchDarklyClientProvider implements Provider {
     }
 
     try {
-      await this._client.waitForInitialization();
+      await this._client.waitForInitialization(this.initializationTimeout);
       this.status = ProviderStatus.READY;
     } catch {
       this.status = ProviderStatus.ERROR;

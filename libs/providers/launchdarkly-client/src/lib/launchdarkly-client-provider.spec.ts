@@ -80,6 +80,17 @@ describe('LaunchDarklyClientProvider', () => {
       expect(initialize).toHaveBeenCalledTimes(1);
       /* when not set in open feauture LD sdk initialize should be called with the anonymous context*/
       expect(initialize).toHaveBeenCalledWith(envKey, { anonymous: true }, { logger });
+      expect(ldClientMock.waitForInitialization).toHaveBeenCalledWith(undefined);
+    });
+
+    it('should call Ld waitForInitialization with correct arguments', async () => {
+      const provider = new LaunchDarklyClientProvider(envKey, { logger, initializationTimeout: 5 });
+      await provider.initialize();
+      expect(initialize).toHaveBeenCalledTimes(1);
+      /* when not set in open feauture LD sdk initialize should be called with the anonymous context*/
+      expect(initialize).toHaveBeenCalledWith(envKey, { anonymous: true }, { logger });
+      expect(ldClientMock.waitForInitialization).toHaveBeenCalledTimes(1);
+      expect(ldClientMock.waitForInitialization).toHaveBeenCalledWith(5);
     });
 
     it('should set the status to READY if initialization succeeds', async () => {
