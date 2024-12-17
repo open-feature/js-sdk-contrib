@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.1](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.3.0...launchdarkly-client-provider-v0.3.1) (2024-12-17)
+
+
+### ✨ New Features
+
+* Accept timeout for LD waitForInitialization ([#1117](https://github.com/open-feature/js-sdk-contrib/issues/1117)) ([be7851c](https://github.com/open-feature/js-sdk-contrib/commit/be7851ce59a772a32d60fcb3f2d23eac3c862087))
+
+
+### 🧹 Chore
+
+* loosen some test assertions, fix e2e matcher ([#933](https://github.com/open-feature/js-sdk-contrib/issues/933)) ([8def607](https://github.com/open-feature/js-sdk-contrib/commit/8def6072c5d29eaf81d7262b6878cb3d6ff40483))
+
 ## [0.3.0](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.2.1...launchdarkly-client-provider-v0.3.0) (2024-03-25)
 
 
