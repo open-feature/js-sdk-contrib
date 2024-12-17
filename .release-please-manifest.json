@@ -2,7 +2,7 @@
   "libs/hooks/open-telemetry": "0.4.0",
   "libs/providers/go-feature-flag": "0.7.3",
   "libs/providers/flagd": "0.13.1",
-  "libs/providers/flagd-web": "0.7.2",
+  "libs/providers/flagd-web": "0.7.3",
   "libs/providers/env-var": "0.3.1",
   "libs/providers/config-cat": "0.7.2",
   "libs/providers/launchdarkly-client": "0.3.0",
