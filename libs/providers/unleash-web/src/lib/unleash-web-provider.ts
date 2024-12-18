@@ -144,7 +144,7 @@ export class UnleashWebProvider implements Provider {
     }
 
     if (evaluatedVariant.name === 'disabled') {
-      value = defaultValue as T;
+      value = defaultValue;
     } else {
       variant = evaluatedVariant.name;
       value = evaluatedVariant.payload?.value;
