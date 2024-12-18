@@ -437,7 +437,11 @@ describe('MultiProvider', () => {
           ]);
           const context = {};
           await callBeforeHook(multiProvider, context, 'flag', 'string', 'default');
-          expect(await multiProvider.resolveStringEvaluation('flag', 'default', context)).toEqual({ value: 'value' });
+          expect(await multiProvider.resolveStringEvaluation('flag', 'default', context)).toEqual({
+            value: 'value',
+            flagKey: 'flag',
+            flagMetadata: {},
+          });
         });
 
         it('evaluates a number variable', async () => {
@@ -453,7 +457,11 @@ describe('MultiProvider', () => {
 
           await callBeforeHook(multiProvider, context, 'flag', 'number', 0);
 
-          expect(await multiProvider.resolveNumberEvaluation('flag', 0, context)).toEqual({ value: 1 });
+          expect(await multiProvider.resolveNumberEvaluation('flag', 0, context)).toEqual({
+            value: 1,
+            flagKey: 'flag',
+            flagMetadata: {},
+          });
         });
 
         it('evaluates a boolean variable', async () => {
@@ -467,7 +475,11 @@ describe('MultiProvider', () => {
           ]);
           const context = {};
           await callBeforeHook(multiProvider, context, 'flag', 'boolean', false);
-          expect(await multiProvider.resolveBooleanEvaluation('flag', false, context)).toEqual({ value: true });
+          expect(await multiProvider.resolveBooleanEvaluation('flag', false, context)).toEqual({
+            value: true,
+            flagKey: 'flag',
+            flagMetadata: {},
+          });
         });
 
         it('evaluates an object variable', async () => {
@@ -481,7 +493,11 @@ describe('MultiProvider', () => {
           ]);
           const context = {};
           await callBeforeHook(multiProvider, context, 'flag', 'object', {});
-          expect(await multiProvider.resolveObjectEvaluation('flag', {}, context)).toEqual({ value: { test: true } });
+          expect(await multiProvider.resolveObjectEvaluation('flag', {}, context)).toEqual({
+            flagKey: 'flag',
+            flagMetadata: {},
+            value: { test: true },
+          });
         });
       });
       describe('first match strategy', () => {
@@ -554,7 +570,7 @@ describe('MultiProvider', () => {
             new FirstMatchStrategy(),
           );
           const result = await callEvaluation(multiProvider, {}, logger);
-          expect(result).toEqual({ value: true });
+          expect(result).toEqual({ value: true, flagKey: 'flag', flagMetadata: {} });
           expect(provider2.resolveBooleanEvaluation).toHaveBeenCalled();
           expect(provider3.resolveBooleanEvaluation).not.toHaveBeenCalled();
         });
@@ -582,7 +598,7 @@ describe('MultiProvider', () => {
             new FirstMatchStrategy(),
           );
           const result = await callEvaluation(multiProvider, {}, logger);
-          expect(result).toEqual({ value: true });
+          expect(result).toEqual({ value: true, flagKey: 'flag', flagMetadata: {} });
           expect(provider2.resolveBooleanEvaluation).toHaveBeenCalled();
           expect(provider3.resolveBooleanEvaluation).not.toHaveBeenCalled();
         });
@@ -615,7 +631,7 @@ describe('MultiProvider', () => {
             new FirstSuccessfulStrategy(),
           );
           const result = await callEvaluation(multiProvider, {}, logger);
-          expect(result).toEqual({ value: true });
+          expect(result).toEqual({ value: true, flagKey: 'flag', flagMetadata: {} });
           expect(provider2.resolveBooleanEvaluation).toHaveBeenCalled();
           expect(provider3.resolveBooleanEvaluation).not.toHaveBeenCalled();
         });
@@ -659,7 +675,7 @@ describe('MultiProvider', () => {
           expect(provider2.resolveBooleanEvaluation).toHaveBeenCalled();
           expect(provider3.resolveBooleanEvaluation).toHaveBeenCalled();
 
-          expect(await resultPromise).toEqual({ value: true });
+          expect(await resultPromise).toEqual({ value: true, flagKey: 'flag', flagMetadata: {} });
         });
 
         it('calls every provider and returns the fallback value if any disagree, and calls onMismatch', async () => {
@@ -700,21 +716,21 @@ describe('MultiProvider', () => {
             {
               provider: provider1,
               providerName: 'TestProvider-1',
-              details: { value: true },
+              details: { value: true, flagKey: 'flag', flagMetadata: {} },
             },
             {
               provider: provider2,
               providerName: 'TestProvider-2',
-              details: { value: false },
+              details: { value: false, flagKey: 'flag', flagMetadata: {} },
             },
             {
               provider: provider3,
               providerName: 'TestProvider-3',
-              details: { value: false },
+              details: { value: false, flagKey: 'flag', flagMetadata: {} },
             },
           ]);
 
-          expect(result).toEqual({ value: true });
+          expect(result).toEqual({ value: true, flagKey: 'flag', flagMetadata: {} });
         });
 
         it('returns an error if any provider returns an error', async () => {

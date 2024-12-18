@@ -17,5 +17,5 @@ export class <%= libClassName %> implements Hook {
 
   error(hookContext: HookContext, err: unknown, hookHints?: HookHints) {}
 
-  finally(hookContext: HookContext, hookHints?: HookHints) {}
+  finally(hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>, hookHints?: HookHints) {}
 }

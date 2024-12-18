@@ -47,11 +47,16 @@ export class HookExecutor {
     }
   }
 
-  async finallyHooks(hooks: Hook[] | undefined, hookContext: HookContext, hints: HookHints) {
+  async finallyHooks(
+    hooks: Hook[] | undefined,
+    hookContext: HookContext,
+    evaluationDetails: EvaluationDetails<FlagValue>,
+    hints: HookHints,
+  ) {
     // run "finally" hooks sequentially
     for (const hook of hooks ?? []) {
       try {
-        await hook?.finally?.(hookContext, hints);
+        await hook?.finally?.(hookContext, evaluationDetails, hints);
       } catch (err) {
         this.logger.error(`Unhandled error during 'finally' hook: ${err}`);
         if (err instanceof Error) {

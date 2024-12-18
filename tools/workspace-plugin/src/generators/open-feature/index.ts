@@ -183,14 +183,17 @@ function updatePackage(tree: Tree, projectRoot: string, schema: SchemaOptions) {
     // use undefined or this defaults to "commonjs", which breaks things: https://github.com/open-feature/js-sdk-contrib/pull/596
     json.type = undefined;
 
+    // everything should be Apache-2.0
+    json.license = 'Apache-2.0';
+
     // client packages have a web-sdk dep, server js-sdk
     json.peerDependencies =
       schema.category === 'client'
         ? {
-            '@openfeature/web-sdk': '^1.0.0',
+            '@openfeature/web-sdk': '^1.6.0',
           }
         : {
-            '@openfeature/server-sdk': '^1.13.0',
+            '@openfeature/server-sdk': '^1.17.0',
           };
 
     return json;
