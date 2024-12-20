@@ -1,16 +1,11 @@
 import { flagKeyPropertyKey, flagdPropertyKey, targetingPropertyKey } from './common';
 import MurmurHash3 from 'imurmurhash';
 import type { EvaluationContext, EvaluationContextValue, Logger } from '@openfeature/core';
-import { Constants } from 'json-logic-engine';
 
 export const fractionalRule = 'fractional';
 
 export function fractionalFactory(logger: Logger) {
-  return function fractional(
-    data: unknown,
-    contextContainer: { [key in typeof Constants.Override]: EvaluationContext },
-    ...remaining: unknown[]
-  ): string | null {
+  return function fractional(data: unknown, context: EvaluationContext): string | null {
     if (!Array.isArray(data)) {
       return null;
     }
@@ -21,11 +16,7 @@ export function fractionalFactory(logger: Logger) {
       return null;
     }
 
-    // Extract context using JSOn Logic Engine override symbol.
-    console.log('context', contextContainer);
-    console.log('remaining', remaining);
-    const context = contextContainer[Constants.Override];
-    const flagdProperties = context?.[flagdPropertyKey] as { [key: string]: EvaluationContextValue } | undefined;
+    const flagdProperties = context[flagdPropertyKey] as { [key: string]: EvaluationContextValue } | undefined;
     if (!flagdProperties) {
       logger.debug('Missing flagd properties, cannot perform fractional targeting');
       return null;

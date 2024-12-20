@@ -17,7 +17,7 @@ export class Targeting {
     engine.addMethod(startsWithRule, startsWithHandler);
     engine.addMethod(endsWithRule, endsWithHandler);
     engine.addMethod(semVerRule, semVerFactory(logger));
-    engine.addMethod(fractionalRule, fractionalFactory(logger), { useContext: true });
+    engine.addMethod(fractionalRule, fractionalFactory(logger));
 
     // JSON logic engine returns a generic Function interface, so we cast it to any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
