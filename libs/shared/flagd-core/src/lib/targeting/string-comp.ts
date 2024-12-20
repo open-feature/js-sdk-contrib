@@ -1,4 +1,4 @@
-import { type Logger } from '@openfeature/core';
+import type { Logger } from '@openfeature/core';
 
 export const startsWithRule = 'starts_with';
 export const endsWithRule = 'ends_with';

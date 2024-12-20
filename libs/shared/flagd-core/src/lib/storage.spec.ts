@@ -1,11 +1,19 @@
+import type { Logger } from '@openfeature/core';
 import { FeatureFlag } from './feature-flag';
 import { MemoryStorage } from './storage';
+
+const logger: Logger = {
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+};
 
 describe('MemoryStorage', () => {
   let storage: MemoryStorage;
 
   beforeEach(() => {
-    storage = new MemoryStorage();
+    storage = new MemoryStorage(logger);
   });
 
   it('should set configurations correctly', () => {
@@ -18,11 +26,16 @@ describe('MemoryStorage', () => {
       new Map([
         [
           'flag1',
-          new FeatureFlag({
-            state: 'ENABLED',
-            defaultVariant: 'variant1',
-            variants: { variant1: true, variant2: false },
-          }),
+          new FeatureFlag(
+            'flag1',
+            {
+              state: 'ENABLED',
+              defaultVariant: 'variant1',
+              variants: { variant1: true, variant2: false },
+              metadata: {},
+            },
+            logger,
+          ),
         ],
       ]),
     );
@@ -47,10 +60,18 @@ describe('MemoryStorage', () => {
 
     // Assert that the correct flag is returned
     expect(storage.getFlag('flag1')).toEqual(
-      new FeatureFlag({ state: 'ENABLED', defaultVariant: 'variant1', variants: { variant1: true, variant2: false } }),
+      new FeatureFlag(
+        'flag1',
+        { state: 'ENABLED', defaultVariant: 'variant1', variants: { variant1: true, variant2: false }, metadata: {} },
+        logger,
+      ),
     );
     expect(storage.getFlag('flag2')).toEqual(
-      new FeatureFlag({ state: 'ENABLED', defaultVariant: 'variant1', variants: { variant1: true, variant2: false } }),
+      new FeatureFlag(
+        'flag2',
+        { state: 'ENABLED', defaultVariant: 'variant1', variants: { variant1: true, variant2: false }, metadata: {} },
+        logger,
+      ),
     );
 
     // Assert that undefined is returned for non-existing flag

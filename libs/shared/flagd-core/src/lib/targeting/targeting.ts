@@ -3,34 +3,38 @@ import { stringCompareFactory, endsWithRule, startsWithRule } from './string-com
 import { semVerFactory, semVerRule } from './sem-ver';
 import { fractionalFactory, fractionalRule } from './fractional';
 import { flagdPropertyKey, flagKeyPropertyKey, timestampPropertyKey } from './common';
-import { type Logger } from '@openfeature/core';
-export class Targeting {
-  private readonly _logicEngine: LogicEngine;
+import type { EvaluationContext, Logger, JsonValue } from '@openfeature/core';
 
-  constructor(private logger: Logger) {
+export class Targeting {
+  private readonly _logicEngine: { (ctx: EvaluationContext): JsonValue };
+
+  constructor(
+    logic: unknown,
+    private logger: Logger,
+  ) {
     const engine = new LogicEngine();
     const { endsWithHandler, startsWithHandler } = stringCompareFactory(logger);
     engine.addMethod(startsWithRule, startsWithHandler);
     engine.addMethod(endsWithRule, endsWithHandler);
     engine.addMethod(semVerRule, semVerFactory(logger));
-    engine.addMethod(fractionalRule, fractionalFactory(logger));
+    engine.addMethod(fractionalRule, fractionalFactory(logger), { useContext: true });
 
-    this._logicEngine = engine;
+    // JSON logic engine returns a generic Function interface, so we cast it to any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this._logicEngine = engine.build(logic) as any;
   }
 
-  applyTargeting(flagKey: string, logic: unknown, data: object): unknown {
-    if (Object.hasOwn(data, flagdPropertyKey)) {
+  evaluate(flagKey: string, ctx: EvaluationContext): JsonValue {
+    if (Object.hasOwn(ctx, flagdPropertyKey)) {
       this.logger.warn(`overwriting ${flagdPropertyKey} property in the context`);
     }
 
-    const ctxData = {
-      ...data,
+    return this._logicEngine({
+      ...ctx,
       [flagdPropertyKey]: {
         [flagKeyPropertyKey]: flagKey,
         [timestampPropertyKey]: Math.floor(Date.now() / 1000),
       },
-    };
-
-    return this._logicEngine.run(logic, ctxData);
+    });
   }
 }

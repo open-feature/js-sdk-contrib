@@ -1,4 +1,4 @@
-import { Logger } from '@openfeature/core';
+import type { Logger } from '@openfeature/core';
 import { FeatureFlag } from './feature-flag';
 import { parse } from './parser';
 
@@ -34,7 +34,7 @@ export interface Storage {
 export class MemoryStorage implements Storage {
   private _flags: Map<string, FeatureFlag>;
 
-  constructor(private logger?: Logger) {
+  constructor(private logger: Logger) {
     this._flags = new Map<string, FeatureFlag>();
   }
 

@@ -1,4 +1,5 @@
-import { Logger, ParseError } from '@openfeature/core';
+import type { Logger } from '@openfeature/core';
+import { ParseError } from '@openfeature/core';
 import Ajv from 'ajv';
 import flagsSchema from '../../flagd-schemas/json/flags.json';
 import targetingSchema from '../../flagd-schemas/json/targeting.json';
@@ -15,22 +16,42 @@ const errorMessages = 'invalid flagd flag configuration';
 /**
  * Validate and parse flag configurations.
  */
-export function parse(flagCfg: string, throwIfSchemaInvalid: boolean, logger?: Logger): Map<string, FeatureFlag> {
+export function parse(flagCfg: string, throwIfSchemaInvalid: boolean, logger: Logger): Map<string, FeatureFlag> {
   try {
     const transformed = transform(flagCfg);
-    const flags: { flags: { [key: string]: Flag } } = JSON.parse(transformed);
+    const flags: { flags: { [key: string]: Flag }; metadata?: { id?: string; version?: string } } =
+      JSON.parse(transformed);
     const isValid = validate(flags);
     if (!isValid) {
       const message = `${errorMessages}: ${JSON.stringify(validate.errors, undefined, 2)}`;
-      logger?.warn(message);
+      logger.warn(message);
       if (throwIfSchemaInvalid) {
         throw new ParseError(message);
       }
     }
     const flagMap = new Map<string, FeatureFlag>();
 
+    const flagSetMetadata = {
+      ...(flags?.metadata?.id && { flagSetId: flags.metadata.id }),
+      ...(flags?.metadata?.version && { flagSetVersion: flags.metadata.version }),
+    };
+
     for (const flagsKey in flags.flags) {
-      flagMap.set(flagsKey, new FeatureFlag(flags.flags[flagsKey]));
+      const flag = flags.flags[flagsKey];
+      flagMap.set(
+        flagsKey,
+        new FeatureFlag(
+          flagsKey,
+          {
+            ...flag,
+            metadata: {
+              ...flagSetMetadata,
+              ...flag.metadata,
+            },
+          },
+          logger,
+        ),
+      );
     }
 
     return flagMap;

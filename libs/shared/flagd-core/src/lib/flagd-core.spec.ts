@@ -1,4 +1,4 @@
-import { FlagNotFoundError, ParseError, StandardResolutionReasons, TypeMismatchError } from '@openfeature/core';
+import { ErrorCode, ParseError, StandardResolutionReasons } from '@openfeature/core';
 import { FlagdCore } from './flagd-core';
 
 describe('flagd-core resolving', () => {
@@ -12,35 +12,35 @@ describe('flagd-core resolving', () => {
     });
 
     it('should resolve boolean flag', () => {
-      const resolved = core.resolveBooleanEvaluation('myBoolFlag', false, {}, console);
+      const resolved = core.resolveBooleanEvaluation('myBoolFlag', false, {});
       expect(resolved.value).toBe(true);
       expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
       expect(resolved.variant).toBe('on');
     });
 
     it('should resolve string flag', () => {
-      const resolved = core.resolveStringEvaluation('myStringFlag', 'key2', {}, console);
+      const resolved = core.resolveStringEvaluation('myStringFlag', 'key2', {});
       expect(resolved.value).toBe('val1');
       expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
       expect(resolved.variant).toBe('key1');
     });
 
     it('should resolve number flag', () => {
-      const resolved = core.resolveNumberEvaluation('myFloatFlag', 2.34, {}, console);
+      const resolved = core.resolveNumberEvaluation('myFloatFlag', 2.34, {});
       expect(resolved.value).toBe(1.23);
       expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
       expect(resolved.variant).toBe('one');
     });
 
     it('should resolve object flag', () => {
-      const resolved = core.resolveObjectEvaluation('myObjectFlag', { key: true }, {}, console);
+      const resolved = core.resolveObjectEvaluation('myObjectFlag', { key: true }, {});
       expect(resolved.value).toStrictEqual({ key: 'val' });
       expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
       expect(resolved.variant).toBe('object1');
     });
 
     it('should resolve all flags', () => {
-      const resolved = core.resolveAll({}, console);
+      const resolved = core.resolveAll({});
       expect(resolved).toMatchSnapshot();
     });
   });
@@ -55,35 +55,35 @@ describe('flagd-core resolving', () => {
     });
 
     it('should resolve boolean flag', () => {
-      const resolved = core.resolveBooleanEvaluation('myBoolFlag', false, {}, console);
+      const resolved = core.resolveBooleanEvaluation('myBoolFlag', false, {});
       expect(resolved.value).toBe(false);
       expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
       expect(resolved.variant).toBe('off');
     });
 
     it('should resolve string flag', () => {
-      const resolved = core.resolveStringEvaluation('myStringFlag', 'key2', {}, console);
+      const resolved = core.resolveStringEvaluation('myStringFlag', 'key2', {});
       expect(resolved.value).toBe('');
       expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
       expect(resolved.variant).toBe('key1');
     });
 
     it('should resolve number flag', () => {
-      const resolved = core.resolveNumberEvaluation('myFloatFlag', 2.34, {}, console);
+      const resolved = core.resolveNumberEvaluation('myFloatFlag', 2.34, {});
       expect(resolved.value).toBe(0);
       expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
       expect(resolved.variant).toBe('zero');
     });
 
     it('should resolve object flag', () => {
-      const resolved = core.resolveObjectEvaluation('myObjectFlag', { key: true }, {}, console);
+      const resolved = core.resolveObjectEvaluation('myObjectFlag', { key: true }, {});
       expect(resolved.value).toStrictEqual({});
       expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
       expect(resolved.variant).toBe('object1');
     });
 
     it('should resolve all flags', () => {
-      const resolved = core.resolveAll({}, console);
+      const resolved = core.resolveAll({});
       expect(resolved).toMatchSnapshot();
     });
   });
@@ -100,21 +100,21 @@ describe('flagd-core targeting evaluations', () => {
   });
 
   it('should resolve for correct inputs', () => {
-    const resolved = core.resolveStringEvaluation('targetedFlag', 'none', { email: 'admin@openfeature.dev' }, console);
+    const resolved = core.resolveStringEvaluation('targetedFlag', 'none', { email: 'admin@openfeature.dev' });
     expect(resolved.value).toBe('BBB');
     expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
     expect(resolved.variant).toBe('second');
   });
 
   it('should fallback to default - missing targeting context data', () => {
-    const resolved = core.resolveStringEvaluation('targetedFlag', 'none', {}, console);
+    const resolved = core.resolveStringEvaluation('targetedFlag', 'none', {});
     expect(resolved.value).toBe('AAA');
     expect(resolved.reason).toBe(StandardResolutionReasons.DEFAULT);
     expect(resolved.variant).toBe('first');
   });
 
   it('should handle short circuit fallbacks', () => {
-    const resolved = core.resolveBooleanEvaluation('shortCircuit', false, { favoriteNumber: 1 }, console);
+    const resolved = core.resolveBooleanEvaluation('shortCircuit', false, { favoriteNumber: 1 });
     expect(resolved.value).toBe(true);
     expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
     expect(resolved.variant).toBe('true');
@@ -127,12 +127,7 @@ describe('flagd-core targeting evaluations', () => {
     const core = new FlagdCore();
     core.setConfigurations(caseVariantValueFlag);
 
-    const evaluation = core.resolveBooleanEvaluation(
-      'new-welcome-banner',
-      false,
-      { email: 'test@example.com' },
-      console,
-    );
+    const evaluation = core.resolveBooleanEvaluation('new-welcome-banner', false, { email: 'test@example.com' });
     expect(evaluation.value).toBe(true);
     expect(evaluation.variant).toBe('true');
     expect(evaluation.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
@@ -142,7 +137,7 @@ describe('flagd-core targeting evaluations', () => {
 describe('flagd-core validations', () => {
   // flags of disabled, invalid variants and missing variant
   const mixFlags =
-    '{"flags":{"myBoolFlag":{"state":"DISABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"}}}';
+    '{"flags":{"disabledFlag":{"state":"DISABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"}}}';
   let core: FlagdCore;
 
   beforeAll(() => {
@@ -150,26 +145,33 @@ describe('flagd-core validations', () => {
     core.setConfigurations(mixFlags);
   });
 
-  it('should throw because the flag does not exist', () => {
+  it('should return reason "error" because the flag does not exist', () => {
     const flagKey = 'nonexistentFlagKey';
-    expect(() => core.resolveBooleanEvaluation(flagKey, false, {}, console)).toThrow(
-      new FlagNotFoundError(`flag: '${flagKey}' not found`),
-    );
+    const evaluation = core.resolveBooleanEvaluation(flagKey, false, {});
+    expect(evaluation.reason).toBe(StandardResolutionReasons.ERROR);
+    expect(evaluation.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
+    expect(evaluation.errorMessage).toBe(`flag '${flagKey}' not found`);
+    expect(evaluation.value).toBe(false);
+    expect(evaluation.variant).toBeUndefined();
   });
 
-  it('should throw because the flag is disabled and should behave like it does not exist', () => {
-    const flagKey = 'myBoolFlag';
-    expect(() => core.resolveBooleanEvaluation(flagKey, false, {}, console)).toThrow(
-      new FlagNotFoundError(`flag: '${flagKey}' is disabled`),
-    );
+  it('should return reason "disabled" and return the default value', () => {
+    const flagKey = 'disabledFlag';
+    const evaluation = core.resolveBooleanEvaluation(flagKey, false, {});
+    expect(evaluation.reason).toBe(StandardResolutionReasons.DISABLED);
+    expect(evaluation.value).toBe(false);
+    expect(evaluation.variant).toBeUndefined();
   });
 
   it('should validate variant', () => {
-    expect(() => core.resolveStringEvaluation('myStringFlag', 'hello', {}, console)).toThrow(TypeMismatchError);
+    const evaluation = core.resolveStringEvaluation('myStringFlag', 'hello', {});
+    expect(evaluation.value).toBe('hello');
+    expect(evaluation.reason).toBe(StandardResolutionReasons.ERROR);
+    expect(evaluation.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
   });
 
   it('should only resolve enabled flags', () => {
-    const resolved = core.resolveAll({}, console);
+    const resolved = core.resolveAll({});
     expect(resolved).toHaveLength(1);
     expect(resolved[0]).toHaveProperty('flagKey', 'myStringFlag');
   });
@@ -182,19 +184,14 @@ describe('flagd-core common flag definitions', () => {
     core.setConfigurations(flagCfg);
 
     it('should support truthy values', () => {
-      const resolvedTruthy = core.resolveBooleanEvaluation(
-        'myBoolFlag',
-        false,
-        { email: 'user@openfeature.dev' },
-        console,
-      );
+      const resolvedTruthy = core.resolveBooleanEvaluation('myBoolFlag', false, { email: 'user@openfeature.dev' });
       expect(resolvedTruthy.value).toBe(true);
       expect(resolvedTruthy.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
       expect(resolvedTruthy.variant).toBe('true');
     });
 
     it('should support falsy values', () => {
-      const resolvedFalsy = core.resolveBooleanEvaluation('myBoolFlag', false, { email: 'user@flagd.dev' }, console);
+      const resolvedFalsy = core.resolveBooleanEvaluation('myBoolFlag', false, { email: 'user@flagd.dev' });
       expect(resolvedFalsy.value).toBe(false);
       expect(resolvedFalsy.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
       expect(resolvedFalsy.variant).toBe('false');
@@ -206,7 +203,7 @@ describe('flagd-core common flag definitions', () => {
     const flagCfg = `{"flags":{"headerColor":{"state":"ENABLED","variants":{"red":"red","blue":"blue","grey":"grey"},"defaultVariant":"grey", "targeting":{"fractional":[{"cat":[{"var":"$flagd.flagKey"},{"var":"email"}]},["red",50],["blue",50]]}}}}`;
     core.setConfigurations(flagCfg);
 
-    const resolved = core.resolveStringEvaluation('headerColor', 'grey', { email: 'user@openfeature.dev' }, console);
+    const resolved = core.resolveStringEvaluation('headerColor', 'grey', { email: 'user@openfeature.dev' });
     expect(resolved.value).toBe('red');
     expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
     expect(resolved.variant).toBe('red');
@@ -217,7 +214,7 @@ describe('flagd-core common flag definitions', () => {
     const flagCfg = `{"flags":{"headerColor":{"state":"ENABLED","variants":{"red":"red","blue":"blue","grey":"grey"},"defaultVariant":"grey", "targeting":{"if":[true,{"fractional":[{"cat":[{"var":"$flagd.flagKey"},{"var":"email"}]},["red",50],["blue",50]]}]}}}}`;
     core.setConfigurations(flagCfg);
 
-    const resolved = core.resolveStringEvaluation('headerColor', 'grey', { email: 'user@openfeature.dev' }, console);
+    const resolved = core.resolveStringEvaluation('headerColor', 'grey', { email: 'user@openfeature.dev' });
     expect(resolved.value).toBe('red');
     expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
     expect(resolved.variant).toBe('red');
@@ -228,7 +225,7 @@ describe('flagd-core common flag definitions', () => {
     const flagCfg = `{"flags":{"isEnabled":{"state":"ENABLED","variants":{"true":true,"false":false},"defaultVariant":"false","targeting":{}}}}`;
     core.setConfigurations(flagCfg);
 
-    const resolved = core.resolveBooleanEvaluation('isEnabled', false, {}, console);
+    const resolved = core.resolveBooleanEvaluation('isEnabled', false, {});
     expect(resolved.value).toBe(false);
     expect(resolved.reason).toBe(StandardResolutionReasons.STATIC);
     expect(resolved.variant).toBe('false');
