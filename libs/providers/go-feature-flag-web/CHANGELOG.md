@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.2...go-feature-flag-web-provider-v0.2.3) (2024-12-13)
+
+
+### 🐛 Bug Fixes
+
+* **go-feature-flag-web:** avoid infinite loop in waitWebsocketFinalSt… ([#1104](https://github.com/open-feature/js-sdk-contrib/issues/1104)) ([2cc7483](https://github.com/open-feature/js-sdk-contrib/commit/2cc7483ea0f8d178d5abfacfdce804db83704ba7))
+
 ## [0.2.2](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.1...go-feature-flag-web-provider-v0.2.2) (2024-12-03)
 
 

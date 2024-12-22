@@ -36,4 +36,16 @@ export interface LaunchDarklyProviderOptions extends LDOptions {
    * disclaimer: this logger instance will be used by the launch-darkly sdk
    */
   logger?: LDLogger | Logger;
+
+  /**
+   * Configures the amount of time, in seconds, to wait for initialization when
+   * connecting to the LaunchDarkly service.
+   *
+   * Using a large timeout is not recommended as network delays may cause your
+   * application to wait a long time before continuing execution.
+   *
+   * See the launchdarkly-js-client-sdk docs for more details:
+   * {@link https://launchdarkly.github.io/js-client-sdk/interfaces/LDClient.html#waitForInitialization}
+   */
+  initializationTimeout?: number;
 }
