@@ -8,6 +8,7 @@ import {
   ProviderEvents,
   ResolutionDetails,
   ProviderFatalError,
+  TypeMismatchError,
 } from '@openfeature/web-sdk';
 import { UnleashClient } from 'unleash-proxy-client';
 import { UnleashConfig } from './unleash-web-provider-config';
@@ -122,20 +123,22 @@ export class UnleashWebProvider implements Provider {
   }
 
   resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
-    return this.evaluate(flagKey, defaultValue);
+    return this.evaluate(flagKey, defaultValue, 'string');
   }
 
   resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number> {
-    const resolutionDetails = this.evaluate(flagKey, defaultValue);
-    resolutionDetails.value = Number(resolutionDetails.value);
-    return resolutionDetails;
+    return this.evaluate(flagKey, defaultValue, 'number');
   }
 
   resolveObjectEvaluation<U extends JsonValue>(flagKey: string, defaultValue: U): ResolutionDetails<U> {
-    return this.evaluate(flagKey, defaultValue);
+    return this.evaluate(flagKey, defaultValue, 'object');
   }
 
-  private evaluate<T>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
+  private throwTypeMismatchError(variant: string, variantType: string, flagType: string) {
+    throw new TypeMismatchError(`Type of requested variant ${variant} is of type ${variantType} but requested flag type of ${flagType}`);
+  }
+
+  private evaluate<T>(flagKey: string, defaultValue: T, flagType: string): ResolutionDetails<T> {
     const evaluatedVariant = this._client?.getVariant(flagKey);
     let value;
     let variant;
@@ -143,11 +146,29 @@ export class UnleashWebProvider implements Provider {
       throw new FlagNotFoundError();
     }
 
-    if (evaluatedVariant.name === 'disabled') {
+    if (evaluatedVariant.name === 'disabled' || typeof evaluatedVariant.payload === 'undefined') {
       value = defaultValue;
     } else {
       variant = evaluatedVariant.name;
       value = evaluatedVariant.payload?.value;
+
+      const variantType = evaluatedVariant.payload?.type;
+
+      if (flagType === 'string' && flagType !== variantType) {
+        this.throwTypeMismatchError(variant, variantType, flagType);
+      }
+      if (flagType === 'number') {
+        const numberValue = parseFloat(value);
+        if (flagType !== variantType || isNaN(numberValue)) {
+          this.throwTypeMismatchError(variant, variantType, flagType);
+        }
+        value = numberValue;
+      }
+      if (flagType === 'object') {
+        if (variantType !== 'json' && variantType !== 'csv') {
+          this.throwTypeMismatchError(variant, variantType, flagType);
+        }
+      }
     }
     return {
       variant: variant,
