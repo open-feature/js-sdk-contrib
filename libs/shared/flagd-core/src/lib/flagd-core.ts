@@ -14,6 +14,8 @@ import {
 import { FeatureFlag } from './feature-flag';
 import { MemoryStorage, Storage } from './storage';
 
+type ResolutionDetailsWithFlagMetadata<T> = Required<Pick<ResolutionDetails<T>, 'flagMetadata'>> & ResolutionDetails<T>;
+
 /**
  * Expose flag configuration setter and flag resolving methods.
  */
@@ -24,16 +26,6 @@ export class FlagdCore implements Storage {
   constructor(storage?: Storage, logger?: Logger) {
     this._logger = logger ? new SafeLogger(logger) : new DefaultLogger();
     this._storage = storage ? storage : new MemoryStorage(this._logger);
-  }
-
-  /**
-   * Sets the logger for the FlagdCore instance.
-   * @param logger - The logger to be set.
-   * @returns - The FlagdCore instance with the logger set.
-   */
-  setLogger(logger: Logger) {
-    this._logger = new SafeLogger(logger);
-    return this;
   }
 
   setConfigurations(cfg: string): string[] {
@@ -48,20 +40,22 @@ export class FlagdCore implements Storage {
     return this._storage.getFlags();
   }
 
+  getFlagSetMetadata(): { flagSetId?: string; flagSetVersion?: string } {
+    return this._storage.getFlagSetMetadata();
+  }
+
   /**
    * Resolve the flag evaluation to a boolean value.
    * @param flagKey - The key of the flag to be evaluated.
    * @param defaultValue - The default value to be returned if the flag is not found.
    * @param evalCtx - The evaluation context to be used for targeting.
-   * @param logger - The logger to be used to troubleshoot targeting errors. Overrides the default logger.
    * @returns - The resolved value and the reason for the resolution.
    */
   resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,
     evalCtx?: EvaluationContext,
-    // logger?: Logger,
-  ): ResolutionDetails<boolean> {
+  ): ResolutionDetailsWithFlagMetadata<boolean> {
     return this.resolve('boolean', flagKey, defaultValue, evalCtx);
   }
 
@@ -70,15 +64,13 @@ export class FlagdCore implements Storage {
    * @param flagKey - The key of the flag to be evaluated.
    * @param defaultValue - The default value to be returned if the flag is not found.
    * @param evalCtx - The evaluation context to be used for targeting.
-   * @param logger - The logger to be used to troubleshoot targeting errors. Overrides the default logger.
    * @returns - The resolved value and the reason for the resolution.
    */
   resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
     evalCtx?: EvaluationContext,
-    // logger?: Logger,
-  ): ResolutionDetails<string> {
+  ): ResolutionDetailsWithFlagMetadata<string> {
     return this.resolve('string', flagKey, defaultValue, evalCtx);
   }
 
@@ -87,15 +79,13 @@ export class FlagdCore implements Storage {
    * @param flagKey - The key of the flag to evaluate.
    * @param defaultValue - The default value to return if the flag is not found or the evaluation fails.
    * @param evalCtx - The evaluation context to be used for targeting.
-   * @param logger - The logger to be used to troubleshoot targeting errors. Overrides the default logger.
    * @returns - The resolved value and the reason for the resolution.
    */
   resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
     evalCtx?: EvaluationContext,
-    // logger?: Logger,
-  ): ResolutionDetails<number> {
+  ): ResolutionDetailsWithFlagMetadata<number> {
     return this.resolve('number', flagKey, defaultValue, evalCtx);
   }
 
@@ -105,26 +95,22 @@ export class FlagdCore implements Storage {
    * @param flagKey - The key of the flag to resolve.
    * @param defaultValue - The default value to use if the flag is not found.
    * @param evalCtx - The evaluation context to be used for targeting.
-   * @param logger - The logger to be used to troubleshoot targeting errors. Overrides the default logger.
    * @returns - The resolved value and the reason for the resolution.
    */
   resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
     evalCtx?: EvaluationContext,
-    // logger?: Logger,
-  ): ResolutionDetails<T> {
+  ): ResolutionDetailsWithFlagMetadata<T> {
     return this.resolve('object', flagKey, defaultValue, evalCtx);
   }
 
   /**
    * Resolve the flag evaluation for all enabled flags.
    * @param evalCtx - The evaluation context to be used for targeting.
-   * @param logger - The logger to be used to troubleshoot targeting errors. Overrides the default logger.
    * @returns - The list of evaluation details for all enabled flags.
    */
   resolveAll(evalCtx: EvaluationContext = {}): EvaluationDetails<JsonValue>[] {
-    // logger ??= this._logger;
     const values: EvaluationDetails<JsonValue>[] = [];
     for (const [key, flag] of this.getFlags()) {
       try {
@@ -151,7 +137,6 @@ export class FlagdCore implements Storage {
    * @param {string} flagKey - The key of the flag.
    * @param {T} defaultValue - The default value of the flag.
    * @param {EvaluationContext} evalCtx - The evaluation context for targeting rules.
-   * @param {Logger} [logger] - The optional logger for logging errors.
    * @returns {ResolutionDetails<T>} -  The resolved value and the reason for the resolution.
    * @throws {FlagNotFoundError} - If the flag with the given key is not found.
    * @throws {TypeMismatchError} - If the evaluated type of the flag does not match the expected type.
@@ -162,8 +147,7 @@ export class FlagdCore implements Storage {
     flagKey: string,
     defaultValue: T,
     evalCtx: EvaluationContext = {},
-    // logger?: Logger,
-  ): ResolutionDetails<T> {
+  ): ResolutionDetailsWithFlagMetadata<T> {
     const flag = this._storage.getFlag(flagKey);
     // flag exist check
     if (!flag) {
@@ -172,6 +156,7 @@ export class FlagdCore implements Storage {
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.FLAG_NOT_FOUND,
         errorMessage: `flag '${flagKey}' not found`,
+        flagMetadata: this._storage.getFlagSetMetadata(),
       };
     }
 
@@ -179,7 +164,9 @@ export class FlagdCore implements Storage {
     if (flag.state === 'DISABLED') {
       return {
         value: defaultValue,
-        reason: StandardResolutionReasons.DISABLED,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.FLAG_NOT_FOUND,
+        errorMessage: `flag '${flagKey}' is disabled`,
         flagMetadata: flag.metadata,
       };
     }
@@ -200,6 +187,7 @@ export class FlagdCore implements Storage {
       value: value as T,
       reason,
       variant,
+      flagMetadata: flag.metadata,
     };
   }
 }

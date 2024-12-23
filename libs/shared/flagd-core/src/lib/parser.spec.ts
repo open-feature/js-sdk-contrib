@@ -25,7 +25,7 @@ describe('Flag configurations', () => {
         '  }\n' +
         '}';
 
-      const flags = parse(simpleFlag, false, logger);
+      const { flags } = parse(simpleFlag, false, logger);
       expect(flags).toBeTruthy();
       expect(flags.get('myBoolFlag')).toBeTruthy();
     });
@@ -34,7 +34,7 @@ describe('Flag configurations', () => {
       const longFlag =
         '{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"key1":"val1","key2":"val2"},"defaultVariant":"key1"},"myFloatFlag":{"state":"ENABLED","variants":{"one":1.23,"two":2.34},"defaultVariant":"one"},"myIntFlag":{"state":"ENABLED","variants":{"one":1,"two":2},"defaultVariant":"one"},"myObjectFlag":{"state":"ENABLED","variants":{"object1":{"key":"val"},"object2":{"key":true}},"defaultVariant":"object1"},"fibAlgo":{"variants":{"recursive":"recursive","memo":"memo","loop":"loop","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},"binet",null]}},"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",{"in":["Chrome",{"var":"userAgent"}]},"third",null]}}},"$evaluators":{"emailWithFaas":{"in":["@faas.com",{"var":["email"]}]}}}';
 
-      const flags = parse(longFlag, false, logger);
+      const { flags } = parse(longFlag, false, logger);
       expect(flags).toBeTruthy();
       expect(flags.get('myBoolFlag')).toBeTruthy();
       expect(flags.get('myStringFlag')).toBeTruthy();
@@ -61,12 +61,13 @@ describe('Flag configurations', () => {
       const flagWithRef =
         '{"flags":{"fibAlgo":{"variants":{"recursive":"recursive","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailSuffixFaas"},"binet",null]}}},"$evaluators":{"emailSuffixFaas":{"in":["@faas.com",{"var":["email"]}]}}}';
 
-      const flags = parse(flagWithRef, false, logger);
+      const { flags } = parse(flagWithRef, false, logger);
       expect(flags).toBeTruthy();
 
       const fibAlgo = flags.get('fibAlgo');
       expect(fibAlgo).toBeTruthy();
-      // expect(fibAlgo?.targeting).toStrictEqual({ if: [{ in: ['@faas.com', { var: ['email'] }] }, 'binet', null] });
+      // TODO - spy on parser
+      // expect(fibAlgo.).toStrictEqual({ if: [{ in: ['@faas.com', { var: ['email'] }] }, 'binet', null] });
     });
 
     it('should throw a parsing error due to invalid JSON', () => {
@@ -119,6 +120,25 @@ describe('Flag configurations', () => {
         '}';
 
       expect(() => parse(invalidFlag, true, logger)).toThrow(ParseError);
+    });
+
+    it('should not throw if targeting is valid', () => {
+      const invalidFlag =
+        '{\n' +
+        '  "flags": {\n' +
+        '    "myBoolFlag": {\n' +
+        '      "state": "ENABLED",\n' +
+        '      "variants": {\n' +
+        '        "on": true,\n' +
+        '        "off": false\n' +
+        '      },\n' +
+        '      "defaultVariant": "off",\n' +
+        '      "targeting": {"if":[{"in":[{"var":"locale"},["us","ca"]]}, "true"]}' +
+        '    }\n' +
+        '  }\n' +
+        '}';
+
+      expect(() => parse(invalidFlag, true, logger)).not.toThrow();
     });
   });
 });

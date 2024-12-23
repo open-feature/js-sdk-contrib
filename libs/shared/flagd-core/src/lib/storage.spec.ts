@@ -77,4 +77,31 @@ describe('MemoryStorage', () => {
     // Assert that undefined is returned for non-existing flag
     expect(storage.getFlag('flag3')).toBeUndefined();
   });
+
+  describe('metadata', () => {
+    it('should return flag set version and id, owner, and drop "random"', () => {
+      const cfg =
+        '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false},"metadata":{"owner":"mike"}}}, "metadata":{"version":"1", "id": "test", "random": "shouldBeDropped"}}';
+      storage.setConfigurations(cfg);
+      const flag1 = storage.getFlag('flag1');
+
+      expect(flag1?.metadata).toEqual({ flagSetVersion: '1', flagSetId: 'test', owner: 'mike' });
+    });
+
+    it('should merge metadata with flag metadata overriding matching flag set metadata', () => {
+      const cfg =
+        '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false},"metadata":{"owner":"mike", "flagSetId": "prod" }}}, "metadata":{"version":"1", "id": "dev"}}';
+      storage.setConfigurations(cfg);
+      const flag1 = storage.getFlag('flag1');
+
+      expect(flag1?.metadata).toEqual({ flagSetVersion: '1', flagSetId: 'prod', owner: 'mike' });
+    });
+
+    it('should set flag set metadata correctly', () => {
+      const cfg =
+        '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}}}, "metadata":{"version":"1", "id": "dev"}}';
+      storage.setConfigurations(cfg);
+      expect(storage.getFlagSetMetadata()).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+    });
+  });
 });

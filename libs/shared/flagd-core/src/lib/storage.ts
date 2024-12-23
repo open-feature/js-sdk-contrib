@@ -26,6 +26,12 @@ export interface Storage {
    * @returns The map of all the flags.
    */
   getFlags(): Map<string, FeatureFlag>;
+
+  /**
+   * Gets metadata related to the flag set.
+   * @returns The flag set metadata.
+   */
+  getFlagSetMetadata(): { flagSetId?: string; flagSetVersion?: string };
 }
 
 /**
@@ -33,6 +39,7 @@ export interface Storage {
  */
 export class MemoryStorage implements Storage {
   private _flags: Map<string, FeatureFlag>;
+  private _flagSetMetadata = {};
 
   constructor(private logger: Logger) {
     this._flags = new Map<string, FeatureFlag>();
@@ -46,8 +53,12 @@ export class MemoryStorage implements Storage {
     return this._flags;
   }
 
+  getFlagSetMetadata(): { flagSetId?: string; flagSetVersion?: string } {
+    return this._flagSetMetadata;
+  }
+
   setConfigurations(cfg: string): string[] {
-    const newFlags = parse(cfg, false, this.logger);
+    const { flags: newFlags, metadata } = parse(cfg, false, this.logger);
     const oldFlags = this._flags;
     const added: string[] = [];
     const removed: string[] = [];
@@ -68,6 +79,7 @@ export class MemoryStorage implements Storage {
     });
 
     this._flags = newFlags;
+    this._flagSetMetadata = metadata;
     return [...added, ...removed, ...changed];
   }
 }

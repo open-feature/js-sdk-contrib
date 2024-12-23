@@ -5,6 +5,16 @@ import flagsSchema from '../../flagd-schemas/json/flags.json';
 import targetingSchema from '../../flagd-schemas/json/targeting.json';
 import { FeatureFlag, Flag } from './feature-flag';
 
+type FlagConfig = {
+  flags: { [key: string]: Flag };
+  metadata?: { id?: string; version?: string };
+};
+
+type FlagSet = {
+  flags: Map<string, FeatureFlag>;
+  metadata: { flagSetId?: string; flagSetVersion?: string };
+};
+
 const ajv = new Ajv({ strict: false });
 const validate = ajv.addSchema(targetingSchema).compile(flagsSchema);
 
@@ -16,15 +26,15 @@ const errorMessages = 'invalid flagd flag configuration';
 /**
  * Validate and parse flag configurations.
  */
-export function parse(flagCfg: string, throwIfSchemaInvalid: boolean, logger: Logger): Map<string, FeatureFlag> {
+export function parse(flagConfig: string, throwIfSchemaInvalid: boolean, logger: Logger): FlagSet {
   try {
-    const transformed = transform(flagCfg);
-    const flags: { flags: { [key: string]: Flag }; metadata?: { id?: string; version?: string } } =
-      JSON.parse(transformed);
-    const isValid = validate(flags);
+    const transformed = transform(flagConfig);
+    const parsedFlagConfig: FlagConfig = JSON.parse(transformed);
+
+    const isValid = validate(parsedFlagConfig);
     if (!isValid) {
       const message = `${errorMessages}: ${JSON.stringify(validate.errors, undefined, 2)}`;
-      logger.warn(message);
+      // TODO see if trace logging makes sense here
       if (throwIfSchemaInvalid) {
         throw new ParseError(message);
       }
@@ -32,12 +42,12 @@ export function parse(flagCfg: string, throwIfSchemaInvalid: boolean, logger: Lo
     const flagMap = new Map<string, FeatureFlag>();
 
     const flagSetMetadata = {
-      ...(flags?.metadata?.id && { flagSetId: flags.metadata.id }),
-      ...(flags?.metadata?.version && { flagSetVersion: flags.metadata.version }),
+      ...(parsedFlagConfig?.metadata?.id && { flagSetId: parsedFlagConfig.metadata.id }),
+      ...(parsedFlagConfig?.metadata?.version && { flagSetVersion: parsedFlagConfig.metadata.version }),
     };
 
-    for (const flagsKey in flags.flags) {
-      const flag = flags.flags[flagsKey];
+    for (const flagsKey in parsedFlagConfig.flags) {
+      const flag = parsedFlagConfig.flags[flagsKey];
       flagMap.set(
         flagsKey,
         new FeatureFlag(
@@ -54,12 +64,15 @@ export function parse(flagCfg: string, throwIfSchemaInvalid: boolean, logger: Lo
       );
     }
 
-    return flagMap;
+    return {
+      flags: flagMap,
+      metadata: flagSetMetadata,
+    };
   } catch (err) {
     if (err instanceof ParseError) {
       throw err;
     }
-    throw new ParseError(errorMessages);
+    throw new ParseError(errorMessages, { cause: err });
   }
 }
 

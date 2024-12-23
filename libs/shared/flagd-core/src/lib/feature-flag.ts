@@ -22,6 +22,8 @@ export interface Flag {
   metadata?: FlagMetadata;
 }
 
+type ResolutionDetailsWithFlagMetadata<T> = Required<Pick<ResolutionDetails<T>, 'flagMetadata'>> & ResolutionDetails<T>;
+
 /**
  * Flagd flag configuration structure for internal reference.
  */
@@ -33,6 +35,7 @@ export class FeatureFlag {
   private readonly _hash: string;
   private readonly _metadata: FlagMetadata;
   private readonly _targeting?: Targeting;
+  private readonly _targetingParseError?: Error;
 
   constructor(key: string, flag: Flag, logger: Logger) {
     this._key = key;
@@ -40,8 +43,16 @@ export class FeatureFlag {
     this._defaultVariant = flag['defaultVariant'];
     this._variants = new Map<string, FlagValue>(Object.entries(flag['variants']));
     this._metadata = flag['metadata'] ?? {};
-    this._targeting =
-      flag.targeting && Object.keys(flag.targeting).length > 0 ? new Targeting(flag.targeting, logger) : undefined;
+
+    if (flag.targeting && Object.keys(flag.targeting).length > 0) {
+      try {
+        this._targeting = new Targeting(flag.targeting, logger);
+      } catch (err) {
+        const message = `Invalid targeting configuration for flag '${key}'`;
+        logger.warn(message);
+        this._targetingParseError = new ParseError(message, { cause: err });
+      }
+    }
     this._hash = sha1(flag);
 
     this.validateStructure();
@@ -71,11 +82,13 @@ export class FeatureFlag {
     return this._metadata;
   }
 
-  evaluate(evalCtx: EvaluationContext): ResolutionDetails<JsonValue> {
+  evaluate(evalCtx: EvaluationContext): ResolutionDetailsWithFlagMetadata<JsonValue> {
     let variant: string;
     let reason: ResolutionReason;
 
-    if (!this._targeting) {
+    if (this._targetingParseError) {
+      throw this._targetingParseError;
+    } else if (!this._targeting) {
       variant = this._defaultVariant;
       reason = StandardResolutionReasons.STATIC;
     } else {
@@ -83,12 +96,11 @@ export class FeatureFlag {
       try {
         targetingResolution = this._targeting.evaluate(this._key, evalCtx);
       } catch (e) {
-        console.log(e);
         throw new GeneralError(`Error evaluating targeting rule for flag '${this._key}'`, { cause: e });
       }
 
       // Return default variant if targeting resolution is null or undefined
-      if (targetingResolution == null) {
+      if (targetingResolution === null || targetingResolution === undefined) {
         variant = this._defaultVariant;
         reason = StandardResolutionReasons.DEFAULT;
       } else {

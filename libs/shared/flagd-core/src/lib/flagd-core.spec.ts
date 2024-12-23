@@ -155,10 +155,12 @@ describe('flagd-core validations', () => {
     expect(evaluation.variant).toBeUndefined();
   });
 
-  it('should return reason "disabled" and return the default value', () => {
+  it('should return reason "error" because the flag is disabled', () => {
     const flagKey = 'disabledFlag';
     const evaluation = core.resolveBooleanEvaluation(flagKey, false, {});
-    expect(evaluation.reason).toBe(StandardResolutionReasons.DISABLED);
+    expect(evaluation.reason).toBe(StandardResolutionReasons.ERROR);
+    expect(evaluation.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
+    expect(evaluation.errorMessage).toBe(`flag '${flagKey}' is disabled`);
     expect(evaluation.value).toBe(false);
     expect(evaluation.variant).toBeUndefined();
   });
