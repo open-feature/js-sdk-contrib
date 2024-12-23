@@ -92,7 +92,7 @@ export class OFREPWebProvider implements Provider {
       this._logger?.debug(`${this.metadata.name} initialized successfully`);
     } catch (error) {
       if (error instanceof OFREPApiUnauthorizedError || error instanceof OFREPForbiddenError) {
-        throw new ProviderFatalError('Initialization failed', error);
+        throw new ProviderFatalError('Initialization failed', { cause: error });
       }
       throw error;
     }
