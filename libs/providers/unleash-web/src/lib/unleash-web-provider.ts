@@ -135,7 +135,9 @@ export class UnleashWebProvider implements Provider {
   }
 
   private throwTypeMismatchError(variant: string, variantType: string, flagType: string) {
-    throw new TypeMismatchError(`Type of requested variant ${variant} is of type ${variantType} but requested flag type of ${flagType}`);
+    throw new TypeMismatchError(
+      `Type of requested variant ${variant} is of type ${variantType} but requested flag type of ${flagType}`,
+    );
   }
 
   private evaluate<T>(flagKey: string, defaultValue: T, flagType: string): ResolutionDetails<T> {

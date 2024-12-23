@@ -235,7 +235,7 @@ describe('UnleashWebProvider evaluations', () => {
       const evaluation = provider.resolveNumberEvaluation('disabledVariant', 0);
       expect(evaluation).toHaveProperty(valueProperty, 0);
     });
-  
+
     it('should throw TypeMismatchError if requested variant type is not a number', () => {
       expect(() => provider.resolveNumberEvaluation('variantToggleCsv', 0)).toThrow(TypeMismatchError);
     });
