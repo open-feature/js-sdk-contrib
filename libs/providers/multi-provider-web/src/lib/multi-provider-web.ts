@@ -13,6 +13,12 @@ import {
   ProviderMetadata,
   BeforeHookContext,
   ResolutionDetails,
+  FlagMetadata,
+  ErrorCode,
+  EvaluationDetails,
+  FlagValue,
+  OpenFeatureError,
+  StandardResolutionReasons,
 } from '@openfeature/web-sdk';
 import { HookExecutor } from './hook-executor';
 import { constructAggregateError, throwAggregateErrorFromPromiseResults } from './errors';
@@ -232,32 +238,31 @@ export class WebMultiProvider implements Provider {
     hookContext: HookContext,
     hookHints: HookHints,
   ) {
-    let evaluationResult: ResolutionDetails<T>;
+    let evaluationDetails: EvaluationDetails<T>;
 
     try {
       this.hookExecutor.beforeHooks(provider.hooks, hookContext, hookHints);
 
-      evaluationResult = this.callProviderResolve(
+      const resolutionDetails = this.callProviderResolve<T>(
         provider,
         flagKey,
         defaultValue,
         hookContext.context,
       ) as ResolutionDetails<T>;
 
-      const afterHookEvalDetails = {
-        ...evaluationResult,
-        flagMetadata: Object.freeze(evaluationResult.flagMetadata ?? {}),
+      evaluationDetails = {
+        ...resolutionDetails,
+        flagMetadata: Object.freeze(resolutionDetails.flagMetadata ?? {}),
         flagKey,
       };
 
-      this.hookExecutor.afterHooks(provider.hooks, hookContext, afterHookEvalDetails, hookHints);
-      return evaluationResult;
+      this.hookExecutor.afterHooks(provider.hooks, hookContext, evaluationDetails, hookHints);
     } catch (error: unknown) {
       this.hookExecutor.errorHooks(provider.hooks, hookContext, error, hookHints);
-      throw error;
-    } finally {
-      this.hookExecutor.finallyHooks(provider.hooks, hookContext, hookHints);
+      evaluationDetails = this.getErrorEvaluationDetails(flagKey, defaultValue, error);
     }
+    this.hookExecutor.finallyHooks(provider.hooks, hookContext, evaluationDetails, hookHints);
+    return evaluationDetails;
   }
 
   private callProviderResolve<T extends boolean | string | number | JsonValue>(
@@ -290,5 +295,24 @@ export class WebMultiProvider implements Provider {
         },
       },
     ];
+  }
+
+  private getErrorEvaluationDetails<T extends FlagValue>(
+    flagKey: string,
+    defaultValue: T,
+    err: unknown,
+    flagMetadata: FlagMetadata = {},
+  ): EvaluationDetails<T> {
+    const errorMessage: string = (err as Error)?.message;
+    const errorCode: ErrorCode = (err as OpenFeatureError)?.code || ErrorCode.GENERAL;
+
+    return {
+      errorCode,
+      errorMessage,
+      value: defaultValue,
+      reason: StandardResolutionReasons.ERROR,
+      flagMetadata: Object.freeze(flagMetadata),
+      flagKey,
+    };
   }
 }

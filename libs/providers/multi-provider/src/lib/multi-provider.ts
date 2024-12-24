@@ -1,6 +1,11 @@
 import {
+  BeforeHookContext,
   DefaultLogger,
+  ErrorCode,
   EvaluationContext,
+  EvaluationDetails,
+  FlagMetadata,
+  FlagValue,
   FlagValueType,
   GeneralError,
   Hook,
@@ -8,16 +13,17 @@ import {
   HookHints,
   JsonValue,
   Logger,
+  OpenFeatureError,
   OpenFeatureEventEmitter,
   Provider,
   ProviderMetadata,
-  BeforeHookContext,
   ResolutionDetails,
+  StandardResolutionReasons,
 } from '@openfeature/server-sdk';
-import { HookExecutor } from './hook-executor';
 import { constructAggregateError, throwAggregateErrorFromPromiseResults } from './errors';
-import { BaseEvaluationStrategy, ProviderResolutionResult, FirstMatchStrategy } from './strategies';
+import { HookExecutor } from './hook-executor';
 import { StatusTracker } from './status-tracker';
+import { BaseEvaluationStrategy, FirstMatchStrategy, ProviderResolutionResult } from './strategies';
 import { ProviderEntryInput, RegisteredProvider } from './types';
 
 export class MultiProvider implements Provider {
@@ -239,7 +245,7 @@ export class MultiProvider implements Provider {
     hookHints: HookHints,
   ) {
     let providerContext: EvaluationContext | undefined = undefined;
-    let evaluationResult: ResolutionDetails<T>;
+    let evaluationDetails: EvaluationDetails<T>;
 
     // create a copy of the shared hook context because we're going to mutate the evaluation context
     const hookContextCopy = { ...hookContext, context: { ...hookContext.context } };
@@ -248,27 +254,26 @@ export class MultiProvider implements Provider {
       // return the modified provider context and mutate the hook context to contain it
       providerContext = await this.hookExecutor.beforeHooks(provider.hooks, hookContextCopy, hookHints);
 
-      evaluationResult = (await this.callProviderResolve(
+      const resolutionDetails = (await this.callProviderResolve(
         provider,
         flagKey,
         defaultValue,
         providerContext,
       )) as ResolutionDetails<T>;
 
-      const afterHookEvalDetails = {
-        ...evaluationResult,
-        flagMetadata: Object.freeze(evaluationResult.flagMetadata ?? {}),
+      evaluationDetails = {
+        ...resolutionDetails,
+        flagMetadata: Object.freeze(resolutionDetails.flagMetadata ?? {}),
         flagKey,
       };
 
-      await this.hookExecutor.afterHooks(provider.hooks, hookContextCopy, afterHookEvalDetails, hookHints);
-      return evaluationResult;
+      await this.hookExecutor.afterHooks(provider.hooks, hookContextCopy, evaluationDetails, hookHints);
     } catch (error: unknown) {
       await this.hookExecutor.errorHooks(provider.hooks, hookContextCopy, error, hookHints);
-      throw error;
-    } finally {
-      await this.hookExecutor.finallyHooks(provider.hooks, hookContextCopy, hookHints);
+      evaluationDetails = this.getErrorEvaluationDetails(flagKey, defaultValue, error);
     }
+    await this.hookExecutor.finallyHooks(provider.hooks, hookContextCopy, evaluationDetails, hookHints);
+    return evaluationDetails;
   }
 
   private async callProviderResolve<T extends boolean | string | number | JsonValue>(
@@ -301,5 +306,24 @@ export class MultiProvider implements Provider {
         },
       },
     ];
+  }
+
+  private getErrorEvaluationDetails<T extends FlagValue>(
+    flagKey: string,
+    defaultValue: T,
+    err: unknown,
+    flagMetadata: FlagMetadata = {},
+  ): EvaluationDetails<T> {
+    const errorMessage: string = (err as Error)?.message;
+    const errorCode: ErrorCode = (err as OpenFeatureError)?.code || ErrorCode.GENERAL;
+
+    return {
+      errorCode,
+      errorMessage,
+      value: defaultValue,
+      reason: StandardResolutionReasons.ERROR,
+      flagMetadata: Object.freeze(flagMetadata),
+      flagKey,
+    };
   }
 }

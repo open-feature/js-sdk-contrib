@@ -42,6 +42,7 @@
     "unleash-proxy-client": "^3.6.0"
   },
   "devDependencies": {
+    "@bufbuild/buf": "^1.34.0",
     "@nx/devkit": "16.9.1",
     "@nx/eslint-plugin": "16.9.1",
     "@nx/jest": "16.9.1",
@@ -51,9 +52,9 @@
     "@nx/rollup": "16.9.1",
     "@nx/web": "16.9.1",
     "@nx/workspace": "16.9.1",
-    "@openfeature/core": "^1.1.0",
-    "@openfeature/server-sdk": "^1.13.2",
-    "@openfeature/web-sdk": "^1.1.0",
+    "@openfeature/core": "^1.6.0",
+    "@openfeature/server-sdk": "^1.17.0",
+    "@openfeature/web-sdk": "^1.4.0",
     "@opentelemetry/sdk-metrics": "^1.15.0",
     "@swc-node/register": "~1.10.0",
     "@swc/cli": "~0.4.0",
@@ -72,7 +73,6 @@
     "assert": "^2.0.0",
     "axios-mock-adapter": "2.1.0",
     "babel-preset-minify": "0.5.2",
-    "@bufbuild/buf": "^1.34.0",
     "eslint": "8.57.1",
     "eslint-config-prettier": "8.10.0",
     "eslint-plugin-prettier": "^5.0.1",
