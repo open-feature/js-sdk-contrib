@@ -1,12 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
-  "semanticCommits": "enabled",
-  "labels": [
-    "renovate"
-  ],
+  "extends": ["github>open-feature/community-tooling"],
   "packageRules": [
     {
       "matchPackagePatterns": ["^@nx/", "nx"],
