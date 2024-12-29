@@ -96,35 +96,54 @@ enum ENV_VAR {
   FLAGD_OFFLINE_FLAG_SOURCE_PATH = 'FLAGD_OFFLINE_FLAG_SOURCE_PATH',
 }
 
-const getEnvVarConfig = (): Partial<Config> => ({
-  ...(process.env[ENV_VAR.FLAGD_HOST] && {
-    host: process.env[ENV_VAR.FLAGD_HOST],
-  }),
-  ...(Number(process.env[ENV_VAR.FLAGD_PORT]) && {
-    port: Number(process.env[ENV_VAR.FLAGD_PORT]),
-  }),
-  ...(process.env[ENV_VAR.FLAGD_TLS] && {
-    tls: process.env[ENV_VAR.FLAGD_TLS]?.toLowerCase() === 'true',
-  }),
-  ...(process.env[ENV_VAR.FLAGD_SOCKET_PATH] && {
-    socketPath: process.env[ENV_VAR.FLAGD_SOCKET_PATH],
-  }),
-  ...((process.env[ENV_VAR.FLAGD_CACHE] === 'lru' || process.env[ENV_VAR.FLAGD_CACHE] === 'disabled') && {
-    cache: process.env[ENV_VAR.FLAGD_CACHE],
-  }),
-  ...(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE] && {
-    maxCacheSize: Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
-  }),
-  ...(process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR] && {
-    selector: process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR],
-  }),
-  ...((process.env[ENV_VAR.FLAGD_RESOLVER] === 'rpc' || process.env[ENV_VAR.FLAGD_RESOLVER] === 'in-process') && {
-    resolverType: process.env[ENV_VAR.FLAGD_RESOLVER],
-  }),
-  ...(process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH] && {
-    offlineFlagSourcePath: process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH],
-  }),
-});
+function checkEnvVarResolverType() {
+  return (
+    process.env[ENV_VAR.FLAGD_RESOLVER] &&
+    (process.env[ENV_VAR.FLAGD_RESOLVER].toLowerCase() === 'rpc' ||
+      process.env[ENV_VAR.FLAGD_RESOLVER].toLowerCase() === 'in-process')
+  );
+}
+
+const getEnvVarConfig = (): Partial<Config> => {
+  let provider = undefined;
+  if (
+    process.env[ENV_VAR.FLAGD_RESOLVER] &&
+    (process.env[ENV_VAR.FLAGD_RESOLVER].toLowerCase() === 'rpc' ||
+      process.env[ENV_VAR.FLAGD_RESOLVER].toLowerCase() === 'in-process')
+  ) {
+    provider = process.env[ENV_VAR.FLAGD_RESOLVER].toLowerCase();
+  }
+
+  return {
+    ...(process.env[ENV_VAR.FLAGD_HOST] && {
+      host: process.env[ENV_VAR.FLAGD_HOST],
+    }),
+    ...(Number(process.env[ENV_VAR.FLAGD_PORT]) && {
+      port: Number(process.env[ENV_VAR.FLAGD_PORT]),
+    }),
+    ...(process.env[ENV_VAR.FLAGD_TLS] && {
+      tls: process.env[ENV_VAR.FLAGD_TLS]?.toLowerCase() === 'true',
+    }),
+    ...(process.env[ENV_VAR.FLAGD_SOCKET_PATH] && {
+      socketPath: process.env[ENV_VAR.FLAGD_SOCKET_PATH],
+    }),
+    ...((process.env[ENV_VAR.FLAGD_CACHE] === 'lru' || process.env[ENV_VAR.FLAGD_CACHE] === 'disabled') && {
+      cache: process.env[ENV_VAR.FLAGD_CACHE],
+    }),
+    ...(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE] && {
+      maxCacheSize: Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
+    }),
+    ...(process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR] && {
+      selector: process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR],
+    }),
+    ...(provider && {
+      resolverType: provider as ResolverType,
+    }),
+    ...(process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH] && {
+      offlineFlagSourcePath: process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH],
+    }),
+  };
+};
 
 export function getConfig(options: FlagdProviderOptions = {}) {
   const envVarConfig = getEnvVarConfig();
