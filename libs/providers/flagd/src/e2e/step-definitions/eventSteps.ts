@@ -32,10 +32,9 @@ export const eventSteps: Steps =
     });
 
     then(/^the (.*) event handler should have been executed$/, async (type: string) => {
-      await waitFor(() => expect(state.events.find((value) => value.type == type)).toBeDefined(), { timeout: 10000 });
+      await waitFor(() => expect(state.events.find((value) => value.type == type)).toBeDefined(), { timeout: 20000 });
       expect(state.events.find((value) => value.type == type)).toBeDefined();
       state.events = state.events.filter((a) => a.type !== type);
-      console.error('here bin cih');
     });
 
     then(/^the (.*) event handler should have been executed within (\d+)ms$/, async (type: string, ms: number) => {

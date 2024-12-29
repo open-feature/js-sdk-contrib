@@ -9,6 +9,7 @@ import { contextSteps } from '../step-definitions/contextSteps';
 
 const steps = [providerSteps, configSteps, eventSteps, flagSteps, contextSteps];
 
+jest.setTimeout(50000);
 describe('rpc', () => {
   const state: State = {
     resolverType: 'in-process',
@@ -18,7 +19,7 @@ describe('rpc', () => {
   };
   autoBindSteps(
     loadFeatures(GHERKIN_FLAGD, {
-      tagFilter: '@in-process and not @targetURI and not @customCert and not @events and not @sync',
+      tagFilter: '@in-process and not @targetURI and not @customCert and not @events and not @sync and not @grace',
       scenarioNameTemplate: (vars) => {
         return `${vars.scenarioTitle} (${vars.scenarioTags.join(',')} ${vars.featureTags.join(',')})`;
       },

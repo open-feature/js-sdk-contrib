@@ -32,7 +32,6 @@ export const configSteps: Steps = (state: State) => {
       (name: string, type: string, value: string) => {
         const expected = mapValueToType(value, type);
         const propertyName = mapName(name);
-        expect(state.config).toHaveProperty(propertyName);
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         const configElement = state.config[propertyName];

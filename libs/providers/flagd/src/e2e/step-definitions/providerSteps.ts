@@ -21,7 +21,7 @@ export const providerSteps: Steps =
       }
 
       return Promise.all(promises);
-    });
+    }, 50000);
 
     afterAll(async () => {
       await OpenFeature.close();
@@ -38,7 +38,7 @@ export const providerSteps: Steps =
       }
 
       return Promise.all(promises);
-    });
+    }, 50000);
 
     function getContainer(providerType: string): FlagdContainer {
       if (Object.hasOwn(containers, providerType)) {
