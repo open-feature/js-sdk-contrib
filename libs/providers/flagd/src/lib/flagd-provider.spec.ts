@@ -144,7 +144,7 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ host: '', port: 123, tls: false }, basicServiceClientMock),
+          new GRPCService({ deadlineMs: 100, host: '', port: 123, tls: false }, basicServiceClientMock),
         ),
       );
       client = OpenFeature.getClient('basic test');
@@ -301,7 +301,10 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
+          new GRPCService(
+            { deadlineMs: 100, host: '', port: 123, tls: false, cache: 'lru' },
+            streamingServiceClientMock,
+          ),
         )
           .initialize()
           .then(() => {
@@ -326,7 +329,10 @@ describe(FlagdProvider.name, () => {
           new FlagdProvider(
             undefined,
             undefined,
-            new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
+            new GRPCService(
+              { deadlineMs: 100, host: '', port: 123, tls: false, cache: 'lru' },
+              streamingServiceClientMock,
+            ),
           ),
         );
         // fire message saying provider is ready
@@ -375,7 +381,10 @@ describe(FlagdProvider.name, () => {
           new FlagdProvider(
             undefined,
             undefined,
-            new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
+            new GRPCService(
+              { deadlineMs: 100, host: '', port: 123, tls: false, cache: 'lru' },
+              streamingServiceClientMock,
+            ),
           ),
         );
         // fire message saying provider is ready
@@ -407,7 +416,10 @@ describe(FlagdProvider.name, () => {
           new FlagdProvider(
             undefined,
             undefined,
-            new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
+            new GRPCService(
+              { deadlineMs: 100, host: '', port: 123, tls: false, cache: 'lru' },
+              streamingServiceClientMock,
+            ),
           ),
         );
         // fire message saying provider is ready
@@ -496,7 +508,10 @@ describe(FlagdProvider.name, () => {
         const provider = new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ host: '', port: 123, tls: false, cache: 'lru' }, streamingServiceClientMock),
+          new GRPCService(
+            { deadlineMs: 100, host: '', port: 123, tls: false, cache: 'lru' },
+            streamingServiceClientMock,
+          ),
         );
         provider.initialize().catch(() => {
           // ignore
@@ -574,7 +589,7 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ host: '', port: 123, tls: false }, errServiceClientMock),
+          new GRPCService({ deadlineMs: 100, host: '', port: 123, tls: false }, errServiceClientMock),
         ),
       );
       client = OpenFeature.getClient('errors test');
@@ -661,7 +676,7 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ host: '', port: 123, tls: false }, errServiceClientMock),
+          new GRPCService({ deadlineMs: 100, host: '', port: 123, tls: false }, errServiceClientMock),
         ),
       );
     });
