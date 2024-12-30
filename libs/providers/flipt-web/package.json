@@ -15,6 +15,6 @@
     "@openfeature/web-sdk": "^1.0.0"
   },
   "devDependencies": {
-    "undici": "^6.13.0"
+    "undici": "^7.0.0"
   }
 }
