@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.2...flagd-web-provider-v0.7.3) (2024-12-30)
+
+
+### 🧹 Chore
+
+* **deps:** update libs/providers/flagd-web/schemas digest to b81a56e ([#1131](https://github.com/open-feature/js-sdk-contrib/issues/1131)) ([828145a](https://github.com/open-feature/js-sdk-contrib/commit/828145a89da13bbd90bca352a6488aecb62b764b))
+* removing build dependencies and using testcontainers for container spin up ([#982](https://github.com/open-feature/js-sdk-contrib/issues/982)) ([2d64331](https://github.com/open-feature/js-sdk-contrib/commit/2d6433101b76ba9ad266095fe31b58314f82a105))
+* various gherkin improvements for e2e tests ([#1008](https://github.com/open-feature/js-sdk-contrib/issues/1008)) ([40abd8e](https://github.com/open-feature/js-sdk-contrib/commit/40abd8eca76b47bb5c084b377302821968acd19c))
+
 ## [0.7.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.1...flagd-web-provider-v0.7.2) (2024-07-08)
 
 
