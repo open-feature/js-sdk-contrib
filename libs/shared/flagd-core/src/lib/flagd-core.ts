@@ -114,6 +114,7 @@ export class FlagdCore implements Storage {
    * Resolve the flag evaluation for all enabled flags.
    * @param evalCtx - The evaluation context to be used for targeting.
    * @param logger - The logger to be used to troubleshoot targeting errors. Overrides the default logger.
+   * @returns - The list of evaluation details for all enabled flags.
    */
   resolveAll(evalCtx: EvaluationContext = {}, logger: Logger = this._logger): EvaluationDetails<JsonValue>[] {
     const values: EvaluationDetails<JsonValue>[] = [];
