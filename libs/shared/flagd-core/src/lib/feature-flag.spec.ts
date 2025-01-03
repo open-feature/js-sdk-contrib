@@ -29,6 +29,26 @@ describe('Flagd flag structure', () => {
     expect(ff.variants.get('off')).toBeFalsy();
   });
 
+  it('should be constructed with valid input - string', () => {
+    const input: Flag = {
+      state: 'ENABLED',
+      defaultVariant: 'off',
+      variants: {
+        on: 'on',
+        off: 'off',
+      },
+      targeting: '',
+    };
+
+    const ff = new FeatureFlag('test', input, logger);
+
+    expect(ff).toBeTruthy();
+    expect(ff.state).toBe('ENABLED');
+    expect(ff.defaultVariant).toBe('off');
+    expect(ff.variants.get('on')).toBe('on');
+    expect(ff.variants.get('off')).toBe('off');
+  });
+
   it('should be constructed with valid input - number', () => {
     const input: Flag = {
       state: 'ENABLED',

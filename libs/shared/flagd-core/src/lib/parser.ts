@@ -25,8 +25,12 @@ const errorMessages = 'invalid flagd flag configuration';
 
 /**
  * Validate and parse flag configurations.
+ * @param flagConfig The flag configuration string.
+ * @param strictValidation Validates against the flag and targeting schemas.
+ * @param logger The logger to be used for troubleshooting.
+ * @returns The parsed flag configurations.
  */
-export function parse(flagConfig: string, throwIfSchemaInvalid: boolean, logger: Logger): FlagSet {
+export function parse(flagConfig: string, strictValidation: boolean, logger: Logger): FlagSet {
   try {
     const transformed = transform(flagConfig);
     const parsedFlagConfig: FlagConfig = JSON.parse(transformed);
@@ -34,9 +38,10 @@ export function parse(flagConfig: string, throwIfSchemaInvalid: boolean, logger:
     const isValid = validate(parsedFlagConfig);
     if (!isValid) {
       const message = `${errorMessages}: ${JSON.stringify(validate.errors, undefined, 2)}`;
-      // TODO see if trace logging makes sense here
-      if (throwIfSchemaInvalid) {
+      if (strictValidation) {
         throw new ParseError(message);
+      } else {
+        logger.debug(message);
       }
     }
     const flagMap = new Map<string, FeatureFlag>();

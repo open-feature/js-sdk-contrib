@@ -4,10 +4,10 @@ import type {
   ResolutionDetails,
   JsonValue,
   Logger,
-  ResolutionReason,
   EvaluationContext,
+  ResolutionReason,
 } from '@openfeature/core';
-import { ParseError, StandardResolutionReasons, GeneralError, TypeMismatchError } from '@openfeature/core';
+import { ParseError, StandardResolutionReasons, ErrorCode } from '@openfeature/core';
 import { sha1 } from 'object-hash';
 import { Targeting } from './targeting/targeting';
 
@@ -22,7 +22,20 @@ export interface Flag {
   metadata?: FlagMetadata;
 }
 
-type ResolutionDetailsWithFlagMetadata<T> = Required<Pick<ResolutionDetails<T>, 'flagMetadata'>> & ResolutionDetails<T>;
+type RequiredResolutionDetails<T> = Omit<ResolutionDetails<T>, 'value'> & {
+  flagMetadata: FlagMetadata;
+} & (
+    | {
+        reason: 'ERROR';
+        errorCode: ErrorCode;
+        errorMessage: string;
+        value?: never;
+      }
+    | {
+        value: T;
+        variant: string;
+      }
+  );
 
 /**
  * Flagd flag configuration structure for internal reference.
@@ -35,9 +48,13 @@ export class FeatureFlag {
   private readonly _hash: string;
   private readonly _metadata: FlagMetadata;
   private readonly _targeting?: Targeting;
-  private readonly _targetingParseError?: Error;
+  private readonly _targetingParseErrorMessage?: string;
 
-  constructor(key: string, flag: Flag, logger: Logger) {
+  constructor(
+    key: string,
+    flag: Flag,
+    private readonly logger: Logger,
+  ) {
     this._key = key;
     this._state = flag['state'];
     this._defaultVariant = flag['defaultVariant'];
@@ -49,8 +66,8 @@ export class FeatureFlag {
         this._targeting = new Targeting(flag.targeting, logger);
       } catch (err) {
         const message = `Invalid targeting configuration for flag '${key}'`;
-        logger.warn(message);
-        this._targetingParseError = new ParseError(message, { cause: err });
+        this.logger.warn(message);
+        this._targetingParseErrorMessage = message;
       }
     }
     this._hash = sha1(flag);
@@ -82,21 +99,34 @@ export class FeatureFlag {
     return this._metadata;
   }
 
-  evaluate(evalCtx: EvaluationContext): ResolutionDetailsWithFlagMetadata<JsonValue> {
+  evaluate(evalCtx: EvaluationContext, logger: Logger = this.logger): RequiredResolutionDetails<JsonValue> {
     let variant: string;
     let reason: ResolutionReason;
 
-    if (this._targetingParseError) {
-      throw this._targetingParseError;
-    } else if (!this._targeting) {
+    if (this._targetingParseErrorMessage) {
+      return {
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.PARSE_ERROR,
+        errorMessage: this._targetingParseErrorMessage,
+        flagMetadata: this.metadata,
+      };
+    }
+
+    if (!this._targeting) {
       variant = this._defaultVariant;
       reason = StandardResolutionReasons.STATIC;
     } else {
       let targetingResolution: JsonValue;
       try {
-        targetingResolution = this._targeting.evaluate(this._key, evalCtx);
+        targetingResolution = this._targeting.evaluate(this._key, evalCtx, logger);
       } catch (e) {
-        throw new GeneralError(`Error evaluating targeting rule for flag '${this._key}'`, { cause: e });
+        logger.debug(`Error evaluating targeting rule for flag '${this._key}': ${(e as Error).message}`);
+        return {
+          reason: StandardResolutionReasons.ERROR,
+          errorCode: ErrorCode.GENERAL,
+          errorMessage: `Error evaluating targeting rule for flag '${this._key}'`,
+          flagMetadata: this.metadata,
+        };
       }
 
       // Return default variant if targeting resolution is null or undefined
@@ -110,13 +140,23 @@ export class FeatureFlag {
       }
     }
 
-    if (typeof variant !== 'string') {
-      throw new TypeMismatchError(`Variant must be a string, but found '${typeof variant}'`);
-    }
+    // if (typeof variant !== 'string') {
+    //   return {
+    //     reason: StandardResolutionReasons.ERROR,
+    //     errorCode: ErrorCode.GENERAL,
+    //     errorMessage: `Variant must be a string, but found '${typeof variant}'`,
+    //     flagMetadata: this.metadata,
+    //   };
+    // }
 
     const resolvedVariant = this._variants.get(variant);
     if (resolvedVariant === undefined) {
-      throw new GeneralError(`Variant '${variant}' not found in flag with key '${this._key}'`);
+      return {
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.GENERAL,
+        errorMessage: `Variant '${variant}' not found in flag with key '${this._key}'`,
+        flagMetadata: this.metadata,
+      };
     }
 
     return {

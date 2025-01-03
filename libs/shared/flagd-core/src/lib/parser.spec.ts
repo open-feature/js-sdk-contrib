@@ -1,6 +1,5 @@
 import { type Logger, ParseError } from '@openfeature/core';
 import { parse } from './parser';
-
 const logger: Logger = {
   error: jest.fn(),
   warn: jest.fn(),
@@ -66,8 +65,8 @@ describe('Flag configurations', () => {
 
       const fibAlgo = flags.get('fibAlgo');
       expect(fibAlgo).toBeTruthy();
-      // TODO - spy on parser
-      // expect(fibAlgo.).toStrictEqual({ if: [{ in: ['@faas.com', { var: ['email'] }] }, 'binet', null] });
+      expect(fibAlgo?.evaluate({ email: 'test@test.com' })).toHaveProperty('value', 'recursive');
+      expect(fibAlgo?.evaluate({ email: 'test@faas.com' })).toHaveProperty('value', 'binet');
     });
 
     it('should throw a parsing error due to invalid JSON', () => {

@@ -251,3 +251,119 @@ describe('flagd-core common flag definitions', () => {
     expect(() => core.setConfigurations(flagCfg)).toThrow(ParseError);
   });
 });
+
+describe('flagd-core flag metadata', () => {
+  const targetingFlag =
+    '{"flags":{"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",null]},"metadata":{"owner": "mike"}},"shortCircuit":{"variants":{"true":true,"false":false},"defaultVariant":"false","state":"ENABLED","targeting":{"==":[{"var":"favoriteNumber"},1]}}},"metadata":{"id":"dev","version":"1"}}';
+  let core: FlagdCore;
+
+  beforeAll(() => {
+    core = new FlagdCore();
+    core.setConfigurations(targetingFlag);
+  });
+
+  it('should return "targetedFlag" flag metadata', () => {
+    const resolved = core.resolveStringEvaluation('targetedFlag', 'none', { email: 'admin@openfeature.dev' });
+    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev', owner: 'mike' });
+  });
+
+  it('should return "shortCircuit" flag metadata', () => {
+    const resolved = core.resolveBooleanEvaluation('shortCircuit', false, { favoriteNumber: 1 });
+    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+  });
+});
+
+describe('flagd-core error conditions', () => {
+  const errorFlags = {
+    flags: {
+      basic: {
+        variants: { on: true, off: false },
+        defaultVariant: 'on',
+        state: 'ENABLED',
+      },
+      disabledFlag: {
+        variants: { on: true, off: false },
+        defaultVariant: 'on',
+        state: 'DISABLED',
+      },
+      invalidTargetingRule: {
+        variants: { on: true, off: false },
+        defaultVariant: 'on',
+        state: 'ENABLED',
+        targeting: { invalid: true },
+      },
+      invalidVariantName: {
+        variants: { true: true, false: false },
+        defaultVariant: 'false',
+        state: 'ENABLED',
+        targeting: { if: [true, 'invalid'] },
+      },
+    },
+    metadata: { id: 'dev', version: '1' },
+  };
+  let core: FlagdCore;
+
+  beforeAll(() => {
+    core = new FlagdCore();
+    core.setConfigurations(JSON.stringify(errorFlags));
+  });
+
+  it('should not find the flag', () => {
+    const resolved = core.resolveBooleanEvaluation('invalid', false, {});
+    expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
+    expect(resolved.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
+    expect(resolved.errorMessage).toBeTruthy();
+    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+  });
+
+  it('should treat disabled flags as not found', () => {
+    const resolved = core.resolveBooleanEvaluation('disabledFlag', false, {});
+    expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
+    expect(resolved.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
+    expect(resolved.errorMessage).toBeTruthy();
+    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+  });
+
+  it('should return a parse error code', () => {
+    const resolved = core.resolveBooleanEvaluation('invalidTargetingRule', false, {});
+    expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
+    expect(resolved.errorCode).toBe(ErrorCode.PARSE_ERROR);
+    expect(resolved.errorMessage).toBeTruthy();
+    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+  });
+
+  // it('should return a general error if targeting evaluate fails', () => {
+  //   const evaluationErrorCore = new FlagdCore({
+  //     setConfigurations: jest.fn(),
+  //     getFlag: () => {
+  //       const featureFlag =  new FeatureFlag('basic', {}, logger)
+  //       featureFlag[_targeting] = () => throw new Error("something broke");
+  //       return featureFlag;
+  //     },
+  //     getFlags: jest.fn(),
+  //     getFlagSetMetadata: jest.fn(),
+  //   });
+
+  //   const resolved = evaluationErrorCore.resolveBooleanEvaluation('basic', false, {});
+  //   expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
+  //   expect(resolved.errorCode).toBe(ErrorCode.PARSE_ERROR);
+  //   expect(resolved.errorMessage).toBeTruthy();
+  //   expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+  // });
+
+  it('should return a general error if the variant is not a string', () => {
+    const resolved = core.resolveBooleanEvaluation('invalidVariantName', false, {});
+    expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
+    expect(resolved.errorCode).toBe(ErrorCode.GENERAL);
+    expect(resolved.errorMessage).toBeTruthy();
+    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+  });
+
+  it('should return a type mismatch error', () => {
+    const resolved = core.resolveStringEvaluation('basic', 'false', {});
+    expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
+    expect(resolved.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+    expect(resolved.errorMessage).toBeTruthy();
+    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+  });
+});
