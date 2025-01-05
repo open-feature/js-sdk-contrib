@@ -43,7 +43,7 @@ export class UnleashWebProvider implements Provider {
 
   async initialize(): Promise<void> {
     await this.initializeClient();
-    this._logger?.info('UnleashWebProvider initialized');
+    this._logger?.debug('UnleashWebProvider initialized');
   }
 
   private async initializeClient() {
@@ -57,25 +57,25 @@ export class UnleashWebProvider implements Provider {
 
   private registerEventListeners() {
     this._client?.on('ready', () => {
-      this._logger?.info('Unleash ready event received');
+      this._logger?.debug('Unleash ready event received');
       this.events.emit(ProviderEvents.Ready, {
         message: 'Ready',
       });
     });
     this._client?.on('update', () => {
-      this._logger?.info('Unleash update event received');
+      this._logger?.debug('Unleash update event received');
       this.events.emit(ProviderEvents.ConfigurationChanged, {
         message: 'Flags changed',
       });
     });
     this._client?.on('error', () => {
-      this._logger?.info('Unleash error event received');
+      this._logger?.debug('Unleash error event received');
       this.events.emit(ProviderEvents.Error, {
         message: 'Error',
       });
     });
     this._client?.on('recovered', () => {
-      this._logger?.info('Unleash recovered event received');
+      this._logger?.debug('Unleash recovered event received');
       this.events.emit(ProviderEvents.Ready, {
         message: 'Recovered',
       });
@@ -104,11 +104,11 @@ export class UnleashWebProvider implements Provider {
       unleashContext.set('properties', Object.fromEntries(properties));
     }
     await this._client?.updateContext(Object.fromEntries(unleashContext));
-    this._logger?.info('Unleash context updated');
+    this._logger?.debug('Unleash context updated');
   }
 
   async onClose() {
-    this._logger?.info('closing Unleash client');
+    this._logger?.debug('closing Unleash client');
     this._client?.stop();
   }
 

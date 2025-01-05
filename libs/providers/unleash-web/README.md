@@ -27,24 +27,75 @@ $ npm install @openfeature/unleash-web-provider @openfeature/web-sdk
 
 ## Usage
 
-To initialize the OpenFeature client with Unleash, you can use the following code snippet:
+To initialize the OpenFeature client with Unleash, you can use the following code snippets:
+
+### Initialization - without context
 
 ```ts
 import { UnleashWebProvider } from '@openfeature/unleash-web-provider';
 
 const provider = new UnleashWebProvider({
-      url: 'http://your.upstream.unleash.instance',
-      clientKey: 'theclientkey',
-      appName: 'your app',
-  });
+    url: 'http://your.upstream.unleash.instance',
+    clientKey: 'theclientkey',
+    appName: 'your app',
+});
   
 await OpenFeature.setProviderAndWait(provider);
 ```
 
+### Initialization - with context
+
+The [Unleash context](https://docs.getunleash.io/reference/unleash-context) can be set during creation of the provider.
+
+```ts
+import { UnleashWebProvider } from '@openfeature/unleash-web-provider';
+
+const context = {
+    userId: '123',
+    sessionId: '456',
+    remoteAddress: 'address',
+    properties: {
+        property1: 'property1',
+        property2: 'property2',
+    },
+};
+
+const provider = new UnleashWebProvider({
+    url: 'http://your.upstream.unleash.instance',
+    clientKey: 'theclientkey',
+    appName: 'your app',
+    context: context,
+});
+  
+await OpenFeature.setProviderAndWait(provider);
+```
+
+
+### Available Constructor Configuration Options
+
+Unleash has a variety of configuration options that can be provided to the `UnleashWebProvider` constructor.
+
+Please refer to the options described in the official [Unleash Proxy Client for the browser Client Side SDK](https://docs.getunleash.io/reference/sdks/javascript-browser#available-options).
+
+
+
+
+### After initialization
+
 After the provider gets initialized, you can start evaluations of feature flags like so:
 
 ```ts
-// Note - this can also be set within the contructor
+
+// Get the client 
+const client = await OpenFeature.getClient();
+
+// You can now use the client to evaluate your flags
+const details = client.getBooleanValue('my-feature', false);
+```
+
+The static evaluation context can be changed if needed
+
+```ts
 const evaluationCtx: EvaluationContext = {
   usedId: 'theuser',
   currentTime: 'time',
@@ -56,20 +107,10 @@ const evaluationCtx: EvaluationContext = {
   anotherCustomProperty: 'somethingForIt',
 };
 
-// Set the static context for OpenFeature
+// changes the static evaluation context for OpenFeature
 await OpenFeature.setContext(evaluationCtx);
 
-// Get the client 
-const client = await OpenFeature.getClient();
-
-// You can now use the client to evaluate your flags
-const details = client.getBooleanValue('my-feature', false);
 ```
-### Available Options
-
-Unleash has a variety of configuration options that can be provided to the the `UnleashWebProvider` constructor.
-
-Please refer to the options described in the official [Unleash Proxy Client for the browser Client Side SDK](https://docs.getunleash.io/reference/sdks/javascript-browser#available-options).
 
 ## Contribute
 

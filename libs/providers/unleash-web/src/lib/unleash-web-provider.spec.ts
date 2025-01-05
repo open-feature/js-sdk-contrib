@@ -17,7 +17,19 @@ describe('UnleashWebProvider', () => {
 
   it('should be an instance of UnleashWebProvider', async () => {
     fetchMock.mockResponseOnce(JSON.stringify({ toggles: [] }));
-    provider = new UnleashWebProvider({ url: endpoint, clientKey: 'clientsecret', appName: 'test' }, logger);
+    const context = {
+      userId: '123',
+      sessionId: '456',
+      remoteAddress: 'address',
+      properties: {
+        property1: 'property1',
+        property2: 'property2',
+      },
+    };
+    provider = new UnleashWebProvider(
+      { url: endpoint, clientKey: 'clientsecret', appName: 'test', context: context },
+      logger,
+    );
     await provider.initialize();
     expect(provider).toBeInstanceOf(UnleashWebProvider);
   });
