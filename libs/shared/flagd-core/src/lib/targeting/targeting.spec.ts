@@ -1,253 +1,273 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+import type { Logger } from '@openfeature/core';
 import { Targeting } from './targeting';
 
-const logger = {
-  debug: () => {},
-  error: () => {},
-  info: () => {},
-  warn: () => {},
+const logger: Logger = {
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
 };
 
-describe('Targeting rule evaluator', () => {
-  let targeting: Targeting;
+const requestLogger: Logger = {
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+};
 
-  beforeAll(() => {
-    targeting = new Targeting(logger);
+describe('targeting', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
-  it('should inject flag key as a property', () => {
-    const flagKey = 'flagA';
-    const input = { '===': [{ var: '$flagd.flagKey' }, flagKey] };
+  describe('Context injection', () => {
+    it('should inject flag key as a property', () => {
+      const flagKey = 'flagA';
+      const logic = { '===': [{ var: '$flagd.flagKey' }, flagKey] };
+      const targeting = new Targeting(logic, logger);
 
-    expect(targeting.applyTargeting(flagKey, input, {})).toBeTruthy();
+      expect(targeting.evaluate(flagKey, {})).toBeTruthy();
+    });
+
+    it('should inject current timestamp as a property', () => {
+      const ts = Math.floor(Date.now() / 1000);
+      const logic = { '>=': [{ var: '$flagd.timestamp' }, ts] };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flag', {})).toBeTruthy();
+    });
+
+    it('should override injected properties if already present in context', () => {
+      const flagKey = 'flagA';
+      const logic = { '===': [{ var: '$flagd.flagKey' }, flagKey] };
+      const ctx = {
+        $flagd: {
+          flagKey: 'someOtherFlag',
+        },
+      };
+
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate(flagKey, ctx)).toBeTruthy();
+    });
   });
 
-  it('should inject current timestamp as a property', () => {
-    const ts = Math.floor(Date.now() / 1000);
-    const input = { '>=': [{ var: '$flagd.timestamp' }, ts] };
+  describe('String comparison operator', () => {
+    it('should evaluate starts with calls', () => {
+      const logic = { starts_with: [{ var: 'email' }, 'admin'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', { email: 'admin@abc.com' })).toBeTruthy();
+    });
 
-    expect(targeting.applyTargeting('flag', input, {})).toBeTruthy();
+    it('should evaluate ends with calls', () => {
+      const logic = { ends_with: [{ var: 'email' }, 'abc.com'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', { email: 'admin@abc.com' })).toBeTruthy();
+    });
+
+    it('should be falsy if the input is not an array', () => {
+      const logic = { starts_with: 'invalid' };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', { email: 'admin@abc.com' })).toBeFalsy();
+      expect(logger.debug).toHaveBeenCalled();
+    });
+
+    it('should be falsy if the input array is too large', () => {
+      const logic = { starts_with: [{ var: 'email' }, 'abc.com', 'invalid'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', { email: 'admin@abc.com' })).toBeFalsy();
+      expect(logger.debug).toHaveBeenCalled();
+    });
+
+    it('should be falsy if the input array contains a non-string', () => {
+      const logic = { starts_with: [{ var: 'email' }, 2] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', { email: 'admin@abc.com' })).toBeFalsy();
+      expect(logger.debug).toHaveBeenCalled();
+    });
   });
 
-  it('should override injected properties if already present in context', () => {
-    const flagKey = 'flagA';
-    const input = { '===': [{ var: '$flagd.flagKey' }, flagKey] };
-    const ctx = {
-      $flagd: {
-        flagKey: 'someOtherFlag',
-      },
-    };
+  describe('Sem ver operator', () => {
+    it('should support equal operator', () => {
+      const logic = { sem_ver: ['v1.2.3', '=', '1.2.3'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeTruthy();
+    });
 
-    expect(targeting.applyTargeting(flagKey, input, ctx)).toBeTruthy();
-  });
-});
+    it('should support neq operator', () => {
+      const logic = { sem_ver: ['v1.2.3', '!=', '1.2.4'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeTruthy();
+    });
 
-describe('String comparison operator', () => {
-  let targeting: Targeting;
+    it('should support lt operator', () => {
+      const logic = { sem_ver: ['v1.2.3', '<', '1.2.4'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeTruthy();
+    });
 
-  beforeAll(() => {
-    targeting = new Targeting(logger);
-  });
+    it('should support lte operator', () => {
+      const logic = { sem_ver: ['v1.2.3', '<=', '1.2.3'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeTruthy();
+    });
 
-  it('should evaluate starts with calls', () => {
-    const input = { starts_with: [{ var: 'email' }, 'admin'] };
-    expect(targeting.applyTargeting('flag', input, { email: 'admin@abc.com' })).toBeTruthy();
-  });
+    it('should support gte operator', () => {
+      const logic = { sem_ver: ['v1.2.3', '>=', '1.2.3'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeTruthy();
+    });
 
-  it('should evaluate ends with calls', () => {
-    const input = { ends_with: [{ var: 'email' }, 'abc.com'] };
-    expect(targeting.applyTargeting('flag', input, { email: 'admin@abc.com' })).toBeTruthy();
-  });
-});
+    it('should support gt operator', () => {
+      const logic = { sem_ver: ['v1.2.4', '>', '1.2.3'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeTruthy();
+    });
 
-describe('String comparison operator should validate', () => {
-  let targeting: Targeting;
+    it('should support major comparison operator', () => {
+      const logic = { sem_ver: ['v1.2.3', '^', 'v1.0.0'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeTruthy();
+    });
 
-  beforeAll(() => {
-    targeting = new Targeting(logger);
-  });
+    it('should support minor comparison operator', () => {
+      const logic = { sem_ver: ['v5.0.3', '~', 'v5.0.8'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeTruthy();
+    });
 
-  it('missing input', () => {
-    const input = { starts_with: [{ var: 'email' }] };
-    expect(targeting.applyTargeting('flag', input, { email: 'admin@abc.com' })).toBeFalsy();
-  });
+    it('should handle unknown operator', () => {
+      const logic = { sem_ver: ['v1.0.0', '-', 'v1.0.0'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeFalsy();
+    });
 
-  it('non string variable', () => {
-    const input = { starts_with: [{ var: 'someNumber' }, 'abc.com'] };
-    expect(targeting.applyTargeting('flag', input, { someNumber: 123456 })).toBeFalsy();
-  });
+    it('should handle invalid inputs', () => {
+      const logic = { sem_ver: ['myVersion_1', '=', 'myVersion_1'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeFalsy();
+    });
 
-  it('non string comparator', () => {
-    const input = { starts_with: [{ var: 'email' }, 123456] };
-    expect(targeting.applyTargeting('flag', input, { email: 'admin@abc.com' })).toBeFalsy();
-  });
-});
-
-describe('Sem ver operator', () => {
-  let targeting: Targeting;
-
-  beforeAll(() => {
-    targeting = new Targeting(logger);
-  });
-
-  it('should support equal operator', () => {
-    const input = { sem_ver: ['v1.2.3', '=', '1.2.3'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeTruthy();
-  });
-
-  it('should support neq operator', () => {
-    const input = { sem_ver: ['v1.2.3', '!=', '1.2.4'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeTruthy();
+    it('should validate inputs', () => {
+      const logic = { sem_ver: ['myVersion_2', '+', 'myVersion_1', 'myVersion_1'] };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flag', {})).toBeFalsy();
+    });
   });
 
-  it('should support lt operator', () => {
-    const input = { sem_ver: ['v1.2.3', '<', '1.2.4'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeTruthy();
-  });
+  describe('Fractional operator', () => {
+    it('should evaluate to red with key "bucketKeyA"', () => {
+      const logic = {
+        fractional: [{ cat: [{ var: '$flagd.flagKey' }, { var: 'key' }] }, ['red', 50], ['blue', 50]],
+      };
+      const targeting = new Targeting(logic, logger);
 
-  it('should support lte operator', () => {
-    const input = { sem_ver: ['v1.2.3', '<=', '1.2.3'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeTruthy();
-  });
+      expect(targeting.evaluate('flagA', { key: 'bucketKeyA' })).toBe('red');
+    });
 
-  it('should support gte operator', () => {
-    const input = { sem_ver: ['v1.2.3', '>=', '1.2.3'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeTruthy();
-  });
+    it('should evaluate to blue with key "bucketKeyB"', () => {
+      const logic = {
+        fractional: [{ cat: [{ var: '$flagd.flagKey' }, { var: 'key' }] }, ['red', 50], ['blue', 50]],
+      };
+      const targeting = new Targeting(logic, logger);
 
-  it('should support gt operator', () => {
-    const input = { sem_ver: ['v1.2.4', '>', '1.2.3'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeTruthy();
-  });
+      expect(targeting.evaluate('flagA', { key: 'bucketKeyB' })).toBe('blue');
+    });
 
-  it('should support major comparison operator', () => {
-    const input = { sem_ver: ['v1.2.3', '^', 'v1.0.0'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeTruthy();
-  });
+    it('should evaluate valid rule with targeting key', () => {
+      const logic = {
+        fractional: [
+          ['red', 50],
+          ['blue', 50],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
 
-  it('should support minor comparison operator', () => {
-    const input = { sem_ver: ['v5.0.3', '~', 'v5.0.8'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeTruthy();
-  });
+      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB' })).toBe('blue');
+    });
 
-  it('should handle unknown operator', () => {
-    const input = { sem_ver: ['v1.0.0', '-', 'v1.0.0'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeFalsy();
-  });
+    it('should evaluate valid rule with targeting key although one does not have a fraction', () => {
+      const logic = {
+        fractional: [['red', 1], ['blue']],
+      };
+      const targeting = new Targeting(logic, logger);
 
-  it('should handle invalid inputs', () => {
-    const input = { sem_ver: ['myVersion_1', '=', 'myVersion_1'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeFalsy();
-  });
+      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB' })).toBe('blue');
+    });
 
-  it('should validate inputs', () => {
-    const input = { sem_ver: ['myVersion_2', '+', 'myVersion_1', 'myVersion_1'] };
-    expect(targeting.applyTargeting('flag', input, {})).toBeFalsy();
-  });
-});
+    it('should return null if targeting key is missing', () => {
+      const logic = {
+        fractional: [
+          ['red', 1],
+          ['blue', 1],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
 
-describe('fractional operator', () => {
-  let targeting: Targeting;
+      expect(targeting.evaluate('flagA', {})).toBe(null);
+    });
 
-  beforeAll(() => {
-    targeting = new Targeting(logger);
-  });
+    it('should support bucket sum with sum bigger than 100', () => {
+      const logic = {
+        fractional: [
+          ['red', 55],
+          ['blue', 55],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
 
-  it('should evaluate valid rule', () => {
-    const input = {
-      fractional: [{ cat: [{ var: '$flagd.flagKey' }, { var: 'key' }] }, ['red', 50], ['blue', 50]],
-    };
+      expect(targeting.evaluate('flagA', { targetingKey: 'key' })).toBe('blue');
+    });
 
-    expect(targeting.applyTargeting('flagA', input, { key: 'bucketKeyA' })).toBe('red');
-  });
+    it('should support bucket sum with sum lower than 100', () => {
+      const logic = {
+        fractional: [
+          ['red', 45],
+          ['blue', 45],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
 
-  it('should evaluate valid rule', () => {
-    const input = {
-      fractional: [{ cat: [{ var: '$flagd.flagKey' }, { var: 'key' }] }, ['red', 50], ['blue', 50]],
-    };
+      expect(targeting.evaluate('flagA', { targetingKey: 'key' })).toBe('blue');
+    });
 
-    expect(targeting.applyTargeting('flagA', input, { key: 'bucketKeyB' })).toBe('blue');
-  });
+    it('should not support non-string variant names', () => {
+      const logic = {
+        fractional: [
+          ['red', 50],
+          [100, 50],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
 
-  it('should evaluate valid rule with targeting key', () => {
-    const input = {
-      fractional: [
-        ['red', 50],
-        ['blue', 50],
-      ],
-    };
+      expect(targeting.evaluate('flagA', { targetingKey: 'key' })).toBe(null);
+    });
 
-    expect(targeting.applyTargeting('flagA', input, { targetingKey: 'bucketKeyB' })).toBe('blue');
-  });
+    it('should not support invalid bucket configurations', () => {
+      const logic = {
+        fractional: [
+          ['red', 45, 1256],
+          ['blue', 4, 455],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
 
-  it('should evaluate valid rule with targeting key although one does not have a fraction', () => {
-    const input = {
-      fractional: [['red', 1], ['blue']],
-    };
+      expect(targeting.evaluate('flagA', { targetingKey: 'key' })).toBe(null);
+      expect(logger.debug).toHaveBeenCalled();
+    });
 
-    expect(targeting.applyTargeting('flagA', input, { targetingKey: 'bucketKeyB' })).toBe('blue');
-  });
+    it('should log using a custom logger', () => {
+      const logic = {
+        fractional: [
+          ['red', 45, 1256],
+          ['blue', 4, 455],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
 
-  it('should return null if targeting key is missing', () => {
-    const input = {
-      fractional: [
-        ['red', 1],
-        ['blue', 1],
-      ],
-    };
-
-    expect(targeting.applyTargeting('flagA', input, {})).toBe(null);
-  });
-});
-
-describe('fractional operator should validate', () => {
-  let targeting: Targeting;
-
-  beforeAll(() => {
-    targeting = new Targeting(logger);
-  });
-
-  it('bucket sum with sum bigger than 100', () => {
-    const input = {
-      fractional: [
-        ['red', 55],
-        ['blue', 55],
-      ],
-    };
-
-    expect(targeting.applyTargeting('flagA', input, { targetingKey: 'key' })).toBe('blue');
-  });
-
-  it('bucket sum with sum lower than 100', () => {
-    const input = {
-      fractional: [
-        ['red', 45],
-        ['blue', 45],
-      ],
-    };
-
-    expect(targeting.applyTargeting('flagA', input, { targetingKey: 'key' })).toBe('blue');
-  });
-
-  it('buckets properties to have variant and fraction', () => {
-    const input = {
-      fractional: [
-        ['red', 50],
-        [100, 50],
-      ],
-    };
-
-    expect(targeting.applyTargeting('flagA', input, { targetingKey: 'key' })).toBe(null);
-  });
-
-  it('buckets properties to have variant and fraction', () => {
-    const input = {
-      fractional: [
-        ['red', 45, 1256],
-        ['blue', 4, 455],
-      ],
-    };
-
-    expect(targeting.applyTargeting('flagA', input, { targetingKey: 'key' })).toBe(null);
+      expect(targeting.evaluate('flagA', { targetingKey: 'key' }, requestLogger)).toBe(null);
+      expect(logger.debug).not.toHaveBeenCalled();
+      expect(requestLogger.debug).toHaveBeenCalled();
+    });
   });
 });

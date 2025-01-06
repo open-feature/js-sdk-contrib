@@ -1,12 +1,13 @@
 {
   "name": "@openfeature/flagd-core",
   "version": "0.2.5",
+  "license": "Apache-2.0",
   "scripts": {
     "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/core": ">=0.0.16"
+    "@openfeature/core": ">=1.6.0"
   },
   "dependencies": {
     "ajv": "^8.12.0",

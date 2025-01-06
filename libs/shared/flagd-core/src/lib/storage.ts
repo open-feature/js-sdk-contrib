@@ -1,4 +1,4 @@
-import { Logger } from '@openfeature/core';
+import type { Logger } from '@openfeature/core';
 import { FeatureFlag } from './feature-flag';
 import { parse } from './parser';
 
@@ -9,10 +9,11 @@ export interface Storage {
   /**
    * Sets the configurations and returns the list of flags that have changed.
    * @param cfg The configuration string to be parsed and stored.
+   * @param strictValidation Validates against the flag and targeting schemas.
    * @returns The list of flags that have changed.
    * @throws {Error} If the configuration string is invalid.
    */
-  setConfigurations(cfg: string): string[];
+  setConfigurations(cfg: string, strictValidation?: boolean): string[];
 
   /**
    * Gets the feature flag configuration with the given key.
@@ -26,6 +27,12 @@ export interface Storage {
    * @returns The map of all the flags.
    */
   getFlags(): Map<string, FeatureFlag>;
+
+  /**
+   * Gets metadata related to the flag set.
+   * @returns The flag set metadata.
+   */
+  getFlagSetMetadata(): { flagSetId?: string; flagSetVersion?: string };
 }
 
 /**
@@ -33,8 +40,9 @@ export interface Storage {
  */
 export class MemoryStorage implements Storage {
   private _flags: Map<string, FeatureFlag>;
+  private _flagSetMetadata = {};
 
-  constructor(private logger?: Logger) {
+  constructor(private logger: Logger) {
     this._flags = new Map<string, FeatureFlag>();
   }
 
@@ -46,8 +54,12 @@ export class MemoryStorage implements Storage {
     return this._flags;
   }
 
-  setConfigurations(cfg: string): string[] {
-    const newFlags = parse(cfg, false, this.logger);
+  getFlagSetMetadata(): { flagSetId?: string; flagSetVersion?: string } {
+    return this._flagSetMetadata;
+  }
+
+  setConfigurations(cfg: string, strictValidation = false): string[] {
+    const { flags: newFlags, metadata } = parse(cfg, strictValidation, this.logger);
     const oldFlags = this._flags;
     const added: string[] = [];
     const removed: string[] = [];
@@ -68,6 +80,7 @@ export class MemoryStorage implements Storage {
     });
 
     this._flags = newFlags;
+    this._flagSetMetadata = metadata;
     return [...added, ...removed, ...changed];
   }
 }
