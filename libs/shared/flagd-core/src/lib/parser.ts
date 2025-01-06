@@ -1,4 +1,4 @@
-import type { Logger } from '@openfeature/core';
+import type { Logger, FlagMetadata } from '@openfeature/core';
 import { ParseError } from '@openfeature/core';
 import Ajv from 'ajv';
 import flagsSchema from '../../flagd-schemas/json/flags.json';
@@ -7,12 +7,12 @@ import { FeatureFlag, Flag } from './feature-flag';
 
 type FlagConfig = {
   flags: { [key: string]: Flag };
-  metadata?: { id?: string; version?: string };
+  metadata?: FlagMetadata;
 };
 
 type FlagSet = {
   flags: Map<string, FeatureFlag>;
-  metadata: { flagSetId?: string; flagSetVersion?: string };
+  metadata: FlagMetadata;
 };
 
 const ajv = new Ajv({ strict: false });
@@ -46,10 +46,7 @@ export function parse(flagConfig: string, strictValidation: boolean, logger: Log
     }
     const flagMap = new Map<string, FeatureFlag>();
 
-    const flagSetMetadata = {
-      ...(parsedFlagConfig?.metadata?.id && { flagSetId: parsedFlagConfig.metadata.id }),
-      ...(parsedFlagConfig?.metadata?.version && { flagSetVersion: parsedFlagConfig.metadata.version }),
-    };
+    const flagSetMetadata = parsedFlagConfig.metadata ?? {};
 
     for (const flagsKey in parsedFlagConfig.flags) {
       const flag = parsedFlagConfig.flags[flagsKey];
@@ -60,7 +57,7 @@ export function parse(flagConfig: string, strictValidation: boolean, logger: Log
           {
             ...flag,
             metadata: {
-              ...flagSetMetadata,
+              ...parsedFlagConfig.metadata,
               ...flag.metadata,
             },
           },

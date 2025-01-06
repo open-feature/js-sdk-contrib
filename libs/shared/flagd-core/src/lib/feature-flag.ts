@@ -140,17 +140,8 @@ export class FeatureFlag {
       }
     }
 
-    // if (typeof variant !== 'string') {
-    //   return {
-    //     reason: StandardResolutionReasons.ERROR,
-    //     errorCode: ErrorCode.GENERAL,
-    //     errorMessage: `Variant must be a string, but found '${typeof variant}'`,
-    //     flagMetadata: this.metadata,
-    //   };
-    // }
-
-    const resolvedVariant = this._variants.get(variant);
-    if (resolvedVariant === undefined) {
+    const resolvedValue = this._variants.get(variant);
+    if (resolvedValue === undefined) {
       return {
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.GENERAL,
@@ -160,7 +151,7 @@ export class FeatureFlag {
     }
 
     return {
-      value: resolvedVariant,
+      value: resolvedValue,
       reason,
       variant,
       flagMetadata: this.metadata,

@@ -7,6 +7,7 @@ import type {
   FlagValue,
   FlagValueType,
   JsonValue,
+  FlagMetadata,
 } from '@openfeature/core';
 import { FeatureFlag } from './feature-flag';
 import { MemoryStorage, Storage } from './storage';
@@ -25,8 +26,8 @@ export class FlagdCore implements Storage {
     this._storage = storage ? storage : new MemoryStorage(this._logger);
   }
 
-  setConfigurations(cfg: string): string[] {
-    return this._storage.setConfigurations(cfg);
+  setConfigurations(flagConfig: string): string[] {
+    return this._storage.setConfigurations(flagConfig);
   }
 
   getFlag(key: string): FeatureFlag | undefined {
@@ -37,7 +38,7 @@ export class FlagdCore implements Storage {
     return this._storage.getFlags();
   }
 
-  getFlagSetMetadata(): { flagSetId?: string; flagSetVersion?: string } {
+  getFlagSetMetadata(): FlagMetadata {
     return this._storage.getFlagSetMetadata();
   }
 
@@ -130,9 +131,11 @@ export class FlagdCore implements Storage {
             ...result,
             flagKey: key,
           });
+        } else {
+          logger.debug(`Flag ${key} omitted because ${result.errorCode}: ${result.errorMessage}`);
         }
       } catch (e) {
-        logger.error(`Error resolving flag ${key}: ${(e as Error).message}`);
+        logger.debug(`Error resolving flag ${key}: ${(e as Error).message}`);
       }
     }
     return values;
@@ -177,21 +180,29 @@ export class FlagdCore implements Storage {
       };
     }
 
-    const evaluatedResponse = flag.evaluate(evalCtx, logger);
+    const resolution = flag.evaluate(evalCtx, logger);
 
-    if (evaluatedResponse.value && typeof evaluatedResponse.value !== type) {
+    // Error during evaluation, returning default value
+    if (resolution.value === undefined) {
+      return {
+        ...resolution,
+        value: defaultValue,
+      }
+    }
+    
+    if (typeof resolution.value !== type) {
       return {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.TYPE_MISMATCH,
-        errorMessage: `Evaluated type of the flag ${flagKey} does not match. Expected ${type}, got ${typeof evaluatedResponse.value}`,
+        errorMessage: `Evaluated type of the flag ${flagKey} does not match. Expected ${type}, got ${typeof resolution.value}`,
         flagMetadata: flag.metadata,
       };
     }
 
     return {
-      ...evaluatedResponse,
-      value: (evaluatedResponse.value as T) ?? defaultValue,
+      ...resolution,
+      value: resolution.value as T,
     };
   }
 }

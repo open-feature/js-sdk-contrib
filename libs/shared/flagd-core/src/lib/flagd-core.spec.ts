@@ -1,5 +1,14 @@
 import { ErrorCode, ParseError, StandardResolutionReasons } from '@openfeature/core';
+import type { Logger } from '@openfeature/core';
 import { FlagdCore } from './flagd-core';
+import { FeatureFlag } from './feature-flag';
+
+const logger: Logger = {
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+};
 
 describe('flagd-core resolving', () => {
   describe('truthy variant values', () => {
@@ -254,7 +263,7 @@ describe('flagd-core common flag definitions', () => {
 
 describe('flagd-core flag metadata', () => {
   const targetingFlag =
-    '{"flags":{"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",null]},"metadata":{"owner": "mike"}},"shortCircuit":{"variants":{"true":true,"false":false},"defaultVariant":"false","state":"ENABLED","targeting":{"==":[{"var":"favoriteNumber"},1]}}},"metadata":{"id":"dev","version":"1"}}';
+    '{"flags":{"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",null]},"metadata":{"owner": "mike"}},"shortCircuit":{"variants":{"true":true,"false":false},"defaultVariant":"false","state":"ENABLED","targeting":{"==":[{"var":"favoriteNumber"},1]}}},"metadata":{"flagSetId":"dev","version":"1"}}';
   let core: FlagdCore;
 
   beforeAll(() => {
@@ -264,12 +273,12 @@ describe('flagd-core flag metadata', () => {
 
   it('should return "targetedFlag" flag metadata', () => {
     const resolved = core.resolveStringEvaluation('targetedFlag', 'none', { email: 'admin@openfeature.dev' });
-    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev', owner: 'mike' });
+    expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev', owner: 'mike' });
   });
 
   it('should return "shortCircuit" flag metadata', () => {
     const resolved = core.resolveBooleanEvaluation('shortCircuit', false, { favoriteNumber: 1 });
-    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+    expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev' });
   });
 });
 
@@ -299,7 +308,7 @@ describe('flagd-core error conditions', () => {
         targeting: { if: [true, 'invalid'] },
       },
     },
-    metadata: { id: 'dev', version: '1' },
+    metadata: { flagSetId: 'dev', version: '1' },
   };
   let core: FlagdCore;
 
@@ -313,7 +322,7 @@ describe('flagd-core error conditions', () => {
     expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
     expect(resolved.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
     expect(resolved.errorMessage).toBeTruthy();
-    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+    expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev' });
   });
 
   it('should treat disabled flags as not found', () => {
@@ -321,7 +330,7 @@ describe('flagd-core error conditions', () => {
     expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
     expect(resolved.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
     expect(resolved.errorMessage).toBeTruthy();
-    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+    expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev' });
   });
 
   it('should return a parse error code', () => {
@@ -329,34 +338,45 @@ describe('flagd-core error conditions', () => {
     expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
     expect(resolved.errorCode).toBe(ErrorCode.PARSE_ERROR);
     expect(resolved.errorMessage).toBeTruthy();
-    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+    expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev' });
   });
 
-  // it('should return a general error if targeting evaluate fails', () => {
-  //   const evaluationErrorCore = new FlagdCore({
-  //     setConfigurations: jest.fn(),
-  //     getFlag: () => {
-  //       const featureFlag =  new FeatureFlag('basic', {}, logger)
-  //       featureFlag[_targeting] = () => throw new Error("something broke");
-  //       return featureFlag;
-  //     },
-  //     getFlags: jest.fn(),
-  //     getFlagSetMetadata: jest.fn(),
-  //   });
+  it('should return a general error if targeting evaluate fails', () => {
+    const evaluationErrorCore = new FlagdCore({
+      setConfigurations: jest.fn(),
+      getFlag: () => {
+        const featureFlag = new FeatureFlag(
+          'basic',
+          {
+            defaultVariant: 'off',
+            state: 'ENABLED',
+            variants: { on: true, off: false },
+            metadata: { version: '1', flagSetId: 'dev' },
+          },
+          logger,
+        );
+        (featureFlag as any)['_targeting'] = () => {
+          throw new Error('something broke');
+        };
+        return featureFlag;
+      },
+      getFlags: jest.fn(),
+      getFlagSetMetadata: jest.fn(),
+    });
 
-  //   const resolved = evaluationErrorCore.resolveBooleanEvaluation('basic', false, {});
-  //   expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
-  //   expect(resolved.errorCode).toBe(ErrorCode.PARSE_ERROR);
-  //   expect(resolved.errorMessage).toBeTruthy();
-  //   expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
-  // });
+    const resolved = evaluationErrorCore.resolveBooleanEvaluation('basic', false, {});
+    expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
+    expect(resolved.errorCode).toBe(ErrorCode.GENERAL);
+    expect(resolved.errorMessage).toBeTruthy();
+    expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev' });
+  });
 
   it('should return a general error if the variant is not a string', () => {
     const resolved = core.resolveBooleanEvaluation('invalidVariantName', false, {});
     expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
     expect(resolved.errorCode).toBe(ErrorCode.GENERAL);
     expect(resolved.errorMessage).toBeTruthy();
-    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+    expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev' });
   });
 
   it('should return a type mismatch error', () => {
@@ -364,6 +384,6 @@ describe('flagd-core error conditions', () => {
     expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
     expect(resolved.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
     expect(resolved.errorMessage).toBeTruthy();
-    expect(resolved.flagMetadata).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+    expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev' });
   });
 });

@@ -81,27 +81,27 @@ describe('MemoryStorage', () => {
   describe('metadata', () => {
     it('should return flag set version and id, owner, and drop "random"', () => {
       const cfg =
-        '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false},"metadata":{"owner":"mike"}}}, "metadata":{"version":"1", "id": "test", "random": "shouldBeDropped"}}';
+        '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false},"metadata":{"owner":"mike"}}}, "metadata":{"version":"1", "flagSetId": "test", "additionalProp": "name"}}';
       storage.setConfigurations(cfg);
       const flag1 = storage.getFlag('flag1');
 
-      expect(flag1?.metadata).toEqual({ flagSetVersion: '1', flagSetId: 'test', owner: 'mike' });
+      expect(flag1?.metadata).toEqual({ version: '1', flagSetId: 'test', additionalProp: 'name', owner: 'mike' });
     });
 
     it('should merge metadata with flag metadata overriding matching flag set metadata', () => {
       const cfg =
-        '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false},"metadata":{"owner":"mike", "flagSetId": "prod" }}}, "metadata":{"version":"1", "id": "dev"}}';
+        '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false},"metadata":{"owner":"mike", "flagSetId": "prod" }}}, "metadata":{"version":"1", "flagSetId": "dev"}}';
       storage.setConfigurations(cfg);
       const flag1 = storage.getFlag('flag1');
 
-      expect(flag1?.metadata).toEqual({ flagSetVersion: '1', flagSetId: 'prod', owner: 'mike' });
+      expect(flag1?.metadata).toEqual({ version: '1', flagSetId: 'prod', owner: 'mike' });
     });
 
     it('should set flag set metadata correctly', () => {
       const cfg =
-        '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}}}, "metadata":{"version":"1", "id": "dev"}}';
+        '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}}}, "metadata":{"version":"1", "flagSetId": "dev"}}';
       storage.setConfigurations(cfg);
-      expect(storage.getFlagSetMetadata()).toEqual({ flagSetVersion: '1', flagSetId: 'dev' });
+      expect(storage.getFlagSetMetadata()).toEqual({ version: '1', flagSetId: 'dev' });
     });
   });
 });

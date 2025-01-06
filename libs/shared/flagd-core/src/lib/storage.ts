@@ -1,4 +1,4 @@
-import type { Logger } from '@openfeature/core';
+import type { FlagMetadata, Logger } from '@openfeature/core';
 import { FeatureFlag } from './feature-flag';
 import { parse } from './parser';
 
@@ -30,9 +30,9 @@ export interface Storage {
 
   /**
    * Gets metadata related to the flag set.
-   * @returns The flag set metadata.
+   * @returns {FlagMetadata} The flag set metadata.
    */
-  getFlagSetMetadata(): { flagSetId?: string; flagSetVersion?: string };
+  getFlagSetMetadata(): FlagMetadata;
 }
 
 /**
@@ -40,7 +40,7 @@ export interface Storage {
  */
 export class MemoryStorage implements Storage {
   private _flags: Map<string, FeatureFlag>;
-  private _flagSetMetadata = {};
+  private _flagSetMetadata: FlagMetadata = {};
 
   constructor(private logger: Logger) {
     this._flags = new Map<string, FeatureFlag>();
@@ -54,7 +54,7 @@ export class MemoryStorage implements Storage {
     return this._flags;
   }
 
-  getFlagSetMetadata(): { flagSetId?: string; flagSetVersion?: string } {
+  getFlagSetMetadata(): FlagMetadata {
     return this._flagSetMetadata;
   }
 
