@@ -8,12 +8,12 @@ import { parse } from './parser';
 export interface Storage {
   /**
    * Sets the configurations and returns the list of flags that have changed.
-   * @param cfg The configuration string to be parsed and stored.
+   * @param flagConfig The configuration string to be parsed and stored.
    * @param strictValidation Validates against the flag and targeting schemas.
    * @returns The list of flags that have changed.
    * @throws {Error} If the configuration string is invalid.
    */
-  setConfigurations(cfg: string, strictValidation?: boolean): string[];
+  setConfigurations(flagConfig: string, strictValidation?: boolean): string[];
 
   /**
    * Gets the feature flag configuration with the given key.
@@ -58,8 +58,8 @@ export class MemoryStorage implements Storage {
     return this._flagSetMetadata;
   }
 
-  setConfigurations(cfg: string, strictValidation = false): string[] {
-    const { flags: newFlags, metadata } = parse(cfg, strictValidation, this.logger);
+  setConfigurations(flagConfig: string, strictValidation = false): string[] {
+    const { flags: newFlags, metadata } = parse(flagConfig, strictValidation, this.logger);
     const oldFlags = this._flags;
     const added: string[] = [];
     const removed: string[] = [];
