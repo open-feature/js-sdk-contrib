@@ -187,9 +187,9 @@ export class FlagdCore implements Storage {
       return {
         ...resolution,
         value: defaultValue,
-      }
+      };
     }
-    
+
     if (typeof resolution.value !== type) {
       return {
         value: defaultValue,
