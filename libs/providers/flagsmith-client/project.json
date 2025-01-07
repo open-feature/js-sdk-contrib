@@ -18,24 +18,14 @@
       ]
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["libs/providers/flagsmith-client/**/*.ts", "libs/providers/flagsmith-client/package.json"]
-      }
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
     },
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "libs/providers/flagsmith-client/jest.config.ts",
-        "passWithNoTests": true
-      },
-      "configurations": {
-        "ci": {
-          "ci": true,
-          "codeCoverage": true
-        }
+        "jestConfig": "libs/providers/flagsmith-client/jest.config.ts"
       }
     },
     "package": {
@@ -46,7 +36,6 @@
         "outputPath": "dist/libs/providers/flagsmith-client",
         "entryFile": "libs/providers/flagsmith-client/src/index.ts",
         "tsConfig": "libs/providers/flagsmith-client/tsconfig.lib.json",
-        "buildableProjectDepsInPackageJsonType": "dependencies",
         "compiler": "tsc",
         "generateExportsField": true,
         "umdName": "flagsmith-client",
