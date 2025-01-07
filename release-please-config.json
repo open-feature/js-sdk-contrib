@@ -78,7 +78,6 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default",
-      "release-as": "1.0.0"
     },
     "libs/shared/ofrep-core": {
       "release-type": "node",
