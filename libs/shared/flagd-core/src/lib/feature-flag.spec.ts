@@ -1,4 +1,12 @@
+import type { Logger } from '@openfeature/core';
 import { FeatureFlag, Flag } from './feature-flag';
+
+const logger: Logger = {
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+};
 
 describe('Flagd flag structure', () => {
   it('should be constructed with valid input - boolean', () => {
@@ -12,14 +20,33 @@ describe('Flagd flag structure', () => {
       targeting: '',
     };
 
-    const ff = new FeatureFlag(input);
+    const ff = new FeatureFlag('test', input, logger);
 
     expect(ff).toBeTruthy();
     expect(ff.state).toBe('ENABLED');
     expect(ff.defaultVariant).toBe('off');
-    expect(ff.targeting).toBe('');
     expect(ff.variants.get('on')).toBeTruthy();
     expect(ff.variants.get('off')).toBeFalsy();
+  });
+
+  it('should be constructed with valid input - string', () => {
+    const input: Flag = {
+      state: 'ENABLED',
+      defaultVariant: 'off',
+      variants: {
+        on: 'on',
+        off: 'off',
+      },
+      targeting: '',
+    };
+
+    const ff = new FeatureFlag('test', input, logger);
+
+    expect(ff).toBeTruthy();
+    expect(ff.state).toBe('ENABLED');
+    expect(ff.defaultVariant).toBe('off');
+    expect(ff.variants.get('on')).toBe('on');
+    expect(ff.variants.get('off')).toBe('off');
   });
 
   it('should be constructed with valid input - number', () => {
@@ -33,12 +60,11 @@ describe('Flagd flag structure', () => {
       targeting: '',
     };
 
-    const ff = new FeatureFlag(input);
+    const ff = new FeatureFlag('test', input, logger);
 
     expect(ff).toBeTruthy();
     expect(ff.state).toBe('ENABLED');
     expect(ff.defaultVariant).toBe('one');
-    expect(ff.targeting).toBe('');
     expect(ff.variants.get('one')).toBe(1.0);
     expect(ff.variants.get('two')).toBe(2.0);
   });
@@ -60,12 +86,11 @@ describe('Flagd flag structure', () => {
       targeting: '',
     };
 
-    const ff = new FeatureFlag(input);
+    const ff = new FeatureFlag('test', input, logger);
 
     expect(ff).toBeTruthy();
     expect(ff.state).toBe('ENABLED');
     expect(ff.defaultVariant).toBe('pi2');
-    expect(ff.targeting).toBe('');
     expect(ff.variants.get('pi2')).toStrictEqual({ value: 3.14, accuracy: 2 });
     expect(ff.variants.get('pi5')).toStrictEqual({ value: 3.14159, accuracy: 5 });
   });

@@ -1,36 +1,46 @@
 import { LogicEngine } from 'json-logic-engine';
-import { stringCompareFactory, endsWithRule, startsWithRule } from './string-comp';
-import { semVerFactory, semVerRule } from './sem-ver';
-import { fractionalFactory, fractionalRule } from './fractional';
-import { flagdPropertyKey, flagKeyPropertyKey, timestampPropertyKey } from './common';
-import { type Logger } from '@openfeature/core';
+import { endsWith, startsWith, endsWithRule, startsWithRule } from './string-comp';
+import { semVer, semVerRule } from './sem-ver';
+import { fractional, fractionalRule } from './fractional';
+import { flagdPropertyKey, flagKeyPropertyKey, loggerSymbol, timestampPropertyKey } from './common';
+import type { EvaluationContextWithLogger } from './common';
+import type { EvaluationContext, Logger, JsonValue } from '@openfeature/core';
+
 export class Targeting {
-  private readonly _logicEngine: LogicEngine;
+  private readonly _logicEngine: { <T extends JsonValue>(ctx: EvaluationContextWithLogger): T };
 
-  constructor(private logger: Logger) {
+  constructor(
+    logic: unknown,
+    private logger: Logger,
+  ) {
     const engine = new LogicEngine();
-    const { endsWithHandler, startsWithHandler } = stringCompareFactory(logger);
-    engine.addMethod(startsWithRule, startsWithHandler);
-    engine.addMethod(endsWithRule, endsWithHandler);
-    engine.addMethod(semVerRule, semVerFactory(logger));
-    engine.addMethod(fractionalRule, fractionalFactory(logger));
+    engine.addMethod(startsWithRule, startsWith);
+    engine.addMethod(endsWithRule, endsWith);
+    engine.addMethod(semVerRule, semVer);
+    engine.addMethod(fractionalRule, fractional);
 
-    this._logicEngine = engine;
+    // JSON logic engine returns a generic Function interface, so we cast it to any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this._logicEngine = engine.build(logic) as any;
   }
 
-  applyTargeting(flagKey: string, logic: unknown, data: object): unknown {
-    if (Object.hasOwn(data, flagdPropertyKey)) {
-      this.logger.warn(`overwriting ${flagdPropertyKey} property in the context`);
+  evaluate<T extends JsonValue>(flagKey: string, ctx: EvaluationContext, logger: Logger = this.logger): T {
+    if (Object.hasOwn(ctx, flagdPropertyKey)) {
+      this.logger.debug(`overwriting ${flagdPropertyKey} property in the context`);
     }
 
-    const ctxData = {
-      ...data,
+    return this._logicEngine({
+      ...ctx,
       [flagdPropertyKey]: {
         [flagKeyPropertyKey]: flagKey,
         [timestampPropertyKey]: Math.floor(Date.now() / 1000),
       },
-    };
-
-    return this._logicEngine.run(logic, ctxData);
+      /**
+       * Inject the current logger into the context. This is used in custom methods.
+       * The symbol is used to prevent collisions with other properties and is omitted
+       * when context is serialized.
+       */
+      [loggerSymbol]: logger,
+    });
   }
 }
