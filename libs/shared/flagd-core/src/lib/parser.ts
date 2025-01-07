@@ -56,6 +56,7 @@ export function parse(flagConfig: string, strictValidation: boolean, logger: Log
           flagsKey,
           {
             ...flag,
+            // Flag metadata has higher precedence than flag set metadata
             metadata: {
               ...parsedFlagConfig.metadata,
               ...flag.metadata,

@@ -34,6 +34,8 @@ type RequiredResolutionDetails<T> = Omit<ResolutionDetails<T>, 'value'> & {
     | {
         value: T;
         variant: string;
+        errorCode?: never;
+        errorMessage?: never;
       }
   );
 

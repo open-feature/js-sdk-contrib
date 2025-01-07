@@ -182,7 +182,10 @@ export class FlagdCore implements Storage {
 
     const resolution = flag.evaluate(evalCtx, logger);
 
-    // Error during evaluation, returning default value
+    /**
+     * A resolution without a value represents an error condition. It contains
+     * information about the error but requires the default value set.
+     */
     if (resolution.value === undefined) {
       return {
         ...resolution,

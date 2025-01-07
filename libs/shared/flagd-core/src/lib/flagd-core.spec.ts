@@ -355,6 +355,7 @@ describe('flagd-core error conditions', () => {
           },
           logger,
         );
+        /* eslint-disable  @typescript-eslint/no-explicit-any */
         (featureFlag as any)['_targeting'] = () => {
           throw new Error('something broke');
         };
