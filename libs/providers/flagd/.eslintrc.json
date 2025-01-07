@@ -1,6 +1,6 @@
 {
   "extends": ["../../../.eslintrc.json"],
-  "ignorePatterns": ["!**/*", "node_modules", "src/proto/**"],
+  "ignorePatterns": ["!**/*", "node_modules", "src/proto/**", "schemas/**", "spec/**"],
   "overrides": [
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],

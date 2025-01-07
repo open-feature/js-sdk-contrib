@@ -16,7 +16,7 @@ export const typeFactory = (
   if (value === null) return undefined;
   switch (type) {
     case 'string':
-      return typeof value !== null && typeof value !== 'undefined' ? `${value}` : value;
+      return value !== null && typeof value !== 'undefined' ? `${value}` : value;
     case 'number':
       return typeof value === 'number' ? value : parseFloat(value as string) || value;
     case 'boolean':
