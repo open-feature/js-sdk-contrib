@@ -1,6 +1,6 @@
 {
   "extends": ["../../../.eslintrc.json"],
-  "ignorePatterns": ["!**/*"],
+  "ignorePatterns": ["!**/*", "test-harness", "flagd-schemas", "spec"],
   "overrides": [
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],

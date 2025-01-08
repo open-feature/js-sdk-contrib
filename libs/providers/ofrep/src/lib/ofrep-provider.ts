@@ -1,4 +1,3 @@
-import { GeneralError } from '@openfeature/core';
 import {
   EvaluationFlagValue,
   OFREPApi,
@@ -8,7 +7,14 @@ import {
   handleEvaluationError,
   toResolutionDetails,
 } from '@openfeature/ofrep-core';
-import { EvaluationContext, JsonValue, Provider, ResolutionDetails, TypeMismatchError } from '@openfeature/server-sdk';
+import {
+  EvaluationContext,
+  GeneralError,
+  JsonValue,
+  Provider,
+  ResolutionDetails,
+  TypeMismatchError,
+} from '@openfeature/server-sdk';
 
 export type OFREPProviderOptions = OFREPProviderBaseOptions;
 

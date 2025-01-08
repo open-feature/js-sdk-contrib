@@ -42,6 +42,24 @@
       "files": "*.json",
       "parser": "jsonc-eslint-parser",
       "rules": {}
+    },
+    {
+      "files": ["*.json"],
+      "parser": "jsonc-eslint-parser",
+      "rules": {
+        "@nx/dependency-checks": [
+          "error",
+          {
+            "buildTargets": ["lint"],
+            "includeTransitiveDependencies": false,
+            "checkMissingDependencies": true,
+            "checkObsoleteDependencies": true,
+            "checkVersionMismatches": true,
+            "ignoredDependencies": ["jest-cucumber"],
+            "ignoredFiles": ["**/*.spec.ts", "**/*.spec.js", "**/*.test.ts", "**/*.test.js"]
+          }
+        ]
+      }
     }
   ]
 }

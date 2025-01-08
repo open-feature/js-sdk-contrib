@@ -1,9 +1,6 @@
 {
   "name": "@openfeature/ofrep-web-provider",
   "version": "0.3.1",
-  "dependencies": {
-    "tslib": "^2.3.0"
-  },
   "main": "./src/index.js",
   "typings": "./src/index.d.ts",
   "scripts": {
@@ -12,5 +9,9 @@
   },
   "peerDependencies": {
     "@openfeature/web-sdk": "^1.4.0"
+  },
+  "dependencies": {
+    "undici": "^5.0.0",
+    "@openfeature/ofrep-core": "0.2.0"
   }
 }

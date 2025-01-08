@@ -14,8 +14,8 @@ import {
   InvalidContextError,
   ParseError,
   TargetingKeyMissingError,
-} from '@openfeature/core';
-import { TypeMismatchError } from '@openfeature/server-sdk';
+  TypeMismatchError,
+} from '@openfeature/server-sdk';
 
 describe('OFREPProvider should', () => {
   let provider: OFREPProvider;

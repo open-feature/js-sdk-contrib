@@ -7,5 +7,9 @@
   },
   "peerDependencies": {
     "@openfeature/core": "<=1.6.0"
+  },
+  "dependencies": {
+    "configcat-common": "9.3.1",
+    "configcat-js-ssr": "^8.4.3"
   }
 }

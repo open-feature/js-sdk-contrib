@@ -1,4 +1,4 @@
-import { TypeMismatchError } from '@openfeature/core';
+import { TypeMismatchError } from '@openfeature/server-sdk';
 import translateResult from './translate-result';
 
 describe('translateResult', () => {

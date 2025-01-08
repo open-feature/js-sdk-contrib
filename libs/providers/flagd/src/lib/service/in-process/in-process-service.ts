@@ -1,10 +1,17 @@
-import { Service } from '../service';
-import { EvaluationContext, FlagValue, JsonValue, Logger, ResolutionDetails, FlagValueType } from '@openfeature/core';
-import { Config } from '../../configuration';
 import { FlagdCore } from '@openfeature/flagd-core';
+import type {
+  EvaluationContext,
+  FlagValue,
+  FlagValueType,
+  JsonValue,
+  Logger,
+  ResolutionDetails,
+} from '@openfeature/server-sdk';
+import { Config } from '../../configuration';
+import { Service } from '../service';
 import { DataFetch } from './data-fetch';
-import { GrpcFetch } from './grpc/grpc-fetch';
 import { FileFetch } from './file/file-fetch';
+import { GrpcFetch } from './grpc/grpc-fetch';
 
 export class InProcessService implements Service {
   private _flagdCore: FlagdCore;

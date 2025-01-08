@@ -13,7 +13,7 @@ import {
   TypeMismatchError,
 } from '@openfeature/server-sdk';
 import { LRUCache } from 'lru-cache';
-import { promisify } from 'util';
+import { promisify } from 'node:util';
 import {
   EventStreamResponse,
   ResolveBooleanRequest,

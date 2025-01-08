@@ -7,5 +7,11 @@
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.15.0"
+  },
+  "dependencies": {
+    "object-hash": "^3.0.0",
+    "lru-cache": "^11.0.0",
+    "axios": "1.7.9",
+    "copy-anything": "^3.0.5"
   }
 }

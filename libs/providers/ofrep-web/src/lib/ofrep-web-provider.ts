@@ -1,10 +1,4 @@
 import {
-  InvalidContextError,
-  ParseError,
-  StandardResolutionReasons,
-  TargetingKeyMissingError,
-} from '@openfeature/core';
-import {
   EvaluationFailureErrorCode,
   EvaluationRequest,
   EvaluationResponse,
@@ -25,13 +19,17 @@ import {
   FlagValue,
   GeneralError,
   Hook,
+  InvalidContextError,
   JsonValue,
   Logger,
   OpenFeatureError,
   OpenFeatureEventEmitter,
+  ParseError,
   Provider,
   ProviderFatalError,
   ResolutionDetails,
+  StandardResolutionReasons,
+  TargetingKeyMissingError,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
 import { BulkEvaluationStatus, EvaluateFlagsResponse } from './model/evaluate-flags-response';

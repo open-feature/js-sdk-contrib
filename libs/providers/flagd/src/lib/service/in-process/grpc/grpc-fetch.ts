@@ -1,5 +1,5 @@
 import { ClientReadableStream, ServiceError, credentials } from '@grpc/grpc-js';
-import { Logger } from '@openfeature/core';
+import { Logger } from '@openfeature/server-sdk';
 import { GeneralError } from '@openfeature/server-sdk';
 import { FlagSyncServiceClient, SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { Config } from '../../../configuration';
