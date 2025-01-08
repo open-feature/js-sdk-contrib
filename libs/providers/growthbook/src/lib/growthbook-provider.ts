@@ -17,12 +17,12 @@ export class GrowthbookProvider implements Provider {
 
   readonly runsOn = 'server';
   private _client?: GrowthBookClient;
-  private readonly context: ClientOptions;
+  private readonly options: ClientOptions;
   private _initOptions?: InitOptions;
   public readonly events = new OpenFeatureEventEmitter();
 
-  constructor(growthbookContext: ClientOptions, initOptions?: InitOptions) {
-    this.context = growthbookContext;
+  constructor(growthbookOptions: ClientOptions, initOptions?: InitOptions) {
+    this.options = growthbookOptions;
     this._initOptions = initOptions;
   }
 
@@ -37,9 +37,9 @@ export class GrowthbookProvider implements Provider {
   async initialize(evalContext?: EvaluationContext): Promise<void> {
     // Use context to construct the instance to instantiate GrowthBook
     const globalContext = {
-      globalAttributes: { ...this.context.globalAttributes, ...evalContext },
+      globalAttributes: { ...this.options.globalAttributes, ...evalContext },
     };
-    this._client = new GrowthBookClient({ ...this.context, ...globalContext });
+    this._client = new GrowthBookClient({ ...this.options, ...globalContext });
 
     await this.client.init(this._initOptions);
 

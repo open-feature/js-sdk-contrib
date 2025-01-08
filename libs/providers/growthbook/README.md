@@ -9,7 +9,7 @@ $ npm install @openfeature/growthbook-provider
 ## Example Setup
 
 ```typescript
-import { GrowthBook, Context, InitOptions } from '@growthbook/growthbook';
+import { GrowthBookClient, ClientOptions, InitOptions } from '@growthbook/growthbook';
 import { GrowthbookProvider } from '@openfeature/growthbook-provider';
 import { OpenFeature } from '@openfeature/server-sdk';
 
@@ -17,7 +17,7 @@ import { OpenFeature } from '@openfeature/server-sdk';
  * Configure your GrowthBook instance with GrowthBook context
  * @see https://docs.growthbook.io/lib/js#step-1-configure-your-app
  */
-const gbContext: Context = {
+const gbClientOptions: ClientOptions = {
   apiHost: 'https://cdn.growthbook.io',
   clientKey: 'sdk-abc123',
   // Only required if you have feature encryption enabled in GrowthBook

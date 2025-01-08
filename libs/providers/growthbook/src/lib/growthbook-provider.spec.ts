@@ -5,7 +5,7 @@ import { Client, OpenFeature } from '@openfeature/server-sdk';
 jest.mock('@growthbook/growthbook');
 
 const testFlagKey = 'flag-key';
-const growthbookContextMock: ClientOptions = {
+const growthbookOptionsMock: ClientOptions = {
   apiHost: 'http://api.growthbook.io',
   clientKey: 'sdk-test-key',
   globalAttributes: {
@@ -22,7 +22,7 @@ describe('GrowthbookProvider', () => {
   let ofClient: Client;
 
   beforeAll(() => {
-    gbProvider = new GrowthbookProvider(growthbookContextMock, initOptionsMock);
+    gbProvider = new GrowthbookProvider(growthbookOptionsMock, initOptionsMock);
     OpenFeature.setProvider(gbProvider);
     ofClient = OpenFeature.getClient();
   });
@@ -31,31 +31,31 @@ describe('GrowthbookProvider', () => {
   });
 
   it('should be and instance of GrowthbookProvider', () => {
-    expect(new GrowthbookProvider(growthbookContextMock, initOptionsMock)).toBeInstanceOf(GrowthbookProvider);
+    expect(new GrowthbookProvider(growthbookOptionsMock, initOptionsMock)).toBeInstanceOf(GrowthbookProvider);
   });
 
   describe('constructor', () => {
-    it('should set the growthbook context & initOptions correctly', () => {
-      const provider = new GrowthbookProvider(growthbookContextMock, initOptionsMock);
+    it('should set the growthbook options & initOptions correctly', () => {
+      const provider = new GrowthbookProvider(growthbookOptionsMock, initOptionsMock);
 
-      expect(provider['context']).toEqual(growthbookContextMock);
+      expect(provider['options']).toEqual(growthbookOptionsMock);
       expect(provider['_initOptions']).toEqual(initOptionsMock);
     });
   });
 
   describe('initialize', () => {
-    const provider = new GrowthbookProvider(growthbookContextMock, initOptionsMock);
+    const provider = new GrowthbookProvider(growthbookOptionsMock, initOptionsMock);
 
     it('should call growthbook initialize function with correct arguments', async () => {
       const evalContext = { serverIp: '10.1.1.1' };
       await provider.initialize({ serverIp: '10.1.1.1' });
 
-      const context = {
-        ...provider['context'],
-        globalAttributes: { ...provider['context'].globalAttributes, ...evalContext },
+      const options = {
+        ...provider['options'],
+        globalAttributes: { ...provider['options'].globalAttributes, ...evalContext },
       };
 
-      expect(GrowthBookClient).toHaveBeenCalledWith(context);
+      expect(GrowthBookClient).toHaveBeenCalledWith(options);
       expect(provider['_client']?.init).toHaveBeenCalledWith(initOptionsMock);
     });
   });
