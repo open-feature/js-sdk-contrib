@@ -83,7 +83,7 @@
     "jest-fetch-mock": "^3.0.3",
     "jest-websocket-mock": "^2.4.0",
     "jsonc-eslint-parser": "^2.1.0",
-    "msw": "^2.2.3",
+    "msw": "2.2.3",
     "nx": "20.3.1",
     "prettier": "^3.0.3",
     "testcontainers": "10.16.0",
