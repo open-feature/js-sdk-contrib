@@ -33,7 +33,7 @@ const initOptions: InitOptions = {
   streaming: true,
 };
 
-OpenFeature.setProvider(new GrowthbookProvider(gbContext, initOptions));
+OpenFeature.setProvider(new GrowthbookProvider(gbClientOptions, initOptions));
 ```
 
 ## Building
