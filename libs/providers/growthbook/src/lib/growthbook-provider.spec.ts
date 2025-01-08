@@ -1,14 +1,14 @@
-import { Context, GrowthBook, InitOptions } from '@growthbook/growthbook';
+import { ClientOptions, GrowthBookClient, InitOptions } from '@growthbook/growthbook';
 import { GrowthbookProvider } from './growthbook-provider';
 import { Client, OpenFeature } from '@openfeature/server-sdk';
 
 jest.mock('@growthbook/growthbook');
 
 const testFlagKey = 'flag-key';
-const growthbookContextMock: Context = {
+const growthbookContextMock: ClientOptions = {
   apiHost: 'http://api.growthbook.io',
   clientKey: 'sdk-test-key',
-  attributes: {
+  globalAttributes: {
     id: 1,
   },
 };
@@ -44,19 +44,25 @@ describe('GrowthbookProvider', () => {
   });
 
   describe('initialize', () => {
-    const provider = new GrowthbookProvider(growthbookContextMock);
+    const provider = new GrowthbookProvider(growthbookContextMock, initOptionsMock);
 
     it('should call growthbook initialize function with correct arguments', async () => {
-      const evalContext = { deviceId: 5 };
-      await provider.initialize({ deviceId: 5 });
+      const evalContext = { serverIp: '10.1.1.1' };
+      await provider.initialize({ serverIp: '10.1.1.1' });
 
-      expect(provider['_client']?.setAttributes).toHaveBeenCalledWith(evalContext);
+      const context = {
+        ...provider['context'],
+        globalAttributes: { ...provider['context'].globalAttributes, ...evalContext },
+      };
+
+      expect(GrowthBookClient).toHaveBeenCalledWith(context);
+      expect(provider['_client']?.init).toHaveBeenCalledWith(initOptionsMock);
     });
   });
 
   describe('resolveBooleanEvaluation', () => {
     it('handles correct return types for boolean variations', async () => {
-      jest.spyOn(GrowthBook.prototype, 'evalFeature').mockImplementation(() => ({
+      jest.spyOn(GrowthBookClient.prototype, 'evalFeature').mockImplementation(() => ({
         value: true,
         source: 'experiment',
         on: true,
@@ -86,7 +92,7 @@ describe('GrowthbookProvider', () => {
 
   describe('resolveStringEvaluation', () => {
     it('handles correct return types for string variations', async () => {
-      jest.spyOn(GrowthBook.prototype, 'evalFeature').mockImplementation(() => ({
+      jest.spyOn(GrowthBookClient.prototype, 'evalFeature').mockImplementation(() => ({
         value: 'Experiment fearlessly, deliver confidently',
         source: 'experiment',
         on: true,
@@ -116,7 +122,7 @@ describe('GrowthbookProvider', () => {
 
   describe('resolveNumberEvaluation', () => {
     it('handles correct return types for number variations', async () => {
-      jest.spyOn(GrowthBook.prototype, 'evalFeature').mockImplementation(() => ({
+      jest.spyOn(GrowthBookClient.prototype, 'evalFeature').mockImplementation(() => ({
         value: 12345,
         source: 'experiment',
         on: true,
@@ -146,7 +152,7 @@ describe('GrowthbookProvider', () => {
 
   describe('resolveObjectEvaluation', () => {
     it('handles correct return types for object variations', async () => {
-      jest.spyOn(GrowthBook.prototype, 'evalFeature').mockImplementation(() => ({
+      jest.spyOn(GrowthBookClient.prototype, 'evalFeature').mockImplementation(() => ({
         value: { test: true },
         source: 'experiment',
         on: true,

@@ -1,4 +1,4 @@
-import { Context, GrowthBook, GrowthBookClient, InitOptions } from '@growthbook/growthbook';
+import { ClientOptions, Context, GrowthBookClient, InitOptions } from '@growthbook/growthbook';
 import {
   EvaluationContext,
   Provider,
@@ -8,7 +8,6 @@ import {
   GeneralError,
   ProviderEvents,
 } from '@openfeature/server-sdk';
-import isEmpty from 'lodash.isempty';
 import translateResult from './translate-result';
 
 export class GrowthbookProvider implements Provider {
@@ -17,32 +16,30 @@ export class GrowthbookProvider implements Provider {
   };
 
   readonly runsOn = 'server';
-  private _client?: GrowthBook;
-  private readonly context: Context;
+  private _client?: GrowthBookClient;
+  private readonly context: ClientOptions;
   private _initOptions?: InitOptions;
   public readonly events = new OpenFeatureEventEmitter();
 
-  constructor(growthbookContext: Context, initOptions?: InitOptions) {
+  constructor(growthbookContext: ClientOptions, initOptions?: InitOptions) {
     this.context = growthbookContext;
     this._initOptions = initOptions;
   }
 
-  private get client(): GrowthBook {
+  private get client(): GrowthBookClient {
     if (!this._client) {
       throw new GeneralError('Provider is not initialized');
     }
     return this._client;
   }
 
-  // the global context is passed to the initialization function
+  // the global (or static) context is passed to the initialization function
   async initialize(evalContext?: EvaluationContext): Promise<void> {
     // Use context to construct the instance to instantiate GrowthBook
-    this._client = new GrowthBook(this.context);
-
-    if (!isEmpty(evalContext)) {
-      // Set attributes from the global provider context
-      await this.client.setAttributes(evalContext);
-    }
+    const globalContext = {
+      globalAttributes: { ...this.context.globalAttributes, ...evalContext },
+    };
+    this._client = new GrowthBookClient({ ...this.context, ...globalContext });
 
     await this.client.init(this._initOptions);
 
@@ -64,11 +61,11 @@ export class GrowthbookProvider implements Provider {
     defaultValue: boolean,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
-    if (!isEmpty(context)) {
-      await this.client.setAttributes(context);
-    }
+    const userContext = {
+      attributes: context,
+    };
 
-    const res = this.client.evalFeature(flagKey);
+    const res = this.client.evalFeature(flagKey, userContext);
 
     return translateResult(res, defaultValue);
   }
@@ -78,11 +75,11 @@ export class GrowthbookProvider implements Provider {
     defaultValue: string,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
-    if (!isEmpty(context)) {
-      await this.client.setAttributes(context);
-    }
+    const userContext = {
+      attributes: context,
+    };
 
-    const res = this.client.evalFeature(flagKey);
+    const res = this.client.evalFeature(flagKey, userContext);
 
     return translateResult(res, defaultValue);
   }
@@ -92,11 +89,11 @@ export class GrowthbookProvider implements Provider {
     defaultValue: number,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
-    if (!isEmpty(context)) {
-      await this.client.setAttributes(context);
-    }
+    const userContext = {
+      attributes: context,
+    };
 
-    const res = this.client.evalFeature(flagKey);
+    const res = this.client.evalFeature(flagKey, userContext);
 
     return translateResult(res, defaultValue);
   }
@@ -106,11 +103,11 @@ export class GrowthbookProvider implements Provider {
     defaultValue: U,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
-    if (!isEmpty(context)) {
-      await this.client.setAttributes(context);
-    }
+    const userContext = {
+      attributes: context,
+    };
 
-    const res = this.client.evalFeature(flagKey);
+    const res = this.client.evalFeature(flagKey, userContext);
 
     return translateResult(res, defaultValue);
   }
