@@ -1,6 +1,7 @@
 {
   "name": "@openfeature/growthbook-client-provider",
   "version": "0.1.2",
+  "license": "Apache-2.0",
   "dependencies": {
     "lodash.isempty": "^4.4.0"
   },

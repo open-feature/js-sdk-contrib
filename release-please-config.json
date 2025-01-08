@@ -5,139 +5,140 @@
   "packages": {
     "libs/hooks/open-telemetry": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/go-feature-flag": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/flagd": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/flagd-web": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/env-var": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/shared/config-cat-core": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/config-cat": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/config-cat-web": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/launchdarkly-client": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/go-feature-flag-web": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/shared/flagd-core": {
       "release-type": "node",
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/shared/ofrep-core": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/flipt": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/ofrep": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/ofrep-web": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/flagsmith-client": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/flipt-web": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/growthbook-client": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/multi-provider": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
     "libs/providers/multi-provider-web": {
       "release-type": "node",
-      "prerelease": true,
+      "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
