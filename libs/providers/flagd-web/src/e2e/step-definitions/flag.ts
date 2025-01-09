@@ -1,6 +1,5 @@
 import { StepDefinitions } from 'jest-cucumber';
 import {
-  EvaluationContext,
   EvaluationDetails,
   FlagValue,
   JsonObject,
@@ -13,10 +12,8 @@ import { E2E_CLIENT_NAME } from '@openfeature/flagd-core';
 export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then }) => {
   let flagKey: string;
   let value: FlagValue;
-  let context: EvaluationContext = {};
   let details: EvaluationDetails<FlagValue>;
   let fallback: FlagValue;
-  let flagsChanged: string[];
 
   const client = OpenFeature.getClient(E2E_CLIENT_NAME);
 
@@ -266,7 +263,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
   });
 
   when('a PROVIDER_CONFIGURATION_CHANGED handler is added', () => {
-    client.addHandler(ProviderEvents.ConfigurationChanged, async (details) => {
+    client.addHandler(ProviderEvents.ConfigurationChanged, async () => {
       // file writes are not atomic, so we get a few events in quick succession from the testbed
       // some will not contain changes, this tolerates that; at least 1 should have our change
 
@@ -290,7 +287,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     expect(ran).toBeTruthy();
   });
 
-  and(/^the event details must indicate "(.*)" was altered$/, (flagName) => {
+  and(/^the event details must indicate "(.*)" was altered$/, () => {
     // TODO: enable this for testing of issue
     //expect(flagsChanged).toContain(flagName);
   });
