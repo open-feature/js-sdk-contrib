@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - uses: bufbuild/buf-setup-action@1115d0acd3d2a120b30023fac52abc46807c8fd6 # v1.48.0
+      - uses: bufbuild/buf-setup-action@480b44ac64eb7784931d42dcddaf762c626186a6 # v1.49.0
         with:
           github_token: ${{ github.token }}
       - name: Setup Node
