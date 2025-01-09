@@ -23,10 +23,6 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     });
   });
 
-  beforeEach(() => {
-    context = {};
-  });
-
   given('a provider is registered', () => undefined);
   given('a flagd provider is set', () => undefined);
 
