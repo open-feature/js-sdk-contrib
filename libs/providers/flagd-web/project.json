@@ -59,12 +59,12 @@
       ]
     },
     "e2e": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/libs/providers/flagd-web"
+      ],
       "options": {
-        "commands": [
-          "npx jest"
-        ],
-        "cwd": "libs/providers/flagd-web/src/e2e",
+        "jestConfig": "libs/providers/flagd-web/src/e2e/jest.config.ts",
         "parallel": false
       },
       "dependsOn": [

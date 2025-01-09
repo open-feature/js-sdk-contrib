@@ -11,7 +11,6 @@ import {
   OpenFeatureEventEmitter,
   Provider,
   ProviderEvents,
-  ProviderStatus,
   ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
@@ -31,10 +30,12 @@ type AnyFlagResolutionType = typeof AnyFlag.prototype.value.case;
 
 export class FlagdWebProvider implements Provider {
   metadata = {
-    name: 'flagd-web',
+    name: 'flagd',
   };
 
-  private _status = ProviderStatus.NOT_READY;
+  readonly runsOn = 'client';
+  readonly events = new OpenFeatureEventEmitter();
+
   private _connected = false;
   private _promiseClient: PromiseClient<typeof Service>;
   private _callbackClient: CallbackClient<typeof Service>;
@@ -63,12 +64,6 @@ export class FlagdWebProvider implements Provider {
     this._maxDelay = maxDelay;
     this._logger = logger;
   }
-
-  get status() {
-    return this._status;
-  }
-
-  events = new OpenFeatureEventEmitter();
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     await this.fetchAll(newContext);
@@ -112,6 +107,7 @@ export class FlagdWebProvider implements Provider {
       reason: this._connected ? resolved.reason : StandardResolutionReasons.CACHED,
       variant: resolved.variant,
       value: resolved.value as T,
+      flagMetadata: resolved.flagMetadata,
     };
   }
 
@@ -129,7 +125,6 @@ export class FlagdWebProvider implements Provider {
             case EVENT_PROVIDER_READY:
               this.fetchAll(currentContext).then(() => {
                 this.resetConnectionState();
-                this._status = ProviderStatus.READY;
                 resolve();
               });
               return;
@@ -142,8 +137,7 @@ export class FlagdWebProvider implements Provider {
           }
         },
         (err) => {
-          this._status = ProviderStatus.ERROR;
-          this._logger?.error(`${FlagdWebProvider.name}: could not establish connection to flagd, ${err?.message}`);
+          this._logger?.error(`${FlagdWebProvider.name}: could not establish connection, ${err?.message}`);
           this._logger?.debug(err?.stack);
           if (this._retry < this._maxRetries) {
             this._retry++;
@@ -160,12 +154,12 @@ export class FlagdWebProvider implements Provider {
   private async fetchAll(context: EvaluationContext) {
     const transformedContext = this.transformContext(context);
     const allResolved = await this._promiseClient.resolveAll({ context: transformedContext });
-    this._flags = Object.keys(allResolved.flags).reduce((accumuated, currentKey) => {
+    this._flags = Object.keys(allResolved.flags).reduce((accumulated, currentKey) => {
       const resolved = allResolved.flags[currentKey];
       // reducer to store the resolved bulk response in a map of ResolutionDetails,
       // with an addition annotation for the type (typeof AnyFlag.prototype.value.case)
       return {
-        ...accumuated,
+        ...accumulated,
         [currentKey]: {
           type: resolved.value.case,
           reason: resolved.reason,

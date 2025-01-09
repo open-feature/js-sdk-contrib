@@ -5,7 +5,6 @@ import {
   OpenFeatureEventEmitter,
   Provider,
   ProviderEvents,
-  ProviderStatus,
   ResolutionDetails,
 } from '@openfeature/server-sdk';
 import { FlagdProviderOptions, getConfig } from './configuration';
@@ -15,22 +14,13 @@ import { InProcessService } from './service/in-process/in-process-service';
 
 export class FlagdProvider implements Provider {
   metadata = {
-    name: 'flagd Provider',
+    name: 'flagd',
   };
 
   readonly runsOn = 'server';
-
-  get status() {
-    return this._status;
-  }
-
-  get events() {
-    return this._events;
-  }
+  readonly events = new OpenFeatureEventEmitter();
 
   private readonly _service: Service;
-  private _status = ProviderStatus.NOT_READY;
-  private _events = new OpenFeatureEventEmitter();
 
   /**
    * Construct a new flagd provider.
@@ -53,19 +43,19 @@ export class FlagdProvider implements Provider {
         : new GRPCService(config, undefined, logger);
   }
 
-  initialize(): Promise<void> {
-    return this._service
-      .connect(this.handleReconnect.bind(this), this.handleChanged.bind(this), this.handleError.bind(this))
-      .then(() => {
-        this.logger?.debug(`${this.metadata.name}: ready`);
-        this._status = ProviderStatus.READY;
-      })
-      .catch((err) => {
-        this._status = ProviderStatus.ERROR;
-        this.logger?.error(`${this.metadata.name}: error during initialization: ${err.message}`);
-        this.logger?.debug(err);
-        throw err;
-      });
+  async initialize(): Promise<void> {
+    try {
+      await this._service.connect(
+        this.handleReconnect.bind(this),
+        this.handleChanged.bind(this),
+        this.handleError.bind(this),
+      );
+      this.logger?.debug(`${this.metadata.name}: ready`);
+    } catch (err) {
+      this.logger?.error(`${this.metadata.name}: error during initialization: ${(err as Error)?.message}`);
+      this.logger?.debug(err);
+      throw err;
+    }
   }
 
   onClose(): Promise<void> {
@@ -79,9 +69,7 @@ export class FlagdProvider implements Provider {
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
-    return this._service
-      .resolveBoolean(flagKey, defaultValue, transformedContext, logger)
-      .catch((err) => this.logRejected(err, flagKey, logger));
+    return this._service.resolveBoolean(flagKey, defaultValue, transformedContext, logger);
   }
 
   resolveStringEvaluation(
@@ -90,9 +78,7 @@ export class FlagdProvider implements Provider {
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<string>> {
-    return this._service
-      .resolveString(flagKey, defaultValue, transformedContext, logger)
-      .catch((err) => this.logRejected(err, flagKey, logger));
+    return this._service.resolveString(flagKey, defaultValue, transformedContext, logger);
   }
 
   resolveNumberEvaluation(
@@ -101,9 +87,7 @@ export class FlagdProvider implements Provider {
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<number>> {
-    return this._service
-      .resolveNumber(flagKey, defaultValue, transformedContext, logger)
-      .catch((err) => this.logRejected(err, flagKey, logger));
+    return this._service.resolveNumber(flagKey, defaultValue, transformedContext, logger);
   }
 
   resolveObjectEvaluation<T extends JsonValue>(
@@ -112,28 +96,18 @@ export class FlagdProvider implements Provider {
     transformedContext: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
-    return this._service
-      .resolveObject<T>(flagKey, defaultValue, transformedContext, logger)
-      .catch((err) => this.logRejected(err, flagKey, logger));
+    return this._service.resolveObject<T>(flagKey, defaultValue, transformedContext, logger);
   }
 
-  logRejected = (err: Error, flagKey: string, logger: Logger) => {
-    logger.error(`Error resolving flag ${flagKey}: ${err?.message}`);
-    logger.error(err?.stack);
-    throw err;
-  };
-
   private handleReconnect(): void {
-    this._status = ProviderStatus.READY;
-    this._events.emit(ProviderEvents.Ready);
+    this.events.emit(ProviderEvents.Ready);
   }
 
   private handleError(message: string): void {
-    this._status = ProviderStatus.ERROR;
-    this._events.emit(ProviderEvents.Error, { message });
+    this.events.emit(ProviderEvents.Error, { message });
   }
 
   private handleChanged(flagsChanged: string[]): void {
-    this._events.emit(ProviderEvents.ConfigurationChanged, { flagsChanged });
+    this.events.emit(ProviderEvents.ConfigurationChanged, { flagsChanged });
   }
 }

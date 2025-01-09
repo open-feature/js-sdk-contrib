@@ -1,6 +1,6 @@
 import { getGherkinTestPath } from '@openfeature/flagd-core';
 
-export const FLAGD_NAME = 'flagd Provider';
+export const FLAGD_NAME = 'flagd';
 export const UNSTABLE_CLIENT_NAME = 'unstable';
 export const UNAVAILABLE_CLIENT_NAME = 'unavailable';
 

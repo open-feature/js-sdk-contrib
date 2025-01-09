@@ -41,17 +41,16 @@ export class GrpcFetch implements DataFetch {
     this._request = { providerId: '', selector: selector ? selector : '' };
   }
 
-  connect(
+  async connect(
     dataCallback: (flags: string) => string[],
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: (message: string) => void,
   ): Promise<void> {
-    return new Promise<void>((resolve, reject) =>
+    await new Promise<void>((resolve, reject) =>
       this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback, resolve, reject),
-    ).then(() => {
-      this._initialized = true;
-    });
+    );
+    this._initialized = true;
   }
 
   async disconnect() {
