@@ -77,7 +77,7 @@
       "release-type": "node",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "versioning": "default",
+      "versioning": "default"
     },
     "libs/shared/ofrep-core": {
       "release-type": "node",
@@ -136,6 +136,13 @@
       "versioning": "default"
     },
     "libs/providers/multi-provider-web": {
+      "release-type": "node",
+      "prerelease": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "versioning": "default"
+    },
+    "libs/providers/growthbook": {
       "release-type": "node",
       "prerelease": true,
       "bump-minor-pre-major": true,
