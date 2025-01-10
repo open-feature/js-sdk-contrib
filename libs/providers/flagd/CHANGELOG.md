@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.13.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.1...flagd-provider-v0.13.2) (2025-01-10)
+
+
+### ✨ New Features
+
+* **flagd:** add flag metadata ([#1151](https://github.com/open-feature/js-sdk-contrib/issues/1151)) ([b1c6d23](https://github.com/open-feature/js-sdk-contrib/commit/b1c6d235565f6cce02519d7c08bb6ad2dd791332))
+
+
+### 🧹 Chore
+
+* **deps:** update dependency @grpc/grpc-js to ~1.8.0 || ~1.9.0 || ~1.10.0 || ~1.11.0 ([#1023](https://github.com/open-feature/js-sdk-contrib/issues/1023)) ([f2247d3](https://github.com/open-feature/js-sdk-contrib/commit/f2247d3adfa33b0b5bcc7d07184d6c6bca534ee6))
+* **deps:** update dependency @grpc/grpc-js to ~1.8.0 || ~1.9.0 || ~1.10.0 || ~1.11.0 || ~1.12.0 ([#1064](https://github.com/open-feature/js-sdk-contrib/issues/1064)) ([1e8eca8](https://github.com/open-feature/js-sdk-contrib/commit/1e8eca8409e4e09196b9044a97268972ddd66c2f))
+* **deps:** update ghcr.io/open-feature/flagd-testbed docker tag to v0.5.13 ([#1068](https://github.com/open-feature/js-sdk-contrib/issues/1068)) ([75c5b10](https://github.com/open-feature/js-sdk-contrib/commit/75c5b10feec2165c6f2f176bcde011e78f9791d0))
+* **deps:** update ghcr.io/open-feature/flagd-testbed docker tag to v0.5.20 ([#1137](https://github.com/open-feature/js-sdk-contrib/issues/1137)) ([f5f110c](https://github.com/open-feature/js-sdk-contrib/commit/f5f110c1ac41cd1a556de5aaa4c198f4fcba3ccf))
+* **deps:** update ghcr.io/open-feature/flagd-testbed docker tag to v0.5.21 ([#1155](https://github.com/open-feature/js-sdk-contrib/issues/1155)) ([1150c9b](https://github.com/open-feature/js-sdk-contrib/commit/1150c9b818fc9e9a2fac542bca08377cdb90211e))
+* **deps:** update ghcr.io/open-feature/flagd-testbed-unstable docker tag to v0.5.13 ([#1073](https://github.com/open-feature/js-sdk-contrib/issues/1073)) ([bfadf65](https://github.com/open-feature/js-sdk-contrib/commit/bfadf65eebf8002bf4761a7ae223027295cc545c))
+* **deps:** update ghcr.io/open-feature/flagd-testbed-unstable docker tag to v0.5.20 ([#1138](https://github.com/open-feature/js-sdk-contrib/issues/1138)) ([d54c9a9](https://github.com/open-feature/js-sdk-contrib/commit/d54c9a938c5456d7e1bde684cf6bfed8b08a759d))
+* **deps:** update ghcr.io/open-feature/flagd-testbed-unstable docker tag to v0.5.21 ([#1159](https://github.com/open-feature/js-sdk-contrib/issues/1159)) ([4e0c983](https://github.com/open-feature/js-sdk-contrib/commit/4e0c9839cc631f62d29778005bb5751b5e770f9e))
+* **deps:** update ghcr.io/open-feature/sync-testbed docker tag to v0.5.13 ([#1074](https://github.com/open-feature/js-sdk-contrib/issues/1074)) ([194bafb](https://github.com/open-feature/js-sdk-contrib/commit/194bafbabcdea7e02001754377ba72c16d10d759))
+* **deps:** update ghcr.io/open-feature/sync-testbed docker tag to v0.5.20 ([#1139](https://github.com/open-feature/js-sdk-contrib/issues/1139)) ([401b310](https://github.com/open-feature/js-sdk-contrib/commit/401b3102ffe9803584344ad50ff77ceed7ecf472))
+* **deps:** update ghcr.io/open-feature/sync-testbed docker tag to v0.5.21 ([#1160](https://github.com/open-feature/js-sdk-contrib/issues/1160)) ([45a9b03](https://github.com/open-feature/js-sdk-contrib/commit/45a9b030e15efe8121fa05aca58fec76b2c63b84))
+* **deps:** update ghcr.io/open-feature/sync-testbed-unstable docker tag to v0.5.13 ([#1075](https://github.com/open-feature/js-sdk-contrib/issues/1075)) ([3a97b36](https://github.com/open-feature/js-sdk-contrib/commit/3a97b36bf77b813effbf80d00e4a87b54e7de320))
+* **deps:** update libs/providers/flagd/schemas digest to 37baa2c ([#1149](https://github.com/open-feature/js-sdk-contrib/issues/1149)) ([f3c2c8e](https://github.com/open-feature/js-sdk-contrib/commit/f3c2c8efc30dc3c55c87446b30b4bb462b0220a0))
+* **deps:** update libs/providers/flagd/schemas digest to b81a56e ([#1132](https://github.com/open-feature/js-sdk-contrib/issues/1132)) ([cd069da](https://github.com/open-feature/js-sdk-contrib/commit/cd069da13aecec9abe44113802d70a44dfebc8d6))
+* **deps:** update libs/providers/flagd/spec digest to d261f68 ([#1150](https://github.com/open-feature/js-sdk-contrib/issues/1150)) ([4366710](https://github.com/open-feature/js-sdk-contrib/commit/43667107c1e9202b0dbcb2e44abbf5de0feb1e06))
+* **deps:** update libs/providers/flagd/spec digest to ed0f9ef ([#1133](https://github.com/open-feature/js-sdk-contrib/issues/1133)) ([938d3a1](https://github.com/open-feature/js-sdk-contrib/commit/938d3a108488016df14d82abaa8a2c400bbc75f3))
+* removing build dependencies and using testcontainers for container spin up ([#982](https://github.com/open-feature/js-sdk-contrib/issues/982)) ([2d64331](https://github.com/open-feature/js-sdk-contrib/commit/2d6433101b76ba9ad266095fe31b58314f82a105))
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+* various gherkin improvements for e2e tests ([#1008](https://github.com/open-feature/js-sdk-contrib/issues/1008)) ([40abd8e](https://github.com/open-feature/js-sdk-contrib/commit/40abd8eca76b47bb5c084b377302821968acd19c))
+
 ## [0.13.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.0...flagd-provider-v0.13.1) (2024-07-08)
 
 
