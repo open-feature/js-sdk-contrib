@@ -50,9 +50,7 @@
     },
     "e2e": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/providers/flagd-web"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/flagd-web"],
       "options": {
         "jestConfig": "libs/providers/flagd-web/src/e2e/jest.config.ts",
         "parallel": false

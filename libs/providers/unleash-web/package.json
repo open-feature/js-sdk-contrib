@@ -10,7 +10,6 @@
   },
   "peerDependencies": {
     "@openfeature/web-sdk": "^1.0.0",
-    "tslib": "^2.3.0",
     "unleash-proxy-client": "^3.6.0"
   }
 }
