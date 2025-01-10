@@ -107,7 +107,7 @@ For general information on events, see the [official documentation](https://open
 
 ### Flag Metadata
 
-Flag metadata is a set of key-value pairs that can be associated with a flag.
+[Flag metadata](https://flagd.dev/reference/flag-definitions/#metadata) is a set of key-value pairs that can be associated with a flag.
 The values come from the flag definition in flagd.
 
 ## Building
