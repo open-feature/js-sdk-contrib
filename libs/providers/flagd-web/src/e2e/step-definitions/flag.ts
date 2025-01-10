@@ -1,6 +1,5 @@
 import { StepDefinitions } from 'jest-cucumber';
 import {
-  EvaluationContext,
   EvaluationDetails,
   FlagValue,
   JsonObject,
@@ -13,10 +12,8 @@ import { E2E_CLIENT_NAME } from '@openfeature/flagd-core';
 export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then }) => {
   let flagKey: string;
   let value: FlagValue;
-  let context: EvaluationContext = {};
   let details: EvaluationDetails<FlagValue>;
   let fallback: FlagValue;
-  let flagsChanged: string[];
 
   const client = OpenFeature.getClient(E2E_CLIENT_NAME);
 
@@ -26,19 +23,15 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     });
   });
 
-  beforeEach(() => {
-    context = {};
-  });
-
   given('a provider is registered', () => undefined);
   given('a flagd provider is set', () => undefined);
 
   when(
     /^a boolean flag with key "(.*)" is evaluated with default value "(.*)"$/,
-    async (key: string, defaultValue: string) => {
+    (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = defaultValue;
-      value = await client.getBooleanValue(key, defaultValue === 'true');
+      value = client.getBooleanValue(key, defaultValue === 'true');
     },
   );
 
@@ -48,10 +41,10 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
 
   when(
     /^a string flag with key "(.*)" is evaluated with default value "(.*)"$/,
-    async (key: string, defaultValue: string) => {
+    (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = defaultValue;
-      value = await client.getStringValue(key, defaultValue);
+      value = client.getStringValue(key, defaultValue);
     },
   );
 
@@ -64,7 +57,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     async (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = Number(defaultValue);
-      value = await client.getNumberValue(key, Number.parseInt(defaultValue));
+      value = client.getNumberValue(key, Number.parseInt(defaultValue));
     },
   );
 
@@ -77,7 +70,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     async (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = Number(defaultValue);
-      value = await client.getNumberValue(key, Number.parseFloat(defaultValue));
+      value = client.getNumberValue(key, Number.parseFloat(defaultValue));
     },
   );
 
@@ -89,7 +82,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     const defaultValue = {};
     flagKey = key;
     fallback = '';
-    value = await client.getObjectValue(key, defaultValue);
+    value = client.getObjectValue(key, defaultValue);
   });
 
   then(
@@ -107,7 +100,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     async (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = defaultValue;
-      details = await client.getBooleanDetails(key, defaultValue === 'true');
+      details = client.getBooleanDetails(key, defaultValue === 'true');
     },
   );
 
@@ -123,10 +116,10 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
 
   when(
     /^a string flag with key "(.*)" is evaluated with details and default value "(.*)"$/,
-    async (key: string, defaultValue: string) => {
+    (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = defaultValue;
-      details = await client.getStringDetails(key, defaultValue);
+      details = client.getStringDetails(key, defaultValue);
     },
   );
 
@@ -142,10 +135,10 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
 
   when(
     /^an integer flag with key "(.*)" is evaluated with details and default value (\d+)$/,
-    async (key: string, defaultValue: string) => {
+    (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = defaultValue;
-      details = await client.getNumberDetails(key, Number.parseInt(defaultValue));
+      details = client.getNumberDetails(key, Number.parseInt(defaultValue));
     },
   );
 
@@ -161,10 +154,10 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
 
   when(
     /^a float flag with key "(.*)" is evaluated with details and default value (\d+\.?\d*)$/,
-    async (key: string, defaultValue: string) => {
+    (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = defaultValue;
-      details = await client.getNumberDetails(key, Number.parseFloat(defaultValue));
+      details = client.getNumberDetails(key, Number.parseFloat(defaultValue));
     },
   );
 
@@ -178,10 +171,10 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     },
   );
 
-  when(/^an object flag with key "(.*)" is evaluated with details and a null default value$/, async (key: string) => {
+  when(/^an object flag with key "(.*)" is evaluated with details and a null default value$/, (key: string) => {
     flagKey = key;
     fallback = {};
-    details = await client.getObjectDetails(key, {});
+    details = client.getObjectDetails(key, {});
   });
 
   then(
@@ -211,10 +204,10 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
 
   when(
     /^a non-existent string flag with key "(.*)" is evaluated with details and a default value "(.*)"$/,
-    async (key: string, defaultValue: string) => {
+    (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = defaultValue;
-      details = await client.getStringDetails(flagKey, defaultValue);
+      details = client.getStringDetails(flagKey, defaultValue);
     },
   );
 
@@ -234,10 +227,10 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
 
   when(
     /^a string flag with key "(.*)" is evaluated as an integer, with details and a default value (\d+)$/,
-    async (key: string, defaultValue: string) => {
+    (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = Number.parseInt(defaultValue);
-      details = await client.getNumberDetails(flagKey, Number.parseInt(defaultValue));
+      details = client.getNumberDetails(flagKey, Number.parseInt(defaultValue));
     },
   );
 
@@ -266,7 +259,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
   });
 
   when('a PROVIDER_CONFIGURATION_CHANGED handler is added', () => {
-    client.addHandler(ProviderEvents.ConfigurationChanged, async (details) => {
+    client.addHandler(ProviderEvents.ConfigurationChanged, async () => {
       // file writes are not atomic, so we get a few events in quick succession from the testbed
       // some will not contain changes, this tolerates that; at least 1 should have our change
 
@@ -290,7 +283,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     expect(ran).toBeTruthy();
   });
 
-  and(/^the event details must indicate "(.*)" was altered$/, (flagName) => {
+  and(/^the event details must indicate "(.*)" was altered$/, () => {
     // TODO: enable this for testing of issue
     //expect(flagsChanged).toContain(flagName);
   });
@@ -303,9 +296,9 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     },
   );
 
-  then(/^the resolved boolean zero-value should be "(.*)"$/, async (expectedVal: string) => {
+  then(/^the resolved boolean zero-value should be "(.*)"$/, (expectedVal: string) => {
     const expectedValue = expectedVal === 'true';
-    const value = await client.getBooleanValue(flagKey, fallback as boolean);
+    const value = client.getBooleanValue(flagKey, fallback as boolean);
     expect(value).toEqual(expectedValue);
   });
 
@@ -314,8 +307,8 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     fallback = defaultVal;
   });
 
-  then('the resolved string zero-value should be ""', async () => {
-    const value = await client.getStringValue(flagKey, fallback as string);
+  then('the resolved string zero-value should be ""', () => {
+    const value = client.getStringValue(flagKey, fallback as string);
     expect(value).toEqual('');
   });
 
@@ -324,9 +317,9 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     fallback = defaultVal;
   });
 
-  then(/^the resolved integer zero-value should be (\d+)$/, async (expectedValueString) => {
+  then(/^the resolved integer zero-value should be (\d+)$/, (expectedValueString) => {
     const expectedValue = Number.parseInt(expectedValueString);
-    const value = await client.getNumberValue(flagKey, fallback as number);
+    const value = client.getNumberValue(flagKey, fallback as number);
     expect(value).toEqual(expectedValue);
   });
 
@@ -338,9 +331,9 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     },
   );
 
-  then(/^the resolved float zero-value should be (\d+\.\d+)$/, async (expectedValueString) => {
+  then(/^the resolved float zero-value should be (\d+\.\d+)$/, (expectedValueString) => {
     const expectedValue = Number.parseFloat(expectedValueString);
-    const value = await client.getNumberValue(flagKey, fallback as number);
+    const value = client.getNumberValue(flagKey, fallback as number);
     expect(value).toEqual(expectedValue);
   });
 

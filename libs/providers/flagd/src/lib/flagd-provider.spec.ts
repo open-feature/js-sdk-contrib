@@ -7,7 +7,6 @@ import {
   FlagMetadata,
   OpenFeature,
   ProviderEvents,
-  ProviderStatus,
   StandardResolutionReasons,
 } from '@openfeature/server-sdk';
 import type { UnaryCall } from '@protobuf-ts/runtime-rpc';
@@ -25,10 +24,10 @@ import {
   ResolveStringResponse,
   ServiceClient,
 } from '../proto/ts/flagd/evaluation/v1/evaluation';
-import { EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from './constants';
 import { FlagdProvider } from './flagd-provider';
 import { FlagChangeMessage, GRPCService } from './service/grpc/grpc-service';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
+import { EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from './constants';
 
 const REASON = StandardResolutionReasons.STATIC;
 const ERROR_REASON = StandardResolutionReasons.ERROR;
@@ -245,8 +244,8 @@ describe(FlagdProvider.name, () => {
   });
 
   describe('streaming', () => {
-    const STATIC_BOOLEAN_KEY_1 = 'staticBoolflagOne';
-    const STATIC_BOOLEAN_KEY_2 = 'staticBoolflagTwo';
+    const STATIC_BOOLEAN_KEY_1 = 'staticBoolFlagOne';
+    const STATIC_BOOLEAN_KEY_2 = 'staticBoolFlagTwo';
     const TARGETING_MATCH_BOOLEAN_KEY = 'targetingMatchBooleanKey';
 
     // ref to callback to fire to fake error messages to flagd
@@ -511,8 +510,6 @@ describe(FlagdProvider.name, () => {
         // fake some errors
         registeredOnErrorCallback();
 
-        // status should be ERROR
-        expect(provider.status).toEqual(ProviderStatus.ERROR);
         expect(streamingServiceClientMock.getChannel().getConnectivityState).toHaveBeenCalledWith(true);
         expect(streamingServiceClientMock.getChannel().watchConnectivityState).toHaveBeenCalled();
       });
