@@ -1,7 +1,6 @@
 {
   "bootstrap-sha": "8ec3eb4db55b7c2d6c2d7edc7c7f3c147b47fd35",
   "separate-pull-requests": true,
-  "plugins": ["node-workspace"],
   "packages": {
     "libs/hooks/open-telemetry": {
       "release-type": "node",
