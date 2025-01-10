@@ -1,7 +1,6 @@
-import { Logger, OpenFeatureError } from '@openfeature/core';
+import { Logger, OpenFeatureError, GeneralError } from '@openfeature/server-sdk';
 import { DataFetch } from '../data-fetch';
 import { promises as fsPromises, watchFile, unwatchFile } from 'fs';
-import { GeneralError } from '@openfeature/core';
 
 const encoding = 'utf8';
 export class FileFetch implements DataFetch {

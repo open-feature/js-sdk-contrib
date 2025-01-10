@@ -7,9 +7,10 @@ import {
   names,
   Tree,
   updateJson,
+  moveFilesToNewDirectory,
 } from '@nx/devkit';
 import { libraryGenerator } from '@nx/js';
-import { Linter } from '@nx/linter';
+import { Linter } from '@nx/eslint';
 
 /**
  * Enforced by the json schema.
@@ -21,17 +22,10 @@ interface SchemaOptions {
 }
 
 export default async function (tree: Tree, schema: SchemaOptions) {
-  const {
-    name,
-    importPath,
-    projectLibDir,
-    libFileName,
-    fileName,
-    projectRoot,
-    libClassName,
-    nxProjectName,
-    directory,
-  } = normalizeOptions(tree, schema);
+  const { name, importPath, libFileName, projectRoot, libClassName, nxProjectName, directory } = normalizeOptions(
+    tree,
+    schema,
+  );
 
   await libraryGenerator(tree, {
     name,
@@ -47,14 +41,12 @@ export default async function (tree: Tree, schema: SchemaOptions) {
     linter: Linter.EsLint,
   });
 
-  /**
-   * Refactors the auto-generated files
-   */
+  // move the files to the right location in the tree
+  moveFilesToNewDirectory(tree, directory, projectRoot);
+
+  // delete the auto-generated files
   ['spec.ts', 'ts'].forEach((suffix) => {
-    tree.rename(
-      joinPathFragments(projectLibDir, `${directory}-${fileName}.${suffix}`),
-      joinPathFragments(projectLibDir, `${libFileName}.${suffix}`),
-    );
+    tree.delete(joinPathFragments(projectRoot, 'src', 'lib', `${name}.${suffix}`));
   });
 
   /**
@@ -98,7 +90,6 @@ function normalizeOptions(tree: Tree, schema: SchemaOptions) {
   const { libsDir } = getWorkspaceLayout(tree);
   const projectRoot = joinPathFragments(libsDir, directory, fileName);
   const importPath = `@openfeature/${fileName}-${schema.type}`;
-  const projectLibDir = joinPathFragments(projectRoot, 'src', 'lib');
 
   return {
     name,
@@ -106,7 +97,6 @@ function normalizeOptions(tree: Tree, schema: SchemaOptions) {
     libFileName,
     nxProjectName,
     importPath,
-    projectLibDir,
     fileName,
     projectRoot,
     directory,
@@ -123,8 +113,6 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
         outputPath: `dist/${projectRoot}`,
         entryFile: `${projectRoot}/src/index.ts`,
         tsConfig: `${projectRoot}/tsconfig.lib.json`,
-        buildableProjectDepsInPackageJsonType: 'dependencies',
-        updateBuildableProjectDepsInPackageJson: true,
         compiler: 'tsc',
         generateExportsField: true,
         umdName,
@@ -203,6 +191,7 @@ function updatePackage(tree: Tree, projectRoot: string, schema: SchemaOptions) {
 function updateTsConfig(tree: Tree, projectRoot: string) {
   updateJson(tree, joinPathFragments(projectRoot, 'tsconfig.json'), (json) => {
     json.compilerOptions.module = 'ES6';
+    json.extends = `../../${json.extends}`;
 
     return json;
   });
@@ -212,7 +201,7 @@ function updateReleasePleaseConfig(tree: Tree, projectRoot: string) {
   updateJson(tree, 'release-please-config.json', (json) => {
     json.packages[projectRoot] = {
       'release-type': 'node',
-      prerelease: true,
+      prerelease: false,
       'bump-minor-pre-major': true,
       'bump-patch-for-minor-pre-major': true,
       versioning: 'default',

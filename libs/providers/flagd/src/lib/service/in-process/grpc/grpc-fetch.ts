@@ -1,10 +1,9 @@
 import { ClientReadableStream, ServiceError, credentials } from '@grpc/grpc-js';
-import { Logger } from '@openfeature/core';
-import { GeneralError } from '@openfeature/server-sdk';
+import { GeneralError, Logger } from '@openfeature/server-sdk';
 import { FlagSyncServiceClient, SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { Config } from '../../../configuration';
-import { DataFetch } from '../data-fetch';
 import { closeStreamIfDefined } from '../../common';
+import { DataFetch } from '../data-fetch';
 
 /**
  * Implements the gRPC sync contract to fetch flag data.

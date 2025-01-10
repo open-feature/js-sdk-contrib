@@ -28,15 +28,8 @@
       }
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "libs/providers/flagd/**/*.ts"
-        ]
-      },
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
       "dependsOn": [
         {
           "target": "generate"
@@ -45,12 +38,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/providers/flagd"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/flagd"],
       "options": {
-        "jestConfig": "libs/providers/flagd/jest.config.ts",
-        "passWithNoTests": true
+        "jestConfig": "libs/providers/flagd/jest.config.ts"
       },
       "dependsOn": [
         {
@@ -60,9 +50,7 @@
     },
     "e2e": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/providers/flagd"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/flagd"],
       "options": {
         "jestConfig": "libs/providers/flagd/src/e2e/jest.config.ts",
         "parallel": false
@@ -78,9 +66,7 @@
     },
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/providers/flagd/package.json",
         "outputPath": "dist/libs/providers/flagd",
@@ -88,13 +74,9 @@
         "tsConfig": "libs/providers/flagd/tsconfig.lib.json",
         "compiler": "tsc",
         "generateExportsField": true,
-        "buildableProjectDepsInPackageJsonType": "dependencies",
         "umdName": "flagd",
         "external": "all",
-        "format": [
-          "cjs",
-          "esm"
-        ],
+        "format": ["cjs", "esm"],
         "assets": [
           {
             "glob": "package.json",
@@ -111,8 +93,7 @@
             "input": "./libs/providers/flagd",
             "output": "./"
           }
-        ],
-        "updateBuildableProjectDepsInPackageJson": true
+        ]
       },
       "dependsOn": [
         {

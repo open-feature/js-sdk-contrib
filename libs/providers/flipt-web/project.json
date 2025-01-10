@@ -18,24 +18,14 @@
       ]
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["libs/providers/flipt-web/**/*.ts", "libs/providers/flipt-web/package.json"]
-      }
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
     },
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "libs/providers/flipt-web/jest.config.ts",
-        "passWithNoTests": true
-      },
-      "configurations": {
-        "ci": {
-          "ci": true,
-          "codeCoverage": true
-        }
+        "jestConfig": "libs/providers/flipt-web/jest.config.ts"
       }
     },
     "package": {
@@ -46,7 +36,6 @@
         "outputPath": "dist/libs/providers/flipt-web",
         "entryFile": "libs/providers/flipt-web/src/index.ts",
         "tsConfig": "libs/providers/flipt-web/tsconfig.lib.json",
-        "buildableProjectDepsInPackageJsonType": "dependencies",
         "compiler": "tsc",
         "generateExportsField": true,
         "umdName": "flipt-web",

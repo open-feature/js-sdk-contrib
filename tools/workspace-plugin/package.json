@@ -2,5 +2,10 @@
   "name": "@js-sdk-contrib/workspace-plugin",
   "version": "0.0.1",
   "type": "commonjs",
-  "generators": "./generators.json"
+  "generators": "./generators.json",
+  "dependencies": {
+    "@nx/devkit": "20.3.1",
+    "@nx/eslint": "20.3.1",
+    "@nx/js": "20.3.1"
+  }
 }

@@ -1,4 +1,4 @@
-import { EvaluationDetails, FlagValue, Hook, HookContext, Logger } from '@openfeature/server-sdk';
+import { EvaluationDetails, FlagValue, Hook, HookContext, Logger } from '@openfeature/web-sdk';
 import { FeatureEvent, GoFeatureFlagWebProviderOptions } from './model';
 import { copy } from 'copy-anything';
 import { CollectorError } from './errors/collector-error';

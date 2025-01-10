@@ -12,31 +12,30 @@
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "package"
         }
       ]
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["libs/providers/unleash-web/**/*.ts", "libs/providers/unleash-web/package.json"]
-      }
+      "dependsOn": [
+        {
+          "target": "generate"
+        }
+      ]
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/unleash-web"],
       "options": {
-        "jestConfig": "libs/providers/unleash-web/jest.config.ts",
-        "passWithNoTests": true
+        "jestConfig": "libs/providers/unleash-web/jest.config.ts"
       },
-      "configurations": {
-        "ci": {
-          "ci": true,
-          "codeCoverage": true
+      "dependsOn": [
+        {
+          "target": "generate"
         }
-      }
+      ]
     },
     "package": {
       "executor": "@nx/rollup:rollup",
@@ -46,8 +45,6 @@
         "outputPath": "dist/libs/providers/unleash-web",
         "entryFile": "libs/providers/unleash-web/src/index.ts",
         "tsConfig": "libs/providers/unleash-web/tsconfig.lib.json",
-        "buildableProjectDepsInPackageJsonType": "dependencies",
-        "updateBuildableProjectDepsInPackageJson": true,
         "compiler": "tsc",
         "generateExportsField": true,
         "umdName": "unleash-web",

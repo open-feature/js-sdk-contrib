@@ -1,10 +1,7 @@
 {
   "name": "@openfeature/flipt-web-provider",
   "version": "0.1.1",
-  "dependencies": {
-    "@flipt-io/flipt-client-browser": "^0.3.1",
-    "tslib": "^2.3.0"
-  },
+  "license": "Apache-2.0",
   "main": "./src/index.js",
   "typings": "./src/index.d.ts",
   "scripts": {
@@ -16,5 +13,9 @@
   },
   "devDependencies": {
     "undici": "^6.13.0"
+  },
+  "dependencies": {
+    "@flipt-io/flipt-client-browser": "^0.3.1",
+    "undici": "^5.0.0"
   }
 }

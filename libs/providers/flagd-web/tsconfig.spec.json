@@ -4,13 +4,7 @@
     "outDir": "../../../dist/out-tsc",
     "module": "commonjs",
     "types": ["jest"],
-    "allowJs": true,
+    "allowJs": true
   },
-  "include": [
-    "jest.config.ts",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/*.d.ts",
-    "./src/e2e/"
-  ]
+  "include": ["jest.config.ts", "**/*.test.ts", "**/*.spec.ts", "**/*.d.ts", "./src/e2e/"]
 }

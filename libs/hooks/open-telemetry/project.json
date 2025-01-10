@@ -6,9 +6,7 @@
   "targets": {
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/hooks/open-telemetry/package.json",
         "outputPath": "dist/libs/hooks/open-telemetry",
@@ -18,10 +16,7 @@
         "generateExportsField": true,
         "umdName": "OpenTelemetry",
         "external": "all",
-        "format": [
-          "cjs",
-          "esm"
-        ],
+        "format": ["cjs", "esm"],
         "assets": [
           {
             "glob": "package.json",
@@ -38,23 +33,17 @@
             "input": "./libs/hooks/open-telemetry",
             "output": "./"
           }
-        ],
-        "updateBuildableProjectDepsInPackageJson": true
+        ]
       }
     },
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/libs/hooks/open-telemetry",
         "main": "libs/hooks/open-telemetry/src/index.ts",
         "tsConfig": "libs/hooks/open-telemetry/tsconfig.lib.json",
-        "assets": [
-          "libs/hooks/open-telemetry/*.md"
-        ],
-        "updateBuildableProjectDepsInPackageJson": true
+        "assets": ["libs/hooks/open-telemetry/*.md"]
       }
     },
     "publish": {
@@ -70,24 +59,14 @@
       ]
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "libs/hooks/open-telemetry/**/*.ts"
-        ]
-      }
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/hooks/open-telemetry"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/libs/hooks/open-telemetry"],
       "options": {
         "jestConfig": "libs/hooks/open-telemetry/jest.config.ts",
-        "passWithNoTests": true,
         "codeCoverage": true,
         "coverageDirectory": "coverage/libs/hooks/open-telemetry"
       }

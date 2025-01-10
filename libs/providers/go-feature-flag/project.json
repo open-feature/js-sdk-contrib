@@ -17,31 +17,19 @@
       ]
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "libs/providers/go-feature-flag/**/*.ts"
-        ]
-      }
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/providers/go-feature-flag"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/go-feature-flag"],
       "options": {
-        "jestConfig": "libs/providers/go-feature-flag/jest.config.ts",
-        "passWithNoTests": true
+        "jestConfig": "libs/providers/go-feature-flag/jest.config.ts"
       }
     },
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "project": "libs/providers/go-feature-flag/package.json",
         "outputPath": "dist/libs/providers/go-feature-flag",
@@ -49,13 +37,9 @@
         "tsConfig": "libs/providers/go-feature-flag/tsconfig.lib.json",
         "compiler": "tsc",
         "generateExportsField": true,
-        "buildableProjectDepsInPackageJsonType": "dependencies",
         "umdName": "go-feature-flag",
         "external": "all",
-        "format": [
-          "cjs",
-          "esm"
-        ],
+        "format": ["cjs", "esm"],
         "assets": [
           {
             "glob": "package.json",
@@ -72,8 +56,7 @@
             "input": "./libs/providers/go-feature-flag",
             "output": "./"
           }
-        ],
-        "updateBuildableProjectDepsInPackageJson": true
+        ]
       }
     }
   },

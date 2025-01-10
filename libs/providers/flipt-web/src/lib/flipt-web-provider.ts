@@ -40,7 +40,7 @@ export class FliptWebProvider implements Provider {
     this._logger = logger;
   }
 
-  async initialize(context?: EvaluationContext | undefined): Promise<void> {
+  async initialize(): Promise<void> {
     return Promise.all([this.initializeClient()]).then(() => {
       this._logger?.info('FliptWebProvider initialized');
     });
@@ -66,7 +66,7 @@ export class FliptWebProvider implements Provider {
     }
   }
 
-  async onContextChange(_oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+  async onContextChange(): Promise<void> {
     await this._client?.refresh();
   }
 

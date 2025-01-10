@@ -1,11 +1,18 @@
 {
   "name": "@openfeature/go-feature-flag-provider",
   "version": "0.7.3",
+  "license": "Apache-2.0",
   "scripts": {
     "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.15.0"
+  },
+  "dependencies": {
+    "object-hash": "^3.0.0",
+    "lru-cache": "^11.0.0",
+    "axios": "1.7.9",
+    "copy-anything": "^3.0.5"
   }
 }
