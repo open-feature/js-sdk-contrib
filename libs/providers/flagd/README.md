@@ -61,7 +61,7 @@ In the above example, the provider expects flagd to be available at `localhost:8
 
 Alternatively, you can use socket paths to connect to flagd.
 
-```
+```ts
   OpenFeature.setProvider(new FlagdProvider({
       socketPath: "/tmp/flagd.socks",
   }))
@@ -72,7 +72,7 @@ Alternatively, you can use socket paths to connect to flagd.
 This mode performs flag evaluations locally (in-process).
 Flag configurations for evaluation are obtained via gRPC protocol using [sync protobuf schema](https://buf.build/open-feature/flagd/file/main:sync/v1/sync_service.proto) service definition.
 
-```
+```ts
   OpenFeature.setProvider(new FlagdProvider({
       resolverType: 'in-process',
   }))
@@ -83,7 +83,7 @@ In the above example, the provider expects a flag sync service implementation to
 In-process resolver can also work in an offline mode.
 To enable this mode, you should provide a valid flag configuration file with the option `offlineFlagSourcePath`.
 
-```
+```ts
   OpenFeature.setProvider(new FlagdProvider({
       resolverType: 'in-process',
       offlineFlagSourcePath: './flags.json',
@@ -107,9 +107,8 @@ For general information on events, see the [official documentation](https://open
 
 ### Flag Metadata
 
-| Field   | Type   | Value                                             |
-| ------- | ------ | ------------------------------------------------- |
-| `scope` | string | "selector" set for the associated source in flagd |
+[Flag metadata](https://flagd.dev/reference/flag-definitions/#metadata) is a set of key-value pairs that can be associated with a flag.
+The values come from the flag definition in flagd.
 
 ## Building
 

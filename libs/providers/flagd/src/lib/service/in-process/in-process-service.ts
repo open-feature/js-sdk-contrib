@@ -83,20 +83,19 @@ export class InProcessService implements Service {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
-    const details = this._flagdCore.resolve(type, flagKey, defaultValue, context, logger);
-    return {
-      ...details,
-      flagMetadata: this.addFlagMetadata(),
-    };
-  }
+    const resolution = this._flagdCore.resolve(type, flagKey, defaultValue, context, logger);
 
-  /**
-   * Adds the flag metadata to the resolution details
-   */
-  private addFlagMetadata() {
-    return {
-      ...(this.config.selector ? { scope: this.config.selector } : {}),
-    };
+    // Add selector as scope if not already present in flag metadata
+    if (this.config.selector && !resolution.flagMetadata['scope']) {
+      return {
+        ...resolution,
+        flagMetadata: {
+          ...resolution.flagMetadata,
+          scope: this.config.selector,
+        },
+      };
+    }
+    return resolution;
   }
 
   /**

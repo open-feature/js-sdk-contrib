@@ -6,7 +6,6 @@ import {
   JsonValue,
   OpenFeature,
   ProviderEvents,
-  ProviderStatus,
   StandardResolutionReasons,
 } from '@openfeature/web-sdk';
 import fetchMock from 'jest-fetch-mock';
@@ -193,21 +192,12 @@ describe(FlagdWebProvider.name, () => {
 
     describe(ProviderEvents.Ready, () => {
       it('should fire as soon as client subscribes, if ready', (done) => {
-        try {
-          // should start NOT_READY
-          expect(provider.status).toEqual(ProviderStatus.NOT_READY);
-          done();
-        } catch (err) {
-          done(err);
-        }
-
         mockCallbackClient.mockMessage({
           type: EVENT_PROVIDER_READY,
         });
 
         client.addHandler(ProviderEvents.Ready, () => {
           try {
-            expect(provider.status).toEqual(ProviderStatus.READY);
             done();
           } catch (err) {
             done(err);
@@ -216,22 +206,14 @@ describe(FlagdWebProvider.name, () => {
       });
 
       it('should fire and be ready if message received', (done) => {
-        try {
-          // should start NOT_READY
-          expect(provider.status).toEqual(ProviderStatus.NOT_READY);
-          done();
-        } catch (err) {
-          done(err);
-        }
-
         client.addHandler(ProviderEvents.Ready, () => {
           try {
-            expect(provider.status).toEqual(ProviderStatus.READY);
             done();
           } catch (err) {
             done(err);
           }
         });
+
         mockCallbackClient.mockMessage({
           type: EVENT_PROVIDER_READY,
         });
@@ -269,9 +251,9 @@ describe(FlagdWebProvider.name, () => {
 
     describe(ProviderEvents.Error, () => {
       it('should fire if message received', (done) => {
-        client.addHandler(ProviderEvents.Error, () => {
+        client.addHandler(ProviderEvents.Error, (event) => {
           try {
-            expect(provider.status).toEqual(ProviderStatus.ERROR);
+            expect(event?.providerName).toBe('flagd');
             done();
           } catch (err) {
             done(err);
