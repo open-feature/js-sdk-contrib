@@ -201,7 +201,7 @@ function updateReleasePleaseConfig(tree: Tree, projectRoot: string) {
   updateJson(tree, 'release-please-config.json', (json) => {
     json.packages[projectRoot] = {
       'release-type': 'node',
-      prerelease: true,
+      prerelease: false,
       'bump-minor-pre-major': true,
       'bump-patch-for-minor-pre-major': true,
       versioning: 'default',
