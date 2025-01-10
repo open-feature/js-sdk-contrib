@@ -8,7 +8,6 @@ const config: Config = {
     '@openfeature/flagd-core': ['<rootDir>/../../../../shared/flagd-core/src'],
     '(.+)\\.js$': '$1',
   },
-  detectOpenHandles: true,
   verbose: true,
 };
 
