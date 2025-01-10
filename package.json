@@ -30,7 +30,7 @@
     "configcat-js-ssr": "^8.4.3",
     "configcat-node": "^11.3.1",
     "copy-anything": "^3.0.5",
-    "flagsmith": "^4.0.0",
+    "flagsmith": "^4.1.4",
     "imurmurhash": "^0.1.4",
     "json-logic-engine": "4.0.5",
     "launchdarkly-js-client-sdk": "^3.1.3",

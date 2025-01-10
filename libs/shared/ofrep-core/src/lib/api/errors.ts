@@ -57,7 +57,7 @@ export class OFREPApiTooManyRequestsError extends OFREPApiError {
     this.name = OFREPApiTooManyRequestsError.name;
     this.requestTime = new Date();
     this.message =
-      (message ?? this.retryAfterDate)
+      message ?? this.retryAfterDate
         ? `rate limit exceeded, try again after ${this.retryAfterDate}`
         : `rate limit exceeded, try again later`;
   }
