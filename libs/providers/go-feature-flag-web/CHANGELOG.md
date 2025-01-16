@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.4](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.3...go-feature-flag-web-provider-v0.2.4) (2025-01-16)
+
+
+### ✨ New Features
+
+* **go-feature-flag:** Support exporter metadata in web and server providers ([#1183](https://github.com/open-feature/js-sdk-contrib/issues/1183)) ([0edf3f5](https://github.com/open-feature/js-sdk-contrib/commit/0edf3f55161878684ffe809fbde8ad6fa379c4b0))
+
+
+### 🧹 Chore
+
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.2.3](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.2...go-feature-flag-web-provider-v0.2.3) (2024-12-13)
 
 
