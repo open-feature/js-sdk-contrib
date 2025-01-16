@@ -10,7 +10,7 @@ import {
 } from '@openfeature/web-sdk';
 import WS from 'jest-websocket-mock';
 import TestLogger from './test-logger';
-import { GOFeatureFlagWebsocketResponse } from './model';
+import { DataCollectorRequest, GOFeatureFlagWebsocketResponse } from './model';
 import fetchMock from 'fetch-mock-jest';
 
 describe('GoFeatureFlagWebProvider', () => {
@@ -624,6 +624,41 @@ describe('GoFeatureFlagWebProvider', () => {
     await expect(provider.waitWebsocketFinalStatus(websocket)).rejects.toBe(
       'timeout of 1000 ms reached when initializing the websocket',
     );
+  });
+
+  it('should call the data collector with exporter metadata', async () => {
+    const clientName = expect.getState().currentTestName ?? 'test-provider';
+    await OpenFeature.setContext(defaultContext);
+    const p = new GoFeatureFlagWebProvider(
+      {
+        endpoint: endpoint,
+        apiTimeout: 1000,
+        maxRetries: 1,
+        dataFlushInterval: 10000,
+        apiKey: 'toto',
+        exporterMetadata: {
+          browser: 'chrome',
+          version: '1.0.0',
+          score: 123,
+        },
+      },
+      logger,
+    );
+
+    await OpenFeature.setProviderAndWait(clientName, p);
+    const client = OpenFeature.getClient(clientName);
+    await websocketMockServer.connected;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    client.getBooleanDetails('bool_flag', false);
+    client.getBooleanDetails('bool_flag', false);
+
+    await OpenFeature.close();
+
+    expect(fetchMock.calls(dataCollectorEndpoint).length).toBe(1);
+    const jsonBody = fetchMock.lastOptions(dataCollectorEndpoint)?.body;
+    const body = JSON.parse(jsonBody as never) as DataCollectorRequest<never>;
+    expect(body.meta).toEqual({ browser: 'chrome', version: '1.0.0', score: 123, openfeature: true, provider: 'web' });
   });
 });
 

@@ -872,6 +872,11 @@ describe('GoFeatureFlagProvider', () => {
         flagCacheTTL: 3000,
         flagCacheSize: 100,
         dataFlushInterval: 1000, // in milliseconds
+        exporterMetadata: {
+          nodeJSVersion: '14.17.0',
+          appVersion: '1.0.0',
+          identifier: 123,
+        },
       });
       const providerName = expect.getState().currentTestName || 'test';
       await OpenFeature.setProviderAndWait(providerName, goff);
@@ -896,9 +901,9 @@ describe('GoFeatureFlagProvider', () => {
             userKey: 'user-key',
           },
         ],
-        meta: { provider: 'open-feature-js-sdk' },
+        meta: { provider: 'js', openfeature: true, nodeJSVersion: '14.17.0', appVersion: '1.0.0', identifier: 123 },
       };
-      expect(want).toEqual(got);
+      expect(got).toEqual(want);
     });
 
     it('should call the data collector when waiting more than the dataFlushInterval', async () => {
@@ -912,6 +917,11 @@ describe('GoFeatureFlagProvider', () => {
         flagCacheTTL: 3000,
         flagCacheSize: 100,
         dataFlushInterval: 100, // in milliseconds
+        exporterMetadata: {
+          nodeJSVersion: '14.17.0',
+          appVersion: '1.0.0',
+          identifier: 123,
+        },
       });
       const providerName = expect.getState().currentTestName || 'test';
       await OpenFeature.setProviderAndWait(providerName, goff);
@@ -934,6 +944,11 @@ describe('GoFeatureFlagProvider', () => {
         flagCacheTTL: 3000,
         flagCacheSize: 100,
         dataFlushInterval: 100, // in milliseconds
+        exporterMetadata: {
+          nodeJSVersion: '14.17.0',
+          appVersion: '1.0.0',
+          identifier: 123,
+        },
       });
       const providerName = expect.getState().currentTestName || 'test';
       await OpenFeature.setProviderAndWait(providerName, goff);
@@ -962,6 +977,11 @@ describe('GoFeatureFlagProvider', () => {
         flagCacheTTL: 3000,
         flagCacheSize: 100,
         dataFlushInterval: 200, // in milliseconds
+        exporterMetadata: {
+          nodeJSVersion: '14.17.0',
+          appVersion: '1.0.0',
+          identifier: 123,
+        },
       });
       const providerName = expect.getState().currentTestName || 'test';
       await OpenFeature.setProviderAndWait(providerName, goff);
@@ -988,6 +1008,11 @@ describe('GoFeatureFlagProvider', () => {
           flagCacheTTL: 3000,
           flagCacheSize: 100,
           dataFlushInterval: 2000, // in milliseconds
+          exporterMetadata: {
+            nodeJSVersion: '14.17.0',
+            appVersion: '1.0.0',
+            identifier: 123,
+          },
         },
         testLogger,
       );

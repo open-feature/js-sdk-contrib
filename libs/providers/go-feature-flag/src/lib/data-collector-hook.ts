@@ -6,7 +6,7 @@ import {
   Logger,
   StandardResolutionReasons,
 } from '@openfeature/server-sdk';
-import { DataCollectorHookOptions, FeatureEvent } from './model';
+import { DataCollectorHookOptions, ExporterMetadataValue, FeatureEvent } from './model';
 import { copy } from 'copy-anything';
 import { CollectorError } from './errors/collector-error';
 import { GoffApiController } from './controller/goff-api';
@@ -24,9 +24,7 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
   // dataFlushInterval interval time (in millisecond) we use to call the relay proxy to collect data.
   private readonly dataFlushInterval: number;
   // dataCollectorMetadata are the metadata used when calling the data collector endpoint
-  private readonly dataCollectorMetadata: Record<string, string> = {
-    provider: 'open-feature-js-sdk',
-  };
+  private readonly dataCollectorMetadata: Record<string, ExporterMetadataValue>;
   private readonly goffApiController: GoffApiController;
   // logger is the Open Feature logger to use
   private logger?: Logger;
@@ -36,6 +34,11 @@ export class GoFeatureFlagDataCollectorHook implements Hook {
     this.logger = logger;
     this.goffApiController = goffApiController;
     this.collectUnCachedEvaluation = options.collectUnCachedEvaluation;
+    this.dataCollectorMetadata = {
+      provider: 'js',
+      openfeature: true,
+      ...options.exporterMetadata,
+    };
   }
 
   init() {

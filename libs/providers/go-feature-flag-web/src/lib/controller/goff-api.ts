@@ -1,4 +1,4 @@
-import { DataCollectorRequest, FeatureEvent, GoFeatureFlagWebProviderOptions } from '../model';
+import { DataCollectorRequest, ExporterMetadataValue, FeatureEvent, GoFeatureFlagWebProviderOptions } from '../model';
 import { CollectorError } from '../errors/collector-error';
 
 export class GoffApiController {
@@ -15,7 +15,7 @@ export class GoffApiController {
     this.options = options;
   }
 
-  async collectData(events: FeatureEvent<any>[], dataCollectorMetadata: Record<string, string>) {
+  async collectData(events: FeatureEvent<any>[], dataCollectorMetadata: Record<string, ExporterMetadataValue>) {
     if (events?.length === 0) {
       return;
     }

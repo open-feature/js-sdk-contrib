@@ -72,14 +72,24 @@ export interface GoFeatureFlagProviderOptions {
   // If a negative number is provided, the provider will not poll.
   // Default: 30000
   pollInterval?: number; // in milliseconds
+
+  // exporterMetadata (optional) exporter metadata is a set of key-value that will be added to the metadata when calling the
+  // exporter API. All those information will be added to the event produce by the exporter.
+  //
+  // ‼️Important: If you are using a GO Feature Flag relay proxy before version v1.41.0, the information
+  // of this field will not be added to your feature events.
+  exporterMetadata?: Record<string, ExporterMetadataValue>;
 }
+
+// ExporterMetadataValue is the type of the value that can be used in the exporterMetadata
+export type ExporterMetadataValue = string | number | boolean;
 
 // GOFeatureFlagResolutionReasons allows to extends resolution reasons
 export declare enum GOFeatureFlagResolutionReasons {}
 
 export interface DataCollectorRequest<T> {
   events: FeatureEvent<T>[];
-  meta: Record<string, string>;
+  meta: Record<string, ExporterMetadataValue>;
 }
 
 export interface FeatureEvent<T> {
@@ -107,6 +117,13 @@ export interface DataCollectorHookOptions {
 
   // collectUnCachedEvent (optional) set to true if you want to send all events not only the cached evaluations.
   collectUnCachedEvaluation?: boolean;
+
+  // exporterMetadata (optional) exporter metadata is a set of key-value that will be added to the metadata when calling the
+  // exporter API. All those information will be added to the event produce by the exporter.
+  //
+  // ‼️Important: If you are using a GO Feature Flag relay proxy before version v1.41.0, the information
+  // of this field will not be added to your feature events.
+  exporterMetadata?: Record<string, ExporterMetadataValue>;
 }
 
 export enum ConfigurationChange {
