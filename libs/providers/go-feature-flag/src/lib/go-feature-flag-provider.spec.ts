@@ -872,149 +872,6 @@ describe('GoFeatureFlagProvider', () => {
         flagCacheTTL: 3000,
         flagCacheSize: 100,
         dataFlushInterval: 1000, // in milliseconds
-      });
-      const providerName = expect.getState().currentTestName || 'test';
-      await OpenFeature.setProviderAndWait(providerName, goff);
-      const cli = OpenFeature.getClient(providerName);
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await OpenFeature.close();
-      const collectorCalls = axiosMock.history['post'].filter((i) => i.url === dataCollectorEndpoint);
-      expect(collectorCalls.length).toBe(1);
-      const got = JSON.parse(collectorCalls[0].data);
-      expect(isNaN(got.events[0].creationDate)).toBe(false);
-      const want = {
-        events: [
-          {
-            contextKind: 'user',
-            kind: 'feature',
-            creationDate: got.events[0].creationDate,
-            default: false,
-            key: 'random-flag',
-            value: true,
-            variation: 'trueVariation',
-            userKey: 'user-key',
-          },
-        ],
-        meta: { provider: 'open-feature-js-sdk' },
-      };
-      expect(want).toEqual(got);
-    });
-
-    it('should call the data collector when waiting more than the dataFlushInterval', async () => {
-      const flagName = 'random-flag';
-      const targetingKey = 'user-key';
-      const dns = `${endpoint}v1/feature/${flagName}/eval`;
-
-      axiosMock.onPost(dns).reply(200, validBoolResponse);
-      const goff = new GoFeatureFlagProvider({
-        endpoint,
-        flagCacheTTL: 3000,
-        flagCacheSize: 100,
-        dataFlushInterval: 100, // in milliseconds
-      });
-      const providerName = expect.getState().currentTestName || 'test';
-      await OpenFeature.setProviderAndWait(providerName, goff);
-      const cli = OpenFeature.getClient(providerName);
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await new Promise((r) => setTimeout(r, 130));
-      const collectorCalls = axiosMock.history['post'].filter((i) => i.url === dataCollectorEndpoint);
-      expect(collectorCalls.length).toBe(1);
-    });
-
-    it('should call the data collector multiple time while waiting dataFlushInterval time', async () => {
-      const flagName = 'random-flag';
-      const targetingKey = 'user-key';
-      const dns = `${endpoint}v1/feature/${flagName}/eval`;
-
-      axiosMock.onPost(dns).reply(200, validBoolResponse);
-      const goff = new GoFeatureFlagProvider({
-        endpoint,
-        flagCacheTTL: 3000,
-        flagCacheSize: 100,
-        dataFlushInterval: 100, // in milliseconds
-      });
-      const providerName = expect.getState().currentTestName || 'test';
-      await OpenFeature.setProviderAndWait(providerName, goff);
-      const cli = OpenFeature.getClient(providerName);
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await new Promise((r) => setTimeout(r, 130));
-      const collectorCalls = axiosMock.history['post'].filter((i) => i.url === dataCollectorEndpoint);
-      expect(collectorCalls.length).toBe(1);
-      axiosMock.resetHistory();
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await new Promise((r) => setTimeout(r, 130));
-      const collectorCalls2 = axiosMock.history['post'].filter((i) => i.url === dataCollectorEndpoint);
-      expect(collectorCalls2.length).toBe(1);
-    });
-
-    it('should not call the data collector before the dataFlushInterval', async () => {
-      const flagName = 'random-flag';
-      const targetingKey = 'user-key';
-      const dns = `${endpoint}v1/feature/${flagName}/eval`;
-
-      axiosMock.onPost(dns).reply(200, validBoolResponse);
-      const goff = new GoFeatureFlagProvider({
-        endpoint,
-        flagCacheTTL: 3000,
-        flagCacheSize: 100,
-        dataFlushInterval: 200, // in milliseconds
-      });
-      const providerName = expect.getState().currentTestName || 'test';
-      await OpenFeature.setProviderAndWait(providerName, goff);
-      const cli = OpenFeature.getClient(providerName);
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await new Promise((r) => setTimeout(r, 130));
-      const collectorCalls = axiosMock.history['post'].filter((i) => i.url === dataCollectorEndpoint);
-
-      expect(collectorCalls.length).toBe(0);
-    });
-
-    it('should have a log when data collector is not available', async () => {
-      const flagName = 'random-flag';
-      const targetingKey = 'user-key';
-      const dns = `${endpoint}v1/feature/${flagName}/eval`;
-
-      axiosMock.onPost(dns).reply(200, validBoolResponse);
-      axiosMock.onPost(dataCollectorEndpoint).reply(500, {});
-
-      const goff = new GoFeatureFlagProvider(
-        {
-          endpoint,
-          flagCacheTTL: 3000,
-          flagCacheSize: 100,
-          dataFlushInterval: 2000, // in milliseconds
-        },
-        testLogger,
-      );
-      const providerName = expect.getState().currentTestName || 'test';
-      await OpenFeature.setProviderAndWait(providerName, goff);
-      const cli = OpenFeature.getClient(providerName);
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await cli.getBooleanDetails(flagName, false, { targetingKey });
-      await OpenFeature.close();
-
-      expect(testLogger.inMemoryLogger['error'].length).toBe(1);
-      expect(testLogger.inMemoryLogger['error']).toContain(
-        'Error: impossible to send the data to the collector: Error: Request failed with status code 500',
-      );
-    });
-
-    it('should call the data collector with exporter metadata', async () => {
-      const flagName = 'random-flag';
-      const targetingKey = 'user-key';
-      const dns = `${endpoint}v1/feature/${flagName}/eval`;
-
-      axiosMock.onPost(dns).reply(200, validBoolResponse);
-      const goff = new GoFeatureFlagProvider({
-        endpoint,
-        flagCacheTTL: 3000,
-        flagCacheSize: 100,
-        dataFlushInterval: 1000, // in milliseconds
         exporterMetadata: {
           nodeJSVersion: '14.17.0',
           appVersion: '1.0.0',
@@ -1046,7 +903,130 @@ describe('GoFeatureFlagProvider', () => {
         ],
         meta: { provider: 'js', openfeature: true, nodeJSVersion: '14.17.0', appVersion: '1.0.0', identifier: 123 },
       };
-      expect(want).toEqual(got);
+      expect(got).toEqual(want);
+    });
+
+    it('should call the data collector when waiting more than the dataFlushInterval', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+        dataFlushInterval: 100, // in milliseconds
+        exporterMetadata: {
+          nodeJSVersion: '14.17.0',
+          appVersion: '1.0.0',
+          identifier: 123,
+        },
+      });
+      const providerName = expect.getState().currentTestName || 'test';
+      await OpenFeature.setProviderAndWait(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await new Promise((r) => setTimeout(r, 130));
+      const collectorCalls = axiosMock.history['post'].filter((i) => i.url === dataCollectorEndpoint);
+      expect(collectorCalls.length).toBe(1);
+    });
+
+    it('should call the data collector multiple time while waiting dataFlushInterval time', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+        dataFlushInterval: 100, // in milliseconds
+        exporterMetadata: {
+          nodeJSVersion: '14.17.0',
+          appVersion: '1.0.0',
+          identifier: 123,
+        },
+      });
+      const providerName = expect.getState().currentTestName || 'test';
+      await OpenFeature.setProviderAndWait(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await new Promise((r) => setTimeout(r, 130));
+      const collectorCalls = axiosMock.history['post'].filter((i) => i.url === dataCollectorEndpoint);
+      expect(collectorCalls.length).toBe(1);
+      axiosMock.resetHistory();
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await new Promise((r) => setTimeout(r, 130));
+      const collectorCalls2 = axiosMock.history['post'].filter((i) => i.url === dataCollectorEndpoint);
+      expect(collectorCalls2.length).toBe(1);
+    });
+
+    it('should not call the data collector before the dataFlushInterval', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+        dataFlushInterval: 200, // in milliseconds
+        exporterMetadata: {
+          nodeJSVersion: '14.17.0',
+          appVersion: '1.0.0',
+          identifier: 123,
+        },
+      });
+      const providerName = expect.getState().currentTestName || 'test';
+      await OpenFeature.setProviderAndWait(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await new Promise((r) => setTimeout(r, 130));
+      const collectorCalls = axiosMock.history['post'].filter((i) => i.url === dataCollectorEndpoint);
+
+      expect(collectorCalls.length).toBe(0);
+    });
+
+    it('should have a log when data collector is not available', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      axiosMock.onPost(dataCollectorEndpoint).reply(500, {});
+
+      const goff = new GoFeatureFlagProvider(
+        {
+          endpoint,
+          flagCacheTTL: 3000,
+          flagCacheSize: 100,
+          dataFlushInterval: 2000, // in milliseconds
+          exporterMetadata: {
+            nodeJSVersion: '14.17.0',
+            appVersion: '1.0.0',
+            identifier: 123,
+          },
+        },
+        testLogger,
+      );
+      const providerName = expect.getState().currentTestName || 'test';
+      await OpenFeature.setProviderAndWait(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await OpenFeature.close();
+
+      expect(testLogger.inMemoryLogger['error'].length).toBe(1);
+      expect(testLogger.inMemoryLogger['error']).toContain(
+        'Error: impossible to send the data to the collector: Error: Request failed with status code 500',
+      );
     });
   });
   describe('polling', () => {
