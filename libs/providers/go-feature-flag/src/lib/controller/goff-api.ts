@@ -2,6 +2,7 @@ import {
   ConfigurationChange,
   DataCollectorRequest,
   DataCollectorResponse,
+  ExporterMetadataValue,
   FeatureEvent,
   GoFeatureFlagProviderOptions,
   GoFeatureFlagProxyRequest,
@@ -146,7 +147,7 @@ export class GoffApiController {
     };
   }
 
-  async collectData(events: FeatureEvent<any>[], dataCollectorMetadata: Record<string, string>) {
+  async collectData(events: FeatureEvent<any>[], dataCollectorMetadata: Record<string, ExporterMetadataValue>) {
     if (events?.length === 0) {
       return;
     }

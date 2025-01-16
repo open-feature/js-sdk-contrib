@@ -38,7 +38,11 @@ export class GoFeatureFlagProvider implements Provider {
   constructor(options: GoFeatureFlagProviderOptions, logger?: Logger) {
     this._goffApiController = new GoffApiController(options);
     this._dataCollectorHook = new GoFeatureFlagDataCollectorHook(
-      { dataFlushInterval: options.dataFlushInterval },
+      {
+        dataFlushInterval: options.dataFlushInterval,
+        collectUnCachedEvaluation: false,
+        exporterMetadata: options.exporterMetadata,
+      },
       this._goffApiController,
       logger,
     );

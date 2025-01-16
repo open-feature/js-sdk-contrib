@@ -43,7 +43,7 @@ export interface GoFeatureFlagWebProviderOptions {
   // Default: 100 ms
   retryInitialDelay?: number;
 
-  // multiplier of retryInitialDelay after each failure
+  // retryDelayMultiplier (optional) multiplier of retryInitialDelay after each failure
   // (example: 1st connection retry will be after 100ms, second after 200ms, third after 400ms ...)
   // Default: 2
   retryDelayMultiplier?: number;
@@ -58,9 +58,19 @@ export interface GoFeatureFlagWebProviderOptions {
   // default: 1 minute
   dataFlushInterval?: number;
 
-  // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
+  // disableDataCollection (optional) set to true if you don't want to collect the usage of flags retrieved in the cache.
   disableDataCollection?: boolean;
+
+  // exporterMetadata (optional) exporter metadata is a set of key-value that will be added to the metadata when calling the
+  // exporter API. All those information will be added to the event produce by the exporter.
+  //
+  // ‼️Important: If you are using a GO Feature Flag relay proxy before version v1.41.0, the information
+  // of this field will not be added to your feature events.
+  exporterMetadata?: Record<string, ExporterMetadataValue>;
 }
+
+// ExporterMetadataValue is the type of the value that can be used in the exporterMetadata
+export type ExporterMetadataValue = string | number | boolean;
 
 /**
  * FlagState is the object used to get the value return by GO Feature Flag.
@@ -97,7 +107,7 @@ export interface GOFeatureFlagWebsocketResponse {
 
 export interface DataCollectorRequest<T> {
   events: FeatureEvent<T>[];
-  meta: Record<string, string>;
+  meta: Record<string, ExporterMetadataValue>;
 }
 
 export interface FeatureEvent<T> {

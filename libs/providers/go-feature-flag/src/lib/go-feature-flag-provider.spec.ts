@@ -1003,6 +1003,51 @@ describe('GoFeatureFlagProvider', () => {
         'Error: impossible to send the data to the collector: Error: Request failed with status code 500',
       );
     });
+
+    it('should call the data collector with exporter metadata', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+
+      axiosMock.onPost(dns).reply(200, validBoolResponse);
+      const goff = new GoFeatureFlagProvider({
+        endpoint,
+        flagCacheTTL: 3000,
+        flagCacheSize: 100,
+        dataFlushInterval: 1000, // in milliseconds
+        exporterMetadata: {
+          nodeJSVersion: '14.17.0',
+          appVersion: '1.0.0',
+          identifier: 123,
+        },
+      });
+      const providerName = expect.getState().currentTestName || 'test';
+      await OpenFeature.setProviderAndWait(providerName, goff);
+      const cli = OpenFeature.getClient(providerName);
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      await OpenFeature.close();
+      const collectorCalls = axiosMock.history['post'].filter((i) => i.url === dataCollectorEndpoint);
+      expect(collectorCalls.length).toBe(1);
+      const got = JSON.parse(collectorCalls[0].data);
+      expect(isNaN(got.events[0].creationDate)).toBe(false);
+      const want = {
+        events: [
+          {
+            contextKind: 'user',
+            kind: 'feature',
+            creationDate: got.events[0].creationDate,
+            default: false,
+            key: 'random-flag',
+            value: true,
+            variation: 'trueVariation',
+            userKey: 'user-key',
+          },
+        ],
+        meta: { provider: 'js', openfeature: true, nodeJSVersion: '14.17.0', appVersion: '1.0.0', identifier: 123 },
+      };
+      expect(want).toEqual(got);
+    });
   });
   describe('polling', () => {
     it('should_stop_calling_flag_change_if_receive_404', async () => {
