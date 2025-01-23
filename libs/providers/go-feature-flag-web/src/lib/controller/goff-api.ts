@@ -22,7 +22,10 @@ export class GoffApiController {
 
     const request: DataCollectorRequest<boolean> = { events: events, meta: dataCollectorMetadata };
     const endpointURL = new URL(this.endpoint);
-    endpointURL.pathname = 'v1/data/collector';
+    const dataCollectorPath = 'v1/data/collector';
+    endpointURL.pathname = endpointURL.pathname.endsWith('/')
+      ? endpointURL.pathname + dataCollectorPath
+      : endpointURL.pathname + '/' + dataCollectorPath;
 
     try {
       const headers: HeadersInit = {
