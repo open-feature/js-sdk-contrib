@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.4...go-feature-flag-web-provider-v0.2.5) (2025-01-23)
+
+
+### 🐛 Bug Fixes
+
+* **go-feature-flag:** Support endpoint paths in data collector goff-api.ts ([#1184](https://github.com/open-feature/js-sdk-contrib/issues/1184)) ([928e437](https://github.com/open-feature/js-sdk-contrib/commit/928e43764a9d8a4891c07aba7deb1990d52fc29c))
+
 ## [0.2.4](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.3...go-feature-flag-web-provider-v0.2.4) (2025-01-16)
 
 
