@@ -9,7 +9,7 @@ import {
   ServerProviderEvents,
   StandardResolutionReasons,
 } from '@openfeature/server-sdk';
-import { ConfigurationChange, GoFeatureFlagProviderOptions } from './model';
+import { ConfigurationChange, ExporterMetadataValue, GoFeatureFlagProviderOptions } from './model';
 import { GoFeatureFlagDataCollectorHook } from './data-collector-hook';
 import { GoffApiController } from './controller/goff-api';
 import { CacheController } from './controller/cache';
@@ -34,6 +34,7 @@ export class GoFeatureFlagProvider implements Provider {
   private readonly _cacheController?: CacheController;
   private _pollingIntervalId?: number;
   private _pollingInterval: number;
+  private _exporterMetadata?: Record<string, ExporterMetadataValue>;
 
   constructor(options: GoFeatureFlagProviderOptions, logger?: Logger) {
     this._goffApiController = new GoffApiController(options);
@@ -46,6 +47,7 @@ export class GoFeatureFlagProvider implements Provider {
       this._goffApiController,
       logger,
     );
+    this._exporterMetadata = options.exporterMetadata;
     this._disableDataCollection = options.disableDataCollection || false;
     this._cacheController = new CacheController(options, logger);
     this._pollingInterval = options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
@@ -188,6 +190,7 @@ export class GoFeatureFlagProvider implements Provider {
       defaultValue,
       evaluationContext,
       expectedType,
+      this._exporterMetadata ?? {},
     );
 
     this._cacheController?.set(flagKey, evaluationContext, evaluationResponse);
