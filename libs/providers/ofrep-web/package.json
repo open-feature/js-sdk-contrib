@@ -12,7 +12,7 @@
     "@openfeature/web-sdk": "^1.4.0"
   },
   "dependencies": {
-    "undici": "^5.0.0",
+    "undici": "^7.0.0",
     "@openfeature/ofrep-core": "0.2.0"
   }
 }
