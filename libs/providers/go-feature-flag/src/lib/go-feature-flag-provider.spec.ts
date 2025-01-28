@@ -212,6 +212,39 @@ describe('GoFeatureFlagProvider', () => {
     it('provider should be ready after after setting the provider to Open Feature', async () => {
       expect(cli.providerStatus).toEqual(ServerProviderStatus.READY);
     });
+
+    it('should send exporter metadata to the evaluation API', async () => {
+      const flagName = 'random-flag';
+      const targetingKey = 'user-key';
+      const dns = `${endpoint}v1/feature/${flagName}/eval`;
+      axiosMock.onPost(dns).reply(200, {
+        value: true,
+        variationType: 'trueVariation',
+        reason: StandardResolutionReasons.TARGETING_MATCH,
+        failed: false,
+        trackEvents: true,
+        version: '1.0.0',
+      } as GoFeatureFlagProxyResponse<boolean>);
+
+      const provider = new GoFeatureFlagProvider({
+        endpoint,
+        exporterMetadata: { key1: 'value', key2: 123, key3: 123.45 },
+      });
+      await OpenFeature.setProviderAndWait('test-exporter-metadata', provider);
+      const cli = OpenFeature.getClient('test-exporter-metadata');
+
+      await cli.getBooleanDetails(flagName, false, { targetingKey });
+      const request = axiosMock.history.post[0];
+      const want = {
+        openfeature: true,
+        provider: 'js',
+        key1: 'value',
+        key2: 123,
+        key3: 123.45,
+      };
+      const got = JSON.parse(request.data).evaluationContext.custom.gofeatureflag.exporterMetadata;
+      expect(got).toEqual(want);
+    });
   });
   describe('resolveBooleanEvaluation', () => {
     it('should throw an error if we expect a boolean and got another type', async () => {
