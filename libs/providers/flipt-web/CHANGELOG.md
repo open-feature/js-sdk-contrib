@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.1...flipt-web-provider-v0.1.2) (2025-01-28)
+
+
+### 🧹 Chore
+
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.1.1](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.0...flipt-web-provider-v0.1.1) (2024-12-02)
 
 
