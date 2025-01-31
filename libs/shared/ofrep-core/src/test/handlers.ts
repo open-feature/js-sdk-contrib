@@ -26,6 +26,11 @@ export const handlers = [
       const expectedAuthHeader = requestBody.context?.['expectedAuthHeader'] ?? null;
 
       const errors = requestBody.context?.['errors'] as Record<string, boolean> | undefined;
+      if (errors?.['slowRequest']) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        throw HttpResponse.text(undefined, { status: 500 });
+      }
+
       if (errors?.['network']) {
         throw HttpResponse.error();
       }
@@ -131,6 +136,11 @@ export const handlers = [
       const expectedAuthHeader = requestBody.context?.['expectedAuthHeader'] ?? null;
 
       const errors = requestBody.context?.['errors'] as Record<string, boolean> | undefined;
+      if (errors?.['slowRequest']) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        throw HttpResponse.text(undefined, { status: 500 });
+      }
+
       if (errors?.['network']) {
         throw HttpResponse.error();
       }

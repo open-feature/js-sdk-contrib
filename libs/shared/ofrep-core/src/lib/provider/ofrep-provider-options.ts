@@ -10,6 +10,12 @@ export type OFREPProviderBaseOptions = {
    */
   baseUrl: string;
   /**
+   * Abort timeout in milliseconds.
+   *
+   * @default 10000
+   */
+  timeoutMs?: number;
+  /**
    * Optional fetch implementation
    */
   fetchImplementation?: FetchAPI;
