@@ -76,7 +76,7 @@ export class OFREPApi {
     let response: Response;
     try {
       response = await this.fetchImplementation(req, {
-        signal: AbortSignal.timeout(this.baseOptions.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+        signal: this.createTimeoutSignal(this.baseOptions.timeoutMs),
       });
     } catch (err) {
       throw new OFREPApiFetchError(err, 'The OFREP request failed.', { cause: err });
@@ -102,6 +102,23 @@ export class OFREPApi {
       return { response, body: await response.json() };
     } catch {
       return { response };
+    }
+  }
+
+  /**
+   * Create a timeout signal that will abort the request after the timeout.
+   */
+  private createTimeoutSignal(timeoutMs = DEFAULT_TIMEOUT_MS): AbortSignal | undefined {
+    try {
+      const controller = new AbortController();
+      // Uses a setTimeout instead of AbortSignal.timeout to support older browsers.
+      setTimeout(
+        () => controller.abort(new DOMException(`This signal is timeout in ${timeoutMs}ms`, 'TimeoutError')),
+        timeoutMs,
+      );
+      return controller.signal;
+    } catch {
+      return undefined;
     }
   }
 

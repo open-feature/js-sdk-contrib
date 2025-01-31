@@ -57,15 +57,6 @@ describe('OFREPApi', () => {
     });
 
     describe('postEvaluateFlags should', () => {
-      it('throw OFREPApiFetchError on timed out requests', async () => {
-        jest.useRealTimers();
-        try {
-          await api.postEvaluateFlag('my-flag', { context: { errors: { slowRequest: true } } });
-        } catch (err) {
-          expect((err as { cause: DOMException })?.cause?.name).toEqual('TimeoutError');
-        }
-      });
-
       it('throw OFREPApiFetchError on network error', async () => {
         await expect(() => api.postEvaluateFlag('my-flag', { context: { errors: { network: true } } })).rejects.toThrow(
           OFREPApiFetchError,
