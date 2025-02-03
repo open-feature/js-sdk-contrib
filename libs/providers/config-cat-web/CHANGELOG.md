@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.3...config-cat-web-provider-v0.1.4) (2025-02-03)
+
+
+### 🧹 Chore
+
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.2...config-cat-web-provider-v0.1.3) (2024-09-20)
 
 
