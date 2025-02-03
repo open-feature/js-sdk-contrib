@@ -49,9 +49,10 @@ function isomorphicFetch(): FetchAPI {
   return fetch;
 }
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+
 export class OFREPApi {
   private static readonly jsonRegex = new RegExp(/application\/[^+]*[+]?(json);?.*/, 'i');
-  private _etag?: string;
 
   constructor(
     private baseOptions: OFREPProviderBaseOptions,
@@ -74,7 +75,16 @@ export class OFREPApi {
   private async doFetchRequest(req: Request): Promise<{ response: Response; body?: unknown }> {
     let response: Response;
     try {
-      response = await this.fetchImplementation(req);
+      const timeoutMs = this.baseOptions.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+      const controller = new AbortController();
+      // Uses a setTimeout instead of AbortSignal.timeout to support older runtimes.
+      setTimeout(
+        () => controller.abort(new DOMException(`This signal is timeout in ${timeoutMs}ms`, 'TimeoutError')),
+        timeoutMs,
+      );
+      response = await this.fetchImplementation(req, {
+        signal: controller.signal,
+      });
     } catch (err) {
       throw new OFREPApiFetchError(err, 'The OFREP request failed.', { cause: err });
     }
