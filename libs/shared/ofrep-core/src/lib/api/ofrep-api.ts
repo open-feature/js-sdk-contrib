@@ -77,7 +77,7 @@ export class OFREPApi {
     try {
       const timeoutMs = this.baseOptions.timeoutMs ?? DEFAULT_TIMEOUT_MS;
       const controller = new AbortController();
-      // Uses a setTimeout instead of AbortSignal.timeout to support older browsers.
+      // Uses a setTimeout instead of AbortSignal.timeout to support older runtimes.
       setTimeout(
         () => controller.abort(new DOMException(`This signal is timeout in ${timeoutMs}ms`, 'TimeoutError')),
         timeoutMs,
