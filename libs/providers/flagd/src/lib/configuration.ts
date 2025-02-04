@@ -68,6 +68,13 @@ export interface Config {
    * @default 1000
    */
   maxCacheSize?: number;
+
+  /**
+   * The target host (authority) when routing requests through a proxy (e.g. Envoy)
+   *
+   * @default ''
+   */
+  defaultAuthority?: string;
 }
 
 export type FlagdProviderOptions = Partial<Config>;
@@ -94,6 +101,7 @@ enum ENV_VAR {
   FLAGD_SOURCE_SELECTOR = 'FLAGD_SOURCE_SELECTOR',
   FLAGD_RESOLVER = 'FLAGD_RESOLVER',
   FLAGD_OFFLINE_FLAG_SOURCE_PATH = 'FLAGD_OFFLINE_FLAG_SOURCE_PATH',
+  FLAGD_DEFAULT_AUTHORITY = 'FLAGD_DEFAULT_AUTHORITY',
 }
 
 const getEnvVarConfig = (): Partial<Config> => ({
@@ -123,6 +131,9 @@ const getEnvVarConfig = (): Partial<Config> => ({
   }),
   ...(process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH] && {
     offlineFlagSourcePath: process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH],
+  }),
+  ...(process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY] && {
+    defaultAuthority: process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY],
   }),
 });
 

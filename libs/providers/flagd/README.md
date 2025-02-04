@@ -38,6 +38,7 @@ Options can be defined in the constructor or as environment variables. Construct
 | selector                               | FLAGD_SOURCE_SELECTOR          | string  | -                                                              |                  |
 | cache                                  | FLAGD_CACHE                    | string  | lru                                                            | lru, disabled    |
 | maxCacheSize                           | FLAGD_MAX_CACHE_SIZE           | int     | 1000                                                           |                  |
+| defaultAuthority                       | FLAGD_DEFAULT_AUTHORITY        | string  | -                                                              | rpc, in-process  |
 
 #### Resolver type-specific Defaults
 
@@ -92,6 +93,17 @@ To enable this mode, you should provide a valid flag configuration file with the
 
 Offline mode uses `fs.watchFile` and polls every 5 seconds for changes to the file.
 This mode is useful for local development, test cases, and for offline applications.
+
+### Default Authority usage (optional)
+
+This is useful for complex routing or service-discovery usecases that involve a proxy (e.g., Envoy). Please refer to this [link](https://github.com/open-feature/js-sdk-contrib/issues/1187) for more information.
+
+```ts
+  OpenFeature.setProvider(new FlagdProvider({
+      resolverType: 'in-process',
+      defaultAuthority: 'b-target-api.service',
+  }))
+```
 
 ### Supported Events
 
