@@ -72,7 +72,6 @@ export interface Config {
   /**
    * The target host (authority) when routing requests through a proxy (e.g. Envoy)
    *
-   * @default ''
    */
   defaultAuthority?: string;
 }

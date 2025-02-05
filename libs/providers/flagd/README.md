@@ -96,7 +96,8 @@ This mode is useful for local development, test cases, and for offline applicati
 
 ### Default Authority usage (optional)
 
-This is useful for complex routing or service-discovery usecases that involve a proxy (e.g., Envoy). Please refer to this [link](https://github.com/open-feature/js-sdk-contrib/issues/1187) for more information.
+This is useful for complex routing or service-discovery use cases that involve a proxy (e.g., Envoy).
+Please refer to this [GitHub issue](https://github.com/open-feature/js-sdk-contrib/issues/1187) for more information.
 
 ```ts
   OpenFeature.setProvider(new FlagdProvider({
