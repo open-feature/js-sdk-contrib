@@ -1,4 +1,4 @@
-import { ClientReadableStream, ClientUnaryCall, ServiceError, credentials, status } from '@grpc/grpc-js';
+import { ClientReadableStream, ClientUnaryCall, ServiceError, credentials, status, ClientOptions } from '@grpc/grpc-js';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 import {
   EvaluationContext,
@@ -80,12 +80,20 @@ export class GRPCService implements Service {
     client?: ServiceClient,
     private logger?: Logger,
   ) {
-    const { host, port, tls, socketPath } = config;
+    const { host, port, tls, socketPath, defaultAuthority } = config;
+    let clientOptions: ClientOptions | undefined;
+    if (defaultAuthority) {
+      clientOptions = {
+        'grpc.default_authority': defaultAuthority,
+      };
+    }
+
     this._client = client
       ? client
       : new ServiceClient(
           socketPath ? `unix://${socketPath}` : `${host}:${port}`,
           tls ? credentials.createSsl() : credentials.createInsecure(),
+          clientOptions,
         );
 
     if (config.cache === 'lru') {

@@ -31,6 +31,7 @@ describe('Configuration', () => {
     const resolverType = 'in-process';
     const selector = 'app=weather';
     const offlineFlagSourcePath = '/tmp/flags.json';
+    const defaultAuthority = 'test-authority';
 
     process.env['FLAGD_HOST'] = host;
     process.env['FLAGD_PORT'] = `${port}`;
@@ -41,6 +42,7 @@ describe('Configuration', () => {
     process.env['FLAGD_SOURCE_SELECTOR'] = `${selector}`;
     process.env['FLAGD_RESOLVER'] = `${resolverType}`;
     process.env['FLAGD_OFFLINE_FLAG_SOURCE_PATH'] = offlineFlagSourcePath;
+    process.env['FLAGD_DEFAULT_AUTHORITY'] = defaultAuthority;
 
     expect(getConfig()).toStrictEqual({
       host,
@@ -52,6 +54,7 @@ describe('Configuration', () => {
       resolverType,
       selector,
       offlineFlagSourcePath,
+      defaultAuthority,
     });
   });
 
@@ -64,11 +67,13 @@ describe('Configuration', () => {
       cache: 'lru',
       resolverType: 'rpc',
       selector: '',
+      defaultAuthority: '',
     };
 
     process.env['FLAGD_HOST'] = 'override';
     process.env['FLAGD_PORT'] = '8080';
     process.env['FLAGD_TLS'] = 'false';
+    process.env['FLAGD_DEFAULT_AUTHORITY'] = 'test-authority-override';
 
     expect(getConfig(options)).toStrictEqual(options);
   });
