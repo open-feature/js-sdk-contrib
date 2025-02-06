@@ -1,20 +1,10 @@
+import { FlagMetadata, ResolutionDetails } from '@openfeature/core';
 import {
-  FlagMetadata,
-  FlagNotFoundError,
-  GeneralError,
-  InvalidContextError,
-  ParseError,
-  ResolutionDetails,
-  TargetingKeyMissingError,
-} from '@openfeature/core';
-import {
-  EvaluationFailureErrorCode,
   EvaluationFlagValue,
   EvaluationRequest,
   EvaluationSuccessResponse,
   OFREPApiBulkEvaluationFailureResult,
   OFREPApiBulkEvaluationResult,
-  OFREPApiEvaluationFailureResult,
   OFREPApiEvaluationResult,
   OFREPEvaluationErrorHttpStatus,
   OFREPEvaluationErrorHttpStatuses,
@@ -165,25 +155,32 @@ export class OFREPApi {
   }
 }
 
-export function handleEvaluationError(
-  result: OFREPApiEvaluationFailureResult | OFREPApiBulkEvaluationFailureResult,
-): never {
-  const code = result.value.errorCode;
-  const details = result.value.errorDetails;
+export function handleEvaluationError<T>(
+  resultOrError: OFREPApiBulkEvaluationFailureResult | Error,
+  defaultValue: T,
+  callback?: (resultOrError: OFREPApiBulkEvaluationFailureResult | Error) => void,
+): ResolutionDetails<T> {
+  callback?.(resultOrError);
 
-  switch (code) {
-    case EvaluationFailureErrorCode.ParseError:
-      throw new ParseError(details);
-    case EvaluationFailureErrorCode.TargetingKeyMissing:
-      throw new TargetingKeyMissingError(details);
-    case EvaluationFailureErrorCode.InvalidContext:
-      throw new InvalidContextError(details);
-    case EvaluationFailureErrorCode.FlagNotFound:
-      throw new FlagNotFoundError(details);
-    case EvaluationFailureErrorCode.General:
-      throw new GeneralError(details);
-    default:
-      throw new GeneralError(details);
+  if ('value' in resultOrError) {
+    const code = resultOrError.value.errorCode;
+    const message = resultOrError.value.errorCode;
+    const metadata = resultOrError.value.metadata;
+
+    const resolution: ResolutionDetails<T> = {
+      value: defaultValue,
+      flagMetadata: metadata,
+      errorCode: code,
+      errorMessage: message,
+    };
+
+    return resolution;
+  } else {
+    if (resultOrError instanceof Error) {
+      throw resultOrError;
+    } else {
+      throw new Error('OFREP flag evaluation error', { cause: resultOrError });
+    }
   }
 }
 

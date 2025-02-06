@@ -1,9 +1,8 @@
-import { ResolutionReason } from '@openfeature/web-sdk';
-import { EvaluationFailureErrorCode } from '@openfeature/ofrep-core';
+import { ErrorCode, ResolutionReason } from '@openfeature/web-sdk';
 
 export type ResolutionError = {
   reason: ResolutionReason;
-  errorCode: EvaluationFailureErrorCode;
+  errorCode: ErrorCode;
   errorDetails?: string;
 };
 
