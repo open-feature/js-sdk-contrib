@@ -1,10 +1,11 @@
-import { EvaluationFailureErrorCode, EvaluationResponse } from './evaluation';
+import { ErrorCode } from '@openfeature/core';
+import { EvaluationResponse, MetadataResponse } from './evaluation';
 
-export interface BulkEvaluationFailureResponse {
+export interface BulkEvaluationFailureResponse extends MetadataResponse {
   /**
    * An appropriate code specific to the bulk evaluation error. See https://openfeature.dev/specification/types#error-code
    */
-  errorCode: EvaluationFailureErrorCode;
+  errorCode: ErrorCode;
   /**
    * Optional error details description for logging or other needs
    */
@@ -19,13 +20,10 @@ export function isBulkEvaluationFailureResponse(response: unknown): response is 
   return 'errorCode' in response;
 }
 
-export interface BulkEvaluationSuccessResponse {
+export interface BulkEvaluationSuccessResponse extends MetadataResponse {
   flags?: EvaluationResponse[];
 }
 
-export interface BulkEvaluationSuccessResponse {
-  flags?: EvaluationResponse[];
-}
 
 export type BulkEvaluationNotModifiedResponse = undefined;
 

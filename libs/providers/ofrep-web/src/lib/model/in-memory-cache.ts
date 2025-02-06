@@ -1,7 +1,12 @@
-import { FlagValue, ResolutionDetails } from '@openfeature/web-sdk';
+import type { FlagMetadata, FlagValue, ResolutionDetails } from '@openfeature/web-sdk';
 import { ResolutionError } from './resolution-error';
 
 /**
- * FlagCache is a type representing the internal cache of the flags.
+ * Cache of flag values from bulk evaluation.
  */
 export type FlagCache = { [key: string]: ResolutionDetails<FlagValue> | ResolutionError };
+
+/**
+ * Cache of metadata from bulk evaluation.
+ */
+export type MetadataCache = FlagMetadata;
