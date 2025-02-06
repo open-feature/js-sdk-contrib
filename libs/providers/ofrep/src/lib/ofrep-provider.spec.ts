@@ -1,6 +1,4 @@
 import { OFREPProvider, OFREPProviderOptions } from './ofrep-provider';
-
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import {
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
@@ -8,7 +6,9 @@ import {
   OFREPForbiddenError,
 } from '@openfeature/ofrep-core';
 import { ErrorCode, GeneralError, TypeMismatchError } from '@openfeature/server-sdk';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { TEST_FLAG_METADATA } from 'libs/shared/ofrep-core/src/test/test-constants';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
 
 describe('OFREPProvider should', () => {

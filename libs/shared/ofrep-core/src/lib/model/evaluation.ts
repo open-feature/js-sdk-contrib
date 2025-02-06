@@ -1,6 +1,5 @@
 import type { ErrorCode, EvaluationContext, FlagMetadata, FlagValue, ResolutionReason } from '@openfeature/core';
 
-
 export interface EvaluationRequest {
   /**
    * Context information for flag evaluation
