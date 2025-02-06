@@ -1,4 +1,4 @@
-import { FlagMetadata } from "@openfeature/core";
+import { FlagMetadata } from '@openfeature/core';
 
 export const TEST_FLAG_METADATA: FlagMetadata = {
   booleanKey: true,

@@ -24,7 +24,6 @@ export interface BulkEvaluationSuccessResponse extends MetadataResponse {
   flags?: EvaluationResponse[];
 }
 
-
 export type BulkEvaluationNotModifiedResponse = undefined;
 
 export function isBulkEvaluationSuccessResponse(response: unknown): response is BulkEvaluationSuccessResponse {
