@@ -1,14 +1,12 @@
+import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 import { server } from '../../test/mock-service-worker';
-import { OFREPApi } from './ofrep-api';
+import { TEST_FLAG_METADATA, TEST_FLAG_SET_METADATA } from '../../test/test-constants';
 import {
   BulkEvaluationFailureResponse,
   BulkEvaluationSuccessResponse,
-  EvaluationFailureErrorCode,
   EvaluationFailureResponse,
-  EvaluationSuccessReason,
   EvaluationSuccessResponse,
 } from '../model';
-import { EvaluationContext } from '@openfeature/core';
 import {
   OFREPApiFetchError,
   OFREPApiTooManyRequestsError,
@@ -16,6 +14,7 @@ import {
   OFREPApiUnexpectedResponseError,
   OFREPForbiddenError,
 } from './errors';
+import { OFREPApi } from './ofrep-api';
 
 describe('OFREPApi', () => {
   let api: OFREPApi;
@@ -149,12 +148,7 @@ describe('OFREPApi', () => {
           throw new Error('Received unexpected HTTP status');
         }
 
-        expect(result.value.metadata).toEqual({
-          context: {
-            key1: 'value1',
-            targetingKey: 'user-1',
-          },
-        } satisfies EvaluationContext);
+        expect(result.value.metadata).toEqual(TEST_FLAG_METADATA);
       });
 
       it('return HTTP status in result', async () => {
@@ -170,7 +164,8 @@ describe('OFREPApi', () => {
 
         expect(result.value).toEqual({
           key: 'my-flag',
-          errorCode: EvaluationFailureErrorCode.FlagNotFound,
+          errorCode: ErrorCode.FLAG_NOT_FOUND,
+          metadata: TEST_FLAG_METADATA,
         } satisfies EvaluationFailureResponse);
       });
 
@@ -182,7 +177,8 @@ describe('OFREPApi', () => {
 
         expect(result.value).toEqual({
           key: 'my-flag',
-          errorCode: EvaluationFailureErrorCode.FlagNotFound,
+          errorCode: ErrorCode.FLAG_NOT_FOUND,
+          metadata: TEST_FLAG_METADATA,
         } satisfies EvaluationFailureResponse);
       });
 
@@ -203,14 +199,10 @@ describe('OFREPApi', () => {
         expect(result.httpStatus).toEqual(200);
         expect(result.value).toEqual({
           key: 'my-flag',
-          reason: EvaluationSuccessReason.TargetingMatch,
+          reason: StandardResolutionReasons.TARGETING_MATCH,
           value: true,
           variant: 'default',
-          metadata: {
-            context: {
-              targetingKey: 'user',
-            },
-          },
+          metadata: TEST_FLAG_METADATA,
         } satisfies EvaluationSuccessResponse);
       });
 
@@ -220,14 +212,10 @@ describe('OFREPApi', () => {
         expect(result.httpStatus).toEqual(200);
         expect(result.value).toEqual({
           key: 'my-flag',
-          reason: EvaluationSuccessReason.TargetingMatch,
+          reason: StandardResolutionReasons.TARGETING_MATCH,
           value: true,
           variant: 'scoped',
-          metadata: {
-            context: {
-              targetingKey: 'user',
-            },
-          },
+          metadata: TEST_FLAG_METADATA,
         } satisfies EvaluationSuccessResponse);
       });
     });
@@ -281,22 +269,18 @@ describe('OFREPApi', () => {
         }
 
         expect(result.value).toEqual({
+          metadata: TEST_FLAG_SET_METADATA,
           flags: [
             {
               key: 'bool-flag',
-              metadata: { context: { key1: 'value1', targetingKey: 'user-1' } },
+              metadata: TEST_FLAG_METADATA,
               value: true,
-              reason: EvaluationSuccessReason.Static,
+              reason: StandardResolutionReasons.STATIC,
               variant: 'variantA',
             },
             {
               key: 'object-flag',
-              metadata: {
-                context: {
-                  key1: 'value1',
-                  targetingKey: 'user-1',
-                },
-              },
+              metadata: TEST_FLAG_METADATA,
               value: {
                 complex: true,
                 nested: {
@@ -320,7 +304,7 @@ describe('OFREPApi', () => {
         }
 
         expect(result.value).toEqual({
-          errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+          errorCode: ErrorCode.TARGETING_KEY_MISSING,
         } satisfies BulkEvaluationFailureResponse);
       });
 
@@ -350,6 +334,7 @@ describe('OFREPApi', () => {
         const result = await api.postBulkEvaluateFlags();
         expect(result.httpStatus).toEqual(200);
         expect(result.value).toEqual({
+          metadata: TEST_FLAG_SET_METADATA,
           flags: [
             {
               key: 'other-flag',
@@ -363,17 +348,18 @@ describe('OFREPApi', () => {
         const result = await api.postBulkEvaluateFlags();
         expect(result.httpStatus).toEqual(200);
         expect(result.value).toEqual({
+          metadata: TEST_FLAG_SET_METADATA,
           flags: [
             {
               key: 'bool-flag',
-              metadata: {},
+              metadata: TEST_FLAG_METADATA,
               value: true,
-              reason: EvaluationSuccessReason.Static,
+              reason: StandardResolutionReasons.STATIC,
               variant: 'variantA',
             },
             {
               key: 'object-flag',
-              metadata: {},
+              metadata: TEST_FLAG_METADATA,
               value: {
                 complex: true,
                 nested: {

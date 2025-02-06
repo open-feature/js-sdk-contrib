@@ -1,12 +1,7 @@
 import { http, HttpResponse, StrictResponse } from 'msw';
-import {
-  BulkEvaluationResponse,
-  EvaluationFailureErrorCode,
-  EvaluationFailureResponse,
-  EvaluationRequest,
-  EvaluationResponse,
-  EvaluationSuccessReason,
-} from '../lib';
+import { BulkEvaluationResponse, EvaluationFailureResponse, EvaluationRequest, EvaluationResponse } from '../lib';
+import { TEST_FLAG_METADATA, TEST_FLAG_SET_METADATA } from './test-constants';
+import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 
 export const handlers = [
   http.post<{ key: string }, EvaluationRequest, EvaluationResponse>(
@@ -36,30 +31,45 @@ export const handlers = [
       }
 
       if (errors?.['generic400']) {
-        throw HttpResponse.text(undefined, { status: 400 });
+        throw HttpResponse.json({ metadata: TEST_FLAG_METADATA }, { status: 400 });
       }
 
       if (errors?.['401'] || expectedAuthHeader !== authHeader) {
-        throw HttpResponse.text(undefined, { status: 401 });
+        throw HttpResponse.json({ metadata: TEST_FLAG_METADATA }, { status: 401 });
       }
 
       if (errors?.['403']) {
-        throw HttpResponse.text(undefined, { status: 403 });
+        throw HttpResponse.json({ metadata: TEST_FLAG_METADATA }, { status: 403 });
+      }
+
+      if (errors?.['metadata404']) {
+        throw HttpResponse.json(
+          {
+            key: info.params.key,
+            errorCode: ErrorCode.FLAG_NOT_FOUND,
+            metadata: TEST_FLAG_METADATA,
+          },
+          { status: 404 },
+        );
       }
 
       if (errors?.['429'] === true) {
-        throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': '2000' } });
+        throw HttpResponse.json({ metadata: TEST_FLAG_METADATA }, { status: 429, headers: { 'Retry-After': '2000' } });
       }
 
       if (typeof errors?.['429'] === 'string') {
-        throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': errors?.['429'] } });
+        throw HttpResponse.json(
+          { metadata: TEST_FLAG_METADATA },
+          { status: 429, headers: { 'Retry-After': errors?.['429'] } },
+        );
       }
 
       if (errors?.['parseError']) {
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.ParseError,
+            errorCode: ErrorCode.PARSE_ERROR,
+            metadata: TEST_FLAG_METADATA,
           },
           { status: 400 },
         );
@@ -69,7 +79,8 @@ export const handlers = [
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+            errorCode: ErrorCode.TARGETING_KEY_MISSING,
+            metadata: TEST_FLAG_METADATA,
           },
           { status: 400 },
         );
@@ -79,7 +90,8 @@ export const handlers = [
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.InvalidContext,
+            errorCode: ErrorCode.INVALID_CONTEXT,
+            metadata: TEST_FLAG_METADATA,
           },
           { status: 400 },
         );
@@ -89,7 +101,8 @@ export const handlers = [
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.FlagNotFound,
+            errorCode: ErrorCode.FLAG_NOT_FOUND,
+            metadata: TEST_FLAG_METADATA,
           },
           { status: 404 },
         );
@@ -99,7 +112,8 @@ export const handlers = [
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.General,
+            errorCode: ErrorCode.GENERAL,
+            metadata: TEST_FLAG_METADATA,
           },
           { status: 400 },
         );
@@ -110,11 +124,11 @@ export const handlers = [
       return HttpResponse.json<EvaluationResponse>({
         key: info.params.key,
         reason: requestBody.context?.targetingKey
-          ? EvaluationSuccessReason.TargetingMatch
-          : EvaluationSuccessReason.Static,
+          ? StandardResolutionReasons.TARGETING_MATCH
+          : StandardResolutionReasons.STATIC,
         variant: scopeValue ? 'scoped' : 'default',
         value: true,
-        metadata: { context: requestBody.context },
+        metadata: TEST_FLAG_METADATA,
       });
     },
   ),
@@ -165,7 +179,7 @@ export const handlers = [
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.ParseError,
+            errorCode: ErrorCode.PARSE_ERROR,
           },
           { status: 400 },
         );
@@ -175,7 +189,7 @@ export const handlers = [
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+            errorCode: ErrorCode.TARGETING_KEY_MISSING,
           },
           { status: 400 },
         );
@@ -185,7 +199,7 @@ export const handlers = [
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.InvalidContext,
+            errorCode: ErrorCode.INVALID_CONTEXT,
           },
           { status: 400 },
         );
@@ -195,7 +209,7 @@ export const handlers = [
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.FlagNotFound,
+            errorCode: ErrorCode.FLAG_NOT_FOUND,
           },
           { status: 404 },
         );
@@ -205,7 +219,7 @@ export const handlers = [
         return HttpResponse.json<EvaluationFailureResponse>(
           {
             key: info.params.key,
-            errorCode: EvaluationFailureErrorCode.General,
+            errorCode: ErrorCode.GENERAL,
           },
           { status: 400 },
         );
@@ -218,43 +232,43 @@ export const handlers = [
               {
                 key: 'bool-flag',
                 value: true,
-                metadata: { context: requestBody.context },
+                metadata: TEST_FLAG_METADATA,
                 variant: 'variantA',
-                reason: EvaluationSuccessReason.Static,
+                reason: StandardResolutionReasons.STATIC,
               },
               {
                 key: 'parse-error',
-                errorCode: EvaluationFailureErrorCode.ParseError,
+                errorCode: ErrorCode.PARSE_ERROR,
                 errorDetails: 'custom error details',
               },
               {
                 key: 'flag-not-found',
-                errorCode: EvaluationFailureErrorCode.FlagNotFound,
+                errorCode: ErrorCode.FLAG_NOT_FOUND,
                 errorDetails: 'custom error details',
               },
               {
                 key: 'targeting-key-missing',
-                errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+                errorCode: ErrorCode.TARGETING_KEY_MISSING,
                 errorDetails: 'custom error details',
               },
               {
                 key: 'targeting-key-missing',
-                errorCode: EvaluationFailureErrorCode.TargetingKeyMissing,
+                errorCode: ErrorCode.TARGETING_KEY_MISSING,
                 errorDetails: 'custom error details',
               },
               {
                 key: 'invalid-context',
-                errorCode: EvaluationFailureErrorCode.InvalidContext,
+                errorCode: ErrorCode.INVALID_CONTEXT,
                 errorDetails: 'custom error details',
               },
               {
                 key: 'general-error',
-                errorCode: EvaluationFailureErrorCode.General,
+                errorCode: ErrorCode.GENERAL,
                 errorDetails: 'custom error details',
               },
               {
                 key: 'unknown-error',
-                errorCode: 'UNKNOWN_ERROR' as EvaluationFailureErrorCode,
+                errorCode: 'UNKNOWN_ERROR' as ErrorCode,
                 errorDetails: 'custom error details',
               },
             ],
@@ -272,14 +286,15 @@ export const handlers = [
               {
                 key: 'object-flag',
                 value: { complex: true, nested: { also: true }, refreshed: true },
-                metadata: { context: requestBody.context },
+                metadata: TEST_FLAG_METADATA,
               },
               {
                 key: 'object-flag-2',
                 value: { complex: true, nested: { also: true } },
-                metadata: { context: requestBody.context },
+                metadata: TEST_FLAG_METADATA,
               },
             ],
+            metadata: TEST_FLAG_SET_METADATA,
           },
           { headers: { etag: '1234' } },
         );
@@ -292,14 +307,14 @@ export const handlers = [
               {
                 key: 'bool-flag',
                 value: true,
-                metadata: { context: requestBody.context },
+                metadata: TEST_FLAG_METADATA,
                 variant: 'variantA',
-                reason: EvaluationSuccessReason.Static,
+                reason: StandardResolutionReasons.STATIC,
               },
               {
                 key: 'object-flag',
                 value: { complex: true, nested: { also: true }, contextChange: true },
-                metadata: { context: requestBody.context },
+                metadata: TEST_FLAG_METADATA,
               },
             ],
           },
@@ -315,6 +330,7 @@ export const handlers = [
 
       return HttpResponse.json<BulkEvaluationResponse>(
         {
+          metadata: TEST_FLAG_SET_METADATA,
           flags: scopeValue
             ? [
                 {
@@ -326,14 +342,14 @@ export const handlers = [
                 {
                   key: 'bool-flag',
                   value: true,
-                  metadata: { context: requestBody.context },
+                  metadata: TEST_FLAG_METADATA,
                   variant: 'variantA',
-                  reason: EvaluationSuccessReason.Static,
+                  reason: StandardResolutionReasons.STATIC,
                 },
                 {
                   key: 'object-flag',
                   value: { complex: true, nested: { also: true } },
-                  metadata: { context: requestBody.context },
+                  metadata: TEST_FLAG_METADATA,
                 },
               ],
         },

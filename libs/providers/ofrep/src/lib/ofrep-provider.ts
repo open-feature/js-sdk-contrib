@@ -84,21 +84,22 @@ export class OFREPProvider implements Provider {
 
     try {
       const result = await this.ofrepApi.postEvaluateFlag(flagKey, { context });
-      return this.toResolutionDetails(result, defaultValue);
+      return this.responseToResolutionDetails(result, defaultValue);
     } catch (error) {
-      if (error instanceof OFREPApiTooManyRequestsError) {
-        this.notBefore = error.retryAfterDate;
-      }
-      throw error;
+      return handleEvaluationError(error as Error, defaultValue, (resultOrError) => {
+        if (resultOrError instanceof OFREPApiTooManyRequestsError) {
+          this.notBefore = resultOrError.retryAfterDate;
+        }
+      });
     }
   }
 
-  private toResolutionDetails<T extends EvaluationFlagValue>(
+  private responseToResolutionDetails<T extends EvaluationFlagValue>(
     result: OFREPApiEvaluationResult,
     defaultValue: T,
   ): ResolutionDetails<T> {
     if (result.httpStatus !== 200) {
-      handleEvaluationError(result);
+      return handleEvaluationError(result, defaultValue);
     }
 
     if (typeof result.value.value !== typeof defaultValue) {
