@@ -56,18 +56,31 @@ export class GoffApiController {
    * @param defaultValue
    * @param evaluationContext
    * @param expectedType
+   * @param exporterMetadata
    */
   async evaluate<T>(
     flagKey: string,
     defaultValue: T,
     evaluationContext: EvaluationContext,
     expectedType: string,
+    exporterMetadata: Record<string, ExporterMetadataValue> = {},
   ): Promise<{ resolutionDetails: ResolutionDetails<T>; isCacheable: boolean }> {
     const goffEvaluationContext = transformContext(evaluationContext);
 
     // build URL to access to the endpoint
     const endpointURL = new URL(this.endpoint);
     endpointURL.pathname = `v1/feature/${flagKey}/eval`;
+
+    if (goffEvaluationContext.custom === undefined) {
+      goffEvaluationContext.custom = {};
+    }
+    goffEvaluationContext.custom['gofeatureflag'] = {
+      exporterMetadata: {
+        openfeature: true,
+        provider: 'js',
+        ...exporterMetadata,
+      },
+    };
 
     const request: GoFeatureFlagProxyRequest<T> = {
       evaluationContext: goffEvaluationContext,
