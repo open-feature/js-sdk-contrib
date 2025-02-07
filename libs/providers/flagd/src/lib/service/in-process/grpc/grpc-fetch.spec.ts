@@ -44,7 +44,7 @@ const serviceMock: FlagSyncServiceClient = {
 } as unknown as FlagSyncServiceClient;
 
 describe('grpc fetch', () => {
-  const cfg: Config = { host: 'localhost', port: 8000, tls: false, socketPath: '' };
+  const cfg: Config = { host: 'localhost', port: 8000, tls: false, socketPath: '', defaultAuthority: 'test-authority' };
 
   afterEach(() => {
     jest.clearAllMocks();

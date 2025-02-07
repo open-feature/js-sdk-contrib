@@ -7,7 +7,7 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/core": "<=1.6.0"
+    "@openfeature/core": "^1.6.0"
   },
   "dependencies": {
     "configcat-common": "9.3.1",
