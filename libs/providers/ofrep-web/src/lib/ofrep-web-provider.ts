@@ -299,7 +299,7 @@ export class OFREPWebProvider implements Provider {
     if (typeof resolved.value !== type) {
       return {
         value: defaultValue,
-        flagMetadata: this._flagSetMetadataCache,
+        flagMetadata: resolved.flagMetadata,
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.TYPE_MISMATCH,
         errorMessage: ErrorMessageMap[ErrorCode.TYPE_MISMATCH],
