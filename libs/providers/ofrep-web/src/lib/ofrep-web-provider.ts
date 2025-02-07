@@ -129,7 +129,6 @@ export class OFREPWebProvider implements Provider {
   ): ResolutionDetails<T> {
     return this._resolve(flagKey, 'object', defaultValue);
   }
-  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   /**
    * onContextChange is called when the context changes, it will re-evaluate the flags with the new context
@@ -204,10 +203,6 @@ export class OFREPWebProvider implements Provider {
       const bulkSuccessResp = response.value;
       const newCache: FlagCache = {};
 
-      if ('metadata' in bulkSuccessResp && typeof bulkSuccessResp.flags === 'object') {
-        this._flagSetMetadataCache = bulkSuccessResp.metadata || {};
-      }
-
       if ('flags' in bulkSuccessResp && typeof bulkSuccessResp.flags === 'object') {
         bulkSuccessResp.flags?.forEach((evalResp: EvaluationResponse) => {
           if (isEvaluationFailureResponse(evalResp)) {
@@ -230,6 +225,7 @@ export class OFREPWebProvider implements Provider {
         const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
         this._flagCache = newCache;
         this._etag = response.httpResponse?.headers.get('etag');
+        this._flagSetMetadataCache = typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {};
         return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
       } else {
         throw new Error('No flags in OFREP bulk evaluation response');
