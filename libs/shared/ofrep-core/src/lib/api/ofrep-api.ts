@@ -1,4 +1,4 @@
-import { FlagMetadata, ResolutionDetails } from '@openfeature/core';
+import { ErrorCode, FlagMetadata, ResolutionDetails, StandardResolutionReasons } from '@openfeature/core';
 import {
   EvaluationFlagValue,
   EvaluationRequest,
@@ -163,12 +163,13 @@ export function handleEvaluationError<T>(
   callback?.(resultOrError);
 
   if ('value' in resultOrError) {
-    const code = resultOrError.value.errorCode;
+    const code = resultOrError.value.errorCode || ErrorCode.GENERAL;
     const message = resultOrError.value.errorCode;
     const metadata = resultOrError.value.metadata;
 
     const resolution: ResolutionDetails<T> = {
       value: defaultValue,
+      reason: StandardResolutionReasons.ERROR,
       flagMetadata: metadata,
       errorCode: code,
       errorMessage: message,

@@ -7,14 +7,6 @@ export interface EvaluationRequest {
   context?: EvaluationContext;
 }
 
-// export enum EvaluationSuccessReason {
-//   Static = 'STATIC',
-//   TargetingMatch = 'TARGETING_MATCH',
-//   Split = 'SPLIT',
-//   Disabled = 'DISABLED',
-//   Unknown = 'UNKNOWN',
-// }
-
 export type EvaluationFlagValue = FlagValue;
 
 export interface MetadataResponse {

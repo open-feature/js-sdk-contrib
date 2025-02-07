@@ -8,12 +8,13 @@ import {
   toResolutionDetails,
 } from '@openfeature/ofrep-core';
 import {
+  ErrorCode,
   EvaluationContext,
   GeneralError,
   JsonValue,
   Provider,
   ResolutionDetails,
-  TypeMismatchError,
+  StandardResolutionReasons,
 } from '@openfeature/server-sdk';
 
 export type OFREPProviderOptions = OFREPProviderBaseOptions;
@@ -103,7 +104,13 @@ export class OFREPProvider implements Provider {
     }
 
     if (typeof result.value.value !== typeof defaultValue) {
-      throw new TypeMismatchError(`Expected flag type ${typeof defaultValue} but got ${typeof result.value.value}`);
+      return {
+        value: defaultValue,
+        reason: StandardResolutionReasons.ERROR,
+        flagMetadata: result.value.metadata,
+        errorCode: ErrorCode.TYPE_MISMATCH,
+        errorMessage: 'Flag is not of expected type',
+      };
     }
 
     return toResolutionDetails(result.value);

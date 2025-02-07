@@ -7,7 +7,7 @@ import {
 } from '@openfeature/ofrep-core';
 import { ErrorCode, GeneralError, TypeMismatchError } from '@openfeature/server-sdk';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { TEST_FLAG_METADATA } from 'libs/shared/ofrep-core/src/test/test-constants';
+import { TEST_FLAG_METADATA } from '../../../../shared/ofrep-core/src/test/test-constants';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
 
@@ -130,8 +130,10 @@ describe('OFREPProvider should', () => {
     expect(flag.flagMetadata).toEqual(TEST_FLAG_METADATA);
   });
 
-  it('throw TypeMismatchError if response type is different rom requested one', async () => {
-    await expect(provider.resolveNumberEvaluation('my-flag', 42, {})).rejects.toThrow(TypeMismatchError);
+  it('return TypeMismatchError if response type is different rom requested one', async () => {
+    const flag = await provider.resolveNumberEvaluation('my-flag', 42, {});
+    expect(flag.errorCode).toEqual(ErrorCode.TYPE_MISMATCH);
+    expect(flag.flagMetadata).toEqual(TEST_FLAG_METADATA);
   });
 
   it('send auth header from headerFactory', async () => {

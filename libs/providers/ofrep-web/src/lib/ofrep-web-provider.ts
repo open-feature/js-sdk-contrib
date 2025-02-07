@@ -29,7 +29,7 @@ import { FlagCache, MetadataCache } from './model/in-memory-cache';
 import { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
 import { isResolutionError } from './model/resolution-error';
 
-const ERROR_TO_MESSAGE: { [key in ErrorCode]: string } = {
+const ErrorMessageMap: { [key in ErrorCode]: string } = {
   [ErrorCode.FLAG_NOT_FOUND]: 'Flag was not found',
   [ErrorCode.GENERAL]: 'General error',
   [ErrorCode.INVALID_CONTEXT]: 'Context is invalid or could be parsed',
@@ -37,7 +37,7 @@ const ERROR_TO_MESSAGE: { [key in ErrorCode]: string } = {
   [ErrorCode.PROVIDER_FATAL]: 'Provider is in a fatal error state',
   [ErrorCode.PROVIDER_NOT_READY]: 'Provider is not yet ready',
   [ErrorCode.TARGETING_KEY_MISSING]: 'Targeting key is missing',
-  [ErrorCode.TYPE_MISMATCH]: 'Flag is not of expect type',
+  [ErrorCode.TYPE_MISMATCH]: 'Flag is not of expected type',
 };
 
 export class OFREPWebProvider implements Provider {
@@ -203,22 +203,23 @@ export class OFREPWebProvider implements Provider {
       const bulkSuccessResp = response.value;
       const newCache: FlagCache = {};
 
-      if ('flags' in bulkSuccessResp && typeof bulkSuccessResp.flags === 'object') {
-        bulkSuccessResp.flags?.forEach((evalResp: EvaluationResponse) => {
+      if ('flags' in bulkSuccessResp && Array.isArray(bulkSuccessResp.flags)) {
+        bulkSuccessResp.flags.forEach((evalResp: EvaluationResponse) => {
           if (isEvaluationFailureResponse(evalResp)) {
             newCache[evalResp.key] = {
+              reason: StandardResolutionReasons.ERROR,
+              flagMetadata: evalResp.metadata,
               errorCode: evalResp.errorCode,
               errorDetails: evalResp.errorDetails,
-              reason: StandardResolutionReasons.ERROR,
             };
           }
 
           if (isEvaluationSuccessResponse(evalResp) && evalResp.key) {
             newCache[evalResp.key] = {
               value: evalResp.value,
-              flagMetadata: evalResp.metadata,
-              reason: evalResp.reason,
               variant: evalResp.variant,
+              reason: evalResp.reason,
+              flagMetadata: evalResp.metadata,
             };
           }
         });
@@ -281,9 +282,9 @@ export class OFREPWebProvider implements Provider {
       return {
         value: defaultValue,
         flagMetadata: this._flagSetMetadataCache,
-        reason: 'ERROR',
+        reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.FLAG_NOT_FOUND,
-        errorMessage: ERROR_TO_MESSAGE[ErrorCode.FLAG_NOT_FOUND],
+        errorMessage: ErrorMessageMap[ErrorCode.FLAG_NOT_FOUND],
       };
     }
 
@@ -291,7 +292,7 @@ export class OFREPWebProvider implements Provider {
       return {
         ...resolved,
         value: defaultValue,
-        errorMessage: ERROR_TO_MESSAGE[resolved.errorCode],
+        errorMessage: ErrorMessageMap[resolved.errorCode],
       };
     }
 
@@ -299,9 +300,9 @@ export class OFREPWebProvider implements Provider {
       return {
         value: defaultValue,
         flagMetadata: this._flagSetMetadataCache,
-        reason: 'ERROR',
+        reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.TYPE_MISMATCH,
-        errorMessage: ERROR_TO_MESSAGE[ErrorCode.TYPE_MISMATCH],
+        errorMessage: ErrorMessageMap[ErrorCode.TYPE_MISMATCH],
       };
     }
 

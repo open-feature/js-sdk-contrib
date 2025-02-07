@@ -4,7 +4,7 @@ import TestLogger from '../../test/test-logger';
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
 import { ClientProviderEvents, ClientProviderStatus, OpenFeature } from '@openfeature/web-sdk';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { TEST_FLAG_METADATA, TEST_FLAG_SET_METADATA } from 'libs/shared/ofrep-core/src/test/test-constants';
+import { TEST_FLAG_METADATA, TEST_FLAG_SET_METADATA } from '../../../../shared/ofrep-core/src/test/test-constants';
 
 describe('OFREPWebProvider', () => {
   beforeAll(() => server.listen());
@@ -190,9 +190,7 @@ describe('OFREPWebProvider', () => {
       flagKey,
       value: false,
       errorCode: 'PARSE_ERROR',
-      // TODO: there's a bug in the web SDK which calls `instantiateErrorByErrorCode` without a message, so our message is lost :(
-      // errorMessage: 'Flag or flag configuration could not be parsed',
-      errorMessage: '',
+      errorMessage: 'Flag or flag configuration could not be parsed',
       reason: 'ERROR',
       flagMetadata: {},
     });
