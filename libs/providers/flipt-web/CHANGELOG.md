@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.1...flipt-web-provider-v0.1.2) (2025-02-11)
+
+
+### 🐛 Bug Fixes
+
+* Removed incorrect string case format from the options.authentica… ([#1209](https://github.com/open-feature/js-sdk-contrib/issues/1209)) ([dbd2326](https://github.com/open-feature/js-sdk-contrib/commit/dbd23264e4d6408dd9d8b4bd62e0a2735daea1f7))
+
+
+### 🧹 Chore
+
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.1.1](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.0...flipt-web-provider-v0.1.1) (2024-12-02)
 
 
