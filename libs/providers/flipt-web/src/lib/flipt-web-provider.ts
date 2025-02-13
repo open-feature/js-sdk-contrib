@@ -47,19 +47,11 @@ export class FliptWebProvider implements Provider {
   }
 
   async initializeClient() {
-    let authentication = {};
-
-    if (this._options?.authentication && 'clientToken' in this._options.authentication) {
-      authentication = { client_token: this._options.authentication.clientToken };
-    } else if (this._options?.authentication && 'jwtToken' in this._options.authentication) {
-      authentication = { jwt_token: this._options.authentication.jwtToken };
-    }
-
     try {
       this._client = await FliptEvaluationClient.init(this._namespace || 'default', {
         url: this._options?.url || 'http://localhost:8080',
         fetcher: this._options?.fetcher,
-        authentication,
+        authentication: this._options?.authentication,
       });
     } catch (e) {
       throw new ProviderFatalError(getErrorMessage(e));

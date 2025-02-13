@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.5](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.4...go-feature-flag-provider-v0.7.5) (2025-02-07)
+
+
+### ✨ New Features
+
+* **go-feature-flag:** Support exporter metadata during evaluation ([#1186](https://github.com/open-feature/js-sdk-contrib/issues/1186)) ([0dfffdc](https://github.com/open-feature/js-sdk-contrib/commit/0dfffdc3167312b036034dd450b8b23b92d8e132))
+
 ## [0.7.4](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.3...go-feature-flag-provider-v0.7.4) (2025-01-16)
 
 
