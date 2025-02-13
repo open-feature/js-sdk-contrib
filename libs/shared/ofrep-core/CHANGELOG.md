@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.2.0...ofrep-core-v1.0.0) (2025-02-13)
+
+
+### ✨ New Features
+
+* **ofrep-core:** add abort timeout to fetch call ([#1200](https://github.com/open-feature/js-sdk-contrib/issues/1200)) ([d88c5fe](https://github.com/open-feature/js-sdk-contrib/commit/d88c5fe11f676da796f1ff2b02cb7637d8720e5e))
+* support metadata in errors in OFREP ([#1203](https://github.com/open-feature/js-sdk-contrib/issues/1203)) ([ce37b6a](https://github.com/open-feature/js-sdk-contrib/commit/ce37b6adcdc9fca0af386eece00c580542cf7b4b))
+
+
+### 🧹 Chore
+
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.1.5...ofrep-core-v0.2.0) (2024-07-11)
 
 
