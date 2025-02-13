@@ -3,6 +3,8 @@ import TestLogger from '../../test/test-logger';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
 import { ClientProviderEvents, ClientProviderStatus, OpenFeature } from '@openfeature/web-sdk';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { TEST_FLAG_METADATA, TEST_FLAG_SET_METADATA } from '../../../../shared/ofrep-core/src/test/test-constants';
 
 describe('OFREPWebProvider', () => {
   beforeAll(() => server.listen());
@@ -144,7 +146,7 @@ describe('OFREPWebProvider', () => {
     expect(client.providerStatus).toBe(ClientProviderStatus.ERROR);
   });
 
-  it('should return a FLAG_NOT_FOUND error if the flag does not exist', async () => {
+  it('should return a FLAG_NOT_FOUND error and flag set metadata if the flag does not exist', async () => {
     const providerName = expect.getState().currentTestName || 'test-provider';
     const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
     await OpenFeature.setContext(defaultContext);
@@ -154,6 +156,7 @@ describe('OFREPWebProvider', () => {
     const flag = client.getBooleanDetails('non-existent-flag', false);
     expect(flag.errorCode).toBe('FLAG_NOT_FOUND');
     expect(flag.value).toBe(false);
+    expect(flag.flagMetadata).toEqual(TEST_FLAG_SET_METADATA);
   });
 
   it('should return EvaluationDetails if the flag exists', async () => {
@@ -169,7 +172,7 @@ describe('OFREPWebProvider', () => {
       flagKey,
       value: true,
       variant: 'variantA',
-      flagMetadata: { context: defaultContext },
+      flagMetadata: TEST_FLAG_METADATA,
       reason: 'STATIC',
     });
   });
@@ -187,7 +190,7 @@ describe('OFREPWebProvider', () => {
       flagKey,
       value: false,
       errorCode: 'PARSE_ERROR',
-      errorMessage: 'parse error for flag key parse-error: custom error details',
+      errorMessage: 'Flag or flag configuration could not be parsed',
       reason: 'ERROR',
       flagMetadata: {},
     });

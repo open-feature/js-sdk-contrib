@@ -1,4 +1,4 @@
-import type { EvaluationContext, FlagValue } from '@openfeature/core';
+import type { ErrorCode, EvaluationContext, FlagMetadata, FlagValue, ResolutionReason } from '@openfeature/core';
 
 export interface EvaluationRequest {
   /**
@@ -7,17 +7,16 @@ export interface EvaluationRequest {
   context?: EvaluationContext;
 }
 
-export enum EvaluationSuccessReason {
-  Static = 'STATIC',
-  TargetingMatch = 'TARGETING_MATCH',
-  Split = 'SPLIT',
-  Disabled = 'DISABLED',
-  Unknown = 'UNKNOWN',
-}
-
 export type EvaluationFlagValue = FlagValue;
 
-export interface EvaluationSuccessResponse {
+export interface MetadataResponse {
+  /**
+   * Arbitrary metadata for the flag, useful for telemetry and documentary purposes
+   */
+  metadata?: FlagMetadata;
+}
+
+export interface EvaluationSuccessResponse extends MetadataResponse {
   /**
    * Feature flag key
    */
@@ -25,15 +24,11 @@ export interface EvaluationSuccessResponse {
   /**
    * An OpenFeature reason for the evaluation
    */
-  reason?: EvaluationSuccessReason;
+  reason?: ResolutionReason;
   /**
    * Variant of the evaluated flag value
    */
   variant?: string;
-  /**
-   * Arbitrary metadata supporting flag evaluation
-   */
-  metadata?: object;
   /**
    * Flag evaluation result
    */
@@ -48,15 +43,7 @@ export function isEvaluationSuccessResponse(response: unknown): response is Eval
   return 'value' in response;
 }
 
-export enum EvaluationFailureErrorCode {
-  ParseError = 'PARSE_ERROR',
-  TargetingKeyMissing = 'TARGETING_KEY_MISSING',
-  InvalidContext = 'INVALID_CONTEXT',
-  General = 'GENERAL',
-  FlagNotFound = 'FLAG_NOT_FOUND',
-}
-
-export interface EvaluationFailureResponse {
+export interface EvaluationFailureResponse extends MetadataResponse {
   /**
    * Feature flag key
    */
@@ -64,7 +51,7 @@ export interface EvaluationFailureResponse {
   /**
    * OpenFeature compatible error code. See https://openfeature.dev/specification/types#error-code
    */
-  errorCode: EvaluationFailureErrorCode;
+  errorCode: ErrorCode;
   /**
    * An error description for logging or other needs
    */

@@ -1,21 +1,15 @@
 import { OFREPProvider, OFREPProviderOptions } from './ofrep-provider';
-
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
 import {
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
   OFREPApiUnexpectedResponseError,
   OFREPForbiddenError,
 } from '@openfeature/ofrep-core';
-import {
-  FlagNotFoundError,
-  GeneralError,
-  InvalidContextError,
-  ParseError,
-  TargetingKeyMissingError,
-  TypeMismatchError,
-} from '@openfeature/server-sdk';
+import { ErrorCode, GeneralError, TypeMismatchError } from '@openfeature/server-sdk';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { TEST_FLAG_METADATA } from '../../../../shared/ofrep-core/src/test/test-constants';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
 
 describe('OFREPProvider should', () => {
   let provider: OFREPProvider;
@@ -106,45 +100,40 @@ describe('OFREPProvider should', () => {
     // Now the time is over and the provider should call the API again
     jest.setSystemTime(new Date('2018-01-27T00:33:21.000Z'));
     expect(await fastProvider.resolveBooleanEvaluation('my-flag', false, {})).toEqual({
-      flagMetadata: {},
+      flagMetadata: TEST_FLAG_METADATA,
       reason: 'STATIC',
       value: true,
       variant: 'default',
     });
   });
 
-  it('map EvaluationFailureErrorCode.ParseError from response to ParseError', async () => {
-    await expect(provider.resolveBooleanEvaluation('my-flag', false, { errors: { parseError: true } })).rejects.toThrow(
-      ParseError,
-    );
+  it.each([
+    { errorIndex: 'parseError', errCode: ErrorCode.PARSE_ERROR },
+    { errorIndex: 'targetingMissing', errCode: ErrorCode.TARGETING_KEY_MISSING },
+    { errorIndex: 'invalidContext', errCode: ErrorCode.INVALID_CONTEXT },
+    { errorIndex: 'notFound', errCode: ErrorCode.FLAG_NOT_FOUND },
+    { errorIndex: 'general', errCode: ErrorCode.GENERAL },
+  ])('maps error index to code', async (args) => {
+    const resolved = await provider.resolveBooleanEvaluation('my-flag', false, { errors: { [args.errorIndex]: true } });
+    expect(resolved.errorCode).toEqual(args.errCode);
   });
 
-  it('map EvaluationFailureErrorCode.TargetingKeyMissingError from response to TargetingKeyMissingError', async () => {
-    await expect(
-      provider.resolveBooleanEvaluation('my-flag', false, { errors: { targetingMissing: true } }),
-    ).rejects.toThrow(TargetingKeyMissingError);
+  it('should return metadata on error body', async () => {
+    const flag = await provider.resolveBooleanEvaluation('my-flag', true, { errors: { notFound: true } });
+    expect(flag.errorCode).toEqual(ErrorCode.FLAG_NOT_FOUND);
+    expect(flag.flagMetadata).toEqual(TEST_FLAG_METADATA);
   });
 
-  it('map EvaluationFailureErrorCode.InvalidContext from response to InvalidContextError', async () => {
-    await expect(
-      provider.resolveBooleanEvaluation('my-flag', false, { errors: { invalidContext: true } }),
-    ).rejects.toThrow(InvalidContextError);
+  it('should return metadata on http error', async () => {
+    const flag = await provider.resolveBooleanEvaluation('my-flag', true, { errors: { metadata404: true } });
+    expect(flag.errorCode).toEqual(ErrorCode.FLAG_NOT_FOUND);
+    expect(flag.flagMetadata).toEqual(TEST_FLAG_METADATA);
   });
 
-  it('map EvaluationFailureErrorCode.FlagNotFound from response to FlagNotFoundError', async () => {
-    await expect(provider.resolveBooleanEvaluation('my-flag', false, { errors: { notFound: true } })).rejects.toThrow(
-      FlagNotFoundError,
-    );
-  });
-
-  it('map EvaluationFailureErrorCode.General from response to General', async () => {
-    await expect(provider.resolveBooleanEvaluation('my-flag', false, { errors: { general: true } })).rejects.toThrow(
-      GeneralError,
-    );
-  });
-
-  it('throw TypeMismatchError if response type is different rom requested one', async () => {
-    await expect(provider.resolveNumberEvaluation('my-flag', 42, {})).rejects.toThrow(TypeMismatchError);
+  it('return TypeMismatchError if response type is different rom requested one', async () => {
+    const flag = await provider.resolveNumberEvaluation('my-flag', 42, {});
+    expect(flag.errorCode).toEqual(ErrorCode.TYPE_MISMATCH);
+    expect(flag.flagMetadata).toEqual(TEST_FLAG_METADATA);
   });
 
   it('send auth header from headerFactory', async () => {
@@ -186,6 +175,11 @@ describe('OFREPProvider should', () => {
       targetingKey: 'user1',
       customValue: 'custom',
     });
-    expect(flag).toEqual({ flagMetadata: {}, reason: 'TARGETING_MATCH', value: true, variant: 'default' });
+    expect(flag).toEqual({
+      flagMetadata: TEST_FLAG_METADATA,
+      reason: 'TARGETING_MATCH',
+      value: true,
+      variant: 'default',
+    });
   });
 });
