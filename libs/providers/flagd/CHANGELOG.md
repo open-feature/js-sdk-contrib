@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.3...flagd-provider-v0.13.4) (2025-02-13)
+
+
+### 🧹 Chore
+
+* **deps:** update libs/providers/flagd/spec digest to 95fe981 ([#1205](https://github.com/open-feature/js-sdk-contrib/issues/1205)) ([7af11c3](https://github.com/open-feature/js-sdk-contrib/commit/7af11c3bd46f52b89bd9244f7b0b327e2e4bde18))
+
 ## [0.13.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.2...flagd-provider-v0.13.3) (2025-02-07)
 
 
