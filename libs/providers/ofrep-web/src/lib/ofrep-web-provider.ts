@@ -14,6 +14,7 @@ import {
   ErrorCode,
   EvaluationContext,
   FlagValue,
+  GeneralError,
   Hook,
   JsonValue,
   Logger,
@@ -197,7 +198,7 @@ export class OFREPWebProvider implements Provider {
       }
 
       if (response.httpStatus !== 200) {
-        throw new Error(`Failed OFREP bulk evaluation request, status: ${response.httpStatus}`);
+        throw new GeneralError(`Failed OFREP bulk evaluation request, status: ${response.httpStatus}`);
       }
 
       const bulkSuccessResp = response.value;
