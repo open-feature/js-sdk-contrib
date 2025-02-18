@@ -8,17 +8,17 @@ import {
   Paradigm,
   ProviderNotReadyError,
   TypeMismatchError,
-  FlagNotFoundError,
   ParseError,
 } from '@openfeature/server-sdk';
 import {
   isType,
+  parseError,
   PrimitiveType,
   PrimitiveTypeName,
   toResolutionDetails,
   transformContext,
 } from '@openfeature/config-cat-core';
-import { PollingMode } from 'configcat-common';
+import { PollingMode, SettingValue } from 'configcat-common';
 import { IConfigCatClient, getClient, IConfig, OptionsForPollingMode } from 'configcat-node';
 
 export class ConfigCatProvider implements Provider {
@@ -88,7 +88,7 @@ export class ConfigCatProvider implements Provider {
     defaultValue: boolean,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
-    return this.evaluate(flagKey, 'boolean', context);
+    return this.evaluate(flagKey, 'boolean', defaultValue, context);
   }
 
   public async resolveStringEvaluation(
@@ -96,7 +96,7 @@ export class ConfigCatProvider implements Provider {
     defaultValue: string,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
-    return this.evaluate(flagKey, 'string', context);
+    return this.evaluate(flagKey, 'string', defaultValue, context);
   }
 
   public async resolveNumberEvaluation(
@@ -104,7 +104,7 @@ export class ConfigCatProvider implements Provider {
     defaultValue: number,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
-    return this.evaluate(flagKey, 'number', context);
+    return this.evaluate(flagKey, 'number', defaultValue, context);
   }
 
   public async resolveObjectEvaluation<U extends JsonValue>(
@@ -112,22 +112,32 @@ export class ConfigCatProvider implements Provider {
     defaultValue: U,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
-    const objectValue = await this.evaluate(flagKey, 'object', context);
+    const objectValue = await this.evaluate(flagKey, 'object', defaultValue, context);
     return objectValue as ResolutionDetails<U>;
   }
 
   protected async evaluate<T extends PrimitiveTypeName>(
     flagKey: string,
     flagType: T,
+    defaultValue: PrimitiveType<T>,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<PrimitiveType<T>>> {
     if (!this._client) {
       throw new ProviderNotReadyError('Provider is not initialized');
     }
 
+    // Make sure that the user-provided `defaultValue` is compatible with `flagType` as there is
+    // no guarantee that it actually is. (User may bypass type checking or may not use TypeScript at all.)
+    if (!isType(flagType, defaultValue)) {
+      throw new TypeMismatchError();
+    }
+
+    const configCatDefaultValue =
+      typeof flagType !== 'object' ? (defaultValue as SettingValue) : JSON.stringify(defaultValue);
+
     const { value, ...evaluationData } = await this._client.getValueDetailsAsync(
       flagKey,
-      undefined,
+      configCatDefaultValue,
       transformContext(context),
     );
 
@@ -136,25 +146,26 @@ export class ConfigCatProvider implements Provider {
       this.events.emit(ProviderEvents.Ready);
     }
 
-    if (typeof value === 'undefined') {
-      throw new FlagNotFoundError();
+    if (evaluationData.isDefaultValue) {
+      throw parseError(evaluationData.errorMessage);
     }
 
     if (flagType !== 'object') {
-      return toResolutionDetails(flagType, value, evaluationData);
-    }
-
-    if (!isType('string', value)) {
-      throw new TypeMismatchError();
+      // When `flagType` (more precisely, `configCatDefaultValue`) is boolean, string or number,
+      // ConfigCat SDK guarantees that the returned `value` is compatible with `PrimitiveType<T>`.
+      // See also: https://configcat.com/docs/sdk-reference/node/#setting-type-mapping
+      return toResolutionDetails(value as PrimitiveType<T>, evaluationData);
     }
 
     let json: JsonValue;
     try {
-      json = JSON.parse(value);
+      // In this case we can be sure that `value` is string since `configCatDefaultValue` is string,
+      // which means that ConfigCat SDK is guaranteed to return a string value.
+      json = JSON.parse(value as string);
     } catch (e) {
       throw new ParseError(`Unable to parse "${value}" as JSON`);
     }
 
-    return toResolutionDetails(flagType, json, evaluationData);
+    return toResolutionDetails(json as PrimitiveType<T>, evaluationData);
   }
 }
