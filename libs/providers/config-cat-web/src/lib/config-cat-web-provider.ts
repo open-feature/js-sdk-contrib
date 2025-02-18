@@ -18,7 +18,14 @@ import {
   toResolutionDetails,
   transformContext,
 } from '@openfeature/config-cat-core';
-import { getClient, IConfig, IConfigCatClient, OptionsForPollingMode, PollingMode, SettingValue } from 'configcat-js-ssr';
+import {
+  getClient,
+  IConfig,
+  IConfigCatClient,
+  OptionsForPollingMode,
+  PollingMode,
+  SettingValue,
+} from 'configcat-js-ssr';
 
 export class ConfigCatWebProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
@@ -128,9 +135,8 @@ export class ConfigCatWebProvider implements Provider {
       throw new TypeMismatchError();
     }
 
-    const configCatDefaultValue = typeof flagType !== 'object'
-      ? defaultValue as SettingValue
-      : JSON.stringify(defaultValue);
+    const configCatDefaultValue =
+      typeof flagType !== 'object' ? (defaultValue as SettingValue) : JSON.stringify(defaultValue);
 
     const { value, ...evaluationData } = this._client
       .snapshot()
