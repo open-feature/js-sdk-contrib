@@ -32,7 +32,7 @@ export function toResolutionDetails<T>(
 }
 
 export function parseError(errorMessage: string | undefined): OpenFeatureError {
-  // Detecting the error type by checking the error message is somewhat awkward
+  // Detecting the error type by checking the error message is awkward and fragile,
   // but ConfigCat SDK doesn't allow a better way at the moment.
   // However, there are plans to improve this situation, so let's revise this
   // as soon as ConfigCat SDK implements returning error codes.
@@ -44,7 +44,10 @@ export function parseError(errorMessage: string | undefined): OpenFeatureError {
     if (errorMessage.includes('the key was not found in config JSON')) {
       return new FlagNotFoundError();
     }
-    if (errorMessage.includes('The type of a setting must match the type of the specified default value')) {
+    if (
+      errorMessage.includes('The type of a setting must match the type of the specified default value') ||
+      /Setting value (?:is null|is undefined|'.*' is of an unsupported type)/.test(errorMessage)
+    ) {
       return new TypeMismatchError();
     }
   }

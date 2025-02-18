@@ -135,8 +135,7 @@ export class ConfigCatWebProvider implements Provider {
       throw new TypeMismatchError();
     }
 
-    const configCatDefaultValue =
-      typeof flagType !== 'object' ? (defaultValue as SettingValue) : JSON.stringify(defaultValue);
+    const configCatDefaultValue = flagType !== 'object' ? (defaultValue as SettingValue) : JSON.stringify(defaultValue);
 
     const { value, ...evaluationData } = this._client
       .snapshot()
