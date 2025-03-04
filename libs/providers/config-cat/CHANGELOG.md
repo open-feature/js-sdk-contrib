@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.3](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.7.2...config-cat-provider-v0.7.3) (2025-03-04)
+
+
+### 🐛 Bug Fixes
+
+* **config-cat:** Forward default value to underlying client ([#1214](https://github.com/open-feature/js-sdk-contrib/issues/1214)) ([9d14173](https://github.com/open-feature/js-sdk-contrib/commit/9d14173cf08da3030fc58fea8786b24bafd80403))
+
+
+### 🧹 Chore
+
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.7.2](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.7.1...config-cat-provider-v0.7.2) (2024-09-20)
 
 
