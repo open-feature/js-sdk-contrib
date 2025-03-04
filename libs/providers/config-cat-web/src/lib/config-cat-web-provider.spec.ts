@@ -172,8 +172,9 @@ describe('ConfigCatWebProvider', () => {
       expect(() => provider.resolveObjectEvaluation('jsonInvalid', {}, { targetingKey })).toThrow(ParseError);
     });
 
-    it('should throw TypeMismatchError if string is only a JSON primitive', () => {
-      expect(() => provider.resolveObjectEvaluation('jsonPrimitive', {}, { targetingKey })).toThrow(TypeMismatchError);
+    it('should return right value if key exists and value is only a JSON primitive', () => {
+      const value = provider.resolveObjectEvaluation('jsonPrimitive', {}, { targetingKey });
+      expect(value).toHaveProperty('value', JSON.parse(values.jsonPrimitive));
     });
   });
 });
