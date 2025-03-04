@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.3...config-cat-web-provider-v0.1.4) (2025-03-04)
+
+
+### 🐛 Bug Fixes
+
+* **config-cat:** Forward default value to underlying client ([#1214](https://github.com/open-feature/js-sdk-contrib/issues/1214)) ([9d14173](https://github.com/open-feature/js-sdk-contrib/commit/9d14173cf08da3030fc58fea8786b24bafd80403))
+
+
+### 🧹 Chore
+
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.2...config-cat-web-provider-v0.1.3) (2024-09-20)
 
 
