@@ -1,7 +1,6 @@
-import { SSMClient, SSMClientConfig } from '@aws-sdk/client-ssm';
+import { SSMClientConfig } from '@aws-sdk/client-ssm';
 import { AwsSsmProvider } from './aws-ssm-provider';
 import { StandardResolutionReasons } from '@openfeature/core';
-import { Cache } from './cache';
 
 const MOCK_SSM_CLIENT_CONFIG: SSMClientConfig = {
   region: 'us-east-1',

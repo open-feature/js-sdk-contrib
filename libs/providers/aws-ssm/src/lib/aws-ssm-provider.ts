@@ -3,10 +3,8 @@ import {
   Provider,
   JsonValue,
   ResolutionDetails,
-  Logger,
   StandardResolutionReasons,
 } from '@openfeature/server-sdk';
-import { GetParameterCommandInput, SSMClient, SSMClientConfig } from '@aws-sdk/client-ssm';
 import { AwsSsmProviderConfig } from './types';
 import { SSMService } from './ssm-service';
 import { Cache } from './cache';
