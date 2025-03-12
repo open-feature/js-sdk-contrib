@@ -2,6 +2,7 @@
   "name": "@openfeature/aws-ssm-provider",
   "version": "0.0.1",
   "dependencies": {
+    "@aws-sdk/client-ssm": "^3.759.0",
     "tslib": "^2.3.0"
   },
   "main": "./src/index.js",

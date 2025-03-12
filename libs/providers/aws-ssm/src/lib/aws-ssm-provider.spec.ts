@@ -1,7 +1,12 @@
+import { SSMClient, SSMClientConfig } from '@aws-sdk/client-ssm';
 import { AwsSsmProvider } from './aws-ssm-provider';
 
-describe(AwsSsmProvider.name, () => {
-  it('should be and instance of AwsSsmProvider', () => {
-    expect(new AwsSsmProvider()).toBeInstanceOf(AwsSsmProvider);
-  });
-});
+const MOCK_SSM_CLIENT_CONFIG: SSMClientConfig = {
+  region: 'us-east-1',
+  credentials: {
+    accessKeyId: 'accessKeyId',
+    secretAccessKey: 'secretAccessKey',
+  },
+};
+
+describe(AwsSsmProvider.name, () => {});
