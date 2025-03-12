@@ -8,8 +8,5 @@
   },
   "peerDependencies": {
     "@openfeature/core": "^1.6.0"
-  },
-  "dependencies": {
-    "msw": "^2.2.3"
   }
 }
