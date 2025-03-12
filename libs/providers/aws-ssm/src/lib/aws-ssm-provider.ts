@@ -9,6 +9,7 @@ import {
 import { GetParameterCommandInput, SSMClient, SSMClientConfig } from '@aws-sdk/client-ssm';
 import { AwsSsmProviderConfig } from './types';
 import { SSMService } from './ssm-service';
+import { Cache } from './cache';
 
 export class AwsSsmProvider implements Provider {
   metadata = {
@@ -18,9 +19,11 @@ export class AwsSsmProvider implements Provider {
   readonly runsOn = 'server';
   readonly service: SSMService;
   hooks = [];
+  cache: Cache;
 
   constructor(config: AwsSsmProviderConfig) {
     this.service = new SSMService(config.ssmClientConfig);
+    this.cache = new Cache(config.cacheOpts);
   }
 
   async resolveBooleanEvaluation(
@@ -28,8 +31,17 @@ export class AwsSsmProvider implements Provider {
     defaultValue: boolean,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
+    const cachedValue = this.cache.get(flagKey);
+    if (cachedValue) {
+      return {
+        value: cachedValue.value,
+        reason: StandardResolutionReasons.CACHED,
+      };
+    }
     try {
-      return await this.service.getBooleanValue(flagKey, defaultValue);
+      const res = await this.service.getBooleanValue(flagKey);
+      this.cache.set(flagKey, res);
+      return res;
     } catch (e) {
       return {
         value: defaultValue,
@@ -43,8 +55,17 @@ export class AwsSsmProvider implements Provider {
     defaultValue: string,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
+    const cachedValue = this.cache.get(flagKey);
+    if (cachedValue) {
+      return {
+        value: cachedValue.value,
+        reason: StandardResolutionReasons.CACHED,
+      };
+    }
     try {
-      return await this.service.getStringValue(flagKey);
+      const res = await this.service.getStringValue(flagKey);
+      this.cache.set(flagKey, res);
+      return res;
     } catch (e) {
       return {
         value: defaultValue,
@@ -53,19 +74,47 @@ export class AwsSsmProvider implements Provider {
     }
   }
 
-  resolveNumberEvaluation(
+  async resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
-    throw new Error('Method not implemented.');
+    const cachedValue = this.cache.get(flagKey);
+    if (cachedValue) {
+      return {
+        value: cachedValue.value,
+        reason: StandardResolutionReasons.CACHED,
+      };
+    }
+    try {
+      return await this.service.getNumberValue(flagKey);
+    } catch (e) {
+      return {
+        value: defaultValue,
+        reason: StandardResolutionReasons.DEFAULT,
+      };
+    }
   }
 
-  resolveObjectEvaluation<U extends JsonValue>(
+  async resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
     defaultValue: U,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<U>> {
-    throw new Error('Method not implemented.');
+    const cachedValue = this.cache.get(flagKey);
+    if (cachedValue) {
+      return {
+        value: cachedValue.value,
+        reason: StandardResolutionReasons.CACHED,
+      };
+    }
+    try {
+      return await this.service.getObjectValue(flagKey);
+    } catch (e) {
+      return {
+        value: defaultValue,
+        reason: StandardResolutionReasons.DEFAULT,
+      };
+    }
   }
 }
