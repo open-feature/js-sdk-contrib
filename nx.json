@@ -43,11 +43,5 @@
     "production": ["default"]
   },
   "useInferencePlugins": false,
-  "defaultBase": "main",
-  "useLegacyCache": true,
-  "release": {
-    "version": {
-      "preVersionCommand": "npx nx run-many -t build"
-    }
-  }
+  "defaultBase": "main"
 }
