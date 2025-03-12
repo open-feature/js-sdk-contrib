@@ -1,12 +1,12 @@
 import { ResolutionDetails } from '@openfeature/core';
-import { LRUCacheOpts } from './types';
+import { LRUCacheConfig } from './types';
 import { LRUCache } from 'lru-cache';
 
 export class Cache {
   private cache: LRUCache<string, ResolutionDetails<any>>;
   private ttl: number;
   private enabled: boolean;
-  constructor(opts: LRUCacheOpts) {
+  constructor(opts: LRUCacheConfig) {
     this.cache = new LRUCache({
       maxSize: opts.size,
       sizeCalculation: () => 1,
@@ -26,6 +26,13 @@ export class Cache {
     if (!this.enabled) {
       return;
     }
-    this.cache.set(key, value);
+    this.cache.set(key, value, { ttl: this.ttl });
+  }
+
+  clear() {
+    if (!this.enabled) {
+      return;
+    }
+    this.cache.clear();
   }
 }
