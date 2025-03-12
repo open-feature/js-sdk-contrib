@@ -3,10 +3,10 @@ import { LRUCache } from 'lru-cache';
 
 export type AwsSsmProviderConfig = {
   ssmClientConfig: SSMClientConfig;
-  cacheOpts: LRUCacheOpts;
+  cacheOpts: LRUCacheConfig;
 };
 
-export type LRUCacheOpts = {
+export type LRUCacheConfig = {
   enabled: boolean;
   ttl: number;
   size: number;
