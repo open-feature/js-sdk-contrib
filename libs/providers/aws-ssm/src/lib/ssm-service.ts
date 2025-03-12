@@ -6,6 +6,7 @@ import {
   ResolutionDetails,
   StandardResolutionReasons,
 } from '@openfeature/core';
+import { Cache } from './cache';
 
 export class SSMService {
   client: SSMClient;
@@ -14,7 +15,7 @@ export class SSMService {
     this.client = new SSMClient(config);
   }
 
-  async getBooleanValue(name: string, defaultValue: boolean): Promise<ResolutionDetails<boolean>> {
+  async getBooleanValue(name: string): Promise<ResolutionDetails<boolean>> {
     const res = await this._getValueFromSSM(name);
     let result: boolean;
     switch (res) {
@@ -43,7 +44,7 @@ export class SSMService {
 
   async getNumberValue(name: string): Promise<ResolutionDetails<number>> {
     const res = await this._getValueFromSSM(name);
-    if (Number.isNaN(res)) {
+    if (Number.isNaN(Number(res))) {
       throw new ParseError(`${res} is not a number`);
     }
     return {
@@ -64,7 +65,7 @@ export class SSMService {
     }
   }
 
-  private async _getValueFromSSM(name: string): Promise<string> {
+  async _getValueFromSSM(name: string): Promise<string> {
     const command: GetParameterCommand = new GetParameterCommand({
       Name: name,
     });

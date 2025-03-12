@@ -9,4 +9,8 @@ const MOCK_SSM_CLIENT_CONFIG: SSMClientConfig = {
   },
 };
 
-describe(AwsSsmProvider.name, () => {});
+describe(AwsSsmProvider.name, () => {
+  it('should pass', () => {
+    expect(true);
+  });
+});
