@@ -1,4 +1,4 @@
-import { GetParameterCommand, GetParameterCommandInput, SSMClient, SSMClientConfig } from '@aws-sdk/client-ssm';
+import { GetParameterCommand, SSMClient, SSMClientConfig } from '@aws-sdk/client-ssm';
 import {
   FlagNotFoundError,
   JsonValue,
@@ -6,7 +6,6 @@ import {
   ResolutionDetails,
   StandardResolutionReasons,
 } from '@openfeature/core';
-import { Cache } from './cache';
 
 export class SSMService {
   client: SSMClient;
