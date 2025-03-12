@@ -11,6 +11,7 @@ import {
   OpenFeatureEventEmitter,
   ProviderEvents,
   ProviderStatus,
+  TrackingEventDetails,
 } from '@openfeature/web-sdk';
 
 import isEmpty from 'lodash.isempty';
@@ -151,6 +152,11 @@ export class LaunchDarklyClientProvider implements Provider {
       return translateResult(res);
     }
     return wrongTypeResult(defaultValue);
+  }
+
+  track(trackingEventName: string, _context: EvaluationContext, { value, ...details }: TrackingEventDetails): void {
+    // The LD Client already has the context form the identify method, so we can omit it here.
+    this.client.track(trackingEventName, details, value);
   }
 
   private translateContext(context: EvaluationContext) {

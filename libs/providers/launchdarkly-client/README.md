@@ -59,6 +59,16 @@ await OpenFeature.setContext({ key: 'my-key' });
 
 Read more about LD contexts [here](https://launchdarkly.github.io/js-client-sdk/interfaces/LDContextCommon.html)
 
+## Tracking
+
+You can send custom events to LaunchDarkly metrics for use in
+experiments and guarded rollouts. To learn more, read [Sending custom events](https://launchdarkly.com/docs/sdk/features/events).
+
+```ts
+const client = await OpenFeature.getClient();
+client.track('event-key-123abc', { customProperty: someValue })
+```
+
 ## Building
 
 Run `nx package providers-launchdarkly-client` to build the library.
