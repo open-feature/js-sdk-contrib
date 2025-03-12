@@ -17,6 +17,7 @@ export class SSMService {
 
   async getBooleanValue(name: string): Promise<ResolutionDetails<boolean>> {
     const res = await this._getValueFromSSM(name);
+
     let result: boolean;
     switch (res) {
       case 'true':
@@ -28,6 +29,7 @@ export class SSMService {
       default:
         throw new ParseError(`${res} is not a valid boolean value`);
     }
+
     return {
       value: result,
       reason: StandardResolutionReasons.STATIC,
