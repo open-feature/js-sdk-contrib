@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.2](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.3.1...launchdarkly-client-provider-v0.3.2) (2025-03-12)
+
+
+### ✨ New Features
+
+* **launchdarkly-client-provider:** Add tracking API ([#1219](https://github.com/open-feature/js-sdk-contrib/issues/1219)) ([e888d03](https://github.com/open-feature/js-sdk-contrib/commit/e888d03fcae56a32edbb0edb1d7e0ee594588ac4))
+
+
+### 🧹 Chore
+
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.3.1](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.3.0...launchdarkly-client-provider-v0.3.1) (2024-12-17)
 
 

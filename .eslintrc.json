@@ -56,7 +56,7 @@
             "checkObsoleteDependencies": true,
             "checkVersionMismatches": true,
             "ignoredDependencies": ["jest-cucumber", "jest"],
-            "ignoredFiles": ["**/*.spec.ts", "**/*.spec.js", "**/*.test.ts", "**/*.test.js"]
+            "ignoredFiles": ["**/test/**", "**/spec/**", "**/*.spec.ts", "**/*.spec.js", "**/*.test.ts", "**/*.test.js"]
           }
         ]
       }

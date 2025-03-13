@@ -27,6 +27,7 @@ describe('LaunchDarklyClientProvider', () => {
     waitForInitialization: jest.fn(),
     on: jest.fn(),
     close: jest.fn(),
+    track: jest.fn(),
   } as unknown as jest.Mocked<LDClient>;
 
   beforeAll(() => {
@@ -374,6 +375,18 @@ describe('LaunchDarklyClientProvider', () => {
       variant: '22',
       reason: 'OFF',
     });
+  });
+
+  it('calls the client track method properly', async () => {
+    ldClientMock.track = jest.fn().mockResolvedValue({});
+    ofClient.track('event-key-123abc', { value: 99.77, currency: 'USD' });
+    expect(ldClientMock.track).toHaveBeenCalledWith('event-key-123abc', { currency: 'USD' }, 99.77);
+
+    ofClient.track('event-key-123abc', { value: 99.77 });
+    expect(ldClientMock.track).toHaveBeenCalledWith('event-key-123abc', {}, 99.77);
+
+    ofClient.track('event-key-123abc', { currency: 'USD' });
+    expect(ldClientMock.track).toHaveBeenCalledWith('event-key-123abc', { currency: 'USD' }, undefined);
   });
 
   describe('onContextChange', () => {

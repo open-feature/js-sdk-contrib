@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v1.0.0...ofrep-core-v1.0.1) (2025-03-12)
+
+
+### 🐛 Bug Fixes
+
+* improper inclusion of test deps ([#1220](https://github.com/open-feature/js-sdk-contrib/issues/1220)) ([f5e3f1f](https://github.com/open-feature/js-sdk-contrib/commit/f5e3f1f3ceff8d82c5f2de9b44414f79c442d602))
+
 ## [1.0.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v0.2.0...ofrep-core-v1.0.0) (2025-02-13)
 
 
