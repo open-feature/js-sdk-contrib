@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.4...config-cat-web-provider-v0.1.5) (2025-03-14)
+
+
+### 🧹 Chore
+
+* bump the required core version ([1408397](https://github.com/open-feature/js-sdk-contrib/commit/140839777b5cff8e624b23fc9eb2f8d2f4a977cb))
+
 ## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.3...config-cat-web-provider-v0.1.4) (2025-03-04)
 
 
