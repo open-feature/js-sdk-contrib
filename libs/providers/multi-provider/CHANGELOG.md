@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/multi-provider-v0.1.2...multi-provider-v0.1.3) (2025-03-14)
+
+
+### 🧹 Chore
+
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/multi-provider-v0.1.1...multi-provider-v0.1.2) (2024-12-23)
 
 
