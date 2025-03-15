@@ -30,6 +30,11 @@
     "@nx/eslint:lint": {
       "cache": true,
       "inputs": ["default", "{workspaceRoot}/.eslintrc.json", "{workspaceRoot}/tools/eslint-rules/**/*"]
+    },
+    "@nx/js:tsc": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
     }
   },
   "namedInputs": {
@@ -38,6 +43,5 @@
     "production": ["default"]
   },
   "useInferencePlugins": false,
-  "defaultBase": "main",
-  "useLegacyCache": true
+  "defaultBase": "main"
 }
