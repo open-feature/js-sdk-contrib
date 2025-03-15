@@ -4,7 +4,9 @@ import {
   JsonValue,
   ResolutionDetails,
   StandardResolutionReasons,
+  ErrorCode,
 } from '@openfeature/server-sdk';
+import { InternalServerError } from '@aws-sdk/client-ssm';
 import { AwsSsmProviderConfig } from './types';
 import { SSMService } from './ssm-service';
 import { Cache } from './cache';
@@ -40,10 +42,18 @@ export class AwsSsmProvider implements Provider {
       const res = await this.service.getBooleanValue(flagKey);
       this.cache.set(flagKey, res);
       return res;
-    } catch (e) {
+    } catch (err) {
+      let errMsg = 'An unknown error occurred';
+
+      if (err instanceof InternalServerError) {
+        errMsg = err.message;
+      }
+
       return {
         value: defaultValue,
-        reason: StandardResolutionReasons.DEFAULT,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.GENERAL,
+        errorMessage: errMsg,
       };
     }
   }
@@ -64,10 +74,18 @@ export class AwsSsmProvider implements Provider {
       const res = await this.service.getStringValue(flagKey);
       this.cache.set(flagKey, res);
       return res;
-    } catch (e) {
+    } catch (err) {
+      let errMsg = 'An unknown error occurred';
+
+      if (err instanceof InternalServerError) {
+        errMsg = err.message;
+      }
+
       return {
         value: defaultValue,
-        reason: StandardResolutionReasons.DEFAULT,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.GENERAL,
+        errorMessage: errMsg,
       };
     }
   }
@@ -86,10 +104,18 @@ export class AwsSsmProvider implements Provider {
     }
     try {
       return await this.service.getNumberValue(flagKey);
-    } catch (e) {
+    } catch (err) {
+      let errMsg = 'An unknown error occurred';
+
+      if (err instanceof InternalServerError) {
+        errMsg = err.message;
+      }
+
       return {
         value: defaultValue,
-        reason: StandardResolutionReasons.DEFAULT,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.GENERAL,
+        errorMessage: errMsg,
       };
     }
   }
@@ -108,10 +134,18 @@ export class AwsSsmProvider implements Provider {
     }
     try {
       return await this.service.getObjectValue(flagKey);
-    } catch (e) {
+    } catch (err) {
+      let errMsg = 'An unknown error occurred';
+
+      if (err instanceof InternalServerError) {
+        errMsg = err.message;
+      }
+
       return {
         value: defaultValue,
-        reason: StandardResolutionReasons.DEFAULT,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.GENERAL,
+        errorMessage: errMsg,
       };
     }
   }
