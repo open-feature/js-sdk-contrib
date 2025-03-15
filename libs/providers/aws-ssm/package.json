@@ -17,6 +17,7 @@
     "@openfeature/server-sdk": "^1.17.0"
   },
   "devDependencies": {
+    "@smithy/types": "^4.1.0",
     "aws-sdk-client-mock": "^4.1.0"
   }
 }
