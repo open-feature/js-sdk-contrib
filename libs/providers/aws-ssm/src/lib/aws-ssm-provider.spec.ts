@@ -1,6 +1,6 @@
 import { SSMClientConfig } from '@aws-sdk/client-ssm';
 import { AwsSsmProvider } from './aws-ssm-provider';
-import { StandardResolutionReasons } from '@openfeature/core';
+import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 
 const MOCK_SSM_CLIENT_CONFIG: SSMClientConfig = {
   region: 'us-east-1',
@@ -45,7 +45,9 @@ describe(AwsSsmProvider.name, () => {
           jest.spyOn(provider.service, 'getBooleanValue').mockRejectedValue(new Error());
           await expect(provider.resolveBooleanEvaluation('test', false, {})).resolves.toEqual({
             value: false,
-            reason: StandardResolutionReasons.DEFAULT,
+            reason: StandardResolutionReasons.ERROR,
+            errorMessage: 'An unknown error occurred',
+            errorCode: ErrorCode.GENERAL,
           });
         });
       });
@@ -88,7 +90,9 @@ describe(AwsSsmProvider.name, () => {
           jest.spyOn(provider.service, 'getStringValue').mockRejectedValue(new Error());
           await expect(provider.resolveStringEvaluation('test', 'default', {})).resolves.toEqual({
             value: 'default',
-            reason: StandardResolutionReasons.DEFAULT,
+            reason: StandardResolutionReasons.ERROR,
+            errorMessage: 'An unknown error occurred',
+            errorCode: ErrorCode.GENERAL,
           });
         });
       });
@@ -131,7 +135,9 @@ describe(AwsSsmProvider.name, () => {
           jest.spyOn(provider.service, 'getNumberValue').mockRejectedValue(new Error());
           await expect(provider.resolveNumberEvaluation('test', -1, {})).resolves.toEqual({
             value: -1,
-            reason: StandardResolutionReasons.DEFAULT,
+            reason: StandardResolutionReasons.ERROR,
+            errorMessage: 'An unknown error occurred',
+            errorCode: ErrorCode.GENERAL,
           });
         });
       });
@@ -174,7 +180,9 @@ describe(AwsSsmProvider.name, () => {
           jest.spyOn(provider.service, 'getObjectValue').mockRejectedValue(new Error());
           await expect(provider.resolveObjectEvaluation('test', { default: true }, {})).resolves.toEqual({
             value: { default: true },
-            reason: StandardResolutionReasons.DEFAULT,
+            reason: StandardResolutionReasons.ERROR,
+            errorMessage: 'An unknown error occurred',
+            errorCode: ErrorCode.GENERAL,
           });
         });
       });
