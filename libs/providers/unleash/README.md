@@ -46,28 +46,22 @@ After the provider gets initialized, you can start evaluations of feature flags 
 
 ```ts
 // Get the client
-const client = await OpenFeature.getClient();
+const client = OpenFeature.getClient();
 
 // You can now use the client to evaluate your flags
-const details = client.getBooleanValue('my-feature', false);
+const details = await client.getBooleanValue('my-feature', false);
 ```
 
-The static evaluation context can be changed if needed
+In server usage, the evaluation context changes frequently, as often as every evaluation. Though some context data may remain static for the entire application lifecycle (such as the hostname or application version) much of it may be dynamic
 
 ```ts
 const evaluationCtx: EvaluationContext = {
-  usedId: 'theuser',
-  currentTime: 'time',
-  sessionId: 'theSessionId',
-  remoteAddress: 'theRemoteAddress',
   environment: 'theEnvironment',
   appName: 'theAppName',
-  aCustomProperty: 'itsValue',
-  anotherCustomProperty: 'somethingForIt',
 };
 
 // changes the static evaluation context for OpenFeature
-await OpenFeature.setContext(evaluationCtx);
+OpenFeature.setContext(evaluationCtx);
 ```
 
 ## Contribute

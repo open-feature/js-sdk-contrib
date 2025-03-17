@@ -59,18 +59,6 @@ export class UnleashProvider implements Provider {
   }
 
   private registerEventListeners() {
-    this._client?.on('synchronized', () => {
-      this._logger?.debug('Unleash ready event received');
-      this.events.emit(ProviderEvents.Ready, {
-        message: 'Ready',
-      });
-    });
-    this._client?.on('ready', () => {
-      this._logger?.debug('Unleash ready event received');
-      this.events.emit(ProviderEvents.Ready, {
-        message: 'Ready',
-      });
-    });
     this._client?.on('update', () => {
       this._logger?.debug('Unleash update event received');
       this.events.emit(ProviderEvents.ConfigurationChanged, {
