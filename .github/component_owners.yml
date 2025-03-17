@@ -30,6 +30,8 @@ components:
     - markphelps
   libs/providers/flipt-web:
     - markphelps
+  libs/providers/unleash:
+    - albertilagan
   libs/providers/unleash-web:
     - jarebudev
 
