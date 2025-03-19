@@ -42,6 +42,7 @@ export default async function (tree: Tree, schema: SchemaOptions) {
   });
 
   // move the files to the right location in the tree
+  console.log(tree, directory, projectRoot);
   moveFilesToNewDirectory(tree, directory, projectRoot);
 
   // delete the auto-generated files
@@ -65,6 +66,9 @@ export default async function (tree: Tree, schema: SchemaOptions) {
 
   updateProject(tree, projectRoot, name);
   updateTsConfig(tree, projectRoot);
+  updateEslintrc(tree, projectRoot);
+  updateJestConfig(tree, projectRoot);
+  updateProjectJson(tree,projectRoot)
   updatePackage(tree, projectRoot, schema);
   updateReleasePleaseConfig(tree, projectRoot);
   updateReleasePleaseManifest(tree, projectRoot);
@@ -196,6 +200,37 @@ function updateTsConfig(tree: Tree, projectRoot: string) {
     return json;
   });
 }
+
+function updateEslintrc(tree : Tree, projectRoot: string){
+  // Update .eslintrc.json root location
+  updateJson(tree, joinPathFragments(projectRoot, '.eslintrc.json'), (json) => {
+    json.extends = `../../${json.extends}`;
+    return json;
+  });
+}
+
+function updateJestConfig(tree : Tree, projectRoot: string){
+
+  const configPath = joinPathFragments(projectRoot, 'jest.config.ts')
+
+  // Update jest.preset.js path
+  let contents = tree.read(configPath)!.toString();
+  const replaceJestPresetPath = contents.replace('../jest.preset.js', '../../../jest.preset.js')
+  tree.write(configPath, replaceJestPresetPath)
+
+  // Update coverage path
+  contents = tree.read(configPath)!.toString()
+  const replaceCoveragePath = contents.replace('../coverage/providers', `../../../coverage/${projectRoot}`)
+  tree.write(configPath, replaceCoveragePath)
+ }
+
+ function updateProjectJson(tree : Tree, projectRoot : string){
+  // Update jest.config.ts location
+  updateJson(tree,  joinPathFragments(projectRoot, 'project.json'), (json)=>{
+    json.targets.test.options.jestConfig  = "{projectRoot}/jest.config.ts"
+    return json
+  })
+ }
 
 function updateReleasePleaseConfig(tree: Tree, projectRoot: string) {
   updateJson(tree, 'release-please-config.json', (json) => {
