@@ -42,7 +42,6 @@ export default async function (tree: Tree, schema: SchemaOptions) {
   });
 
   // move the files to the right location in the tree
-  console.log(tree, directory, projectRoot);
   moveFilesToNewDirectory(tree, directory, projectRoot);
 
   // delete the auto-generated files
