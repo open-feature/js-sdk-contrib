@@ -1,4 +1,4 @@
-import { ParseError, StandardResolutionReasons } from '@openfeature/core';
+import { ParseError, StandardResolutionReasons, TypeMismatchError } from '@openfeature/core';
 import { SSMService } from './ssm-service';
 
 describe(SSMService.name, () => {
@@ -35,12 +35,12 @@ describe(SSMService.name, () => {
       });
     });
     describe(`when _getParamFromSSM returns an invalid value`, () => {
-      it('should throw a ParseError', () => {
+      it('should throw a TypeMismatchError', () => {
         jest
           .spyOn(SSMService.prototype, '_getValueFromSSM')
           .mockResolvedValue({ val: 'invalid boolean', metadata: { httpStatusCode: 400 } });
         const service = new SSMService({});
-        expect(() => service.getBooleanValue('test')).rejects.toThrow(ParseError);
+        expect(() => service.getBooleanValue('test')).rejects.toThrow(TypeMismatchError);
       });
     });
   });
@@ -82,12 +82,12 @@ describe(SSMService.name, () => {
       });
     });
     describe(`when _getParamFromSSM returns a value that is not a number`, () => {
-      it(`should return a ParseError`, async () => {
+      it(`should return a TypeMismatchError`, async () => {
         jest
           .spyOn(SSMService.prototype, '_getValueFromSSM')
           .mockResolvedValue({ val: 'invalid number', metadata: { httpStatusCode: 400 } });
         const service = new SSMService({});
-        expect(() => service.getNumberValue('test')).rejects.toThrow(ParseError);
+        expect(() => service.getNumberValue('test')).rejects.toThrow(TypeMismatchError);
       });
     });
   });

@@ -2,6 +2,7 @@ import { GetParameterCommand, SSMClient, SSMClientConfig } from '@aws-sdk/client
 import { ResponseMetadata } from '@smithy/types';
 import {
   FlagNotFoundError,
+  TypeMismatchError,
   JsonValue,
   ParseError,
   ResolutionDetails,
@@ -29,7 +30,7 @@ export class SSMService {
         result = false;
         break;
       default:
-        throw new ParseError(`${val} is not a valid boolean value`);
+        throw new TypeMismatchError(`${val} is not a valid boolean value`);
     }
 
     return {
@@ -54,7 +55,7 @@ export class SSMService {
     const { val, metadata } = res;
 
     if (Number.isNaN(Number(val))) {
-      throw new ParseError(`${val} is not a number`);
+      throw new TypeMismatchError(`${val} is not a number`);
     }
     return {
       value: Number(val),
