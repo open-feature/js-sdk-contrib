@@ -1,0 +1,74 @@
+{
+  "name": "providers-unleash",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/providers/unleash/src",
+  "projectType": "library",
+  "targets": {
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/providers/unleash"
+      },
+      "dependsOn": [
+        {
+          "target": "package"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "dependsOn": [
+        {
+          "target": "generate"
+        }
+      ]
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/unleash"],
+      "options": {
+        "jestConfig": "libs/providers/unleash/jest.config.ts"
+      },
+      "dependsOn": [
+        {
+          "target": "generate"
+        }
+      ]
+    },
+    "package": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "project": "libs/providers/unleash/package.json",
+        "outputPath": "dist/libs/providers/unleash",
+        "entryFile": "libs/providers/unleash/src/index.ts",
+        "tsConfig": "libs/providers/unleash/tsconfig.lib.json",
+        "compiler": "tsc",
+        "generateExportsField": true,
+        "umdName": "unleash",
+        "external": "all",
+        "format": ["cjs", "esm"],
+        "assets": [
+          {
+            "glob": "package.json",
+            "input": "./assets",
+            "output": "./src/"
+          },
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/providers/unleash",
+            "output": "./"
+          }
+        ]
+      }
+    }
+  },
+  "tags": []
+}

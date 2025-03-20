@@ -1,0 +1,96 @@
+{
+  "features": [
+    {
+      "name": "simpleToggle",
+      "enabled": true,
+      "impressionData": true,
+      "strategies": []
+    },
+    {
+      "name": "disabledToggle",
+      "enabled": false,
+      "impressionData": true,
+      "strategies": []
+    },
+    {
+      "name": "variantToggleString",
+      "enabled": true,
+      "impressionData": true,
+      "strategies": [],
+      "variants": [
+        {
+          "name": "string",
+          "weight": 1,
+          "payload": {
+            "type": "string",
+            "value": "some-text"
+          }
+        }
+      ]
+    },
+    {
+      "name": "variantToggleJson",
+      "enabled": true,
+      "impressionData": true,
+      "strategies": [],
+      "variants": [
+        {
+          "name": "json",
+          "weight": 1,
+          "payload": {
+            "type": "json",
+            "value": "{hello: world}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "variantToggleCsv",
+      "enabled": true,
+      "strategies": [],
+      "variants": [
+        {
+          "name": "csv",
+          "weight": 1,
+          "payload": {
+            "type": "csv",
+            "value": "1,2,3,4"
+          }
+        }
+      ],
+      "impressionData": false
+    },
+    {
+      "name": "variantToggleInteger",
+      "enabled": true,
+      "strategies": [],
+      "variants": [
+        {
+          "name": "number",
+          "weight": 1,
+          "payload": {
+            "type": "number",
+            "value": "3"
+          }
+        }
+      ],
+      "impressionData": false
+    },
+    {
+      "name": "variantToggleDouble",
+      "enabled": true,
+      "strategies": [],
+      "variants": [
+        {
+          "name": "number",
+          "weight": 1,
+          "payload": {
+            "type": "number",
+            "value": "1.2"
+          }
+        }
+      ],
+      "impressionData": false
+    }
+  ]
+}
