@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v1.0.1...ofrep-core-v1.0.2) (2025-03-21)
+
+
+### 🧹 Chore
+
+* fix lint ([80ec86b](https://github.com/open-feature/js-sdk-contrib/commit/80ec86b938fef19604f1b083387266c42b284f3c))
+
 ## [1.0.1](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v1.0.0...ofrep-core-v1.0.1) (2025-03-12)
 
 
