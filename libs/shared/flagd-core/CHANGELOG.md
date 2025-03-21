@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.0.0...flagd-core-v1.1.0) (2025-03-21)
+
+
+### ✨ New Features
+
+* **flagd:** add flag metadata ([#1151](https://github.com/open-feature/js-sdk-contrib/issues/1151)) ([b1c6d23](https://github.com/open-feature/js-sdk-contrib/commit/b1c6d235565f6cce02519d7c08bb6ad2dd791332))
+
+
+### 🧹 Chore
+
+* **deps:** update dependency libs/shared/flagd-core/test-harness to v0.5.21 ([#1154](https://github.com/open-feature/js-sdk-contrib/issues/1154)) ([63adf97](https://github.com/open-feature/js-sdk-contrib/commit/63adf97c0f44f4661ca38e793e21f60e1678f07b))
+* **deps:** update libs/shared/flagd-core/flagd-schemas digest to bb76343 ([#1190](https://github.com/open-feature/js-sdk-contrib/issues/1190)) ([758d267](https://github.com/open-feature/js-sdk-contrib/commit/758d2678ff42337662f7a5c3090d2c8a2f1def68))
+* **deps:** update libs/shared/flagd-core/spec digest to 5b07065 ([#1192](https://github.com/open-feature/js-sdk-contrib/issues/1192)) ([0a910bc](https://github.com/open-feature/js-sdk-contrib/commit/0a910bc742e6cf3bf4156b966daa9355ad38f0c0))
+* **deps:** update libs/shared/flagd-core/spec digest to d261f68 ([#1152](https://github.com/open-feature/js-sdk-contrib/issues/1152)) ([40b7b0a](https://github.com/open-feature/js-sdk-contrib/commit/40b7b0a4dd7b83cd3a205a54214bd2d8ec5b5a69))
+* **deps:** update libs/shared/flagd-core/test-harness digest to 8931c86 ([#1193](https://github.com/open-feature/js-sdk-contrib/issues/1193)) ([3555c50](https://github.com/open-feature/js-sdk-contrib/commit/3555c50b5104db324fb567c02fb4bcbda826ba69))
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [1.0.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.5...flagd-core-v1.0.0) (2025-01-07)
 
 
