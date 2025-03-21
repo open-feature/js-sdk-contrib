@@ -183,7 +183,8 @@ export class GoffApiController {
   }
 
   public async configurationHasChanged(): Promise<ConfigurationChange> {
-    const url = `${this.endpoint}v1/flag/change`;
+    const endpointURL = new URL(this.endpoint);
+    endpointURL.pathname = 'v1/flag/change';
 
     const headers: any = {
       'Content-Type': 'application/json',
@@ -193,7 +194,7 @@ export class GoffApiController {
       headers['If-None-Match'] = this.etag;
     }
     try {
-      const response = await axios.get(url, { headers });
+      const response = await axios.get(endpointURL.toString(), { headers });
       if (response.status === 304) {
         return ConfigurationChange.FLAG_CONFIGURATION_NOT_CHANGED;
       }
