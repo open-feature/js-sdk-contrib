@@ -1,4 +1,10 @@
-import { GetParameterCommand, SSMClient, SSMClientConfig } from '@aws-sdk/client-ssm';
+import {
+  GetParameterCommand,
+  SSMClient,
+  SSMClientConfig,
+  GetParameterCommandInput,
+  DescribeParametersCommand,
+} from '@aws-sdk/client-ssm';
 import { ResponseMetadata } from '@smithy/types';
 import {
   FlagNotFoundError,
@@ -11,9 +17,10 @@ import {
 
 export class SSMService {
   client: SSMClient;
-
-  constructor(config: SSMClientConfig) {
+  enableDecryption: boolean;
+  constructor(config: SSMClientConfig, enableDecryption: boolean = false) {
     this.client = new SSMClient(config);
+    this.enableDecryption = enableDecryption;
   }
 
   async getBooleanValue(name: string): Promise<ResolutionDetails<boolean>> {
@@ -78,10 +85,34 @@ export class SSMService {
     }
   }
 
+  async _isSecureString(name: string): Promise<boolean> {
+    const res = await this.client.send(
+      new DescribeParametersCommand({
+        ParameterFilters: [
+          {
+            Key: 'Name',
+            Values: [name],
+          },
+        ],
+      }),
+    );
+
+    if (!res.Parameters) {
+      throw new FlagNotFoundError(`Unable to find an SSM Parameter with key ${name}`);
+    }
+    return res.Parameters[0].Type === 'SecureString';
+  }
+
   async _getValueFromSSM(name: string): Promise<{ val: string; metadata: ResponseMetadata }> {
-    const command: GetParameterCommand = new GetParameterCommand({
+    const param: GetParameterCommandInput = {
       Name: name,
-    });
+    };
+
+    if (this.enableDecryption) {
+      param.WithDecryption = await this._isSecureString(name);
+    }
+
+    const command: GetParameterCommand = new GetParameterCommand(param);
 
     const res = await this.client.send(command);
 
