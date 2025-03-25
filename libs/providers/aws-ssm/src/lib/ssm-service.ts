@@ -18,9 +18,9 @@ import {
 export class SSMService {
   client: SSMClient;
   enableDecryption: boolean;
-  constructor(config: SSMClientConfig, enableDecryption: boolean = false) {
+  constructor(config: SSMClientConfig, enableDecryption?: boolean) {
     this.client = new SSMClient(config);
-    this.enableDecryption = enableDecryption;
+    this.enableDecryption = enableDecryption ?? false;
   }
 
   async getBooleanValue(name: string): Promise<ResolutionDetails<boolean>> {
