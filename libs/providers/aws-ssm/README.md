@@ -45,14 +45,26 @@ OpenFeature.setProvider(
 
 | Property  | Type    | Description                                    | Default |
 |-----------|--------|------------------------------------------------|---------|
-| `enabled` | `boolean` | Whether caching is enabled.                 | `true`  |
+| `enabled` | `boolean` | Whether caching is enabled.                 | `false`  |
 | `ttl`     | `number`  | Time-to-live (TTL) for cached items (in ms). | `300000` (5 minutes) |
 | `size`    | `number`  | Maximum number of items in the cache.       | `1000`  |
 
 
+
+
 ## Retrieve Feature Flag!
 
-Create a new SSM Param called 'my-feature-flag' in your AWS Account and then retrieve it via OpenFeature Client!
+Open your AWS Management Console and go to AWS System Manager service  
+
+![SSM-Menu](../../../assets/aws-ssm/search.png)  
+
+Go to Parameter Store  
+
+![Parameter-Store](../../../assets/aws-ssm/ssm-menu.png)  
+
+Create a new SSM Param called 'my-feature-flag' in your AWS Account and then retrieve it via OpenFeature Client!  
+
+![Create-Param](../../../assets/aws-ssm/create-param.png)  
 
 ```
 const featureFlags = OpenFeature.getClient();
