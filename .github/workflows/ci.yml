@@ -31,9 +31,9 @@ jobs:
       - run: git branch --track main origin/main || true
 
       - run: if ! npx nx format:check ; then echo "Format check failed. Please run 'npx nx format:write'."; fi
-      - run: npx nx affected --target=lint --parallel=3
-      - run: npx nx affected --target=test --parallel=3 --ci --code-coverage
-      - run: npx nx affected --target=build --parallel=3
+      - run: npx nx affected --target=lint --parallel=3 --exclude=js-sdk-contrib
+      - run: npx nx affected --target=test --parallel=3 --ci --code-coverage --exclude=js-sdk-contrib
+      - run: npx nx affected --target=build --parallel=3 --exclude=js-sdk-contrib
 
   e2e:
       runs-on: ubuntu-latest
