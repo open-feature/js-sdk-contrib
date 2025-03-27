@@ -4,6 +4,7 @@ import {
   createConsoleLogger,
   createFlagOverridesFromMap,
   HookEvents,
+  IConfigCatCache,
   ISettingUnion,
   LogLevel,
   OverrideBehaviour,
@@ -82,30 +83,51 @@ describe('ConfigCatProvider', () => {
       });
     });
 
-    it('should emit PROVIDER_ERROR event', () => {
-      const handler = jest.fn();
-      const eventData: [string, unknown] = ['error', { error: 'error' }];
+    it("should emit PROVIDER_READY event when underlying client is initialized after provider's initialize", async () => {
+      const cacheValue = '253370761200000\nW/"12345678-90a"\n{"f":{"booleanTrue":{"t":0,"v":{"b":true}}}}';
 
-      provider.events.addHandler(ProviderEvents.Error, handler);
-      configCatEmitter.emit('clientError', ...eventData);
+      const fakeSharedCache = new (class implements IConfigCatCache {
+        private _value?: string;
+        get(key: string) {
+          return this._value;
+        }
+        set(key: string, value: string) {
+          this._value = value;
+        }
+      })();
 
-      expect(handler).toHaveBeenCalledWith({
-        message: eventData[0],
-        metadata: eventData[1],
-      });
-    });
-
-    it('should emit PROVIDER_READY event after successful evaluation during ERROR condition', async () => {
-      const errorHandler = jest.fn();
-      provider.events.addHandler(ProviderEvents.Error, errorHandler);
-
-      configCatEmitter.emit('clientError', 'error', { error: 'error' });
-      expect(errorHandler).toHaveBeenCalled();
+      const provider = ConfigCatProvider.create(
+        'configcat-sdk-1/1234567890123456789012/1234567890123456789012',
+        PollingMode.AutoPoll,
+        {
+          cache: fakeSharedCache,
+          logger: createConsoleLogger(LogLevel.Off),
+          offline: true,
+          maxInitWaitTimeSeconds: 1,
+        },
+      );
 
       const readyHandler = jest.fn();
       provider.events.addHandler(ProviderEvents.Ready, readyHandler);
 
-      await provider.resolveBooleanEvaluation('booleanTrue', false, { targetingKey });
+      try {
+        await provider.initialize();
+      } catch (err) {
+        expect((err as Error).message).toContain('underlying ConfigCat client could not initialize');
+      }
+
+      expect(readyHandler).toHaveBeenCalledTimes(0);
+
+      fakeSharedCache.set('', cacheValue);
+
+      // Make sure that the internal cache is refreshed.
+      await provider.configCatClient?.forceRefreshAsync();
+
+      provider.resolveBooleanEvaluation('booleanTrue', false, { targetingKey });
+
+      // Wait a little while for the Ready event to be emitted.
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       expect(readyHandler).toHaveBeenCalled();
     });
   });
