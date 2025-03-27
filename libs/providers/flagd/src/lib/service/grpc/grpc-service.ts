@@ -1,4 +1,4 @@
-import { ClientReadableStream, ClientUnaryCall, ServiceError, credentials, status, ClientOptions } from '@grpc/grpc-js';
+import { ClientOptions, ClientReadableStream, ClientUnaryCall, credentials, ServiceError, status } from '@grpc/grpc-js';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 import {
   EvaluationContext,
@@ -70,6 +70,8 @@ export class GRPCService implements Service {
   private _cache: LRUCache<string, ResolutionDetails<FlagValue>> | undefined;
   private _cacheEnabled = false;
   private _eventStream: ClientReadableStream<EventStreamResponse> | undefined = undefined;
+  private _deadline: number;
+
   private get _cacheActive() {
     // the cache is "active" (able to be used) if the config enabled it, AND the gRPC stream is live
     return this._cacheEnabled && this._client.getChannel().getConnectivityState(false) === ConnectivityState.READY;
@@ -95,6 +97,7 @@ export class GRPCService implements Service {
           tls ? credentials.createSsl() : credentials.createInsecure(),
           clientOptions,
         );
+    this._deadline = config.deadlineMs;
 
     if (config.cache === 'lru') {
       this._cacheEnabled = true;
@@ -165,7 +168,7 @@ export class GRPCService implements Service {
     // close the previous stream if we're reconnecting
     closeStreamIfDefined(this._eventStream);
 
-    const stream = this._client.eventStream({}, {});
+    const stream = this._client.eventStream({ waitForReady: true}, {});
     stream.on('error', (err: Error) => {
       rejectConnect?.(err);
       this.handleError(reconnectCallback, changedCallback, disconnectCallback);
@@ -240,6 +243,7 @@ export class GRPCService implements Service {
     const resolver = promisify(promise);
     if (this._cacheActive) {
       const cached = this._cache?.get(flagKey);
+      console.log('cache active and this was in the cache', cached);
       if (cached) {
         return { ...cached, reason: StandardResolutionReasons.CACHED } as ResolutionDetails<T>;
       }
