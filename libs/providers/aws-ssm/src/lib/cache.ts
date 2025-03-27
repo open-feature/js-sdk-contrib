@@ -8,10 +8,10 @@ export class Cache {
   private enabled: boolean;
   constructor(opts: LRUCacheConfig) {
     this.cache = new LRUCache({
-      maxSize: opts.size,
+      maxSize: opts.size ?? 1000,
       sizeCalculation: () => 1,
     });
-    this.ttl = opts.ttl;
+    this.ttl = opts.ttl ?? 300000;
     this.enabled = opts.enabled;
   }
 

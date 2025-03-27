@@ -22,7 +22,7 @@ export class AwsSsmProvider implements Provider {
   cache: Cache;
 
   constructor(config: AwsSsmProviderConfig) {
-    this.service = new SSMService(config.ssmClientConfig);
+    this.service = new SSMService(config.ssmClientConfig, config.enableDecryption);
     this.cache = new Cache(config.cacheOpts);
   }
 

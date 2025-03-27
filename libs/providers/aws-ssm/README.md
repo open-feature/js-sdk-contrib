@@ -30,9 +30,41 @@ OpenFeature.setProvider(
   })
 );
 ```
+
+# AWS SSM Provider Configuration
+
+## AwsSsmProviderConfig
+
+| Property         | Type               | Description                                  | Default |
+|-----------------|--------------------|----------------------------------------------|---------|
+| `ssmClientConfig` | `SSMClientConfig` | AWS SSM Client configuration options.       | See [here](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/ssm/)    |
+| `enableDecryption`      | `boolean`   | Enable decryption for SecureString parameters      | false |
+| `cacheOpts`      | `LRUCacheConfig`   | Configuration for the local LRU cache.      | See below |
+
+## LRUCacheConfig
+
+| Property  | Type    | Description                                    | Default |
+|-----------|--------|------------------------------------------------|---------|
+| `enabled` | `boolean` | Whether caching is enabled.                 | `false`  |
+| `ttl`     | `number`  | Time-to-live (TTL) for cached items (in ms). | `300000` (5 minutes) |
+| `size`    | `number`  | Maximum number of items in the cache.       | `1000`  |
+
+
+
+
 ## Retrieve Feature Flag!
 
-Create a new SSM Param called 'my-feature-flag' in your AWS Account and then retrieve it via OpenFeature Client!
+Open your AWS Management Console and go to AWS System Manager service  
+
+![SSM-Menu](../../../assets/aws-ssm/search.png)  
+
+Go to Parameter Store  
+
+![Parameter-Store](../../../assets/aws-ssm/ssm-menu.png)  
+
+Create a new SSM Param called 'my-feature-flag' in your AWS Account and then retrieve it via OpenFeature Client!  
+
+![Create-Param](../../../assets/aws-ssm/create-param.png)  
 
 ```
 const featureFlags = OpenFeature.getClient();
