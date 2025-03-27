@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.13.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.3...flagd-provider-v0.13.4) (2025-03-27)
+
+
+### 🧹 Chore
+
+* add 1.13.0 as a valid grpc-js peer version ([#1234](https://github.com/open-feature/js-sdk-contrib/issues/1234)) ([84abd32](https://github.com/open-feature/js-sdk-contrib/commit/84abd328a402feab8a0e844465e0c1aa5df4396e))
+* **deps:** update libs/providers/flagd/spec digest to 95fe981 ([#1205](https://github.com/open-feature/js-sdk-contrib/issues/1205)) ([7af11c3](https://github.com/open-feature/js-sdk-contrib/commit/7af11c3bd46f52b89bd9244f7b0b327e2e4bde18))
+* **deps:** update libs/providers/flagd/spec digest to a69f748 ([#1215](https://github.com/open-feature/js-sdk-contrib/issues/1215)) ([8f08c48](https://github.com/open-feature/js-sdk-contrib/commit/8f08c48adfdedabbe7323e58424bac375857bb48))
+
 ## [0.13.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.2...flagd-provider-v0.13.3) (2025-02-07)
 
 
