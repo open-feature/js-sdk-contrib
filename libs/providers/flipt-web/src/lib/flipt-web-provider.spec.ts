@@ -75,7 +75,11 @@ describe('FliptWebProvider', () => {
     });
 
     it('should return right value if key exists', () => {
-      const value = provider.resolveObjectEvaluation('flag_object', { fizz: 'buzz' }, { targetingKey: '1234', fizz: 'buzz' });
+      const value = provider.resolveObjectEvaluation(
+        'flag_object',
+        { fizz: 'buzz' },
+        { targetingKey: '1234', fizz: 'buzz' },
+      );
       expect(value).toHaveProperty('value', { foo: 'bar' });
       expect(value).toHaveProperty('reason', 'TARGETING_MATCH');
     });
