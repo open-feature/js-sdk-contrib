@@ -2,7 +2,7 @@
 
 [Flipt](https://www.flipt.io/) is an open source developer friendly feature flagging solution, that allows for easy management and fast feature evaluation.
 
-This provider is an implementation on top of the official [Flipt Browser Client Side SDK](https://www.npmjs.com/package/@flipt-io/flipt-client-browser).
+This provider is an implementation on top of the official [Flipt JavaScript Client Side SDK](https://www.npmjs.com/package/@flipt-io/flipt-client-js).
 
 The main difference between this provider and [`@openfeature/flipt-provider`](https://www.npmjs.com/package/@openfeature/flipt-provider) is that it uses a **static evaluation context**.  
 This provider is more sustainable for client-side implementation.
