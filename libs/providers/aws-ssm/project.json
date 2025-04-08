@@ -1,0 +1,64 @@
+{
+  "name": "providers-aws-ssm",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/providers/aws-ssm/src",
+  "projectType": "library",
+  "targets": {
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/providers/aws-ssm"
+      },
+      "dependsOn": [
+        {
+          "target": "package"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/providers/aws-ssm/jest.config.ts"
+      }
+    },
+    "package": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "project": "libs/providers/aws-ssm/package.json",
+        "outputPath": "dist/libs/providers/aws-ssm",
+        "entryFile": "libs/providers/aws-ssm/src/index.ts",
+        "tsConfig": "libs/providers/aws-ssm/tsconfig.lib.json",
+        "compiler": "tsc",
+        "generateExportsField": true,
+        "umdName": "aws-ssm",
+        "external": "all",
+        "format": ["cjs", "esm"],
+        "assets": [
+          {
+            "glob": "package.json",
+            "input": "./assets",
+            "output": "./src/"
+          },
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/providers/aws-ssm",
+            "output": "./"
+          }
+        ]
+      }
+    }
+  },
+  "tags": []
+}

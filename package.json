@@ -5,15 +5,16 @@
   "scripts": {
     "generate-hook": "nx generate open-feature hook",
     "generate-provider": "nx generate open-feature provider",
-    "test": "nx run-many --all --target=test --skip-nx-cache",
-    "e2e": "nx run-many --all --target=e2e --skip-nx-cache --output-style=stream --parallel=false",
-    "lint": "nx run-many --all --target=lint --skip-nx-cache",
-    "lint:fix": "nx run-many --all --target=lint --skip-nx-cache --fix",
-    "package": "npx nx run-many --all --target=package",
-    "publish": "npx nx run-many --all --target=publish"
+    "test": "nx run-many --all --target=test --skip-nx-cache --exclude=js-sdk-contrib",
+    "e2e": "nx run-many --all --target=e2e --skip-nx-cache --output-style=stream --parallel=false --exclude=js-sdk-contrib",
+    "lint": "nx run-many --all --target=lint --skip-nx-cache --exclude=js-sdk-contrib",
+    "lint:fix": "nx run-many --all --target=lint --skip-nx-cache --fix --exclude=js-sdk-contrib",
+    "package": "npx nx run-many --all --target=package --exclude=js-sdk-contrib",
+    "publish": "npx nx run-many --all --target=publish --exclude=js-sdk-contrib"
   },
   "private": true,
   "dependencies": {
+    "@aws-sdk/client-ssm": "^3.759.0",
     "@bufbuild/protobuf": "^1.2.0",
     "@connectrpc/connect": "^1.4.0",
     "@connectrpc/connect-web": "^1.4.0",
@@ -71,6 +72,7 @@
     "@typescript-eslint/eslint-plugin": "7.18.0",
     "@typescript-eslint/parser": "7.18.0",
     "assert": "^2.0.0",
+    "aws-sdk-client-mock": "^4.1.0",
     "axios-mock-adapter": "2.1.0",
     "babel-preset-minify": "0.5.2",
     "eslint": "8.57.1",
@@ -90,6 +92,7 @@
     "ts-jest": "29.2.5",
     "ts-node": "10.9.2",
     "typescript": "5.7.3",
-    "undici": "^5.0.0"
+    "undici": "^5.0.0",
+    "verdaccio": "^5.0.4"
   }
 }
