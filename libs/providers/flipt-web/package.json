@@ -9,13 +9,10 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/web-sdk": "^1.0.0"
+    "@openfeature/web-sdk": "^1.0.0",
+    "@flipt-io/flipt-client-js": "^0.0.1"
   },
   "devDependencies": {
     "undici": "^6.13.0"
-  },
-  "dependencies": {
-    "@flipt-io/flipt-client-js": "^0.0.1",
-    "undici": "^5.0.0"
   }
 }

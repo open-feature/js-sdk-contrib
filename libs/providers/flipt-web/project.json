@@ -19,13 +19,7 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["libs/providers/flipt-web/**/*.ts"],
-        "depCheck": {
-          "ignorePatterns": ["@flipt-io/flipt-client-js/browser"]
-        }
-      }
+      "outputs": ["{options.outputFile}"]
     },
     "test": {
       "executor": "@nx/jest:jest",
