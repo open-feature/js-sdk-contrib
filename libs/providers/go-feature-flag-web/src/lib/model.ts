@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ErrorCode, EvaluationContextValue, FlagValue } from '@openfeature/web-sdk';
+import { ErrorCode, EvaluationContext, EvaluationContextValue, FlagValue } from '@openfeature/web-sdk';
+import { TrackingEventDetails } from '@openfeature/core';
 
 /**
  * GoFeatureFlagEvaluationContext is the representation of a user for GO Feature Flag
@@ -106,7 +107,7 @@ export interface GOFeatureFlagWebsocketResponse {
 }
 
 export interface DataCollectorRequest<T> {
-  events: FeatureEvent<T>[];
+  events: Array<FeatureEvent<T> | TrackingEvent>;
   meta: Record<string, ExporterMetadataValue>;
 }
 
@@ -121,4 +122,14 @@ export interface FeatureEvent<T> {
   variation: string;
   version?: string;
   source?: string;
+}
+
+export interface TrackingEvent {
+  kind: string;
+  contextKind: string;
+  userKey: string;
+  creationDate: number;
+  key: string;
+  evaluationContext: EvaluationContext;
+  trackingEventDetails: TrackingEventDetails;
 }
