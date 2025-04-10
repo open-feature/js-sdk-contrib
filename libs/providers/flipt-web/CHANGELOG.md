@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.2...flipt-web-provider-v0.1.3) (2025-04-10)
+
+
+### 🧹 Chore
+
+* **flipt:** swap underlying flipt web sdk ([#1244](https://github.com/open-feature/js-sdk-contrib/issues/1244)) ([dba2a28](https://github.com/open-feature/js-sdk-contrib/commit/dba2a280014e998341487fc2cb1fcb410275d8d6))
+
 ## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.1...flipt-web-provider-v0.1.2) (2025-02-11)
 
 
