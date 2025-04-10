@@ -11,6 +11,6 @@
   "peerDependencies": {
     "@openfeature/web-sdk": "^1.0.0",
     "@flipt-io/flipt-client-js": "^0.0.1",
-    "undici": "^6.13.0"
+    "undici": "^5.0.0"
   }
 }
