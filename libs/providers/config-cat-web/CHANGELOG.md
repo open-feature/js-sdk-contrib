@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.7](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.6...config-cat-web-provider-v0.1.7) (2025-04-11)
+
+
+### 🧹 Chore
+
+* **flipt:** swap underlying flipt web sdk ([#1244](https://github.com/open-feature/js-sdk-contrib/issues/1244)) ([dba2a28](https://github.com/open-feature/js-sdk-contrib/commit/dba2a280014e998341487fc2cb1fcb410275d8d6))
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+
 ## [0.1.6](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.5...config-cat-web-provider-v0.1.6) (2025-04-09)
 
 
