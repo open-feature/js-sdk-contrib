@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/aws-ssm-provider-v0.1.2...aws-ssm-provider-v0.1.3) (2025-04-11)
+
+
+### 🧹 Chore
+
+* **deps:** update dependency @smithy/types to v4.2.0 ([#1274](https://github.com/open-feature/js-sdk-contrib/issues/1274)) ([ee676d8](https://github.com/open-feature/js-sdk-contrib/commit/ee676d849514adbf1a510ee7fcc780cc7dd4f2b5))
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+
 ## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/aws-ssm-provider-v0.1.1...aws-ssm-provider-v0.1.2) (2025-03-27)
 
 
