@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.2](https://github.com/open-feature/js-sdk-contrib/compare/env-var-provider-v0.3.1...env-var-provider-v0.3.2) (2025-04-11)
+
+
+### 🧹 Chore
+
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.3.1](https://github.com/open-feature/js-sdk-contrib/compare/env-var-provider-v0.3.0...env-var-provider-v0.3.1) (2024-07-10)
 
 
