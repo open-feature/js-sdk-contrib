@@ -3,6 +3,8 @@ components:
   libs/hooks/open-telemetry:
     - beeme1mr
     - toddbaert
+  libs/providers/aws-ssm:
+    - gdegiorgio
   libs/providers/config-cat:
     - lukas-reining
     - adams85

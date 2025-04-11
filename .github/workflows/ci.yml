@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
           submodules: recursive
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -31,9 +31,9 @@ jobs:
       - run: git branch --track main origin/main || true
 
       - run: if ! npx nx format:check ; then echo "Format check failed. Please run 'npx nx format:write'."; fi
-      - run: npx nx affected --target=lint --parallel=3
-      - run: npx nx affected --target=test --parallel=3 --ci --code-coverage
-      - run: npx nx affected --target=build --parallel=3
+      - run: npx nx affected --target=lint --parallel=3 --exclude=js-sdk-contrib
+      - run: npx nx affected --target=test --parallel=3 --ci --code-coverage --exclude=js-sdk-contrib
+      - run: npx nx affected --target=build --parallel=3 --exclude=js-sdk-contrib
 
   e2e:
       runs-on: ubuntu-latest
@@ -43,7 +43,7 @@ jobs:
           with:
             fetch-depth: 0
             submodules: recursive
-        - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+        - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4
           with:
             # we need 'fetch' for this test, which is only in 18+
             node-version: 18
