@@ -10,6 +10,7 @@ import {
   ProviderEvents,
   ResolutionDetails,
   StandardResolutionReasons,
+  TrackingEventDetails,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
 import {
@@ -18,10 +19,12 @@ import {
   GOFeatureFlagAllFlagsResponse,
   GoFeatureFlagWebProviderOptions,
   GOFeatureFlagWebsocketResponse,
+  TrackingEvent,
 } from './model';
 import { transformContext } from './context-transformer';
 import { FetchError } from './errors/fetch-error';
 import { GoFeatureFlagDataCollectorHook } from './data-collector-hook';
+import { CollectorManager } from './collector-manager';
 
 export class GoFeatureFlagWebProvider implements Provider {
   metadata = {
@@ -49,6 +52,8 @@ export class GoFeatureFlagWebProvider implements Provider {
   private _websocket?: WebSocket;
   // _flags is the in memory representation of all the flags.
   private _flags: { [key: string]: ResolutionDetails<FlagValue> } = {};
+
+  private readonly _collectorManager: CollectorManager;
   private readonly _dataCollectorHook: GoFeatureFlagDataCollectorHook;
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
   private readonly _disableDataCollection: boolean;
@@ -62,13 +67,15 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._maxRetries = options.maxRetries || 10;
     this._apiKey = options.apiKey;
     this._disableDataCollection = options.disableDataCollection || false;
-    this._dataCollectorHook = new GoFeatureFlagDataCollectorHook(options, logger);
+
+    this._collectorManager = new CollectorManager(options, logger);
+    this._dataCollectorHook = new GoFeatureFlagDataCollectorHook(this._collectorManager);
   }
 
   async initialize(context: EvaluationContext): Promise<void> {
     if (!this._disableDataCollection && this._dataCollectorHook) {
       this.hooks = [this._dataCollectorHook];
-      this._dataCollectorHook.init();
+      this._collectorManager.init();
     }
     return Promise.all([this.fetchAll(context), this.connectWebsocket()])
       .then(() => {
@@ -157,8 +164,8 @@ export class GoFeatureFlagWebProvider implements Provider {
   }
 
   async onClose(): Promise<void> {
-    if (!this._disableDataCollection && this._dataCollectorHook) {
-      await this._dataCollectorHook?.close();
+    if (!this._disableDataCollection && this._collectorManager) {
+      await this._collectorManager?.close();
     }
     this._websocket?.close(1000, 'Closing GO Feature Flag provider');
     return Promise.resolve();
@@ -185,6 +192,29 @@ export class GoFeatureFlagWebProvider implements Provider {
 
   resolveBooleanEvaluation(flagKey: string): ResolutionDetails<boolean> {
     return this.evaluate(flagKey, 'boolean');
+  }
+
+  /**
+   * Track allows to send tracking events to a tracking exporter.
+   *
+   * Warning: Note that you need to have a relay proxy with version 1.45.0 or upper to use this feature.
+   * If you are using a version lower than 1.45.0, the events may look weird in your exporter.
+   *
+   * @param trackingEventName
+   * @param context
+   * @param trackingEventDetails
+   */
+  track(trackingEventName: string, context: EvaluationContext, trackingEventDetails: TrackingEventDetails): void {
+    const trackingEvent: TrackingEvent = {
+      kind: 'tracking',
+      contextKind: context['anonymous'] ? 'anonymousUser' : 'user',
+      creationDate: Math.round(Date.now() / 1000),
+      key: trackingEventName,
+      evaluationContext: context,
+      trackingEventDetails: trackingEventDetails,
+      userKey: context.targetingKey || 'undefined-targetingKey',
+    };
+    this._collectorManager?.add(trackingEvent);
   }
 
   /**
