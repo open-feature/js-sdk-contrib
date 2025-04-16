@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-core-v0.1.1...config-cat-core-v0.1.2) (2025-04-16)
+
+
+### 🧹 Chore
+
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+
 ## [0.1.1](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-core-v0.1.0...config-cat-core-v0.1.1) (2025-03-12)
 
 
