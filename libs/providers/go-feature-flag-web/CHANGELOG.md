@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.5...go-feature-flag-web-provider-v0.2.6) (2025-04-16)
+
+
+### 🧹 Chore
+
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+
 ## [0.2.5](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.4...go-feature-flag-web-provider-v0.2.5) (2025-01-23)
 
 
