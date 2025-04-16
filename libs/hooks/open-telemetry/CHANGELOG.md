@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.4.0...open-telemetry-hooks-v0.4.1) (2025-04-16)
+
+
+### 🧹 Chore
+
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.3.0...open-telemetry-hooks-v0.4.0) (2024-03-25)
 
 
