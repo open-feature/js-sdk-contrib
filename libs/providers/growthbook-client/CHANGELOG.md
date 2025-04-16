@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/growthbook-client-provider-v0.1.2...growthbook-client-provider-v0.1.3) (2025-04-16)
+
+
+### 🧹 Chore
+
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+
 ## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/growthbook-client-provider-v0.1.1...growthbook-client-provider-v0.1.2) (2024-09-27)
 
 
