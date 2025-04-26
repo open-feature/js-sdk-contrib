@@ -10,7 +10,7 @@
   },
   "peerDependencies": {
     "@openfeature/web-sdk": "^1.0.0",
-    "@flipt-io/flipt-client-js": "^0.0.1",
+    "@flipt-io/flipt-client-js": "^0.0.1 || ^0.0.2",
     "undici": "^5.0.0"
   }
 }
