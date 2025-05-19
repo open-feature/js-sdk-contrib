@@ -56,7 +56,7 @@ export interface GoFeatureFlagProviderOptions {
   // Default: null
   apiKey?: string;
 
-  // cache (optional) set to true if you want to use an alternative cache library.
+  // cache (optional) set an alternative cache library.
   cache?: Cache;
 
   // disableCache (optional) set to true if you would like that every flag evaluation goes to the GO Feature Flag directly.
