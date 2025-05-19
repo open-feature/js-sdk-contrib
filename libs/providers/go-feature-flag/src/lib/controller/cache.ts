@@ -20,7 +20,7 @@ export class CacheController {
     this.logger = logger;
     const cacheSize =
       options.flagCacheSize !== undefined && options.flagCacheSize !== 0 ? options.flagCacheSize : 10000;
-    this.cache = new LRUCache({ maxSize: cacheSize, sizeCalculation: () => 1 });
+    this.cache = options.cache || new LRUCache({ maxSize: cacheSize, sizeCalculation: () => 1 });
   }
 
   get(flagKey: string, evaluationContext: EvaluationContext): ResolutionDetails<any> | undefined {

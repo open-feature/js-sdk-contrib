@@ -1,4 +1,4 @@
-import { ErrorCode, EvaluationContextValue } from '@openfeature/server-sdk';
+import { ErrorCode, EvaluationContextValue, ResolutionDetails } from '@openfeature/server-sdk';
 
 export interface GOFFEvaluationContext {
   key: string;
@@ -34,6 +34,15 @@ export interface GoFeatureFlagProxyResponse<T> {
 }
 
 /**
+ * Cache is the interface used to implement an alternative cache for the provider.
+ */
+export interface Cache {
+  get: (key: string) => ResolutionDetails<any> | undefined;
+  set: (key: string, value: ResolutionDetails<any>, options?: { ttl?: number }) => void;
+  clear: () => void;
+}
+
+/**
  * GoFeatureFlagProviderOptions is the object containing all the provider options
  * when initializing the open-feature provider.
  */
@@ -46,6 +55,9 @@ export interface GoFeatureFlagProviderOptions {
   // (This feature is available only if you are using GO Feature Flag relay proxy v1.7.0 or above)
   // Default: null
   apiKey?: string;
+
+  // cache (optional) set to true if you want to use an alternative cache library.
+  cache?: Cache;
 
   // disableCache (optional) set to true if you would like that every flag evaluation goes to the GO Feature Flag directly.
   disableCache?: boolean;
@@ -131,3 +143,4 @@ export enum ConfigurationChange {
   FLAG_CONFIGURATION_UPDATED,
   FLAG_CONFIGURATION_NOT_CHANGED,
 }
+
