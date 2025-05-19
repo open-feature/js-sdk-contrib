@@ -1,4 +1,4 @@
-import { GoFeatureFlagProviderOptions } from '../model';
+import { GoFeatureFlagProviderOptions, Cache } from '../model';
 import { EvaluationContext, Logger, ResolutionDetails } from '@openfeature/server-sdk';
 import { LRUCache } from 'lru-cache';
 import hash from 'object-hash';
@@ -10,7 +10,7 @@ export class CacheController {
   // logger is the Open Feature logger to use
   private logger?: Logger;
   // cache contains the local cache used in the provider to avoid calling the relay-proxy for every evaluation
-  private readonly cache?: LRUCache<string, ResolutionDetails<any>>;
+  private readonly cache?: LRUCache<string, ResolutionDetails<any>> | Cache;
   // options for this provider
   private readonly options: GoFeatureFlagProviderOptions;
 

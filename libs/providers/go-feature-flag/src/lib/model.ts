@@ -38,7 +38,7 @@ export interface GoFeatureFlagProxyResponse<T> {
  */
 export interface Cache {
   get: (key: string) => ResolutionDetails<any> | undefined;
-  set: (key: string, value: ResolutionDetails<any>, options?: { ttl?: number }) => void;
+  set: (key: string, value: ResolutionDetails<any>, options?: Record<string, any>) => void;
   clear: () => void;
 }
 
@@ -143,4 +143,3 @@ export enum ConfigurationChange {
   FLAG_CONFIGURATION_UPDATED,
   FLAG_CONFIGURATION_NOT_CHANGED,
 }
-
