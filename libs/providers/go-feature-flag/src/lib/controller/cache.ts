@@ -10,7 +10,7 @@ export class CacheController {
   // logger is the Open Feature logger to use
   private logger?: Logger;
   // cache contains the local cache used in the provider to avoid calling the relay-proxy for every evaluation
-  private readonly cache?: LRUCache<string, ResolutionDetails<any>> | Cache;
+  private readonly cache?: Cache;
   // options for this provider
   private readonly options: GoFeatureFlagProviderOptions;
 
