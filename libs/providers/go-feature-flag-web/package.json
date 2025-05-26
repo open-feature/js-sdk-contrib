@@ -7,8 +7,7 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/web-sdk": "^1.0.0",
-    "@openfeature/core": "^1.0.0"
+    "@openfeature/web-sdk": "^1.0.0"
   },
   "dependencies": {
     "copy-anything": "^3.0.5"
