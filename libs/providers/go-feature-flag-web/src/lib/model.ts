@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ErrorCode, EvaluationContext, EvaluationContextValue, FlagValue } from '@openfeature/web-sdk';
-import { TrackingEventDetails } from '@openfeature/core';
+import {
+  ErrorCode,
+  EvaluationContext,
+  EvaluationContextValue,
+  FlagValue,
+  TrackingEventDetails,
+} from '@openfeature/web-sdk';
 
 /**
  * GoFeatureFlagEvaluationContext is the representation of a user for GO Feature Flag
