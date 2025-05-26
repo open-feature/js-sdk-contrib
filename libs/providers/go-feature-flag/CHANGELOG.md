@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.8](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.7...go-feature-flag-provider-v0.7.8) (2025-05-26)
+
+
+### ✨ New Features
+
+* **gofeatureflag:** added cache option ([#1284](https://github.com/open-feature/js-sdk-contrib/issues/1284)) ([7083655](https://github.com/open-feature/js-sdk-contrib/commit/7083655c78eed957502f46dc202522a604024886))
+
 ## [0.7.7](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.6...go-feature-flag-provider-v0.7.7) (2025-04-11)
 
 
