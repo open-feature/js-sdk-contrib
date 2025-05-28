@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.6](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.5...go-feature-flag-web-provider-v0.2.6) (2025-05-26)
+
+
+### ✨ New Features
+
+* **goff web:** Support tracking events ([#1268](https://github.com/open-feature/js-sdk-contrib/issues/1268)) ([d9ffcec](https://github.com/open-feature/js-sdk-contrib/commit/d9ffcec1652aa96eefccc45dfe079ca126d55142))
+
+
+### 🧹 Chore
+
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+
 ## [0.2.5](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.4...go-feature-flag-web-provider-v0.2.5) (2025-01-23)
 
 
