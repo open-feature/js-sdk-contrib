@@ -1,17 +1,13 @@
+import type { EvaluationContext, Provider, Logger, JsonValue, ResolutionDetails } from '@openfeature/web-sdk';
 import {
-  EvaluationContext,
-  Provider,
-  Logger,
-  JsonValue,
   FlagNotFoundError,
   OpenFeatureEventEmitter,
   ProviderEvents,
-  ResolutionDetails,
   ProviderFatalError,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
 import { UnleashClient } from 'unleash-proxy-client';
-import { UnleashConfig } from './unleash-web-provider-config';
+import type { UnleashConfig } from './unleash-web-provider-config';
 
 export class UnleashWebProvider implements Provider {
   metadata = {

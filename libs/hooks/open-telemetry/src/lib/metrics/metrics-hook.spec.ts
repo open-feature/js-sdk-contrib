@@ -1,6 +1,8 @@
-import { BeforeHookContext, EvaluationDetails, HookContext, StandardResolutionReasons } from '@openfeature/server-sdk';
+import type { BeforeHookContext, EvaluationDetails, HookContext } from '@openfeature/server-sdk';
+import { StandardResolutionReasons } from '@openfeature/server-sdk';
 import opentelemetry from '@opentelemetry/api';
-import { DataPoint, MeterProvider, MetricReader, ScopeMetrics } from '@opentelemetry/sdk-metrics';
+import type { DataPoint, ScopeMetrics } from '@opentelemetry/sdk-metrics';
+import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import {
   ACTIVE_COUNT_NAME,
   ERROR_TOTAL_NAME,
@@ -12,7 +14,7 @@ import {
   VARIANT_ATTR,
 } from '../conventions';
 import { MetricsHook } from './metrics-hook';
-import { AttributeMapper } from '../otel-hook';
+import type { AttributeMapper } from '../otel-hook';
 
 // no-op "in-memory" reader
 class InMemoryMetricReader extends MetricReader {

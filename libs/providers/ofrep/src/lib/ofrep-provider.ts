@@ -1,21 +1,12 @@
+import type { EvaluationFlagValue, OFREPApiEvaluationResult, OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
 import {
-  EvaluationFlagValue,
   OFREPApi,
-  OFREPApiEvaluationResult,
   OFREPApiTooManyRequestsError,
-  OFREPProviderBaseOptions,
   handleEvaluationError,
   toResolutionDetails,
 } from '@openfeature/ofrep-core';
-import {
-  ErrorCode,
-  EvaluationContext,
-  GeneralError,
-  JsonValue,
-  Provider,
-  ResolutionDetails,
-  StandardResolutionReasons,
-} from '@openfeature/server-sdk';
+import type { EvaluationContext, JsonValue, Provider, ResolutionDetails } from '@openfeature/server-sdk';
+import { ErrorCode, GeneralError, StandardResolutionReasons } from '@openfeature/server-sdk';
 
 export type OFREPProviderOptions = OFREPProviderBaseOptions;
 

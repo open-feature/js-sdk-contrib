@@ -1,5 +1,5 @@
-import { ResolutionDetails } from '@openfeature/core';
-import { LRUCacheConfig } from './types';
+import type { ResolutionDetails } from '@openfeature/core';
+import type { LRUCacheConfig } from './types';
 import { LRUCache } from 'lru-cache';
 
 export class Cache {

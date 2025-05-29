@@ -1,13 +1,13 @@
-import {
+import type {
   ErrorCode,
   EvaluationContext,
   FlagValue,
   FlagValueType,
   OpenFeatureError,
   Provider,
-  ProviderStatus,
   ResolutionDetails,
 } from '@openfeature/server-sdk';
+import { ProviderStatus } from '@openfeature/server-sdk';
 import { ErrorWithCode } from '../errors';
 
 export type StrategyEvaluationContext = {

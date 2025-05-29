@@ -1,5 +1,5 @@
-import { GoFeatureFlagProviderOptions, Cache } from '../model';
-import { EvaluationContext, Logger, ResolutionDetails } from '@openfeature/server-sdk';
+import type { GoFeatureFlagProviderOptions, Cache } from '../model';
+import type { EvaluationContext, Logger, ResolutionDetails } from '@openfeature/server-sdk';
 import { LRUCache } from 'lru-cache';
 import hash from 'object-hash';
 

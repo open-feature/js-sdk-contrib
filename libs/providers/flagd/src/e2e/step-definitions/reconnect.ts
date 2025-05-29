@@ -1,4 +1,4 @@
-import { StepDefinitions } from 'jest-cucumber';
+import type { StepDefinitions } from 'jest-cucumber';
 import { OpenFeature, ProviderEvents } from '@openfeature/server-sdk';
 import { UNAVAILABLE_CLIENT_NAME, UNSTABLE_CLIENT_NAME } from '../constants';
 

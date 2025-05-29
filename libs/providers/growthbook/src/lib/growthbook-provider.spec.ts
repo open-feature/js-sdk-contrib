@@ -1,6 +1,8 @@
-import { ClientOptions, GrowthBookClient, InitOptions } from '@growthbook/growthbook';
+import type { ClientOptions, InitOptions } from '@growthbook/growthbook';
+import { GrowthBookClient } from '@growthbook/growthbook';
 import { GrowthbookProvider } from './growthbook-provider';
-import { Client, OpenFeature } from '@openfeature/server-sdk';
+import type { Client } from '@openfeature/server-sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
 
 jest.mock('@growthbook/growthbook');
 

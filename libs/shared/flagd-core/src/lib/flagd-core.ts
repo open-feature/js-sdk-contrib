@@ -9,8 +9,9 @@ import type {
   JsonValue,
   FlagMetadata,
 } from '@openfeature/core';
-import { FeatureFlag } from './feature-flag';
-import { MemoryStorage, Storage } from './storage';
+import type { FeatureFlag } from './feature-flag';
+import type { Storage } from './storage';
+import { MemoryStorage } from './storage';
 
 type ResolutionDetailsWithFlagMetadata<T> = Required<Pick<ResolutionDetails<T>, 'flagMetadata'>> & ResolutionDetails<T>;
 

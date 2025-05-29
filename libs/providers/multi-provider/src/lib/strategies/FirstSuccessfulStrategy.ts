@@ -1,10 +1,7 @@
-import {
-  BaseEvaluationStrategy,
-  FinalResult,
-  ProviderResolutionResult,
-  StrategyPerProviderContext,
-} from './BaseEvaluationStrategy';
-import { EvaluationContext, FlagValue, ResolutionDetails } from '@openfeature/server-sdk';
+import type { FinalResult, ProviderResolutionResult, StrategyPerProviderContext } from './BaseEvaluationStrategy';
+import { BaseEvaluationStrategy } from './BaseEvaluationStrategy';
+import type { EvaluationContext, FlagValue } from '@openfeature/server-sdk';
+import { ResolutionDetails } from '@openfeature/server-sdk';
 
 /**
  * Return the first result that did result in an error

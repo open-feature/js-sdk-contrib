@@ -1,6 +1,6 @@
 import fetchMock from 'fetch-mock-jest';
 import { GoffApiController } from './goff-api';
-import { GoFeatureFlagWebProviderOptions } from '../model';
+import type { GoFeatureFlagWebProviderOptions } from '../model';
 
 describe('Collect Data API', () => {
   beforeEach(() => {

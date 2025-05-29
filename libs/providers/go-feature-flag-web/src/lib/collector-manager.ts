@@ -1,5 +1,5 @@
-import { Logger } from '@openfeature/web-sdk';
-import { ExporterMetadataValue, FeatureEvent, GoFeatureFlagWebProviderOptions, TrackingEvent } from './model';
+import type { Logger } from '@openfeature/web-sdk';
+import type { ExporterMetadataValue, FeatureEvent, GoFeatureFlagWebProviderOptions, TrackingEvent } from './model';
 import { GoffApiController } from './controller/goff-api';
 import { CollectorError } from './errors/collector-error';
 import { copy } from 'copy-anything';

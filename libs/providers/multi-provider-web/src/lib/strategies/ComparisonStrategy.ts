@@ -1,11 +1,12 @@
-import {
-  BaseEvaluationStrategy,
+import type {
   FinalResult,
   ProviderResolutionResult,
   ProviderResolutionSuccessResult,
   StrategyPerProviderContext,
 } from './BaseEvaluationStrategy';
-import { EvaluationContext, FlagValue, GeneralError, Provider } from '@openfeature/web-sdk';
+import { BaseEvaluationStrategy } from './BaseEvaluationStrategy';
+import type { EvaluationContext, FlagValue, Provider } from '@openfeature/web-sdk';
+import { GeneralError } from '@openfeature/web-sdk';
 
 /**
  * Evaluate all providers and compare the results.

@@ -1,3 +1,4 @@
+import type { Tree } from '@nx/devkit';
 import {
   formatFiles,
   generateFiles,
@@ -5,7 +6,6 @@ import {
   joinPathFragments,
   logger,
   names,
-  Tree,
   updateJson,
   moveFilesToNewDirectory,
 } from '@nx/devkit';

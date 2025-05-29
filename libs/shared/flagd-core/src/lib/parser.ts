@@ -3,7 +3,8 @@ import { ParseError } from '@openfeature/core';
 import Ajv from 'ajv';
 import flagsSchema from '../../flagd-schemas/json/flags.json';
 import targetingSchema from '../../flagd-schemas/json/targeting.json';
-import { FeatureFlag, Flag } from './feature-flag';
+import type { Flag } from './feature-flag';
+import { FeatureFlag } from './feature-flag';
 
 type FlagConfig = {
   flags: { [key: string]: Flag };

@@ -1,20 +1,17 @@
-import { ClientReadableStream, ClientUnaryCall, ServiceError, credentials, status, ClientOptions } from '@grpc/grpc-js';
+import type { ClientReadableStream, ClientUnaryCall, ServiceError, ClientOptions } from '@grpc/grpc-js';
+import { credentials, status } from '@grpc/grpc-js';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
+import type { EvaluationContext, FlagValue, JsonValue, Logger, ResolutionDetails } from '@openfeature/server-sdk';
 import {
-  EvaluationContext,
   FlagNotFoundError,
-  FlagValue,
   GeneralError,
-  JsonValue,
-  Logger,
   ParseError,
-  ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/server-sdk';
 import { LRUCache } from 'lru-cache';
 import { promisify } from 'node:util';
-import {
+import type {
   EventStreamResponse,
   ResolveBooleanRequest,
   ResolveBooleanResponse,
@@ -26,12 +23,12 @@ import {
   ResolveObjectResponse,
   ResolveStringRequest,
   ResolveStringResponse,
-  ServiceClient,
 } from '../../../proto/ts/flagd/evaluation/v1/evaluation';
-import { Config } from '../../configuration';
+import { ServiceClient } from '../../../proto/ts/flagd/evaluation/v1/evaluation';
+import type { Config } from '../../configuration';
 import { DEFAULT_MAX_CACHE_SIZE, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
-import { Service } from '../service';
+import type { Service } from '../service';
 import { closeStreamIfDefined } from '../common';
 
 type AnyResponse =

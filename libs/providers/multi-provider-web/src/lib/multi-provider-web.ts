@@ -1,30 +1,33 @@
-import {
-  DefaultLogger,
+import type {
   EvaluationContext,
   FlagValueType,
-  GeneralError,
   Hook,
   HookContext,
   HookHints,
   JsonValue,
   Logger,
-  OpenFeatureEventEmitter,
   Provider,
   ProviderMetadata,
   BeforeHookContext,
   ResolutionDetails,
   FlagMetadata,
-  ErrorCode,
   EvaluationDetails,
   FlagValue,
   OpenFeatureError,
+} from '@openfeature/web-sdk';
+import {
+  DefaultLogger,
+  GeneralError,
+  OpenFeatureEventEmitter,
+  ErrorCode,
   StandardResolutionReasons,
 } from '@openfeature/web-sdk';
 import { HookExecutor } from './hook-executor';
 import { constructAggregateError, throwAggregateErrorFromPromiseResults } from './errors';
-import { BaseEvaluationStrategy, ProviderResolutionResult, FirstMatchStrategy } from './strategies';
+import type { BaseEvaluationStrategy, ProviderResolutionResult } from './strategies';
+import { FirstMatchStrategy } from './strategies';
 import { StatusTracker } from './status-tracker';
-import { ProviderEntryInput, RegisteredProvider } from './types';
+import type { ProviderEntryInput, RegisteredProvider } from './types';
 
 export class WebMultiProvider implements Provider {
   readonly runsOn = 'client';

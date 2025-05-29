@@ -1,16 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ServiceError, status } from '@grpc/grpc-js';
-import {
-  Client,
-  ErrorCode,
-  EvaluationContext,
-  FlagMetadata,
-  OpenFeature,
-  ProviderEvents,
-  StandardResolutionReasons,
-} from '@openfeature/server-sdk';
+import type { ServiceError } from '@grpc/grpc-js';
+import { status } from '@grpc/grpc-js';
+import type { Client, EvaluationContext, FlagMetadata } from '@openfeature/server-sdk';
+import { ErrorCode, OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/server-sdk';
 import type { UnaryCall } from '@protobuf-ts/runtime-rpc';
-import {
+import type {
   EventStreamResponse,
   ResolveBooleanRequest,
   ResolveBooleanResponse,
@@ -22,10 +16,11 @@ import {
   ResolveObjectResponse,
   ResolveStringRequest,
   ResolveStringResponse,
-  ServiceClient,
 } from '../proto/ts/flagd/evaluation/v1/evaluation';
+import { ServiceClient } from '../proto/ts/flagd/evaluation/v1/evaluation';
 import { FlagdProvider } from './flagd-provider';
-import { FlagChangeMessage, GRPCService } from './service/grpc/grpc-service';
+import type { FlagChangeMessage } from './service/grpc/grpc-service';
+import { GRPCService } from './service/grpc/grpc-service';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 import { EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from './constants';
 

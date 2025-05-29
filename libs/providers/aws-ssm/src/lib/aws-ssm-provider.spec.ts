@@ -1,4 +1,4 @@
-import { SSMClientConfig } from '@aws-sdk/client-ssm';
+import type { SSMClientConfig } from '@aws-sdk/client-ssm';
 import { AwsSsmProvider } from './aws-ssm-provider';
 import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 

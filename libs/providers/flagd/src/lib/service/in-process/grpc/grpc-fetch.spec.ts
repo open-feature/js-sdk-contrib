@@ -1,6 +1,6 @@
 import { GrpcFetch } from './grpc-fetch';
-import { Config } from '../../../configuration';
-import { FlagSyncServiceClient, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
+import type { Config } from '../../../configuration';
+import type { FlagSyncServiceClient, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 
 let watchStateCallback: () => void = () => ({});

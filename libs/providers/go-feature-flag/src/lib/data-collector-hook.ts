@@ -1,15 +1,9 @@
-import {
-  EvaluationDetails,
-  FlagValue,
-  Hook,
-  HookContext,
-  Logger,
-  StandardResolutionReasons,
-} from '@openfeature/server-sdk';
-import { DataCollectorHookOptions, ExporterMetadataValue, FeatureEvent } from './model';
+import type { EvaluationDetails, FlagValue, Hook, HookContext, Logger } from '@openfeature/server-sdk';
+import { StandardResolutionReasons } from '@openfeature/server-sdk';
+import type { DataCollectorHookOptions, ExporterMetadataValue, FeatureEvent } from './model';
 import { copy } from 'copy-anything';
 import { CollectorError } from './errors/collector-error';
-import { GoffApiController } from './controller/goff-api';
+import type { GoffApiController } from './controller/goff-api';
 
 const defaultTargetingKey = 'undefined-targetingKey';
 type Timer = ReturnType<typeof setInterval>;

@@ -1,19 +1,18 @@
-import {
+import type {
   EvaluationContext,
   FlagValue,
   JsonValue,
   Logger,
-  OpenFeatureEventEmitter,
   Provider,
-  ProviderEvents,
   ProviderMetadata,
   ResolutionDetails,
   ResolutionReason,
-  TypeMismatchError,
 } from '@openfeature/web-sdk';
+import { OpenFeatureEventEmitter, ProviderEvents, TypeMismatchError } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from 'flagsmith';
-import { IFlagsmith, IInitConfig, IState } from 'flagsmith/types';
-import { FlagType, typeFactory } from './type-factory';
+import type { IFlagsmith, IInitConfig, IState } from 'flagsmith/types';
+import type { FlagType } from './type-factory';
+import { typeFactory } from './type-factory';
 
 export class FlagsmithClientProvider implements Provider {
   readonly metadata: ProviderMetadata = {

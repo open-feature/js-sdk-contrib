@@ -1,5 +1,6 @@
-import { ErrorCode, GeneralError, OpenFeatureError } from '@openfeature/server-sdk';
-import { RegisteredProvider } from './types';
+import type { ErrorCode } from '@openfeature/server-sdk';
+import { GeneralError, OpenFeatureError } from '@openfeature/server-sdk';
+import type { RegisteredProvider } from './types';
 
 export class ErrorWithCode extends OpenFeatureError {
   constructor(

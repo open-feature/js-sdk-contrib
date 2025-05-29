@@ -1,5 +1,6 @@
 import { LaunchDarklyClientProvider } from './launchdarkly-client-provider';
-import { Client, ErrorCode, OpenFeature } from '@openfeature/web-sdk';
+import type { Client } from '@openfeature/web-sdk';
+import { ErrorCode, OpenFeature } from '@openfeature/web-sdk';
 
 import TestLogger from './test-logger';
 import translateContext from './translate-context';

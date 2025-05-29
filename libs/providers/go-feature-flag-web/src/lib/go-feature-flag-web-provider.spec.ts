@@ -1,16 +1,9 @@
 import { GoFeatureFlagWebProvider } from './go-feature-flag-web-provider';
-import {
-  ErrorCode,
-  EvaluationContext,
-  EvaluationDetails,
-  JsonValue,
-  OpenFeature,
-  ProviderEvents,
-  StandardResolutionReasons,
-} from '@openfeature/web-sdk';
+import type { EvaluationContext, EvaluationDetails, JsonValue } from '@openfeature/web-sdk';
+import { ErrorCode, OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/web-sdk';
 import WS from 'jest-websocket-mock';
 import TestLogger from './test-logger';
-import { DataCollectorRequest, GOFeatureFlagWebsocketResponse, TrackingEvent } from './model';
+import type { DataCollectorRequest, GOFeatureFlagWebsocketResponse, TrackingEvent } from './model';
 import fetchMock from 'fetch-mock-jest';
 
 describe('GoFeatureFlagWebProvider', () => {

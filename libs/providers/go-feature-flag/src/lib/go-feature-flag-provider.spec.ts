@@ -1,17 +1,12 @@
 /**
  * @jest-environment node
  */
-import {
-  Client,
-  ErrorCode,
-  OpenFeature,
-  ServerProviderStatus,
-  StandardResolutionReasons,
-} from '@openfeature/server-sdk';
+import type { Client } from '@openfeature/server-sdk';
+import { ErrorCode, OpenFeature, ServerProviderStatus, StandardResolutionReasons } from '@openfeature/server-sdk';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { GoFeatureFlagProvider } from './go-feature-flag-provider';
-import { GoFeatureFlagProxyResponse } from './model';
+import type { GoFeatureFlagProxyResponse } from './model';
 import TestLogger from './test-logger';
 
 describe('GoFeatureFlagProvider', () => {

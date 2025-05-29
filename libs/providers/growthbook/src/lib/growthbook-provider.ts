@@ -1,13 +1,7 @@
-import { ClientOptions, GrowthBookClient, InitOptions } from '@growthbook/growthbook';
-import {
-  EvaluationContext,
-  Provider,
-  JsonValue,
-  ResolutionDetails,
-  OpenFeatureEventEmitter,
-  GeneralError,
-  ProviderEvents,
-} from '@openfeature/server-sdk';
+import type { ClientOptions, InitOptions } from '@growthbook/growthbook';
+import { GrowthBookClient } from '@growthbook/growthbook';
+import type { EvaluationContext, Provider, JsonValue, ResolutionDetails } from '@openfeature/server-sdk';
+import { OpenFeatureEventEmitter, GeneralError, ProviderEvents } from '@openfeature/server-sdk';
 import translateResult from './translate-result';
 
 export class GrowthbookProvider implements Provider {

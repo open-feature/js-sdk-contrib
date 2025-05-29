@@ -1,32 +1,15 @@
+import type { EvaluationContext, JsonValue, Paradigm, Provider, ResolutionDetails } from '@openfeature/web-sdk';
 import {
-  EvaluationContext,
-  JsonValue,
   OpenFeatureEventEmitter,
-  Paradigm,
   ParseError,
-  Provider,
   ProviderEvents,
   ProviderNotReadyError,
-  ResolutionDetails,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
-import {
-  isType,
-  parseError,
-  PrimitiveType,
-  PrimitiveTypeName,
-  toResolutionDetails,
-  transformContext,
-} from '@openfeature/config-cat-core';
-import {
-  ClientCacheState,
-  getClient,
-  IConfig,
-  IConfigCatClient,
-  OptionsForPollingMode,
-  PollingMode,
-  SettingValue,
-} from 'configcat-js-ssr';
+import type { PrimitiveType, PrimitiveTypeName } from '@openfeature/config-cat-core';
+import { isType, parseError, toResolutionDetails, transformContext } from '@openfeature/config-cat-core';
+import type { IConfig, IConfigCatClient, OptionsForPollingMode, SettingValue } from 'configcat-js-ssr';
+import { ClientCacheState, getClient, PollingMode } from 'configcat-js-ssr';
 
 export class ConfigCatWebProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
