@@ -1,19 +1,21 @@
-import {
+import type {
   EvaluationContext,
-  FlagNotFoundError,
   FlagValue,
   Hook,
   Logger,
-  OpenFeature,
-  OpenFeatureEventEmitter,
   Provider,
-  ProviderEvents,
   ResolutionDetails,
-  StandardResolutionReasons,
   TrackingEventDetails,
-  TypeMismatchError,
 } from '@openfeature/web-sdk';
 import {
+  FlagNotFoundError,
+  OpenFeature,
+  OpenFeatureEventEmitter,
+  ProviderEvents,
+  StandardResolutionReasons,
+  TypeMismatchError,
+} from '@openfeature/web-sdk';
+import type {
   FlagState,
   GoFeatureFlagAllFlagRequest,
   GOFeatureFlagAllFlagsResponse,

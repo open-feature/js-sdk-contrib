@@ -1,11 +1,12 @@
-import {
-  BaseEvaluationStrategy,
+import type {
   FinalResult,
   ProviderResolutionResult,
   ProviderResolutionSuccessResult,
   StrategyPerProviderContext,
 } from './BaseEvaluationStrategy';
-import { EvaluationContext, FlagValue, GeneralError, Provider } from '@openfeature/server-sdk';
+import { BaseEvaluationStrategy } from './BaseEvaluationStrategy';
+import type { EvaluationContext, FlagValue, Provider } from '@openfeature/server-sdk';
+import { GeneralError } from '@openfeature/server-sdk';
 
 /**
  * Evaluate all providers in parallel and compare the results.

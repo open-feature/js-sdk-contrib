@@ -1,5 +1,5 @@
 import type { FlagMetadata, FlagValue, ResolutionDetails } from '@openfeature/web-sdk';
-import { ResolutionError } from './resolution-error';
+import type { ResolutionError } from './resolution-error';
 
 /**
  * Cache of flag values from bulk evaluation.

@@ -1,4 +1,4 @@
-import { ErrorCode, EvaluationContextValue, ResolutionDetails } from '@openfeature/server-sdk';
+import type { ErrorCode, EvaluationContextValue, ResolutionDetails } from '@openfeature/server-sdk';
 
 export interface GOFFEvaluationContext {
   key: string;

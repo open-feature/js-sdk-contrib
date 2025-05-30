@@ -1,5 +1,5 @@
-import { EvaluationDetails, FlagValue, Hook, HookContext } from '@openfeature/web-sdk';
-import { CollectorManager } from './collector-manager';
+import type { EvaluationDetails, FlagValue, Hook, HookContext } from '@openfeature/web-sdk';
+import type { CollectorManager } from './collector-manager';
 
 const defaultTargetingKey = 'undefined-targetingKey';
 type Timer = ReturnType<typeof setInterval>;

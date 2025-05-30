@@ -1,5 +1,6 @@
-import { ErrorCode, FlagMetadata, ResolutionDetails, StandardResolutionReasons } from '@openfeature/core';
-import {
+import type { FlagMetadata, ResolutionDetails } from '@openfeature/core';
+import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
+import type {
   EvaluationFlagValue,
   EvaluationRequest,
   EvaluationSuccessResponse,
@@ -7,15 +8,18 @@ import {
   OFREPApiBulkEvaluationResult,
   OFREPApiEvaluationResult,
   OFREPEvaluationErrorHttpStatus,
-  OFREPEvaluationErrorHttpStatuses,
   OFREPEvaluationSuccessHttpStatus,
+} from '../model';
+import {
+  OFREPEvaluationErrorHttpStatuses,
   OFREPEvaluationSuccessHttpStatuses,
   isBulkEvaluationFailureResponse,
   isBulkEvaluationSuccessResponse,
   isEvaluationFailureResponse,
   isEvaluationSuccessResponse,
 } from '../model';
-import { OFREPProviderBaseOptions, buildHeaders } from '../provider';
+import type { OFREPProviderBaseOptions } from '../provider';
+import { buildHeaders } from '../provider';
 import {
   OFREPApiFetchError,
   OFREPApiTooManyRequestsError,

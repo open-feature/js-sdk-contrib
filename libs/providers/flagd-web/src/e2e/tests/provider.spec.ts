@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { OpenFeature } from '@openfeature/web-sdk';
-import { GenericContainer, StartedTestContainer } from 'testcontainers';
+import type { StartedTestContainer } from 'testcontainers';
+import { GenericContainer } from 'testcontainers';
 import { FlagdWebProvider } from '../../lib/flagd-web-provider';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import { FLAGD_NAME, GHERKIN_EVALUATION_FEATURE } from '../constants';

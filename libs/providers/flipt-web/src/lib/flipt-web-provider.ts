@@ -1,16 +1,8 @@
-import {
-  EvaluationContext,
-  Provider,
-  JsonValue,
-  ResolutionDetails,
-  Logger,
-  StandardResolutionReasons,
-  TypeMismatchError,
-  GeneralError,
-  ProviderFatalError,
-} from '@openfeature/web-sdk';
+import type { EvaluationContext, Provider, JsonValue, ResolutionDetails, Logger } from '@openfeature/web-sdk';
+import { StandardResolutionReasons, TypeMismatchError, GeneralError, ProviderFatalError } from '@openfeature/web-sdk';
 import { FliptClient } from '@flipt-io/flipt-client-js/browser';
-import { EvaluationReason, FliptWebProviderOptions } from './models';
+import type { FliptWebProviderOptions } from './models';
+import { EvaluationReason } from './models';
 import { transformContext } from './context-transformer';
 
 export class FliptWebProvider implements Provider {

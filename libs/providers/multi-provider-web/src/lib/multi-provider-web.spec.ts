@@ -1,18 +1,20 @@
 import { WebMultiProvider } from './multi-provider-web';
-import {
-  DefaultLogger,
-  ErrorCode,
+import type {
   EvaluationContext,
-  FlagNotFoundError,
   FlagValue,
   FlagValueType,
   Hook,
-  InMemoryProvider,
   Logger,
-  OpenFeatureEventEmitter,
   Provider,
   ProviderEmittableEvents,
   ProviderMetadata,
+} from '@openfeature/web-sdk';
+import {
+  DefaultLogger,
+  ErrorCode,
+  FlagNotFoundError,
+  InMemoryProvider,
+  OpenFeatureEventEmitter,
   ClientProviderEvents,
 } from '@openfeature/web-sdk';
 import { FirstMatchStrategy } from './strategies/FirstMatchStrategy';

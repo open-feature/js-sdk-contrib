@@ -1,5 +1,6 @@
-import { EventDetails, OpenFeatureEventEmitter, ProviderEvents, ProviderStatus } from '@openfeature/web-sdk';
-import { RegisteredProvider } from './types';
+import type { EventDetails, OpenFeatureEventEmitter } from '@openfeature/web-sdk';
+import { ProviderEvents, ProviderStatus } from '@openfeature/web-sdk';
+import type { RegisteredProvider } from './types';
 
 /**
  * Tracks each individual provider's status by listening to emitted events

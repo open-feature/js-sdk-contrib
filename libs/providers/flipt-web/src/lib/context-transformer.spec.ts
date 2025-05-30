@@ -1,4 +1,4 @@
-import { EvaluationContext } from '@openfeature/server-sdk';
+import type { EvaluationContext } from '@openfeature/server-sdk';
 import { transformContext } from './context-transformer';
 
 describe('context-transformer', () => {

@@ -1,13 +1,7 @@
-import {
-  EvaluationContext,
-  Provider,
-  JsonValue,
-  ResolutionDetails,
-  StandardResolutionReasons,
-  ErrorCode,
-} from '@openfeature/server-sdk';
+import type { EvaluationContext, Provider, JsonValue, ResolutionDetails } from '@openfeature/server-sdk';
+import { StandardResolutionReasons, ErrorCode } from '@openfeature/server-sdk';
 import { InternalServerError } from '@aws-sdk/client-ssm';
-import { AwsSsmProviderConfig } from './types';
+import type { AwsSsmProviderConfig } from './types';
 import { SSMService } from './ssm-service';
 import { Cache } from './cache';
 

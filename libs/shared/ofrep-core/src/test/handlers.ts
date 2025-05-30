@@ -1,5 +1,6 @@
-import { http, HttpResponse, StrictResponse } from 'msw';
-import { BulkEvaluationResponse, EvaluationFailureResponse, EvaluationRequest, EvaluationResponse } from '../lib';
+import type { StrictResponse } from 'msw';
+import { http, HttpResponse } from 'msw';
+import type { BulkEvaluationResponse, EvaluationFailureResponse, EvaluationRequest, EvaluationResponse } from '../lib';
 import { TEST_FLAG_METADATA, TEST_FLAG_SET_METADATA } from './test-constants';
 import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 

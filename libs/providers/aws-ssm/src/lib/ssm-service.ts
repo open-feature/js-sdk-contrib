@@ -1,19 +1,8 @@
-import {
-  GetParameterCommand,
-  SSMClient,
-  SSMClientConfig,
-  GetParameterCommandInput,
-  DescribeParametersCommand,
-} from '@aws-sdk/client-ssm';
-import { ResponseMetadata } from '@smithy/types';
-import {
-  FlagNotFoundError,
-  TypeMismatchError,
-  JsonValue,
-  ParseError,
-  ResolutionDetails,
-  StandardResolutionReasons,
-} from '@openfeature/core';
+import type { SSMClientConfig, GetParameterCommandInput } from '@aws-sdk/client-ssm';
+import { GetParameterCommand, SSMClient, DescribeParametersCommand } from '@aws-sdk/client-ssm';
+import type { ResponseMetadata } from '@smithy/types';
+import type { JsonValue, ResolutionDetails } from '@openfeature/core';
+import { FlagNotFoundError, TypeMismatchError, ParseError, StandardResolutionReasons } from '@openfeature/core';
 
 export class SSMService {
   client: SSMClient;

@@ -1,18 +1,20 @@
 import { MultiProvider } from './multi-provider';
-import {
-  DefaultLogger,
-  ErrorCode,
+import type {
   EvaluationContext,
-  FlagNotFoundError,
   FlagValue,
   FlagValueType,
   Hook,
-  InMemoryProvider,
   Logger,
-  OpenFeatureEventEmitter,
   Provider,
-  ServerProviderEvents,
   ProviderMetadata,
+} from '@openfeature/server-sdk';
+import {
+  DefaultLogger,
+  ErrorCode,
+  FlagNotFoundError,
+  InMemoryProvider,
+  OpenFeatureEventEmitter,
+  ServerProviderEvents,
 } from '@openfeature/server-sdk';
 import { FirstMatchStrategy } from './strategies/FirstMatchStrategy';
 import { FirstSuccessfulStrategy } from './strategies/FirstSuccessfulStrategy';

@@ -1,5 +1,5 @@
-import { FlagMetadata, Logger } from '@openfeature/server-sdk';
-import { Attributes } from '@opentelemetry/api';
+import type { FlagMetadata, Logger } from '@openfeature/server-sdk';
+import type { Attributes } from '@opentelemetry/api';
 
 export type AttributeMapper = (flagMetadata: FlagMetadata) => Attributes;
 

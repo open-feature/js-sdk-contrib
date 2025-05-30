@@ -1,11 +1,14 @@
-import { AuthenticationStrategy, FliptClient } from '@flipt-io/flipt';
-import {
+import type { AuthenticationStrategy } from '@flipt-io/flipt';
+import { FliptClient } from '@flipt-io/flipt';
+import type {
   EvaluationContext,
   Provider,
   JsonValue,
   ResolutionDetails,
-  ProviderStatus,
   ProviderMetadata,
+} from '@openfeature/server-sdk';
+import {
+  ProviderStatus,
   TypeMismatchError,
   ProviderNotReadyError,
   StandardResolutionReasons,

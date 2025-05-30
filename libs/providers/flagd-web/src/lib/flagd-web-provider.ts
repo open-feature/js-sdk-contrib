@@ -1,23 +1,27 @@
-import { CallbackClient, createCallbackClient, createPromiseClient, PromiseClient } from '@connectrpc/connect';
+import type { CallbackClient, PromiseClient } from '@connectrpc/connect';
+import { createCallbackClient, createPromiseClient } from '@connectrpc/connect';
 import { createConnectTransport } from '@connectrpc/connect-web';
 import { Struct } from '@bufbuild/protobuf';
-import {
+import type {
   EvaluationContext,
-  FlagNotFoundError,
   FlagValue,
   JsonValue,
   Logger,
+  Provider,
+  ResolutionDetails,
+} from '@openfeature/web-sdk';
+import {
+  FlagNotFoundError,
   OpenFeature,
   OpenFeatureEventEmitter,
-  Provider,
   ProviderEvents,
-  ResolutionDetails,
   StandardResolutionReasons,
   TypeMismatchError,
 } from '@openfeature/web-sdk';
 import { Service } from '../proto/ts/flagd/evaluation/v1/evaluation_connect';
-import { AnyFlag } from '../proto/ts/flagd/evaluation/v1/evaluation_pb';
-import { FlagdProviderOptions, getOptions } from './options';
+import type { AnyFlag } from '../proto/ts/flagd/evaluation/v1/evaluation_pb';
+import type { FlagdProviderOptions } from './options';
+import { getOptions } from './options';
 
 export const ERROR_DISABLED = 'DISABLED';
 

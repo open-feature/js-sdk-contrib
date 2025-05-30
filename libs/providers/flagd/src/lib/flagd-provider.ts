@@ -1,15 +1,9 @@
-import {
-  EvaluationContext,
-  JsonValue,
-  Logger,
-  OpenFeatureEventEmitter,
-  Provider,
-  ProviderEvents,
-  ResolutionDetails,
-} from '@openfeature/server-sdk';
-import { FlagdProviderOptions, getConfig } from './configuration';
+import type { EvaluationContext, JsonValue, Logger, Provider, ResolutionDetails } from '@openfeature/server-sdk';
+import { OpenFeatureEventEmitter, ProviderEvents } from '@openfeature/server-sdk';
+import type { FlagdProviderOptions } from './configuration';
+import { getConfig } from './configuration';
 import { GRPCService } from './service/grpc/grpc-service';
-import { Service } from './service/service';
+import type { Service } from './service/service';
 import { InProcessService } from './service/in-process/in-process-service';
 
 export class FlagdProvider implements Provider {

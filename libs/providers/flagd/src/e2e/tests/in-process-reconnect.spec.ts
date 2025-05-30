@@ -1,7 +1,8 @@
 import assert from 'assert';
 import { OpenFeature } from '@openfeature/server-sdk';
 import { FlagdProvider } from '../../lib/flagd-provider';
-import { GenericContainer, StartedTestContainer } from 'testcontainers';
+import type { StartedTestContainer } from 'testcontainers';
+import { GenericContainer } from 'testcontainers';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import {
   FLAGD_NAME,

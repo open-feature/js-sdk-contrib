@@ -1,14 +1,7 @@
 import { ConfigCatWebProvider } from './config-cat-web-provider';
-import {
-  createConsoleLogger,
-  createFlagOverridesFromMap,
-  HookEvents,
-  IConfigCatCache,
-  ISettingUnion,
-  LogLevel,
-  OverrideBehaviour,
-} from 'configcat-js-ssr';
-import { EventEmitter } from 'events';
+import type { HookEvents, IConfigCatCache, ISettingUnion } from 'configcat-js-ssr';
+import { createConsoleLogger, createFlagOverridesFromMap, LogLevel, OverrideBehaviour } from 'configcat-js-ssr';
+import type { EventEmitter } from 'events';
 import { ProviderEvents, ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/web-sdk';
 
 describe('ConfigCatWebProvider', () => {

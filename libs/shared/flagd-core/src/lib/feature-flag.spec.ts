@@ -1,5 +1,6 @@
 import type { Logger } from '@openfeature/core';
-import { FeatureFlag, Flag } from './feature-flag';
+import type { Flag } from './feature-flag';
+import { FeatureFlag } from './feature-flag';
 
 const logger: Logger = {
   error: jest.fn(),

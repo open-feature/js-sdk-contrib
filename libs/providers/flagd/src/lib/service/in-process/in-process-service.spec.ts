@@ -1,4 +1,4 @@
-import { DataFetch } from './data-fetch';
+import type { DataFetch } from './data-fetch';
 import { InProcessService } from './in-process-service';
 
 describe('In-process-service', () => {

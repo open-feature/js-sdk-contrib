@@ -1,5 +1,6 @@
-import { FeatureResult } from '@growthbook/growthbook';
-import { ErrorCode, ResolutionDetails, TypeMismatchError } from '@openfeature/web-sdk';
+import type { FeatureResult } from '@growthbook/growthbook';
+import type { ResolutionDetails } from '@openfeature/web-sdk';
+import { ErrorCode, TypeMismatchError } from '@openfeature/web-sdk';
 
 const FEATURE_RESULT_ERRORS = ['unknownFeature', 'cyclicPrerequisite'];
 

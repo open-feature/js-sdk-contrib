@@ -1,5 +1,5 @@
-import { EvaluationContext } from '@openfeature/server-sdk';
-import { GOFFEvaluationContext } from './model';
+import type { EvaluationContext } from '@openfeature/server-sdk';
+import type { GOFFEvaluationContext } from './model';
 import { transformContext } from './context-transformer';
 
 describe('contextTransformer', () => {

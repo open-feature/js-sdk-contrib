@@ -1,4 +1,5 @@
-import { Config, FlagdProviderOptions, getConfig } from './configuration';
+import type { Config, FlagdProviderOptions } from './configuration';
+import { getConfig } from './configuration';
 import { DEFAULT_MAX_CACHE_SIZE } from './constants';
 
 describe('Configuration', () => {

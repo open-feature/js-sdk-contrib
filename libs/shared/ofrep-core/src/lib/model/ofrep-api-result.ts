@@ -1,5 +1,5 @@
-import { EvaluationFailureResponse, EvaluationSuccessResponse } from './evaluation';
-import { BulkEvaluationFailureResponse, BulkEvaluationSuccessResponse } from './bulk-evaluation';
+import type { EvaluationFailureResponse, EvaluationSuccessResponse } from './evaluation';
+import type { BulkEvaluationFailureResponse, BulkEvaluationSuccessResponse } from './bulk-evaluation';
 
 export interface OFREPApiResult<
   S extends OFREPEvaluationErrorHttpStatus | OFREPEvaluationNotModifiedHttpStatus | OFREPEvaluationSuccessHttpStatus,

@@ -1,6 +1,7 @@
 import { OpenFeature } from '@openfeature/server-sdk';
 import { AwsSsmProvider } from '../lib/aws-ssm-provider';
-import { GetParameterCommand, GetParameterCommandOutput, SSMClient } from '@aws-sdk/client-ssm';
+import type { GetParameterCommandOutput } from '@aws-sdk/client-ssm';
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { mockClient } from 'aws-sdk-client-mock';
 
 const ssmMock = mockClient(SSMClient);

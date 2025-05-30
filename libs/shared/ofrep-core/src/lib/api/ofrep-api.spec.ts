@@ -1,7 +1,7 @@
 import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 import { server } from '../../test/mock-service-worker';
 import { TEST_FLAG_METADATA, TEST_FLAG_SET_METADATA } from '../../test/test-constants';
-import {
+import type {
   BulkEvaluationFailureResponse,
   BulkEvaluationSuccessResponse,
   EvaluationFailureResponse,

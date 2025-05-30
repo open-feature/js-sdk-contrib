@@ -7,6 +7,14 @@
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {
+        "@typescript-eslint/consistent-type-imports": [
+          "error",
+          {
+            "disallowTypeAnnotations": true,
+            "fixStyle": "separate-type-imports",
+            "prefer": "type-imports"
+          }
+        ],
         "@nx/enforce-module-boundaries": [
           "error",
           {

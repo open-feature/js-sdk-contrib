@@ -1,30 +1,33 @@
-import {
+import type {
   BeforeHookContext,
-  DefaultLogger,
-  ErrorCode,
   EvaluationContext,
   EvaluationDetails,
   FlagMetadata,
   FlagValue,
   FlagValueType,
-  GeneralError,
   Hook,
   HookContext,
   HookHints,
   JsonValue,
   Logger,
   OpenFeatureError,
-  OpenFeatureEventEmitter,
   Provider,
   ProviderMetadata,
   ResolutionDetails,
+} from '@openfeature/server-sdk';
+import {
+  DefaultLogger,
+  ErrorCode,
+  GeneralError,
+  OpenFeatureEventEmitter,
   StandardResolutionReasons,
 } from '@openfeature/server-sdk';
 import { constructAggregateError, throwAggregateErrorFromPromiseResults } from './errors';
 import { HookExecutor } from './hook-executor';
 import { StatusTracker } from './status-tracker';
-import { BaseEvaluationStrategy, FirstMatchStrategy, ProviderResolutionResult } from './strategies';
-import { ProviderEntryInput, RegisteredProvider } from './types';
+import type { BaseEvaluationStrategy, ProviderResolutionResult } from './strategies';
+import { FirstMatchStrategy } from './strategies';
+import type { ProviderEntryInput, RegisteredProvider } from './types';
 
 export class MultiProvider implements Provider {
   readonly runsOn = 'server';

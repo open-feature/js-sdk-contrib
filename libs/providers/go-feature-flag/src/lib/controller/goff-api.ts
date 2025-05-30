@@ -1,5 +1,4 @@
-import {
-  ConfigurationChange,
+import type {
   DataCollectorRequest,
   DataCollectorResponse,
   ExporterMetadataValue,
@@ -8,15 +7,9 @@ import {
   GoFeatureFlagProxyRequest,
   GoFeatureFlagProxyResponse,
 } from '../model';
-import {
-  ErrorCode,
-  EvaluationContext,
-  FlagNotFoundError,
-  Logger,
-  ResolutionDetails,
-  StandardResolutionReasons,
-  TypeMismatchError,
-} from '@openfeature/server-sdk';
+import { ConfigurationChange } from '../model';
+import type { EvaluationContext, Logger, ResolutionDetails } from '@openfeature/server-sdk';
+import { ErrorCode, FlagNotFoundError, StandardResolutionReasons, TypeMismatchError } from '@openfeature/server-sdk';
 import { transformContext } from '../context-transformer';
 import axios, { isAxiosError } from 'axios';
 import { Unauthorized } from '../errors/unauthorized';

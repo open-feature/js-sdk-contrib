@@ -1,14 +1,8 @@
-import {
-  EvaluationContext,
-  Provider,
-  JsonValue,
-  ResolutionDetails,
-  GeneralError,
-  OpenFeatureEventEmitter,
-  ProviderEvents,
-} from '@openfeature/web-sdk';
+import type { EvaluationContext, Provider, JsonValue, ResolutionDetails } from '@openfeature/web-sdk';
+import { GeneralError, OpenFeatureEventEmitter, ProviderEvents } from '@openfeature/web-sdk';
 
-import { GrowthBook, InitOptions, Context } from '@growthbook/growthbook';
+import type { InitOptions, Context } from '@growthbook/growthbook';
+import { GrowthBook } from '@growthbook/growthbook';
 import isEmpty from 'lodash.isempty';
 import translateResult from './translate-result';
 

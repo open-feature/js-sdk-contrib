@@ -1,10 +1,7 @@
-import {
-  BaseEvaluationStrategy,
-  FinalResult,
-  ProviderResolutionResult,
-  StrategyPerProviderContext,
-} from './BaseEvaluationStrategy';
-import { ErrorCode, EvaluationContext, FlagValue } from '@openfeature/web-sdk';
+import type { FinalResult, ProviderResolutionResult, StrategyPerProviderContext } from './BaseEvaluationStrategy';
+import { BaseEvaluationStrategy } from './BaseEvaluationStrategy';
+import type { EvaluationContext, FlagValue } from '@openfeature/web-sdk';
+import { ErrorCode } from '@openfeature/web-sdk';
 
 /**
  * Return the first result that did not indicate "flag not found".

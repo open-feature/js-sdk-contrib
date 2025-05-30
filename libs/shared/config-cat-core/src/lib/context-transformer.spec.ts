@@ -1,4 +1,4 @@
-import { EvaluationContext } from '@openfeature/core';
+import type { EvaluationContext } from '@openfeature/core';
 import { transformContext } from './context-transformer';
 
 describe('context-transformer', () => {

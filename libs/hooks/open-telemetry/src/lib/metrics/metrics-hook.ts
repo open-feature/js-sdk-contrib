@@ -1,19 +1,18 @@
+import type { BeforeHookContext, Logger } from '@openfeature/server-sdk';
 import {
-  BeforeHookContext,
-  Logger,
   StandardResolutionReasons,
   type EvaluationDetails,
   type FlagValue,
   type Hook,
   type HookContext,
 } from '@openfeature/server-sdk';
-import { Attributes, Counter, UpDownCounter, ValueType, metrics } from '@opentelemetry/api';
+import type { Attributes, Counter, UpDownCounter } from '@opentelemetry/api';
+import { ValueType, metrics } from '@opentelemetry/api';
+import type { EvaluationAttributes, ExceptionAttributes } from '../conventions';
 import {
   ACTIVE_COUNT_NAME,
   ERROR_TOTAL_NAME,
   EXCEPTION_ATTR,
-  EvaluationAttributes,
-  ExceptionAttributes,
   KEY_ATTR,
   PROVIDER_NAME_ATTR,
   REASON_ATTR,
@@ -21,7 +20,8 @@ import {
   SUCCESS_TOTAL_NAME,
   VARIANT_ATTR,
 } from '../conventions';
-import { OpenTelemetryHook, OpenTelemetryHookOptions } from '../otel-hook';
+import type { OpenTelemetryHookOptions } from '../otel-hook';
+import { OpenTelemetryHook } from '../otel-hook';
 
 type ErrorEvaluationAttributes = EvaluationAttributes & ExceptionAttributes;
 

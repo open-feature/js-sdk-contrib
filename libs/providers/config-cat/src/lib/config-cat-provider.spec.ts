@@ -1,16 +1,14 @@
 import { ConfigCatProvider } from './config-cat-provider';
 import { ProviderEvents, ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/web-sdk';
+import type { HookEvents, IConfigCatCache, ISettingUnion } from 'configcat-js-ssr';
 import {
   createConsoleLogger,
   createFlagOverridesFromMap,
-  HookEvents,
-  IConfigCatCache,
-  ISettingUnion,
   LogLevel,
   OverrideBehaviour,
   PollingMode,
 } from 'configcat-js-ssr';
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 
 describe('ConfigCatProvider', () => {
   const targetingKey = 'abc';
