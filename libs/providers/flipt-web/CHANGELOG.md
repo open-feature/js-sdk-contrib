@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.3...flipt-web-provider-v0.1.4) (2025-05-30)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update dependency @flipt-io/flipt-client-js to v0.0.2 ([#1272](https://github.com/open-feature/js-sdk-contrib/issues/1272)) ([d7f8746](https://github.com/open-feature/js-sdk-contrib/commit/d7f8746434f58333a2458418c35749c125932369))
+
+
+### 🧹 Chore
+
+* add "type" import enforcement lint rule and apply ([#1292](https://github.com/open-feature/js-sdk-contrib/issues/1292)) ([4dbcbf1](https://github.com/open-feature/js-sdk-contrib/commit/4dbcbf18703bdb0addbef2f7b3810677433abbfd))
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+
 ## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.2...flipt-web-provider-v0.1.3) (2025-04-10)
 
 
