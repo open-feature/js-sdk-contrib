@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.6...go-feature-flag-web-provider-v0.2.7) (2025-05-30)
+
+
+### 🧹 Chore
+
+* add "type" import enforcement lint rule and apply ([#1292](https://github.com/open-feature/js-sdk-contrib/issues/1292)) ([4dbcbf1](https://github.com/open-feature/js-sdk-contrib/commit/4dbcbf18703bdb0addbef2f7b3810677433abbfd))
+
 ## [0.2.6](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.5...go-feature-flag-web-provider-v0.2.6) (2025-05-26)
 
 
