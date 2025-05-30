@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.3...flagd-web-provider-v0.7.4) (2025-05-30)
+
+
+### 🧹 Chore
+
+* add "type" import enforcement lint rule and apply ([#1292](https://github.com/open-feature/js-sdk-contrib/issues/1292)) ([4dbcbf1](https://github.com/open-feature/js-sdk-contrib/commit/4dbcbf18703bdb0addbef2f7b3810677433abbfd))
+* **deps:** update libs/providers/flagd-web/schemas digest to c707f56 ([#1254](https://github.com/open-feature/js-sdk-contrib/issues/1254)) ([241e36e](https://github.com/open-feature/js-sdk-contrib/commit/241e36edf6febfcca482ce893ee5a2e7b34fa86a))
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+
 ## [0.7.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.2...flagd-web-provider-v0.7.3) (2025-03-19)
 
 
