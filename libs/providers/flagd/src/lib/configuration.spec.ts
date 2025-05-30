@@ -19,6 +19,7 @@ describe('Configuration', () => {
       cache: 'lru',
       resolverType: 'rpc',
       selector: '',
+      deadlineMs: 500,
     });
   });
 
@@ -56,6 +57,7 @@ describe('Configuration', () => {
       selector,
       offlineFlagSourcePath,
       defaultAuthority,
+      deadlineMs: 500,
     });
   });
 
@@ -69,6 +71,7 @@ describe('Configuration', () => {
       resolverType: 'rpc',
       selector: '',
       defaultAuthority: '',
+      deadlineMs: 500,
     };
 
     process.env['FLAGD_HOST'] = 'override';
