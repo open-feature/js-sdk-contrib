@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.13.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.3...flagd-provider-v0.13.4) (2025-05-30)
+
+
+### 🧹 Chore
+
+* add "type" import enforcement lint rule and apply ([#1292](https://github.com/open-feature/js-sdk-contrib/issues/1292)) ([4dbcbf1](https://github.com/open-feature/js-sdk-contrib/commit/4dbcbf18703bdb0addbef2f7b3810677433abbfd))
+* add 1.13.0 as a valid grpc-js peer version ([#1234](https://github.com/open-feature/js-sdk-contrib/issues/1234)) ([84abd32](https://github.com/open-feature/js-sdk-contrib/commit/84abd328a402feab8a0e844465e0c1aa5df4396e))
+* **deps:** update libs/providers/flagd/schemas digest to c707f56 ([#1269](https://github.com/open-feature/js-sdk-contrib/issues/1269)) ([ca98f7c](https://github.com/open-feature/js-sdk-contrib/commit/ca98f7c6dc54730200e2e9bf53bf003a9fc3d903))
+* **deps:** update libs/providers/flagd/spec digest to 27e4461 ([#1270](https://github.com/open-feature/js-sdk-contrib/issues/1270)) ([29f8b84](https://github.com/open-feature/js-sdk-contrib/commit/29f8b846850a4369ae57486b8b9432f00e9a201d))
+* **deps:** update libs/providers/flagd/spec digest to 95fe981 ([#1205](https://github.com/open-feature/js-sdk-contrib/issues/1205)) ([7af11c3](https://github.com/open-feature/js-sdk-contrib/commit/7af11c3bd46f52b89bd9244f7b0b327e2e4bde18))
+* **deps:** update libs/providers/flagd/spec digest to a69f748 ([#1215](https://github.com/open-feature/js-sdk-contrib/issues/1215)) ([8f08c48](https://github.com/open-feature/js-sdk-contrib/commit/8f08c48adfdedabbe7323e58424bac375857bb48))
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+
 ## [0.13.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.2...flagd-provider-v0.13.3) (2025-02-07)
 
 
