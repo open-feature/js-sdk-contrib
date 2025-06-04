@@ -31,7 +31,7 @@ export const configSteps: Steps = (state: State) => {
       /^the option "(.*)" of type "(.*)" should have the value "(.*)"$/,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       (_name: string, _type: string, _value: string) => {
-        // TODO: implement with configuration unification
+        // TODO: implement with configuration unification, see: https://github.com/open-feature/js-sdk-contrib/issues/1096
         // const expected = mapValueToType(value, type);
         // const propertyName = mapName(name);
         // // eslint-disable-next-line @typescript-eslint/ban-ts-comment
