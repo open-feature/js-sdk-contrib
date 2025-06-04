@@ -1,57 +1,33 @@
-import assert from 'assert';
-import { OpenFeature } from '@openfeature/server-sdk';
-import { FlagdProvider } from '../../lib/flagd-provider';
-import type { StartedTestContainer } from 'testcontainers';
-import { GenericContainer } from 'testcontainers';
-import { autoBindSteps, loadFeature } from 'jest-cucumber';
-import {
-  FLAGD_NAME,
-  GHERKIN_EVALUATION_FEATURE,
-  GHERKIN_FLAGD_FEATURE,
-  GHERKIN_FLAGD_JSON_EVALUATOR_FEATURE,
-} from '../constants';
-import { E2E_CLIENT_NAME, IMAGE_VERSION } from '@openfeature/flagd-core';
-import { flagStepDefinitions } from '../step-definitions';
+import { autoBindSteps, loadFeatures } from 'jest-cucumber';
+import { providerSteps } from '../step-definitions/providerSteps';
+import { configSteps } from '../step-definitions/configSteps';
+import type { State } from '../step-definitions/state';
+import { eventSteps } from '../step-definitions/eventSteps';
+import { flagSteps } from '../step-definitions/flagSteps';
+import { contextSteps } from '../step-definitions/contextSteps';
+import { GHERKIN_FLAGD } from '../constants';
 
-// register the flagd provider before the tests.
-async function setup() {
-  const containers: StartedTestContainer[] = [];
+const steps = [providerSteps, configSteps, eventSteps, flagSteps, contextSteps];
 
-  console.log('Setting flagd provider...');
-  const stable = await new GenericContainer(`ghcr.io/open-feature/flagd-testbed:${IMAGE_VERSION}`)
-    .withExposedPorts(8013)
-    .start();
-  containers.push(stable);
-  OpenFeature.setProvider(E2E_CLIENT_NAME, new FlagdProvider({ cache: 'disabled', port: stable.getFirstMappedPort() }));
-
-  assert(
-    OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name === FLAGD_NAME,
-    new Error(
-      `Expected ${FLAGD_NAME} provider to be configured, instead got: ${
-        OpenFeature.getProviderMetadata(E2E_CLIENT_NAME).name
-      }`,
-    ),
-  );
-
-  console.log('flagd provider configured!');
-  return containers;
-}
+jest.setTimeout(50000);
 
 describe('rpc', () => {
-  let containers: StartedTestContainer[] = [];
-  beforeAll(async () => {
-    containers = await setup();
-  }, 60000);
-  afterAll(async () => {
-    await OpenFeature.close();
-    for (const container of containers) {
-      await container.stop();
-    }
-  });
-  const features = [
-    loadFeature(GHERKIN_FLAGD_FEATURE),
-    loadFeature(GHERKIN_EVALUATION_FEATURE),
-    loadFeature(GHERKIN_FLAGD_JSON_EVALUATOR_FEATURE),
-  ];
-  autoBindSteps(features, [flagStepDefinitions]);
+  const state: State = {
+    resolverType: 'rpc',
+    options: {},
+    config: undefined,
+    events: [],
+  };
+  autoBindSteps(
+    loadFeatures(GHERKIN_FLAGD, {
+      tagFilter:
+        // remove filters as we add support for features
+        // see: https://github.com/open-feature/js-sdk-contrib/issues/1096 and child issues
+        '@rpc and not @targetURI and not @customCert and not @events and not @stream and not @grace and not @metadata and not @contextEnrichment and not @caching',
+      scenarioNameTemplate: (vars) => {
+        return `${vars.scenarioTitle} (${vars.scenarioTags.join(',')} ${vars.featureTags.join(',')})`;
+      },
+    }),
+    steps.map((step) => step(state)),
+  );
 });

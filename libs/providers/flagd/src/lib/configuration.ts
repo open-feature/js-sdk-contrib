@@ -19,6 +19,13 @@ export interface Config {
   port: number;
 
   /**
+   * The deadline for connections.
+   *
+   * @default 500
+   */
+  deadlineMs: number;
+
+  /**
    * Determines if TLS should be used.
    *
    * @default false
@@ -79,6 +86,7 @@ export interface Config {
 export type FlagdProviderOptions = Partial<Config>;
 
 const DEFAULT_CONFIG: Omit<Config, 'port' | 'resolverType'> = {
+  deadlineMs: 500,
   host: 'localhost',
   tls: false,
   selector: '',
@@ -93,6 +101,7 @@ const DEFAULT_IN_PROCESS_CONFIG: Config = { ...DEFAULT_CONFIG, resolverType: 'in
 enum ENV_VAR {
   FLAGD_HOST = 'FLAGD_HOST',
   FLAGD_PORT = 'FLAGD_PORT',
+  FLAGD_DEADLINE_MS = 'FLAGD_DEADLINE_MS',
   FLAGD_TLS = 'FLAGD_TLS',
   FLAGD_SOCKET_PATH = 'FLAGD_SOCKET_PATH',
   FLAGD_CACHE = 'FLAGD_CACHE',
@@ -103,38 +112,60 @@ enum ENV_VAR {
   FLAGD_DEFAULT_AUTHORITY = 'FLAGD_DEFAULT_AUTHORITY',
 }
 
-const getEnvVarConfig = (): Partial<Config> => ({
-  ...(process.env[ENV_VAR.FLAGD_HOST] && {
-    host: process.env[ENV_VAR.FLAGD_HOST],
-  }),
-  ...(Number(process.env[ENV_VAR.FLAGD_PORT]) && {
-    port: Number(process.env[ENV_VAR.FLAGD_PORT]),
-  }),
-  ...(process.env[ENV_VAR.FLAGD_TLS] && {
-    tls: process.env[ENV_VAR.FLAGD_TLS]?.toLowerCase() === 'true',
-  }),
-  ...(process.env[ENV_VAR.FLAGD_SOCKET_PATH] && {
-    socketPath: process.env[ENV_VAR.FLAGD_SOCKET_PATH],
-  }),
-  ...((process.env[ENV_VAR.FLAGD_CACHE] === 'lru' || process.env[ENV_VAR.FLAGD_CACHE] === 'disabled') && {
-    cache: process.env[ENV_VAR.FLAGD_CACHE],
-  }),
-  ...(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE] && {
-    maxCacheSize: Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
-  }),
-  ...(process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR] && {
-    selector: process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR],
-  }),
-  ...((process.env[ENV_VAR.FLAGD_RESOLVER] === 'rpc' || process.env[ENV_VAR.FLAGD_RESOLVER] === 'in-process') && {
-    resolverType: process.env[ENV_VAR.FLAGD_RESOLVER],
-  }),
-  ...(process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH] && {
-    offlineFlagSourcePath: process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH],
-  }),
-  ...(process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY] && {
-    defaultAuthority: process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY],
-  }),
-});
+function checkEnvVarResolverType() {
+  return (
+    process.env[ENV_VAR.FLAGD_RESOLVER] &&
+    (process.env[ENV_VAR.FLAGD_RESOLVER].toLowerCase() === 'rpc' ||
+      process.env[ENV_VAR.FLAGD_RESOLVER].toLowerCase() === 'in-process')
+  );
+}
+
+const getEnvVarConfig = (): Partial<Config> => {
+  let provider = undefined;
+  if (
+    process.env[ENV_VAR.FLAGD_RESOLVER] &&
+    (process.env[ENV_VAR.FLAGD_RESOLVER].toLowerCase() === 'rpc' ||
+      process.env[ENV_VAR.FLAGD_RESOLVER].toLowerCase() === 'in-process')
+  ) {
+    provider = process.env[ENV_VAR.FLAGD_RESOLVER].toLowerCase();
+  }
+
+  return {
+    ...(process.env[ENV_VAR.FLAGD_HOST] && {
+      host: process.env[ENV_VAR.FLAGD_HOST],
+    }),
+    ...(Number(process.env[ENV_VAR.FLAGD_PORT]) && {
+      port: Number(process.env[ENV_VAR.FLAGD_PORT]),
+    }),
+    ...(Number(process.env[ENV_VAR.FLAGD_DEADLINE_MS]) && {
+      deadlineMs: Number(process.env[ENV_VAR.FLAGD_DEADLINE_MS]),
+    }),
+    ...(process.env[ENV_VAR.FLAGD_TLS] && {
+      tls: process.env[ENV_VAR.FLAGD_TLS]?.toLowerCase() === 'true',
+    }),
+    ...(process.env[ENV_VAR.FLAGD_SOCKET_PATH] && {
+      socketPath: process.env[ENV_VAR.FLAGD_SOCKET_PATH],
+    }),
+    ...((process.env[ENV_VAR.FLAGD_CACHE] === 'lru' || process.env[ENV_VAR.FLAGD_CACHE] === 'disabled') && {
+      cache: process.env[ENV_VAR.FLAGD_CACHE],
+    }),
+    ...(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE] && {
+      maxCacheSize: Number(process.env[ENV_VAR.FLAGD_MAX_CACHE_SIZE]),
+    }),
+    ...(process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR] && {
+      selector: process.env[ENV_VAR.FLAGD_SOURCE_SELECTOR],
+    }),
+    ...(provider && {
+      resolverType: provider as ResolverType,
+    }),
+    ...(process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH] && {
+      offlineFlagSourcePath: process.env[ENV_VAR.FLAGD_OFFLINE_FLAG_SOURCE_PATH],
+    }),
+    ...(process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY] && {
+      defaultAuthority: process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY],
+    }),
+  };
+};
 
 export function getConfig(options: FlagdProviderOptions = {}) {
   const envVarConfig = getEnvVarConfig();
