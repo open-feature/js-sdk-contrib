@@ -5,7 +5,6 @@ import { waitFor } from './utils';
 export const eventSteps: Steps =
   (state: State) =>
   ({ given, when, then }) => {
-
     function map(eventType: string): ServerProviderEvents {
       switch (eventType) {
         case 'error':
