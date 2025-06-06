@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.4...flipt-web-provider-v0.1.5) (2025-06-06)
+
+
+### ✨ New Features
+
+* **flipt-web:** update types to match flipt-client-js ([#1303](https://github.com/open-feature/js-sdk-contrib/issues/1303)) ([9e8496a](https://github.com/open-feature/js-sdk-contrib/commit/9e8496a384e65bee8d6cb096bdfaa909e2bfa311))
+
 ## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.3...flipt-web-provider-v0.1.4) (2025-06-04)
 
 
