@@ -1,7 +1,13 @@
 export interface FliptWebProviderOptions {
   url?: string;
   authentication?: FliptWebProviderAuthentication;
-  fetcher?: () => Promise<Response>;
+  fetcher?: FliptFetcher;
+}
+
+export type FliptFetcher = (args?: FliptFetcherOptions) => Promise<Response>;
+
+export interface FliptFetcherOptions {
+  etag?: string;
 }
 
 export interface FliptClientTokenAuthentication {
