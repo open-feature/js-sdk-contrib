@@ -12,7 +12,7 @@
   "dependencies": {
     "object-hash": "^3.0.0",
     "lru-cache": "^11.0.0",
-    "axios": "1.8.4",
+    "axios": "1.9.0",
     "copy-anything": "^3.0.5"
   }
 }
