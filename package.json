@@ -56,7 +56,7 @@
     "@openfeature/core": "^1.6.0",
     "@openfeature/server-sdk": "^1.17.1",
     "@openfeature/web-sdk": "^1.4.1",
-    "@opentelemetry/sdk-metrics": "^1.15.0",
+    "@opentelemetry/sdk-metrics": "^2.0.0",
     "@swc-node/register": "~1.10.0",
     "@swc/cli": "~0.7.0",
     "@swc/core": "1.11.31",
