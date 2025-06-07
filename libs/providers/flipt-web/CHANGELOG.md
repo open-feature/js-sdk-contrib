@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.5...flipt-web-provider-v0.1.6) (2025-06-07)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update dependency @flipt-io/flipt-client-js to v0.0.6 ([#1309](https://github.com/open-feature/js-sdk-contrib/issues/1309)) ([d3ad93e](https://github.com/open-feature/js-sdk-contrib/commit/d3ad93e3a92340ea405ddeeb9bb084cd58f0b552))
+
 ## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.4...flipt-web-provider-v0.1.5) (2025-06-06)
 
 
