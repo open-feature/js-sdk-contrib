@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.3.2...ofrep-web-provider-v0.3.3) (2025-06-23)
+
+
+### 🐛 Bug Fixes
+
+* remove incorrect undici dep ([#1319](https://github.com/open-feature/js-sdk-contrib/issues/1319)) ([6ab7f1a](https://github.com/open-feature/js-sdk-contrib/commit/6ab7f1abfc4a1b5b22b715359cfa56a98a414e8d))
+
 ## [0.3.2](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.3.1...ofrep-web-provider-v0.3.2) (2025-02-13)
 
 
