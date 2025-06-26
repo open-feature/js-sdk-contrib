@@ -14,6 +14,7 @@ import type {
   Provider,
   ProviderMetadata,
   ResolutionDetails,
+  TrackingEventDetails,
 } from '@openfeature/server-sdk';
 import {
   DefaultLogger,
@@ -309,6 +310,40 @@ export class MultiProvider implements Provider {
         },
       },
     ];
+  }
+
+  track(trackingEventName: string, context: EvaluationContext, trackingEventDetails: TrackingEventDetails): void {
+    for (const providerEntry of this.providerEntries) {
+      if (!providerEntry.provider.track) {
+        continue;
+      }
+
+      const strategyContext = {
+        provider: providerEntry.provider,
+        providerName: providerEntry.name,
+        providerStatus: this.statusTracker.providerStatus(providerEntry.name),
+      };
+
+      if (
+        this.evaluationStrategy.shouldTrackWithThisProvider(
+          strategyContext,
+          context,
+          trackingEventName,
+          trackingEventDetails,
+        )
+      ) {
+        try {
+          providerEntry.provider.track?.(trackingEventName, context, trackingEventDetails);
+        } catch (error) {
+          // TODO: how should we handle errors?
+          // Log error but don't throw - tracking shouldn't break application flow
+          this.logger.error(
+            `Error tracking event "${trackingEventName}" with provider "${providerEntry.name}":`,
+            error,
+          );
+        }
+      }
+    }
   }
 
   private getErrorEvaluationDetails<T extends FlagValue>(
