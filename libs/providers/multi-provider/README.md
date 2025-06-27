@@ -30,12 +30,8 @@ import { MultiProvider } from '@openfeature/multi-provider'
 import { OpenFeature } from '@openfeature/server-sdk'
 
 const multiProvider = new MultiProvider([
-  {
-      provider: new ProviderA()
-  },
-  {
-      provider: new ProviderB()
-  }
+  { provider: new ProviderA() },
+  { provider: new ProviderB() }
 ])
 
 await OpenFeature.setProviderAndWait(multiProvider)
@@ -58,12 +54,8 @@ import { MultiProvider, FirstSuccessfulStrategy } from '@openfeature/multi-provi
 
 const multiProvider = new MultiProvider(
     [
-      {
-        provider: new ProviderA()
-      },
-      {
-        provider: new ProviderB()
-      }
+      { provider: new ProviderA() },
+      { provider: new ProviderB() }
     ], 
     new FirstSuccessfulStrategy()
 )
@@ -87,12 +79,8 @@ import { MultiProvider, ComparisonStrategy } from '@openfeature/multi-provider'
 const providerA = new ProviderA()
 const multiProvider = new MultiProvider(
   [
-    {
-      provider: providerA
-    },
-    {
-      provider: new ProviderB()
-    }
+    { provider: providerA },
+    { provider: new ProviderB() }
   ],
   new ComparisonStrategy(providerA, (details) => {
       console.log("Mismatch detected", details)
@@ -111,12 +99,8 @@ import { OpenFeature } from '@openfeature/server-sdk'
 import { MultiProvider } from '@openfeature/multi-provider'
 
 const multiProvider = new MultiProvider([
-  {
-      provider: new ProviderA()
-  },
-  {
-      provider: new ProviderB()
-  }
+  { provider: new ProviderA() },
+  { provider: new ProviderB() }
 ])
 
 await OpenFeature.setProviderAndWait(multiProvider)
