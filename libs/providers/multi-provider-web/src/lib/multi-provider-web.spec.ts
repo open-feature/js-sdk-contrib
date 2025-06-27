@@ -8,6 +8,7 @@ import type {
   Provider,
   ProviderEmittableEvents,
   ProviderMetadata,
+  TrackingEventDetails,
 } from '@openfeature/web-sdk';
 import {
   DefaultLogger,
@@ -20,6 +21,7 @@ import {
 import { FirstMatchStrategy } from './strategies/FirstMatchStrategy';
 import { FirstSuccessfulStrategy } from './strategies/FirstSuccessfulStrategy';
 import { ComparisonStrategy } from './strategies/ComparisonStrategy';
+import type { BaseEvaluationStrategy } from './strategies/BaseEvaluationStrategy';
 
 class TestProvider implements Provider {
   public metadata: ProviderMetadata = {
@@ -27,6 +29,7 @@ class TestProvider implements Provider {
   };
   public events = new OpenFeatureEventEmitter();
   public hooks: Hook[] = [];
+  public track = jest.fn();
   constructor(
     public resolveBooleanEvaluation = jest.fn().mockReturnValue({ value: false }),
     public resolveStringEvaluation = jest.fn().mockReturnValue({ value: 'default' }),
@@ -716,6 +719,171 @@ describe('MultiProvider', () => {
           expect(provider2.resolveBooleanEvaluation).toHaveBeenCalled();
           expect(provider3.resolveBooleanEvaluation).toHaveBeenCalled();
         });
+      });
+    });
+
+    describe('tracking', () => {
+      const context: EvaluationContext = { targetingKey: 'user123' };
+      const trackingEventDetails: TrackingEventDetails = { value: 100, currency: 'USD' };
+
+      it('calls track on all providers by default', () => {
+        const provider1 = new TestProvider();
+        const provider2 = new TestProvider();
+        const provider3 = new TestProvider();
+
+        const multiProvider = new WebMultiProvider([
+          { provider: provider1 },
+          { provider: provider2 },
+          { provider: provider3 },
+        ]);
+
+        multiProvider.track('purchase', context, trackingEventDetails);
+
+        expect(provider1.track).toHaveBeenCalledWith('purchase', context, trackingEventDetails);
+        expect(provider2.track).toHaveBeenCalledWith('purchase', context, trackingEventDetails);
+        expect(provider3.track).toHaveBeenCalledWith('purchase', context, trackingEventDetails);
+      });
+
+      it('skips providers without track method', () => {
+        const provider1 = new TestProvider();
+        const provider2 = new InMemoryProvider(); // Doesn't have track method
+        const provider3 = new TestProvider();
+
+        const multiProvider = new WebMultiProvider([
+          { provider: provider1 },
+          { provider: provider2 },
+          { provider: provider3 },
+        ]);
+
+        expect(() => multiProvider.track('purchase', context, trackingEventDetails)).not.toThrow();
+        expect(provider1.track).toHaveBeenCalledWith('purchase', context, trackingEventDetails);
+        expect(provider3.track).toHaveBeenCalledWith('purchase', context, trackingEventDetails);
+      });
+
+      it('continues tracking with other providers when one throws an error', () => {
+        const provider1 = new TestProvider();
+        const provider2 = new TestProvider();
+        const provider3 = new TestProvider();
+
+        provider2.track.mockImplementation(() => {
+          throw new Error('Tracking failed');
+        });
+
+        const mockLogger = { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() };
+        const multiProvider = new WebMultiProvider(
+          [{ provider: provider1 }, { provider: provider2 }, { provider: provider3 }],
+          undefined,
+          mockLogger,
+        );
+
+        expect(() => multiProvider.track('purchase', context, trackingEventDetails)).not.toThrow();
+
+        expect(provider1.track).toHaveBeenCalledWith('purchase', context, trackingEventDetails);
+        expect(provider2.track).toHaveBeenCalledWith('purchase', context, trackingEventDetails);
+        expect(provider3.track).toHaveBeenCalledWith('purchase', context, trackingEventDetails);
+        expect(mockLogger.error).toHaveBeenCalledWith(
+          'Error tracking event "purchase" with provider "TestProvider-2":',
+          expect.any(Error),
+        );
+      });
+
+      it('respects strategy shouldTrackWithThisProvider decision', () => {
+        const provider1 = new TestProvider();
+        const provider2 = new TestProvider();
+        const provider3 = new TestProvider();
+
+        // Create a custom strategy that only allows the second provider to track
+        class MockStrategy extends FirstMatchStrategy {
+          override shouldTrackWithThisProvider = jest.fn().mockImplementation((strategyContext) => {
+            return strategyContext.providerName === 'TestProvider-2';
+          });
+        }
+
+        const mockStrategy = new MockStrategy();
+
+        const multiProvider = new WebMultiProvider(
+          [{ provider: provider1 }, { provider: provider2 }, { provider: provider3 }],
+          mockStrategy,
+        );
+
+        multiProvider.track('purchase', context, trackingEventDetails);
+
+        expect(mockStrategy.shouldTrackWithThisProvider).toHaveBeenCalledTimes(3);
+        expect(provider1.track).not.toHaveBeenCalled();
+        expect(provider2.track).toHaveBeenCalledWith('purchase', context, trackingEventDetails);
+        expect(provider3.track).not.toHaveBeenCalled();
+      });
+
+      it('does not track with providers in NOT_READY or FATAL status by default', () => {
+        const provider1 = new TestProvider();
+        const provider2 = new TestProvider();
+        const provider3 = new TestProvider();
+
+        const multiProvider = new WebMultiProvider([
+          { provider: provider1 },
+          { provider: provider2 },
+          { provider: provider3 },
+        ]);
+
+        // Mock the status tracker to return different statuses
+        const mockStatusTracker = {
+          providerStatus: jest.fn().mockImplementation((name) => {
+            if (name === 'TestProvider-1') return 'NOT_READY';
+            if (name === 'TestProvider-2') return 'READY';
+            if (name === 'TestProvider-3') return 'FATAL';
+            return 'READY'; // Default fallback
+          }),
+        };
+        (multiProvider as any).statusTracker = mockStatusTracker;
+
+        multiProvider.track('purchase', context, trackingEventDetails);
+
+        expect(provider1.track).not.toHaveBeenCalled();
+        expect(provider2.track).toHaveBeenCalledWith('purchase', context, trackingEventDetails);
+        expect(provider3.track).not.toHaveBeenCalled();
+      });
+
+      it('passes correct strategy context to shouldTrackWithThisProvider', () => {
+        const provider1 = new TestProvider();
+        const provider2 = new TestProvider();
+
+        class MockStrategy extends FirstMatchStrategy {
+          override shouldTrackWithThisProvider = jest.fn().mockReturnValue(true);
+        }
+
+        const mockStrategy = new MockStrategy();
+
+        const multiProvider = new WebMultiProvider([{ provider: provider1 }, { provider: provider2 }], mockStrategy);
+
+        // Mock the status tracker to return READY status
+        const mockStatusTracker = {
+          providerStatus: jest.fn().mockReturnValue('READY'),
+        };
+        (multiProvider as any).statusTracker = mockStatusTracker;
+
+        multiProvider.track('purchase', context, trackingEventDetails);
+
+        expect(mockStrategy.shouldTrackWithThisProvider).toHaveBeenCalledWith(
+          {
+            provider: provider1,
+            providerName: 'TestProvider-1',
+            providerStatus: 'READY',
+          },
+          context,
+          'purchase',
+          trackingEventDetails,
+        );
+
+        expect(mockStrategy.shouldTrackWithThisProvider).toHaveBeenCalledWith(
+          {
+            provider: provider2,
+            providerName: 'TestProvider-2',
+            providerStatus: 'READY',
+          },
+          context,
+          'purchase',
+          trackingEventDetails,
+        );
       });
     });
   });

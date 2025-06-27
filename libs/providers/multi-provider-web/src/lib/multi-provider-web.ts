@@ -14,6 +14,7 @@ import type {
   EvaluationDetails,
   FlagValue,
   OpenFeatureError,
+  TrackingEventDetails,
 } from '@openfeature/web-sdk';
 import {
   DefaultLogger,
@@ -142,6 +143,38 @@ export class WebMultiProvider implements Provider {
     context: EvaluationContext,
   ): ResolutionDetails<T> {
     return this.flagResolutionProxy(flagKey, 'object', defaultValue, context);
+  }
+
+  track(trackingEventName: string, context: EvaluationContext, trackingEventDetails: TrackingEventDetails): void {
+    for (const providerEntry of this.providerEntries) {
+      if (!providerEntry.provider.track) {
+        continue;
+      }
+
+      const strategyContext = {
+        provider: providerEntry.provider,
+        providerName: providerEntry.name,
+        providerStatus: this.statusTracker.providerStatus(providerEntry.name),
+      };
+
+      if (
+        this.evaluationStrategy.shouldTrackWithThisProvider(
+          strategyContext,
+          context,
+          trackingEventName,
+          trackingEventDetails,
+        )
+      ) {
+        try {
+          providerEntry.provider.track?.(trackingEventName, context, trackingEventDetails);
+        } catch (error) {
+          this.logger.error(
+            `Error tracking event "${trackingEventName}" with provider "${providerEntry.name}":`,
+            error,
+          );
+        }
+      }
+    }
   }
 
   private flagResolutionProxy<T extends boolean | string | number | JsonValue>(
