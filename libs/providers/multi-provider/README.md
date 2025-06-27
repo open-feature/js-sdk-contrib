@@ -99,6 +99,7 @@ const multiProvider = new MultiProvider(
   })
 )
 ```
+
 The first argument is the "fallback provider" whose value to use in the event that providers do not agree. It should be the same object reference as one of the providers in the list. The second argument is a callback function that will be executed when a mismatch is detected. The callback will be passed an object containing the details of each provider's resolution, including the flag key, the value returned, and any errors that were thrown.
 
 ## Tracking Support
@@ -107,16 +108,27 @@ The Multi-Provider supports tracking events across multiple providers. When you 
 
 ```typescript
 import { OpenFeature } from '@openfeature/server-sdk'
+import { MultiProvider } from '@openfeature/multi-provider'
 
+const multiProvider = new MultiProvider([
+  {
+      provider: new ProviderA()
+  },
+  {
+      provider: new ProviderB()
+  }
+])
+
+await OpenFeature.setProviderAndWait(multiProvider)
 const client = OpenFeature.getClient()
 
-// Track an event - this will be sent to all providers
+// Tracked events will be sent to all providers by default
 client.track('purchase', { targetingKey: 'user123' }, { value: 99.99, currency: 'USD' })
 ```
 
 ### Tracking Behavior
 
-- **Default**: All providers receive tracking calls
+- **Default**: All providers receive tracking calls by default
 - **Error Handling**: If one provider fails to track, others continue normally and errors are logged
 - **Provider Status**: Providers in `NOT_READY` or `FATAL` status are automatically skipped
 - **Optional Method**: Providers without a `track` method are gracefully skipped
