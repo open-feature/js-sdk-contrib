@@ -1,6 +1,9 @@
 {
   "name": "js-sdk-contrib",
   "version": "0.0.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "license": "Apache-2.0",
   "scripts": {
     "generate-hook": "nx generate open-feature hook",
@@ -28,6 +31,7 @@
     "@swc/helpers": "0.5.17",
     "ajv": "^8.12.0",
     "axios": "1.10.0",
+    "configcat-common": "9.4.0",
     "configcat-js-ssr": "^8.4.3",
     "configcat-node": "^11.3.1",
     "copy-anything": "^3.0.5",
