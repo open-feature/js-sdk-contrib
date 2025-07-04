@@ -7,6 +7,7 @@
       "enabled": false
     },
     {
+      "dependencyDashboardApproval": true,
       "matchPackagePatterns": [
         "^@typescript-eslint/",
         "^eslint"
@@ -14,12 +15,14 @@
       "groupName": "ESLint"
     },
     {
+      "dependencyDashboardApproval": true,
       "matchPackagePatterns": [
         "^@types/"
       ],
       "groupName": "Types"
     },
     {
+      "dependencyDashboardApproval": true,
       "matchUpdateTypes": [
         "minor",
         "patch",
