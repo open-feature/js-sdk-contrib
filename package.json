@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "engines": {
     "npm": "^24.0.0"
-  }
+  },
   "scripts": {
     "generate-hook": "nx generate open-feature hook",
     "generate-provider": "nx generate open-feature provider",
