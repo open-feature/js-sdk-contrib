@@ -3,6 +3,7 @@
   "extends": [
     "github>open-feature/community-tooling"
   ],
+  "dependencyDashboardApproval": true,
   "packageRules": [
     {
       "enabled": false,
