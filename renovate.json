@@ -15,12 +15,6 @@
       "dependencyDashboardApproval": true,
       "groupName": "Types",
       "matchPackageNames": ["/^@types//"]
-    },
-    {
-      "dependencyDashboardApproval": true,
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "matchDepTypes": ["devDependencies"],
-      "automerge": true
     }
   ]
 }
