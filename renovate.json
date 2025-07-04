@@ -3,19 +3,16 @@
   "extends": [
     "github>open-feature/community-tooling"
   ],
-  "dependencyDashboardApproval": true,
   "packageRules": [
     {
       "enabled": false,
       "matchPackageNames": ["/^@nx//", "/nx/"]
     },
     {
-      "dependencyDashboardApproval": true,
       "groupName": "ESLint",
       "matchPackageNames": ["/^@typescript-eslint//", "/^eslint/"]
     },
     {
-      "dependencyDashboardApproval": true,
       "groupName": "Types",
       "matchPackageNames": ["/^@types//"]
     }
