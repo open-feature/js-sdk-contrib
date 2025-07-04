@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.1.0...flagd-core-v1.1.1) (2025-07-04)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates ([#1342](https://github.com/open-feature/js-sdk-contrib/issues/1342)) ([fca83c9](https://github.com/open-feature/js-sdk-contrib/commit/fca83c925c6a3d19bac9d647562fd534397b376b))
+
 ## [1.1.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.0.0...flagd-core-v1.1.0) (2025-07-04)
 
 
