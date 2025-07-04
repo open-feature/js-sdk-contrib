@@ -3,35 +3,23 @@
   "extends": ["github>open-feature/community-tooling"],
   "packageRules": [
     {
-      "matchPackagePatterns": ["^@nx/", "nx"],
-      "enabled": false
+      "enabled": false,
+      "matchPackageNames": ["/^@nx//", "/nx/"]
     },
     {
       "dependencyDashboardApproval": true,
-      "matchPackagePatterns": [
-        "^@typescript-eslint/",
-        "^eslint"
-      ],
-      "groupName": "ESLint"
+      "groupName": "ESLint",
+      "matchPackageNames": ["/^@typescript-eslint//", "/^eslint/"]
     },
     {
       "dependencyDashboardApproval": true,
-      "matchPackagePatterns": [
-        "^@types/"
-      ],
-      "groupName": "Types"
+      "groupName": "Types",
+      "matchPackageNames": ["/^@types//"]
     },
     {
       "dependencyDashboardApproval": true,
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "pin",
-        "digest"
-      ],
-      "matchDepTypes": [
-        "devDependencies"
-      ],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchDepTypes": ["devDependencies"],
       "automerge": true
     }
   ]
