@@ -10,7 +10,7 @@
     "@openfeature/web-sdk": "^1.0.0"
   },
   "dependencies": {
-    "@openfeature/flagd-core": "1.0.0",
+    "@openfeature/flagd-core": "1.1.0",
     "@connectrpc/connect": "^1.4.0",
     "@connectrpc/connect-web": "^1.4.0",
     "@bufbuild/protobuf": "^1.2.0"
