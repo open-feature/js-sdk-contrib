@@ -53,7 +53,14 @@ export class FlagsmithClientProvider implements Provider {
         ...(context || {}),
       });
       this.events.emit(ProviderEvents.Stale, { message: 'context has changed' });
-      return isLogout ? this._client.logout() : this._client.getFlags();
+      if (isLogout) {
+        return this._client.logout();
+      }
+      if (identity) {
+        const { targetingKey, ...traits } = context;
+        return this._client.identify(identity, traits as any);
+      }
+      return this._client.getFlags();
     }
 
     const serverState = this._config.state;
