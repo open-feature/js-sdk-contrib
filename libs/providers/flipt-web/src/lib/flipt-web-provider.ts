@@ -1,16 +1,8 @@
-import {
-  EvaluationContext,
-  Provider,
-  JsonValue,
-  ResolutionDetails,
-  Logger,
-  StandardResolutionReasons,
-  TypeMismatchError,
-  GeneralError,
-  ProviderFatalError,
-} from '@openfeature/web-sdk';
-import { FliptEvaluationClient } from '@flipt-io/flipt-client-browser';
-import { EvaluationReason, FliptWebProviderOptions } from './models';
+import type { EvaluationContext, Provider, JsonValue, ResolutionDetails, Logger } from '@openfeature/web-sdk';
+import { StandardResolutionReasons, TypeMismatchError, GeneralError, ProviderFatalError } from '@openfeature/web-sdk';
+import { FliptClient } from '@flipt-io/flipt-client-js/browser';
+import type { FliptWebProviderOptions } from './models';
+import { EvaluationReason } from './models';
 import { transformContext } from './context-transformer';
 
 export class FliptWebProvider implements Provider {
@@ -28,7 +20,7 @@ export class FliptWebProvider implements Provider {
   private _options?: FliptWebProviderOptions;
 
   // client is the Flipt client reference
-  private _client?: FliptEvaluationClient;
+  private _client?: FliptClient;
 
   readonly runsOn = 'client';
 
@@ -48,7 +40,8 @@ export class FliptWebProvider implements Provider {
 
   async initializeClient() {
     try {
-      this._client = await FliptEvaluationClient.init(this._namespace || 'default', {
+      this._client = await FliptClient.init({
+        namespace: this._namespace || 'default',
         url: this._options?.url || 'http://localhost:8080',
         fetcher: this._options?.fetcher,
         authentication: this._options?.authentication,
@@ -70,7 +63,11 @@ export class FliptWebProvider implements Provider {
     const evalContext: Record<string, string> = transformContext(context);
 
     try {
-      const result = this._client?.evaluateBoolean(flagKey, context.targetingKey ?? '', evalContext);
+      const result = this._client?.evaluateBoolean({
+        flagKey,
+        entityId: context.targetingKey ?? '',
+        context: evalContext,
+      });
 
       switch (result?.reason) {
         case EvaluationReason.DEFAULT:
@@ -135,7 +132,11 @@ export class FliptWebProvider implements Provider {
     const evalContext: Record<string, string> = transformContext(context);
 
     try {
-      const result = this._client?.evaluateVariant(flagKey, context.targetingKey ?? '', evalContext);
+      const result = this._client?.evaluateVariant({
+        flagKey,
+        entityId: context.targetingKey ?? '',
+        context: evalContext,
+      });
 
       if (result?.reason === EvaluationReason.FLAG_DISABLED) {
         return {

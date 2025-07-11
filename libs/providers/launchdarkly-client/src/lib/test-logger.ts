@@ -14,7 +14,7 @@
 
 //Code taken from https://github.com/launchdarkly/openfeature-node-server/blob/main/__tests__/TestLogger.ts
 
-import { LDLogger } from 'launchdarkly-js-client-sdk';
+import type { LDLogger } from 'launchdarkly-js-client-sdk';
 
 export default class TestLogger implements LDLogger {
   public logs: string[] = [];

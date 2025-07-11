@@ -1,30 +1,23 @@
+import type { EvaluationContext, JsonValue, Provider, ResolutionDetails, Paradigm } from '@openfeature/server-sdk';
 import {
-  EvaluationContext,
-  JsonValue,
   OpenFeatureEventEmitter,
-  Provider,
   ProviderEvents,
-  ResolutionDetails,
-  Paradigm,
   ProviderNotReadyError,
   TypeMismatchError,
   ParseError,
 } from '@openfeature/server-sdk';
-import {
-  isType,
-  parseError,
-  PrimitiveType,
-  PrimitiveTypeName,
-  toResolutionDetails,
-  transformContext,
-} from '@openfeature/config-cat-core';
-import { PollingMode, SettingValue } from 'configcat-common';
-import { IConfigCatClient, getClient, IConfig, OptionsForPollingMode } from 'configcat-node';
+import type { PrimitiveType, PrimitiveTypeName } from '@openfeature/config-cat-core';
+import { isType, parseError, toResolutionDetails, transformContext } from '@openfeature/config-cat-core';
+import type { SettingValue } from 'configcat-common';
+import { ClientCacheState, PollingMode } from 'configcat-common';
+import type { IConfigCatClient, IConfig, OptionsForPollingMode } from 'configcat-node';
+import { getClient } from 'configcat-node';
 
 export class ConfigCatProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
   private readonly _clientFactory: (provider: ConfigCatProvider) => IConfigCatClient;
-  private _hasError = false;
+  private readonly _pollingMode: PollingMode;
+  private _isProviderReady = false;
   private _client?: IConfigCatClient;
 
   public runsOn: Paradigm = 'server';
@@ -33,8 +26,9 @@ export class ConfigCatProvider implements Provider {
     name: ConfigCatProvider.name,
   };
 
-  protected constructor(clientFactory: (provider: ConfigCatProvider) => IConfigCatClient) {
+  protected constructor(clientFactory: (provider: ConfigCatProvider) => IConfigCatClient, pollingMode: PollingMode) {
     this._clientFactory = clientFactory;
+    this._pollingMode = pollingMode;
   }
 
   public static create<TMode extends PollingMode>(
@@ -50,29 +44,32 @@ export class ConfigCatProvider implements Provider {
       options.setupHooks = (hooks) => {
         oldSetupHooks?.(hooks);
 
-        hooks.on('configChanged', (projectConfig: IConfig | undefined) =>
+        hooks.on('configChanged', (config: IConfig) =>
           provider.events.emit(ProviderEvents.ConfigurationChanged, {
-            flagsChanged: projectConfig ? Object.keys(projectConfig.settings) : undefined,
+            flagsChanged: Object.keys(config.settings),
           }),
         );
-
-        hooks.on('clientError', (message: string, error) => {
-          provider._hasError = true;
-          provider.events.emit(ProviderEvents.Error, {
-            message: message,
-            metadata: error,
-          });
-        });
       };
 
       return getClient(sdkKey, pollingMode, options);
-    });
+    }, pollingMode ?? PollingMode.AutoPoll);
   }
 
   public async initialize(): Promise<void> {
     const client = this._clientFactory(this);
-    await client.waitForReady();
+    const clientCacheState = await client.waitForReady();
     this._client = client;
+
+    if (this._pollingMode !== PollingMode.AutoPoll || clientCacheState !== ClientCacheState.NoFlagData) {
+      this._isProviderReady = true;
+    } else {
+      // OpenFeature provider defines ready state like this: "The provider is ready to resolve flags."
+      // However, ConfigCat client's behavior is different: in some cases ready state may be reached
+      // even if the client's internal, in-memory cache hasn't been populated yet, that is,
+      // the client is not able to evaluate feature flags yet. In such cases we throw an error to
+      // prevent the provider from being set ready right away, and check for the ready state later.
+      throw Error('The underlying ConfigCat client could not initialize within maxInitWaitTimeSeconds.');
+    }
   }
 
   public get configCatClient() {
@@ -140,9 +137,14 @@ export class ConfigCatProvider implements Provider {
       transformContext(context),
     );
 
-    if (this._hasError && !evaluationData.errorMessage && !evaluationData.errorException) {
-      this._hasError = false;
-      this.events.emit(ProviderEvents.Ready);
+    if (!this._isProviderReady && this._client.snapshot().cacheState !== ClientCacheState.NoFlagData) {
+      // Ideally, we would check ConfigCat client's initialization state in its "background" polling loop.
+      // This is not possible at the moment, so as a workaround, we do the check on feature flag evaluation.
+      // There are plans to improve this situation, so let's revise this
+      // as soon as ConfigCat SDK implements the necessary event.
+
+      this._isProviderReady = true;
+      setTimeout(() => this.events.emit(ProviderEvents.Ready), 0);
     }
 
     if (evaluationData.isDefaultValue) {

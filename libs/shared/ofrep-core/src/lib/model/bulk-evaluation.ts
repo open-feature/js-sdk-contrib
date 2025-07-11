@@ -1,5 +1,5 @@
-import { ErrorCode } from '@openfeature/core';
-import { EvaluationResponse, MetadataResponse } from './evaluation';
+import type { ErrorCode } from '@openfeature/core';
+import type { EvaluationResponse, MetadataResponse } from './evaluation';
 
 export interface BulkEvaluationFailureResponse extends MetadataResponse {
   /**

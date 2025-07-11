@@ -7,9 +7,9 @@ import type {
   Logger,
   ResolutionDetails,
 } from '@openfeature/server-sdk';
-import { Config } from '../../configuration';
-import { Service } from '../service';
-import { DataFetch } from './data-fetch';
+import type { Config } from '../../configuration';
+import type { Service } from '../service';
+import type { DataFetch } from './data-fetch';
 import { FileFetch } from './file/file-fetch';
 import { GrpcFetch } from './grpc/grpc-fetch';
 

@@ -5,6 +5,7 @@ on:
 name: Run Release Please
 jobs:
   release-please:
+    environment: publish
     runs-on: ubuntu-latest
 
     # Release-please creates a PR that tracks all changes
@@ -28,10 +29,10 @@ jobs:
         with:
           github_token: ${{ github.token }}
       - name: Setup Node
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         if: ${{ steps.release.outputs.releases_created }}
         with:
-          node-version: 18
+          node-version: 20
           registry-url: "https://registry.npmjs.org"
       - name: Build Packages
         if: ${{ steps.release.outputs.releases_created }}

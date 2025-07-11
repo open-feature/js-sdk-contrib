@@ -1,5 +1,5 @@
-import { GoFeatureFlagProviderOptions } from '../model';
-import { EvaluationContext, Logger, ResolutionDetails } from '@openfeature/server-sdk';
+import type { GoFeatureFlagProviderOptions, Cache } from '../model';
+import type { EvaluationContext, Logger, ResolutionDetails } from '@openfeature/server-sdk';
 import { LRUCache } from 'lru-cache';
 import hash from 'object-hash';
 
@@ -10,7 +10,7 @@ export class CacheController {
   // logger is the Open Feature logger to use
   private logger?: Logger;
   // cache contains the local cache used in the provider to avoid calling the relay-proxy for every evaluation
-  private readonly cache?: LRUCache<string, ResolutionDetails<any>>;
+  private readonly cache?: Cache;
   // options for this provider
   private readonly options: GoFeatureFlagProviderOptions;
 
@@ -20,7 +20,7 @@ export class CacheController {
     this.logger = logger;
     const cacheSize =
       options.flagCacheSize !== undefined && options.flagCacheSize !== 0 ? options.flagCacheSize : 10000;
-    this.cache = new LRUCache({ maxSize: cacheSize, sizeCalculation: () => 1 });
+    this.cache = options.cache || new LRUCache({ maxSize: cacheSize, sizeCalculation: () => 1 });
   }
 
   get(flagKey: string, evaluationContext: EvaluationContext): ResolutionDetails<any> | undefined {

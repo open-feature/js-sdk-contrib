@@ -7,6 +7,14 @@
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {
+        "@typescript-eslint/consistent-type-imports": [
+          "error",
+          {
+            "disallowTypeAnnotations": true,
+            "fixStyle": "separate-type-imports",
+            "prefer": "type-imports"
+          }
+        ],
         "@nx/enforce-module-boundaries": [
           "error",
           {
@@ -56,7 +64,7 @@
             "checkObsoleteDependencies": true,
             "checkVersionMismatches": true,
             "ignoredDependencies": ["jest-cucumber", "jest"],
-            "ignoredFiles": ["**/test/**", "**/spec/**", "**/*.spec.ts", "**/*.spec.js", "**/*.test.ts", "**/*.test.js"]
+            "ignoredFiles": ["**/test/**", "**/tests/*", "**/spec/**", "**/*.spec.ts", "**/*.spec.js", "**/*.test.ts", "**/*.test.js", "**/jest.*"]
           }
         ]
       }

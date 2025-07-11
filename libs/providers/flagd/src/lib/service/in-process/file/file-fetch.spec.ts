@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { FileFetch } from './file-fetch';
 import { FlagdCore } from '@openfeature/flagd-core';
-import { Logger } from '@openfeature/server-sdk';
+import type { Logger } from '@openfeature/server-sdk';
 
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),

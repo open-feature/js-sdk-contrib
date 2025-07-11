@@ -1,4 +1,4 @@
-import { ErrorCode, ResolutionReason } from '@openfeature/web-sdk';
+import type { ErrorCode, ResolutionReason } from '@openfeature/web-sdk';
 
 export type ResolutionError = {
   reason: ResolutionReason;

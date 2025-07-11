@@ -1,10 +1,7 @@
-import {
-  BaseEvaluationStrategy,
-  FinalResult,
-  ProviderResolutionResult,
-  StrategyPerProviderContext,
-} from './BaseEvaluationStrategy';
-import { ErrorCode, EvaluationContext, FlagValue, OpenFeatureError, ResolutionDetails } from '@openfeature/server-sdk';
+import type { FinalResult, ProviderResolutionResult, StrategyPerProviderContext } from './BaseEvaluationStrategy';
+import { BaseEvaluationStrategy } from './BaseEvaluationStrategy';
+import type { EvaluationContext, FlagValue } from '@openfeature/server-sdk';
+import { ErrorCode, OpenFeatureError, ResolutionDetails } from '@openfeature/server-sdk';
 
 /**
  * Return the first result that did not indicate "flag not found".

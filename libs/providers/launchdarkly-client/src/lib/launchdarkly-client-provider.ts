@@ -1,24 +1,27 @@
-import {
+import type {
   EvaluationContext,
   Provider,
   JsonValue,
   ResolutionDetails,
-  StandardResolutionReasons,
-  ErrorCode,
   ProviderMetadata,
   Logger,
+  TrackingEventDetails,
+} from '@openfeature/web-sdk';
+import {
+  StandardResolutionReasons,
+  ErrorCode,
   GeneralError,
   OpenFeatureEventEmitter,
   ProviderEvents,
   ProviderStatus,
-  TrackingEventDetails,
 } from '@openfeature/web-sdk';
 
 import isEmpty from 'lodash.isempty';
 
-import { basicLogger, LDClient, initialize, LDOptions, LDFlagChangeset } from 'launchdarkly-js-client-sdk';
+import type { LDClient, LDOptions, LDFlagChangeset } from 'launchdarkly-js-client-sdk';
+import { basicLogger, initialize } from 'launchdarkly-js-client-sdk';
 
-import { LaunchDarklyProviderOptions } from './launchdarkly-provider-options';
+import type { LaunchDarklyProviderOptions } from './launchdarkly-provider-options';
 import translateContext from './translate-context';
 import translateResult from './translate-result';
 

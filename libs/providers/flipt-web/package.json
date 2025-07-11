@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/flipt-web-provider",
-  "version": "0.1.2",
+  "version": "0.1.5",
   "license": "Apache-2.0",
   "main": "./src/index.js",
   "typings": "./src/index.d.ts",
@@ -9,13 +9,7 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/web-sdk": "^1.0.0"
-  },
-  "devDependencies": {
-    "undici": "^6.13.0"
-  },
-  "dependencies": {
-    "@flipt-io/flipt-client-browser": "^0.3.1",
-    "undici": "^5.0.0"
+    "@openfeature/web-sdk": "^1.0.0",
+    "@flipt-io/flipt-client-js": "^0.0.1 || ^0.0.2 || ^0.0.6 || ^0.2.0"
   }
 }

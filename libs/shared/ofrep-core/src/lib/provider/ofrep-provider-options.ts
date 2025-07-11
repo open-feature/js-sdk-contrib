@@ -1,4 +1,4 @@
-import { FetchAPI } from '../api';
+import type { FetchAPI } from '../api';
 
 export type OFREPProviderBaseOptions = {
   /**

@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/flagd-web-provider",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "license": "Apache-2.0",
   "scripts": {
     "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
@@ -10,7 +10,7 @@
     "@openfeature/web-sdk": "^1.0.0"
   },
   "dependencies": {
-    "@openfeature/flagd-core": "1.0.0",
+    "@openfeature/flagd-core": "1.1.0",
     "@connectrpc/connect": "^1.4.0",
     "@connectrpc/connect-web": "^1.4.0",
     "@bufbuild/protobuf": "^1.2.0"

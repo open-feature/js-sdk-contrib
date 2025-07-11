@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.7.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.2...flagd-web-provider-v0.7.3) (2025-03-19)
+
+
+### ✨ New Features
+
+* **flagd:** add flag metadata ([#1151](https://github.com/open-feature/js-sdk-contrib/issues/1151)) ([b1c6d23](https://github.com/open-feature/js-sdk-contrib/commit/b1c6d235565f6cce02519d7c08bb6ad2dd791332))
+
+
+### 🧹 Chore
+
+* **deps:** update libs/providers/flagd-web/schemas digest to 37baa2c ([#1148](https://github.com/open-feature/js-sdk-contrib/issues/1148)) ([36ec82a](https://github.com/open-feature/js-sdk-contrib/commit/36ec82a5581e436b699d4b8238908fa4d5817deb))
+* **deps:** update libs/providers/flagd-web/schemas digest to b81a56e ([#1131](https://github.com/open-feature/js-sdk-contrib/issues/1131)) ([828145a](https://github.com/open-feature/js-sdk-contrib/commit/828145a89da13bbd90bca352a6488aecb62b764b))
+* **deps:** update libs/providers/flagd-web/schemas digest to bb76343 ([#1167](https://github.com/open-feature/js-sdk-contrib/issues/1167)) ([cb7bdb1](https://github.com/open-feature/js-sdk-contrib/commit/cb7bdb12a19ea403eb834d0eb552f30b42921b6b))
+* removing build dependencies and using testcontainers for container spin up ([#982](https://github.com/open-feature/js-sdk-contrib/issues/982)) ([2d64331](https://github.com/open-feature/js-sdk-contrib/commit/2d6433101b76ba9ad266095fe31b58314f82a105))
+* update nx packages ([#1147](https://github.com/open-feature/js-sdk-contrib/issues/1147)) ([7f310fe](https://github.com/open-feature/js-sdk-contrib/commit/7f310fe87101b8aa793e1436e63c7602ccc202e3))
+* various gherkin improvements for e2e tests ([#1008](https://github.com/open-feature/js-sdk-contrib/issues/1008)) ([40abd8e](https://github.com/open-feature/js-sdk-contrib/commit/40abd8eca76b47bb5c084b377302821968acd19c))
+
 ## [0.7.2](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.1...flagd-web-provider-v0.7.2) (2024-07-08)
 
 

@@ -1,4 +1,4 @@
-import { EvaluationContext } from '@openfeature/server-sdk';
+import type { EvaluationContext } from '@openfeature/server-sdk';
 
 export function transformContext(context: EvaluationContext): Record<string, string> {
   const evalContext: Record<string, string> = {};

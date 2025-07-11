@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/config-cat-provider",
-  "version": "0.7.4",
+  "version": "0.7.6",
   "license": "Apache-2.0",
   "scripts": {
     "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
@@ -10,6 +10,6 @@
     "@openfeature/server-sdk": "^1.13.5",
     "configcat-node": "^11.3.1",
     "@openfeature/config-cat-core": "0.1.1",
-    "configcat-common": "9.3.1"
+    "configcat-common": "9.4.0"
   }
 }

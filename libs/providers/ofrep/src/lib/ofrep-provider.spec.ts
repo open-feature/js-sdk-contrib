@@ -1,4 +1,5 @@
-import { OFREPProvider, OFREPProviderOptions } from './ofrep-provider';
+import type { OFREPProviderOptions } from './ofrep-provider';
+import { OFREPProvider } from './ofrep-provider';
 import {
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,

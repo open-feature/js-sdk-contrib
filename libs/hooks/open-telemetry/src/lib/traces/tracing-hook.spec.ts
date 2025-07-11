@@ -1,4 +1,4 @@
-import { EvaluationDetails, HookContext } from '@openfeature/server-sdk';
+import type { EvaluationDetails, HookContext } from '@openfeature/server-sdk';
 
 const addEvent = jest.fn();
 const recordException = jest.fn();

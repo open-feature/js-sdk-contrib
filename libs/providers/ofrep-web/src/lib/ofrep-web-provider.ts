@@ -1,6 +1,5 @@
+import type { EvaluationRequest, EvaluationResponse } from '@openfeature/ofrep-core';
 import {
-  EvaluationRequest,
-  EvaluationResponse,
   OFREPApi,
   OFREPApiFetchError,
   OFREPApiTooManyRequestsError,
@@ -9,25 +8,28 @@ import {
   isEvaluationFailureResponse,
   isEvaluationSuccessResponse,
 } from '@openfeature/ofrep-core';
-import {
-  ClientProviderEvents,
-  ErrorCode,
+import type {
   EvaluationContext,
   FlagValue,
-  GeneralError,
   Hook,
   JsonValue,
   Logger,
+  Provider,
+  ResolutionDetails,
+} from '@openfeature/web-sdk';
+import {
+  ClientProviderEvents,
+  ErrorCode,
+  GeneralError,
   OpenFeatureError,
   OpenFeatureEventEmitter,
-  Provider,
   ProviderFatalError,
-  ResolutionDetails,
   StandardResolutionReasons,
 } from '@openfeature/web-sdk';
-import { BulkEvaluationStatus, EvaluateFlagsResponse } from './model/evaluate-flags-response';
-import { FlagCache, MetadataCache } from './model/in-memory-cache';
-import { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
+import type { EvaluateFlagsResponse } from './model/evaluate-flags-response';
+import { BulkEvaluationStatus } from './model/evaluate-flags-response';
+import type { FlagCache, MetadataCache } from './model/in-memory-cache';
+import type { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
 import { isResolutionError } from './model/resolution-error';
 
 const ErrorMessageMap: { [key in ErrorCode]: string } = {

@@ -1,5 +1,6 @@
-import { Logger, OpenFeatureError, GeneralError } from '@openfeature/server-sdk';
-import { DataFetch } from '../data-fetch';
+import type { Logger } from '@openfeature/server-sdk';
+import { OpenFeatureError, GeneralError } from '@openfeature/server-sdk';
+import type { DataFetch } from '../data-fetch';
 import { promises as fsPromises, watchFile, unwatchFile } from 'fs';
 
 const encoding = 'utf8';

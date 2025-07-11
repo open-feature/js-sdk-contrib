@@ -1,15 +1,7 @@
-import {
-  EvaluationContext,
-  Hook,
-  JsonValue,
-  Logger,
-  OpenFeatureEventEmitter,
-  Provider,
-  ResolutionDetails,
-  ServerProviderEvents,
-  StandardResolutionReasons,
-} from '@openfeature/server-sdk';
-import { ConfigurationChange, ExporterMetadataValue, GoFeatureFlagProviderOptions } from './model';
+import type { EvaluationContext, Hook, JsonValue, Logger, Provider, ResolutionDetails } from '@openfeature/server-sdk';
+import { OpenFeatureEventEmitter, ServerProviderEvents, StandardResolutionReasons } from '@openfeature/server-sdk';
+import type { ExporterMetadataValue, GoFeatureFlagProviderOptions } from './model';
+import { ConfigurationChange } from './model';
 import { GoFeatureFlagDataCollectorHook } from './data-collector-hook';
 import { GoffApiController } from './controller/goff-api';
 import { CacheController } from './controller/cache';

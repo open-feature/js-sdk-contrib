@@ -1,4 +1,4 @@
-import { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
+import type { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
 
 export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   /**

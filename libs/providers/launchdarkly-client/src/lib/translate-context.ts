@@ -15,8 +15,8 @@
 
 //Code taken from https://github.com/launchdarkly/openfeature-node-server/blob/main/src/translateContext.ts
 
-import { EvaluationContext, EvaluationContextValue } from '@openfeature/web-sdk';
-import { LDContext, LDContextCommon, LDLogger, LDSingleKindContext } from 'launchdarkly-js-client-sdk';
+import type { EvaluationContext, EvaluationContextValue } from '@openfeature/web-sdk';
+import type { LDContext, LDContextCommon, LDLogger, LDSingleKindContext } from 'launchdarkly-js-client-sdk';
 
 const LDContextBuiltIns = {
   name: 'string',

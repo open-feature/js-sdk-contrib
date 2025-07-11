@@ -1,35 +1,21 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>open-feature/community-tooling"],
+  "extends": [
+    "github>open-feature/community-tooling"
+  ],
+  "dependencyDashboardApproval": true,
   "packageRules": [
     {
-      "matchPackagePatterns": ["^@nx/", "nx"],
-      "enabled": false
+      "enabled": false,
+      "matchPackageNames": ["/^@nx//", "/nx/"]
     },
     {
-      "matchPackagePatterns": [
-        "^@typescript-eslint/",
-        "^eslint"
-      ],
-      "groupName": "ESLint"
+      "groupName": "ESLint",
+      "matchPackageNames": ["/^@typescript-eslint//", "/^eslint/"]
     },
     {
-      "matchPackagePatterns": [
-        "^@types/"
-      ],
-      "groupName": "Types"
-    },
-    {
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "pin",
-        "digest"
-      ],
-      "matchDepTypes": [
-        "devDependencies"
-      ],
-      "automerge": true
+      "groupName": "Types",
+      "matchPackageNames": ["/^@types//"]
     }
   ]
 }

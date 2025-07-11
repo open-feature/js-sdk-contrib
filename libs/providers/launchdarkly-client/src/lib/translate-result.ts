@@ -1,5 +1,6 @@
-import { ErrorCode, ResolutionDetails } from '@openfeature/web-sdk';
-import { LDEvaluationDetail } from 'launchdarkly-js-client-sdk';
+import type { ResolutionDetails } from '@openfeature/web-sdk';
+import { ErrorCode } from '@openfeature/web-sdk';
+import type { LDEvaluationDetail } from 'launchdarkly-js-client-sdk';
 
 function translateErrorKind(errorKind?: string): ErrorCode {
   // Error code specification.

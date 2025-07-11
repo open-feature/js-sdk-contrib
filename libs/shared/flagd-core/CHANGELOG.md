@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.0.0...flagd-core-v1.1.0) (2025-07-04)
+
+
+### ✨ New Features
+
+* **flagd:** add flag metadata ([#1151](https://github.com/open-feature/js-sdk-contrib/issues/1151)) ([b1c6d23](https://github.com/open-feature/js-sdk-contrib/commit/b1c6d235565f6cce02519d7c08bb6ad2dd791332))
+
 ## [1.0.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v0.2.5...flagd-core-v1.0.0) (2025-01-07)
 
 

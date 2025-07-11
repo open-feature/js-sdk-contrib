@@ -1,4 +1,5 @@
-import { Config, FlagdProviderOptions, getConfig } from './configuration';
+import type { Config, FlagdProviderOptions } from './configuration';
+import { getConfig } from './configuration';
 import { DEFAULT_MAX_CACHE_SIZE } from './constants';
 
 describe('Configuration', () => {
@@ -18,6 +19,7 @@ describe('Configuration', () => {
       cache: 'lru',
       resolverType: 'rpc',
       selector: '',
+      deadlineMs: 500,
     });
   });
 
@@ -55,6 +57,7 @@ describe('Configuration', () => {
       selector,
       offlineFlagSourcePath,
       defaultAuthority,
+      deadlineMs: 500,
     });
   });
 
@@ -68,6 +71,7 @@ describe('Configuration', () => {
       resolverType: 'rpc',
       selector: '',
       defaultAuthority: '',
+      deadlineMs: 500,
     };
 
     process.env['FLAGD_HOST'] = 'override';

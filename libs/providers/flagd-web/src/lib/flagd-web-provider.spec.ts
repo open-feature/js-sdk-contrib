@@ -1,16 +1,11 @@
-import { CallbackClient, Code, ConnectError, PromiseClient } from '@connectrpc/connect';
+import type { CallbackClient, ConnectError, PromiseClient } from '@connectrpc/connect';
+import { Code } from '@connectrpc/connect';
 import { Struct } from '@bufbuild/protobuf';
-import {
-  Client,
-  ErrorCode,
-  JsonValue,
-  OpenFeature,
-  ProviderEvents,
-  StandardResolutionReasons,
-} from '@openfeature/web-sdk';
+import type { Client, JsonValue } from '@openfeature/web-sdk';
+import { ErrorCode, OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/web-sdk';
 import fetchMock from 'jest-fetch-mock';
-import { Service } from '../proto/ts/flagd/evaluation/v1/evaluation_connect';
-import { AnyFlag, EventStreamResponse, ResolveAllResponse } from '../proto/ts/flagd/evaluation/v1/evaluation_pb';
+import type { Service } from '../proto/ts/flagd/evaluation/v1/evaluation_connect';
+import type { AnyFlag, EventStreamResponse, ResolveAllResponse } from '../proto/ts/flagd/evaluation/v1/evaluation_pb';
 import { FlagdWebProvider } from './flagd-web-provider';
 
 const EVENT_CONFIGURATION_CHANGE = 'configuration_change';

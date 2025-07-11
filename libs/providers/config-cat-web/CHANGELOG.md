@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.5...config-cat-web-provider-v0.1.6) (2025-04-09)
+
+
+### 🐛 Bug Fixes
+
+* **config-cat:** Rework error reporting ([#1242](https://github.com/open-feature/js-sdk-contrib/issues/1242)) ([0425619](https://github.com/open-feature/js-sdk-contrib/commit/04256197bf6e7da70afd4ac1c31bdaf55ce4b789))
+
 ## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.4...config-cat-web-provider-v0.1.5) (2025-03-14)
 
 

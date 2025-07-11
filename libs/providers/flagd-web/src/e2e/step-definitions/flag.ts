@@ -1,12 +1,6 @@
-import { StepDefinitions } from 'jest-cucumber';
-import {
-  EvaluationDetails,
-  FlagValue,
-  JsonObject,
-  OpenFeature,
-  ProviderEvents,
-  StandardResolutionReasons,
-} from '@openfeature/web-sdk';
+import type { StepDefinitions } from 'jest-cucumber';
+import type { EvaluationContext, EvaluationDetails, FlagValue, JsonObject } from '@openfeature/web-sdk';
+import { OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/web-sdk';
 import { E2E_CLIENT_NAME } from '@openfeature/flagd-core';
 
 export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then }) => {
@@ -14,6 +8,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
   let value: FlagValue;
   let details: EvaluationDetails<FlagValue>;
   let fallback: FlagValue;
+  let context: EvaluationContext;
 
   const client = OpenFeature.getClient(E2E_CLIENT_NAME);
 
@@ -23,7 +18,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     });
   });
 
-  given('a provider is registered', () => undefined);
+  given('a stable provider', () => undefined);
   given('a flagd provider is set', () => undefined);
 
   when(
@@ -83,6 +78,32 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
     flagKey = key;
     fallback = '';
     value = client.getObjectValue(key, defaultValue);
+  });
+
+  and(/^a flag with key "(.*)" is evaluated with default value "(.*)"$/, async (key, defaultValue) => {
+    await OpenFeature.setContext(context);
+    flagKey = key;
+    fallback = defaultValue;
+    value = client.getStringValue(flagKey, fallback as string);
+  });
+
+  when(
+    /^context contains keys "(.*)", "(.*)", "(.*)", "(.*)" with values "(.*)", "(.*)", (\d+), "(.*)"$/,
+    (key0, key1, key2, key3, stringVal1, stringVal2, intVal, boolVal) => {
+      context = {
+        [key0]: stringVal1,
+        [key1]: stringVal2,
+        [key2]: Number.parseInt(intVal),
+        [key3]: boolVal === true,
+      };
+    },
+  );
+
+  and(/^the resolved flag value is "(.*)" when the context is empty$/, async (expectedValue) => {
+    context = {};
+    await OpenFeature.setContext(context);
+    value = client.getStringValue(flagKey, fallback as string);
+    expect(value).toEqual(expectedValue);
   });
 
   then(

@@ -1,13 +1,6 @@
-import { StepDefinitions } from 'jest-cucumber';
-import {
-  EvaluationContext,
-  EvaluationDetails,
-  FlagValue,
-  JsonObject,
-  OpenFeature,
-  ProviderEvents,
-  StandardResolutionReasons,
-} from '@openfeature/server-sdk';
+import type { StepDefinitions } from 'jest-cucumber';
+import type { EvaluationContext, EvaluationDetails, FlagValue, JsonObject } from '@openfeature/server-sdk';
+import { OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/server-sdk';
 import { E2E_CLIENT_NAME } from '@openfeature/flagd-core';
 
 export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then }) => {

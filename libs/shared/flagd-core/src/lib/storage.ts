@@ -1,5 +1,5 @@
 import type { FlagMetadata, Logger } from '@openfeature/core';
-import { FeatureFlag } from './feature-flag';
+import type { FeatureFlag } from './feature-flag';
 import { parse } from './parser';
 
 /**

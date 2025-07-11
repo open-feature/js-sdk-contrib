@@ -1,11 +1,8 @@
-import { IEvaluationDetails } from 'configcat-js-ssr';
+import type { IEvaluationDetails } from 'configcat-js-ssr';
+import type { ResolutionDetails, ResolutionReason, JsonValue, OpenFeatureError } from '@openfeature/core';
 import {
-  ResolutionDetails,
-  ResolutionReason,
   TypeMismatchError,
   StandardResolutionReasons,
-  JsonValue,
-  OpenFeatureError,
   ParseError,
   TargetingKeyMissingError,
   GeneralError,

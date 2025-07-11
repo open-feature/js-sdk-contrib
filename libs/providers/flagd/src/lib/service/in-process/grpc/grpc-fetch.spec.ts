@@ -1,6 +1,6 @@
 import { GrpcFetch } from './grpc-fetch';
-import { Config } from '../../../configuration';
-import { FlagSyncServiceClient, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
+import type { Config } from '../../../configuration';
+import type { FlagSyncServiceClient, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 
 let watchStateCallback: () => void = () => ({});
@@ -44,7 +44,14 @@ const serviceMock: FlagSyncServiceClient = {
 } as unknown as FlagSyncServiceClient;
 
 describe('grpc fetch', () => {
-  const cfg: Config = { host: 'localhost', port: 8000, tls: false, socketPath: '', defaultAuthority: 'test-authority' };
+  const cfg: Config = {
+    deadlineMs: 500,
+    host: 'localhost',
+    port: 8000,
+    tls: false,
+    socketPath: '',
+    defaultAuthority: 'test-authority',
+  };
 
   afterEach(() => {
     jest.clearAllMocks();

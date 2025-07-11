@@ -1,4 +1,4 @@
-import { FlagValue } from '@openfeature/web-sdk';
+import type { FlagValue } from '@openfeature/web-sdk';
 
 export type FlagType = 'string' | 'number' | 'object' | 'boolean';
 

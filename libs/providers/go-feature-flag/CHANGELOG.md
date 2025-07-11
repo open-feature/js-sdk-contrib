@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.7.8](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.7...go-feature-flag-provider-v0.7.8) (2025-05-26)
+
+
+### ✨ New Features
+
+* **gofeatureflag:** added cache option ([#1284](https://github.com/open-feature/js-sdk-contrib/issues/1284)) ([7083655](https://github.com/open-feature/js-sdk-contrib/commit/7083655c78eed957502f46dc202522a604024886))
+
+## [0.7.7](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.6...go-feature-flag-provider-v0.7.7) (2025-04-11)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update dependency axios to v1.8.4 ([#1273](https://github.com/open-feature/js-sdk-contrib/issues/1273)) ([18a0cb9](https://github.com/open-feature/js-sdk-contrib/commit/18a0cb906a0c7e437b52f4645538a859d817ae18))
+* **gofeatureflag:** Error for configurationHasChanged when slash was missing in endpoint ([#1229](https://github.com/open-feature/js-sdk-contrib/issues/1229)) ([ce6a8e1](https://github.com/open-feature/js-sdk-contrib/commit/ce6a8e1a800604b263ee76b305f5ca801aa2641d))
+
+
+### 🧹 Chore
+
+* **main:** release flipt-web-provider 0.1.3 ([#1253](https://github.com/open-feature/js-sdk-contrib/issues/1253)) ([7be62ae](https://github.com/open-feature/js-sdk-contrib/commit/7be62ae45f4dfbaefecc6205a28060698fdd884d))
+
 ## [0.7.6](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.5...go-feature-flag-provider-v0.7.6) (2025-03-12)
 
 

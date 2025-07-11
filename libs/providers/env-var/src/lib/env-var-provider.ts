@@ -1,11 +1,5 @@
-import {
-  FlagNotFoundError,
-  JsonValue,
-  ParseError,
-  Provider,
-  ResolutionDetails,
-  StandardResolutionReasons,
-} from '@openfeature/server-sdk';
+import type { JsonValue, Provider, ResolutionDetails } from '@openfeature/server-sdk';
+import { FlagNotFoundError, ParseError, StandardResolutionReasons } from '@openfeature/server-sdk';
 import { constantCase } from './constant-case';
 
 export type Config = {

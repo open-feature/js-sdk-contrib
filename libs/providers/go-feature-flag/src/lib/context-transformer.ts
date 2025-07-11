@@ -1,6 +1,6 @@
-import { EvaluationContext } from '@openfeature/server-sdk';
+import type { EvaluationContext } from '@openfeature/server-sdk';
 import { sha1 } from 'object-hash';
-import { GOFFEvaluationContext } from './model';
+import type { GOFFEvaluationContext } from './model';
 
 /**
  * transformContext takes the raw OpenFeature context returns a GoFeatureFlagUser.
