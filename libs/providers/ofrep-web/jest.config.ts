@@ -10,7 +10,7 @@ export default {
   transform: {
     '^.+\\.[tj]s$': 'ts-jest',
   },
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node', // Use 'node' so we can run msw test server
   moduleFileExtensions: ['ts', 'js', 'html'],
   setupFiles: ['./jest.polyfills.js'],
 };
