@@ -1,3 +1,4 @@
+import { ErrorCode } from '@openfeature/core';
 import type { State, Steps } from './state';
 import { mapValueToType } from './utils';
 
@@ -61,6 +62,10 @@ export const flagSteps: Steps =
 
     then(/^the reason should be "(.*)"$/, (expectedReason) => {
       expect(state.details?.reason).toBe(expectedReason);
+    });
+
+    then(/^the error-code should be "(.*)"$/, (expectedError: keyof typeof ErrorCode) => {
+      expect(state.details?.errorCode).toBe(ErrorCode[expectedError]);
     });
 
     then(/^the variant should be "(.*)"$/, (expectedVariant) => {
