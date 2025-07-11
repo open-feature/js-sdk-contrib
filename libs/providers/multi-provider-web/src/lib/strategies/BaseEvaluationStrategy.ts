@@ -6,6 +6,7 @@ import type {
   OpenFeatureError,
   Provider,
   ResolutionDetails,
+  TrackingEventDetails,
 } from '@openfeature/web-sdk';
 import { ProviderStatus } from '@openfeature/web-sdk';
 import { ErrorWithCode } from '../errors';
@@ -14,11 +15,12 @@ export type StrategyEvaluationContext = {
   flagKey: string;
   flagType: FlagValueType;
 };
-export type StrategyPerProviderContext = StrategyEvaluationContext & {
+export type StrategyProviderContext = {
   provider: Provider;
   providerName: string;
   providerStatus: ProviderStatus;
 };
+export type StrategyPerProviderContext = StrategyEvaluationContext & StrategyProviderContext;
 
 type ProviderResolutionResultBase = {
   provider: Provider;
@@ -67,6 +69,21 @@ export abstract class BaseEvaluationStrategy {
     context: EvaluationContext,
     result: ProviderResolutionResult<T>,
   ): boolean {
+    return true;
+  }
+
+  shouldTrackWithThisProvider(
+    strategyContext: StrategyProviderContext,
+    context: EvaluationContext,
+    trackingEventName: string,
+    trackingEventDetails: TrackingEventDetails,
+  ): boolean {
+    if (
+      strategyContext.providerStatus === ProviderStatus.NOT_READY ||
+      strategyContext.providerStatus === ProviderStatus.FATAL
+    ) {
+      return false;
+    }
     return true;
   }
 
