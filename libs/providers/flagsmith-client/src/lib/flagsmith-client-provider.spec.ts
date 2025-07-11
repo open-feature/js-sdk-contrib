@@ -353,6 +353,30 @@ describe('FlagsmithProvider', () => {
       );
       expect(config.fetch).toHaveBeenCalledTimes(3);
     });
+
+    it('should set new traits when the context is updated', async () => {
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({
+        logger,
+        ...config,
+      });
+      await OpenFeature.setProviderAndWait(provider);
+      await OpenFeature.setContext({ targetingKey: 'first', traitA: 'a' });
+      expect(config.fetch).toHaveBeenCalledWith(
+        `${provider.flagsmithClient.getState().api}identities/`,
+        expect.objectContaining({
+          body: JSON.stringify({ identifier: 'first', traits: [{ trait_key: 'traitA', trait_value: 'a' }] }),
+        }),
+      );
+      await OpenFeature.setContext({ targetingKey: 'second', traitB: 'b' });
+      expect(config.fetch).toHaveBeenCalledWith(
+        `${provider.flagsmithClient.getState().api}identities/`,
+        expect.objectContaining({
+          body: JSON.stringify({ identifier: 'second', traits: [{ trait_key: 'traitB', trait_value: 'b' }] }),
+        }),
+      );
+    });
+
     it('should initialize with the targeting key and traits when passed to initialize', async () => {
       const targetingKey = 'test';
       const traits = { foo: 'bar', example: 123 };
