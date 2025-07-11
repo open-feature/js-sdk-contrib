@@ -56,9 +56,18 @@ export class FlagsmithClientProvider implements Provider {
       if (isLogout) {
         return this._client.logout();
       }
-      if (identity) {
-        const { targetingKey, ...traits } = context;
-        return this._client.identify(identity, traits as any);
+      if (context?.targetingKey) {
+        const { targetingKey, ...contextTraits } = context;
+        // OpenFeature context attributes can be Date objects, but Flagsmith traits can't
+        const traits: Parameters<IFlagsmith['identify']>[1] = {};
+        for (const [key, value] of Object.entries(contextTraits)) {
+          if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            traits[key] = value;
+          } else if (value instanceof Date) {
+            traits[key] = value.toISOString();
+          }
+        }
+        return this._client.identify(targetingKey, traits);
       }
       return this._client.getFlags();
     }
