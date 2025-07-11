@@ -58,6 +58,7 @@ export class FlagsmithClientProvider implements Provider {
       if (context?.targetingKey) {
         const { targetingKey, ...contextTraits } = context;
         // OpenFeature context attributes can be Date objects, but Flagsmith traits can't
+        // https://github.com/Flagsmith/flagsmith-js-client/issues/329
         const traits: Parameters<IFlagsmith['identify']>[1] = {};
         for (const [key, value] of Object.entries(contextTraits)) {
           if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
