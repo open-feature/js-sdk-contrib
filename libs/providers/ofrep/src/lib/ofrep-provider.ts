@@ -94,7 +94,11 @@ export class OFREPProvider implements Provider {
       return handleEvaluationError(result, defaultValue);
     }
 
-    if (typeof result.value.value !== typeof defaultValue) {
+    if (
+      result.value.value !== undefined &&
+      result.value.value !== null &&
+      typeof result.value.value !== typeof defaultValue
+    ) {
       return {
         value: defaultValue,
         reason: StandardResolutionReasons.ERROR,
@@ -104,6 +108,6 @@ export class OFREPProvider implements Provider {
       };
     }
 
-    return toResolutionDetails(result.value);
+    return toResolutionDetails(result.value, defaultValue);
   }
 }
