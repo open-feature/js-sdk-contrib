@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-core-v0.1.1...config-cat-core-v0.1.2) (2025-07-16)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update dependency configcat-common to v9.4.0 ([#1348](https://github.com/open-feature/js-sdk-contrib/issues/1348)) ([601e7de](https://github.com/open-feature/js-sdk-contrib/commit/601e7de19948bc826778a076f27b46a8cb1fabca))
+* **security:** update vulnerability-updates ([#1342](https://github.com/open-feature/js-sdk-contrib/issues/1342)) ([fca83c9](https://github.com/open-feature/js-sdk-contrib/commit/fca83c925c6a3d19bac9d647562fd534397b376b))
+
 ## [0.1.1](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-core-v0.1.0...config-cat-core-v0.1.1) (2025-03-12)
 
 
