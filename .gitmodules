@@ -13,7 +13,7 @@
 [submodule "libs/shared/flagd-core/test-harness"]
 	path = libs/shared/flagd-core/test-harness
 	url = https://github.com/open-feature/flagd-testbed
-	branch = v2.8.0
+	branch = v2.10.2
 [submodule "libs/shared/flagd-core/spec"]
 	path = libs/shared/flagd-core/spec
 	url = https://github.com/open-feature/spec
