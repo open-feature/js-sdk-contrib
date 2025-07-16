@@ -7,7 +7,7 @@ import type {
   EvaluationContext,
   ResolutionReason,
 } from '@openfeature/core';
-import { ParseError, StandardResolutionReasons, ErrorCode } from '@openfeature/core';
+import { StandardResolutionReasons, ErrorCode, GeneralError } from '@openfeature/core';
 import { sha1 } from 'object-hash';
 import { Targeting } from './targeting/targeting';
 
@@ -45,7 +45,7 @@ type RequiredResolutionDetails<T> = Omit<ResolutionDetails<T>, 'value'> & {
 export class FeatureFlag {
   private readonly _key: string;
   private readonly _state: 'ENABLED' | 'DISABLED';
-  private readonly _defaultVariant: string;
+  private readonly _defaultVariant: string | undefined;
   private readonly _variants: Map<string, FlagValue>;
   private readonly _hash: string;
   private readonly _metadata: FlagMetadata;
@@ -59,7 +59,7 @@ export class FeatureFlag {
   ) {
     this._key = key;
     this._state = flag['state'];
-    this._defaultVariant = flag['defaultVariant'];
+    this._defaultVariant = flag['defaultVariant'] || undefined;
     this._variants = new Map<string, FlagValue>(Object.entries(flag['variants']));
     this._metadata = flag['metadata'] ?? {};
 
@@ -89,7 +89,7 @@ export class FeatureFlag {
     return this._state;
   }
 
-  get defaultVariant(): string {
+  get defaultVariant(): string | undefined {
     return this._defaultVariant;
   }
 
@@ -102,7 +102,7 @@ export class FeatureFlag {
   }
 
   evaluate(evalCtx: EvaluationContext, logger: Logger = this.logger): RequiredResolutionDetails<JsonValue> {
-    let variant: string;
+    let variant: string | undefined;
     let reason: ResolutionReason;
 
     if (this._targetingParseErrorMessage) {
@@ -142,7 +142,21 @@ export class FeatureFlag {
       }
     }
 
-    const resolvedValue = this._variants.get(variant);
+    if (
+      (variant === undefined || variant === null) &&
+      (this.defaultVariant === null || this.defaultVariant === undefined)
+    ) {
+      return {
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.FLAG_NOT_FOUND,
+        errorMessage: `Flag '${this._key}' has no default variant defined, will use code default`,
+        flagMetadata: this.metadata,
+      };
+    }
+
+    const resolvedVariant = variant as string;
+
+    const resolvedValue = this._variants.get(resolvedVariant);
     if (resolvedValue === undefined) {
       return {
         reason: StandardResolutionReasons.ERROR,
@@ -155,7 +169,7 @@ export class FeatureFlag {
     return {
       value: resolvedValue,
       reason,
-      variant,
+      variant: resolvedVariant,
       flagMetadata: this.metadata,
     };
   }
@@ -164,14 +178,10 @@ export class FeatureFlag {
     // basic validation, ideally this sort of thing is caught by IDEs and other schema validation before we get here
     // consistent with Java/Go and other implementations, we only warn for schema validation, but we fail for this sort of basic structural errors
     if (this._state !== 'ENABLED' && this._state !== 'DISABLED') {
-      throw new ParseError(`Invalid flag state: ${JSON.stringify(this._state, undefined, 2)}`);
+      throw new GeneralError(`Invalid flag state: ${JSON.stringify(this._state, undefined, 2)}`);
     }
-    if (this._defaultVariant === undefined) {
-      // this can be falsy, and int, etc...
-      throw new ParseError(`Invalid flag defaultVariant: ${JSON.stringify(this._defaultVariant, undefined, 2)}`);
-    }
-    if (!this._variants.has(this._defaultVariant)) {
-      throw new ParseError(
+    if (this._defaultVariant && !this._variants.has(this._defaultVariant)) {
+      throw new GeneralError(
         `Default variant ${this._defaultVariant} missing from variants ${JSON.stringify(this._variants, undefined, 2)}`,
       );
     }
