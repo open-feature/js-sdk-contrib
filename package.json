@@ -30,7 +30,7 @@
     "@protobuf-ts/runtime-rpc": "^2.9.0",
     "@swc/helpers": "0.5.17",
     "ajv": "^8.12.0",
-    "axios": "1.10.0",
+    "axios": "1.11.0",
     "configcat-common": "9.4.0",
     "configcat-js-ssr": "^8.4.3",
     "configcat-node": "^11.3.1",
