@@ -17,3 +17,6 @@
 [submodule "libs/shared/flagd-core/spec"]
 	path = libs/shared/flagd-core/spec
 	url = https://github.com/open-feature/spec
+[submodule "libs/providers/go-feature-flag-server/wasm-releases"]
+	path = libs/providers/go-feature-flag-server/wasm-releases
+	url = https://github.com/go-feature-flag/wasm-releases.git

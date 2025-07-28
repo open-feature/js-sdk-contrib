@@ -1,6 +1,6 @@
 {
   "extends": ["../../../.eslintrc.json"],
-  "ignorePatterns": ["!**/*"],
+  "ignorePatterns": ["!**/*", "src/lib/wasm/wasm_exec.js"],
   "rules": {
     "@typescript-eslint/no-explicit-any": "off",
     "quotes": ["error", "single"]
