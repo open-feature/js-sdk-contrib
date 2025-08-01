@@ -11,6 +11,7 @@ import {
   exampleNumericFlagName,
   exampleStringFlagName,
   getFetchErrorMock,
+  CACHE_KEY,
 } from './flagsmith.mocks';
 import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from 'flagsmith';
@@ -22,8 +23,6 @@ const logger = {
   reset: jest.fn(),
   warn: jest.fn(),
 };
-
-const CACHE_KEY = 'FLAGSMITH_CACHE_DB';
 
 describe('FlagsmithProvider', () => {
   beforeEach(async () => {

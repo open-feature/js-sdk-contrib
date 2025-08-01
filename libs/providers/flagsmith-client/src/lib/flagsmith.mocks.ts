@@ -156,10 +156,12 @@ export const defaultState = {
   environmentID: environmentID,
 };
 
+export const CACHE_KEY = 'FLAGSMITH_CACHE_DB';
+
 export const cacheConfig = {
   cacheFlags: true,
   cacheOptions: {
     ttl: 1000,
-    storageKey: 'FLAGSMITH_CACHE_DB',
+    storageKey: CACHE_KEY,
   },
 };
