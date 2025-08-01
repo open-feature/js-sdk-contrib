@@ -84,15 +84,15 @@ export class OFREPApi {
     }
 
     if (response.status === 401) {
-      throw new OFREPApiUnauthorizedError(response);
+      throw new OFREPApiUnauthorizedError(response, 'OFREP request failed: unauthorized');
     }
 
     if (response.status === 403) {
-      throw new OFREPForbiddenError(response);
+      throw new OFREPForbiddenError(response, 'OFREP request failed: forbidden');
     }
 
     if (response.status === 429) {
-      throw new OFREPApiTooManyRequestsError(response);
+      throw new OFREPApiTooManyRequestsError(response, 'OFREP request failed: too many requests');
     }
 
     if (response.status === 200 && !this.isJsonMime(response)) {
