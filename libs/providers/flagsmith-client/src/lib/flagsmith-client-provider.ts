@@ -10,9 +10,11 @@ import type {
 } from '@openfeature/web-sdk';
 import { OpenFeatureEventEmitter, ProviderEvents, TypeMismatchError } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from 'flagsmith';
-import type { IFlagsmith, IInitConfig, IState } from 'flagsmith/types';
+import type { ClientEvaluationContext, IFlagsmith, IInitConfig, IState, ITraits } from 'flagsmith/types';
 import type { FlagType } from './type-factory';
 import { typeFactory } from './type-factory';
+
+type OpenFeatureContext = EvaluationContext & Partial<IState>;
 
 export class FlagsmithClientProvider implements Provider {
   readonly metadata: ProviderMetadata = {
@@ -39,20 +41,18 @@ export class FlagsmithClientProvider implements Provider {
     this._config = config;
   }
 
-  async initialize(context?: EvaluationContext & Partial<IState>) {
+  async initialize(context?: OpenFeatureContext) {
     const identity = context?.targetingKey;
+    const evaluationContext: ClientEvaluationContext = this.mapContextToEvaluationContext(
+      context,
+      this._config.environmentID,
+    );
 
     if (this._client?.initialised) {
-      //Already initialised, set the state based on the new context, allow certain context props to be optional
-      const defaultState = { ...this._client.getState(), identity: undefined, traits: {} };
-      const isLogout = !!this._client.identity && !identity;
-      this._client.identity = identity;
-      this._client.setState({
-        ...defaultState,
-        ...(context || {}),
-      });
+      const isLogout = !!this._client.getContext().identity && !identity;
       this.events.emit(ProviderEvents.Stale, { message: 'context has changed' });
-      return isLogout ? this._client.logout() : this._client.getFlags();
+
+      return isLogout ? this._client.logout() : this._client.setContext(evaluationContext);
     }
 
     const serverState = this._config.state;
@@ -60,10 +60,13 @@ export class FlagsmithClientProvider implements Provider {
       this._client.setState(serverState);
       this.events.emit(ProviderEvents.Ready, { message: 'flags provided by SSR state' });
     }
+    if (!this._config.environmentID) {
+      this.events.emit(ProviderEvents.Stale, { message: 'environmentID is required' });
+    }
+
     return this._client.init({
       ...this._config,
-      ...context,
-      identity,
+      evaluationContext,
       onChange: (previousFlags, params, loadingState) => {
         const eventMeta = {
           metadata: this.getMetadata(),
@@ -84,7 +87,7 @@ export class FlagsmithClientProvider implements Provider {
     });
   }
 
-  onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext & Partial<IState>) {
+  onContextChange(oldContext: OpenFeatureContext, newContext: OpenFeatureContext) {
     this.events.emit(ProviderEvents.Stale, { message: 'Context Changed' });
     return this.initialize(newContext);
   }
@@ -111,9 +114,43 @@ export class FlagsmithClientProvider implements Provider {
    */
   private getMetadata() {
     return {
-      targetingKey: this._client.identity || '',
+      targetingKey: this._client.getContext()?.identity?.identifier || '',
       ...(this._client.getAllTraits() || {}),
     };
+  }
+
+  /**
+   * Map the Open Feature context to the Flagsmith evaluation context
+   * @private
+   */
+  private mapContextToEvaluationContext(context?: OpenFeatureContext, environmentID?: string) {
+    if (!context) {
+      return {
+        environment: {
+          apiKey: environmentID,
+        },
+      };
+    }
+
+    const identity = context?.targetingKey;
+    const traits = (context?.['traits'] as ITraits) || {};
+    const hasTraits = Object.keys(traits).length > 0;
+    const hasIdentifier = !!identity;
+
+    const evaluationContext: ClientEvaluationContext = {
+      environment: {
+        apiKey: this._config.environmentID,
+      },
+      identity:
+        hasIdentifier || hasTraits
+          ? {
+              ...(hasIdentifier && { identifier: identity }),
+              ...(hasTraits && { traits }),
+            }
+          : undefined,
+    };
+
+    return evaluationContext;
   }
 
   /**
@@ -128,6 +165,7 @@ export class FlagsmithClientProvider implements Provider {
     if (typeof value !== 'undefined' && typeof value !== type) {
       throw new TypeMismatchError(`flag key ${flagKey} is not of type ${type}`);
     }
+
     return {
       value: (typeof value !== type ? defaultValue : value) as T,
       reason: this.parseReason(value),
