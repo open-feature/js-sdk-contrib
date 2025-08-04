@@ -7,11 +7,16 @@ import {
   ParseError,
 } from '@openfeature/server-sdk';
 import type { PrimitiveType, PrimitiveTypeName } from '@openfeature/config-cat-core';
-import { isType, parseError, toResolutionDetails, transformContext } from '@openfeature/config-cat-core';
-import type { SettingValue } from 'configcat-common';
-import { ClientCacheState, PollingMode } from 'configcat-common';
-import type { IConfigCatClient, IConfig, OptionsForPollingMode } from 'configcat-node';
-import { getClient } from 'configcat-node';
+import { isType, toResolutionDetails, transformContext, translateError } from '@openfeature/config-cat-core';
+import type { Config, IConfigCatClient, INodeAutoPollOptions, INodeLazyLoadingOptions, INodeManualPollOptions, SettingValue } from '@configcat/sdk';
+import { ClientCacheState, EvaluationErrorCode, getClient, PollingMode } from '@configcat/sdk';
+
+type OptionsForPollingMode<TMode extends PollingMode | undefined> =
+  TMode extends PollingMode.AutoPoll ? INodeAutoPollOptions :
+  TMode extends PollingMode.ManualPoll ? INodeManualPollOptions :
+  TMode extends PollingMode.LazyLoad ? INodeLazyLoadingOptions :
+  TMode extends undefined ? INodeAutoPollOptions :
+  never;
 
 export class ConfigCatProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
@@ -44,11 +49,16 @@ export class ConfigCatProvider implements Provider {
       options.setupHooks = (hooks) => {
         oldSetupHooks?.(hooks);
 
-        hooks.on('configChanged', (config: IConfig) =>
+        hooks.on('configChanged', (config: Config) => {
+          if (provider._client && !provider._isProviderReady) {
+            provider._isProviderReady = true;
+            provider.events.emit(ProviderEvents.Ready);
+          }
+
           provider.events.emit(ProviderEvents.ConfigurationChanged, {
-            flagsChanged: Object.keys(config.settings),
-          }),
-        );
+            flagsChanged: config.f ? Object.keys(config.f) : [],
+          });
+        });
       };
 
       return getClient(sdkKey, pollingMode, options);
@@ -137,18 +147,8 @@ export class ConfigCatProvider implements Provider {
       transformContext(context),
     );
 
-    if (!this._isProviderReady && this._client.snapshot().cacheState !== ClientCacheState.NoFlagData) {
-      // Ideally, we would check ConfigCat client's initialization state in its "background" polling loop.
-      // This is not possible at the moment, so as a workaround, we do the check on feature flag evaluation.
-      // There are plans to improve this situation, so let's revise this
-      // as soon as ConfigCat SDK implements the necessary event.
-
-      this._isProviderReady = true;
-      setTimeout(() => this.events.emit(ProviderEvents.Ready), 0);
-    }
-
-    if (evaluationData.isDefaultValue) {
-      throw parseError(evaluationData.errorMessage);
+    if (evaluationData.errorCode !== EvaluationErrorCode.None) {
+      throw translateError(evaluationData.errorCode);
     }
 
     if (flagType !== 'object') {

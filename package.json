@@ -20,6 +20,7 @@
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.759.0",
     "@bufbuild/protobuf": "^1.2.0",
+    "@configcat/sdk": "^1.0.1",
     "@connectrpc/connect": "^1.4.0",
     "@connectrpc/connect-web": "^1.4.0",
     "@flipt-io/flipt": "^1.2.0",
@@ -32,9 +33,6 @@
     "@swc/helpers": "0.5.17",
     "ajv": "^8.12.0",
     "axios": "1.11.0",
-    "configcat-common": "9.4.0",
-    "configcat-js-ssr": "^8.4.3",
-    "configcat-node": "^11.3.1",
     "copy-anything": "^3.0.5",
     "flagsmith": "^4.1.4",
     "imurmurhash": "^0.1.4",

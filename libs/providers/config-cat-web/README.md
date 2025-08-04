@@ -14,18 +14,18 @@ The OpenFeature SDK is required as peer dependency.
 
 The minimum required version of `@openfeature/web-sdk` currently is `1.0.0`.
 
-The minimum required version of `configcat-js-ssr` currently is `8.4.3`.
+The minimum required version of `@configcat/sdk` currently is `1.0.1`.
 
 ```
-$ npm install @openfeature/web-sdk configcat-js-ssr
+$ npm install @openfeature/web-sdk @configcat/sdk
 ```
 
 ## Usage
 
-The ConfigCat provider uses the [ConfigCat JavaScript SSR SDK](https://configcat.com/docs/sdk-reference/js-ssr/).
+The ConfigCat provider uses the [ConfigCat Browser (JavaScript) SDK](https://configcat.com/docs/sdk-reference/js/browser/).
 
 It can be created by passing the ConfigCat SDK options to ```ConfigCatWebProvider.create```.
-The available options can be found in the [ConfigCat JavaScript SSR SDK](https://configcat.com/docs/sdk-reference/js-ssr/#creating-the-configcat-client).
+The available options can be found in the [ConfigCat JavaScript SSR SDK](https://configcat.com/docs/sdk-reference/js/browser/#creating-the-configcat-client).
 
 The ConfigCat Web Provider only supports the `AutoPolling` mode because it caches all evaluation data to support synchronous evaluation of feature flags.
 
@@ -54,7 +54,7 @@ await OpenFeature.clearProviders();
 ```javascript
 import { OpenFeature } from "@openfeature/web-sdk";
 import { ConfigCatWebProvider } from '@openfeature/config-cat-web-provider';
-import { createConsoleLogger, LogLevel } from 'configcat-js-ssr';
+import { createConsoleLogger, LogLevel } from '@configcat/sdk';
 
 // Create and set the provider.
 const provider = ConfigCatWebProvider.create('<sdk_key>', {

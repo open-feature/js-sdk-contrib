@@ -1,5 +1,5 @@
 import type { EvaluationContext, EvaluationContextValue } from '@openfeature/core';
-import type { User as ConfigCatUser, UserAttributeValue } from 'configcat-common';
+import type { IUser as ConfigCatUser, UserAttributeValue } from '@configcat/sdk';
 
 function toUserAttributeValue(value: EvaluationContextValue): UserAttributeValue {
   if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {

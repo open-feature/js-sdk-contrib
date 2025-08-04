@@ -1,6 +1,14 @@
 import { ConfigCatWebProvider } from './config-cat-web-provider';
-import type { HookEvents, IConfigCatCache, ISettingUnion } from 'configcat-js-ssr';
-import { createConsoleLogger, createFlagOverridesFromMap, LogLevel, OverrideBehaviour } from 'configcat-js-ssr';
+import type { HookEvents, IConfigCatConfigFetcher } from '@configcat/sdk';
+import {
+  createConsoleLogger,
+  createFlagOverridesFromMap,
+  FetchResponse,
+  LogLevel,
+  OverrideBehaviour,
+  prepareConfig,
+  SettingType
+} from '@configcat/sdk';
 import type { EventEmitter } from 'events';
 import { ProviderEvents, ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/web-sdk';
 
@@ -65,7 +73,7 @@ describe('ConfigCatWebProvider', () => {
   describe('events', () => {
     it('should emit PROVIDER_CONFIGURATION_CHANGED event', () => {
       const handler = jest.fn();
-      const eventData = { settings: { myFlag: {} as ISettingUnion }, salt: undefined, segments: [] };
+      const eventData = prepareConfig({ f: { 'myFlag': { t: SettingType.Boolean, v: { b: true }, i: "" } } });
 
       provider.events.addHandler(ProviderEvents.ConfigurationChanged, handler);
       configCatEmitter.emit('configChanged', eventData);
@@ -76,47 +84,36 @@ describe('ConfigCatWebProvider', () => {
     });
 
     it("should emit PROVIDER_READY event when underlying client is initialized after provider's initialize", async () => {
-      const cacheValue = '253370761200000\nW/"12345678-90a"\n{"f":{"booleanTrue":{"t":0,"v":{"b":true}}}}';
+      let currentFetch = () => new FetchResponse(503, "Service Unavailable", []);
 
-      const fakeSharedCache = new (class implements IConfigCatCache {
-        private _value?: string;
-        get(key: string) {
-          return this._value;
+      const fakeConfigFetcher = new class implements IConfigCatConfigFetcher {
+        fetchAsync(): Promise<FetchResponse> {
+          return Promise.resolve(currentFetch());
         }
-        set(key: string, value: string) {
-          this._value = value;
-        }
-      })();
+      }();
 
       const provider = ConfigCatWebProvider.create('configcat-sdk-1/1234567890123456789012/1234567890123456789012', {
-        cache: fakeSharedCache,
+        configFetcher: fakeConfigFetcher,
         logger: createConsoleLogger(LogLevel.Off),
-        offline: true,
         maxInitWaitTimeSeconds: 1,
       });
 
       const readyHandler = jest.fn();
       provider.events.addHandler(ProviderEvents.Ready, readyHandler);
 
-      try {
-        await provider.initialize();
-      } catch (err) {
-        expect((err as Error).message).toContain('underlying ConfigCat client could not initialize');
-      }
+      await expect(provider.initialize()).rejects.toThrow(/underlying ConfigCat client could not initialize/);
 
       expect(readyHandler).toHaveBeenCalledTimes(0);
 
-      fakeSharedCache.set('', cacheValue);
+      currentFetch = () => new FetchResponse(200, "OK", [], '{"f":{"booleanTrue":{"t":0,"v":{"b":true}}}}');
 
       // Make sure that the internal cache is refreshed.
       await provider.configCatClient?.forceRefreshAsync();
 
-      provider.resolveBooleanEvaluation('booleanTrue', false, { targetingKey });
-
-      // Wait a little while for the Ready event to be emitted.
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
       expect(readyHandler).toHaveBeenCalled();
+
+      const resolutionDetails = provider.resolveBooleanEvaluation('booleanTrue', false, { targetingKey });
+      expect(resolutionDetails.value).toBe(true);
     });
   });
 
