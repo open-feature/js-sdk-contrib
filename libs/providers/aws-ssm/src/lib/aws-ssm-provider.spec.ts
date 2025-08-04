@@ -2,8 +2,7 @@ import type { SSMClientConfig } from '@aws-sdk/client-ssm';
 import { AwsSsmProvider } from './aws-ssm-provider';
 import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 
-describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
-
+describe('aws-ssm-provider.ts - AwsSsmProvider', () => {
   let provider: AwsSsmProvider;
   let getBooleanValueSpy: jest.SpyInstance;
   let getStringValueSpy: jest.SpyInstance;
@@ -34,9 +33,8 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
     getObjectValueSpy = jest.spyOn(provider.service, 'getObjectValue');
   });
 
-  describe("resolveBooleanEvaluation", () => {
-
-    it("should return cached value when flag is cached", async () => {
+  describe('resolveBooleanEvaluation', () => {
+    it('should return cached value when flag is cached', async () => {
       provider.cache.set('test', {
         value: true,
         reason: StandardResolutionReasons.STATIC,
@@ -50,7 +48,7 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
       });
     });
 
-    it("should return default value when getBooleanValue rejects", async () => {
+    it('should return default value when getBooleanValue rejects', async () => {
       getBooleanValueSpy.mockRejectedValue(new Error());
 
       const result = await provider.resolveBooleanEvaluation('test-error', false, {});
@@ -63,7 +61,7 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
       });
     });
 
-    it("should resolve with expected value when getBooleanValue resolves", async () => {
+    it('should resolve with expected value when getBooleanValue resolves', async () => {
       getBooleanValueSpy.mockResolvedValue({
         value: true,
         reason: StandardResolutionReasons.STATIC,
@@ -78,9 +76,8 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
     });
   });
 
-  describe("resolveStringEvaluation", () => {
-
-    it("should return cached value when flag is cached", async () => {
+  describe('resolveStringEvaluation', () => {
+    it('should return cached value when flag is cached', async () => {
       provider.cache.set('test-string', {
         value: 'somestring',
         reason: StandardResolutionReasons.STATIC,
@@ -94,7 +91,7 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
       });
     });
 
-    it("should return default value when getStringValue rejects", async () => {
+    it('should return default value when getStringValue rejects', async () => {
       getStringValueSpy.mockRejectedValue(new Error());
 
       const result = await provider.resolveStringEvaluation('test-string-error', 'default', {});
@@ -107,7 +104,7 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
       });
     });
 
-    it("should resolve with expected value when getStringValue resolves", async () => {
+    it('should resolve with expected value when getStringValue resolves', async () => {
       getStringValueSpy.mockResolvedValue({
         value: 'somestring',
         reason: StandardResolutionReasons.STATIC,
@@ -122,9 +119,8 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
     });
   });
 
-  describe("resolveNumberEvaluation", () => {
-
-    it("should return cached value when flag is cached", async () => {
+  describe('resolveNumberEvaluation', () => {
+    it('should return cached value when flag is cached', async () => {
       provider.cache.set('test-number', {
         value: 489,
         reason: StandardResolutionReasons.STATIC,
@@ -138,7 +134,7 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
       });
     });
 
-    it("should return default value when getNumberValue rejects", async () => {
+    it('should return default value when getNumberValue rejects', async () => {
       getNumberValueSpy.mockRejectedValue(new Error());
 
       const result = await provider.resolveNumberEvaluation('test-number-error', -1, {});
@@ -151,7 +147,7 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
       });
     });
 
-    it("should resolve with expected value when getNumberValue resolves", async () => {
+    it('should resolve with expected value when getNumberValue resolves', async () => {
       getNumberValueSpy.mockResolvedValue({
         value: 489,
         reason: StandardResolutionReasons.STATIC,
@@ -166,9 +162,8 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
     });
   });
 
-  describe("resolveObjectEvaluation", () => {
-
-    it("should return cached value when flag is cached", async () => {
+  describe('resolveObjectEvaluation', () => {
+    it('should return cached value when flag is cached', async () => {
       provider.cache.set('test-object', {
         value: { default: false },
         reason: StandardResolutionReasons.STATIC,
@@ -182,7 +177,7 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
       });
     });
 
-    it("should return default value when getObjectValue rejects", async () => {
+    it('should return default value when getObjectValue rejects', async () => {
       getObjectValueSpy.mockRejectedValue(new Error());
 
       const result = await provider.resolveObjectEvaluation('test-object-error', { default: true }, {});
@@ -195,7 +190,7 @@ describe("aws-ssm-provider.ts - AwsSsmProvider", () => {
       });
     });
 
-    it("should resolve with expected value when getObjectValue resolves", async () => {
+    it('should resolve with expected value when getObjectValue resolves', async () => {
       getObjectValueSpy.mockResolvedValue({
         value: { default: true },
         reason: StandardResolutionReasons.STATIC,
