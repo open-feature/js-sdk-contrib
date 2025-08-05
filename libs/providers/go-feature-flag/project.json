@@ -29,15 +29,11 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ]
+      "outputs": ["{options.outputFile}"]
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/providers/go-feature-flag"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/go-feature-flag"],
       "options": {
         "jestConfig": "libs/providers/go-feature-flag/jest.config.ts"
       },
@@ -49,9 +45,7 @@
     },
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "dependsOn": [
         {
           "target": "copy-wasm"
@@ -66,10 +60,7 @@
         "generateExportsField": true,
         "umdName": "go-feature-flag",
         "external": "all",
-        "format": [
-          "cjs",
-          "esm"
-        ],
+        "format": ["cjs", "esm"],
         "assets": [
           {
             "glob": "package.json",
