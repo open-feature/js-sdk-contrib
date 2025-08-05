@@ -190,7 +190,7 @@ describe('ExporterMetadata', () => {
 
     it('should handle complex metadata scenarios', () => {
       // Simulate a real-world scenario
-      exporterMetadata.add('sdk', 'go-feature-flag-server');
+      exporterMetadata.add('sdk', 'go-feature-flag');
       exporterMetadata.add('sdkVersion', '1.0.0');
       exporterMetadata.add('endpoint', 'http://localhost:1031');
       exporterMetadata.add('timeout', 5000);
@@ -200,7 +200,7 @@ describe('ExporterMetadata', () => {
       const result = exporterMetadata.asObject();
 
       expect(result).toEqual({
-        sdk: 'go-feature-flag-server',
+        sdk: 'go-feature-flag',
         sdkVersion: '1.0.0',
         endpoint: 'http://localhost:1031',
         timeout: 5000,

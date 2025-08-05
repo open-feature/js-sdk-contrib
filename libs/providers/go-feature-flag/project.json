@@ -16,20 +16,47 @@
         }
       ]
     },
+    "copy-wasm": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "git submodule update --init wasm-releases",
+          "cp wasm-releases/evaluation/gofeatureflag-evaluation_v1.45.6.wasm src/lib/wasm/wasm-module/gofeatureflag-evaluation.wasm"
+        ],
+        "cwd": "libs/providers/go-feature-flag",
+        "parallel": false
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"]
+      "outputs": [
+        "{options.outputFile}"
+      ]
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/providers/go-feature-flag"],
+      "outputs": [
+        "{workspaceRoot}/coverage/libs/providers/go-feature-flag"
+      ],
       "options": {
         "jestConfig": "libs/providers/go-feature-flag/jest.config.ts"
-      }
+      },
+      "dependsOn": [
+        {
+          "target": "copy-wasm"
+        }
+      ]
     },
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "dependsOn": [
+        {
+          "target": "copy-wasm"
+        }
+      ],
       "options": {
         "project": "libs/providers/go-feature-flag/package.json",
         "outputPath": "dist/libs/providers/go-feature-flag",
@@ -39,7 +66,10 @@
         "generateExportsField": true,
         "umdName": "go-feature-flag",
         "external": "all",
-        "format": ["cjs", "esm"],
+        "format": [
+          "cjs",
+          "esm"
+        ],
         "assets": [
           {
             "glob": "package.json",
