@@ -52,7 +52,24 @@ export class FlagsmithClientProvider implements Provider {
         ...(context || {}),
       });
       this.events.emit(ProviderEvents.Stale, { message: 'context has changed' });
-      return isLogout ? this._client.logout() : this._client.getFlags();
+      if (isLogout) {
+        return this._client.logout();
+      }
+      if (context?.targetingKey) {
+        const { targetingKey, ...contextTraits } = context;
+        // OpenFeature context attributes can be Date objects, but Flagsmith traits can't
+        // https://github.com/Flagsmith/flagsmith-js-client/issues/329
+        const traits: Parameters<IFlagsmith['identify']>[1] = {};
+        for (const [key, value] of Object.entries(contextTraits)) {
+          if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            traits[key] = value;
+          } else if (value instanceof Date) {
+            traits[key] = value.toISOString();
+          }
+        }
+        return this._client.identify(targetingKey, traits);
+      }
+      return this._client.getFlags();
     }
 
     const serverState = this._config.state;
