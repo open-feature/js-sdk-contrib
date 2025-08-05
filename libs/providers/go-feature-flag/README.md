@@ -78,7 +78,7 @@ const provider = new GoFeatureFlagProvider({
 | `evaluationType`              | `EvaluationType`   | `InProcess`  | Evaluation mode: `InProcess` or `Remote`        |
 | `timeout`                     | `number`           | `10000`      | HTTP request timeout in milliseconds            |
 | `flagChangePollingIntervalMs` | `number`           | `120000`     | Polling interval for configuration changes      |
-| `dataFlushInterval`           | `number`           | `1000`       | Data collection flush interval                  |
+| `dataFlushInterval`           | `number`           | `120000`     | Data collection flush interval                  |
 | `maxPendingEvents`            | `number`           | `10000`      | Maximum pending events before flushing          |
 | `disableDataCollection`       | `boolean`          | `false`      | Disable data collection entirely                |
 | `apiKey`                      | `string`           | `undefined`  | API key for authentication                      |

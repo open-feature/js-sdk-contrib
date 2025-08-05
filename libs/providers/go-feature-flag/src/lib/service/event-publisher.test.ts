@@ -243,7 +243,7 @@ describe('EventPublisher', () => {
       publisher.addEvent(mockEvent);
 
       // Default should be 10000ms (from constants)
-      jest.advanceTimersByTime(10100);
+      jest.advanceTimersByTime(120010);
 
       expect(mockApi.sendEventToDataCollector).toHaveBeenCalled();
 
