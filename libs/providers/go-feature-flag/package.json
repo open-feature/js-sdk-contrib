@@ -12,7 +12,9 @@
     "@openfeature/ofrep-provider": "0.2.1",
     "@jest/globals": "29.7.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@wasmer/wasi": "^1.2.2"
+  },
   "devDependencies": {
     "@ljharb/eslint-config": "^21.2.0",
     "eslint-plugin-tree-shaking": "^1.12.2"
