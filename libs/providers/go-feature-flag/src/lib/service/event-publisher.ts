@@ -78,13 +78,8 @@ export class EventPublisher {
    * @returns {void}
    */
   addEvent(eventToAdd: ExportEvent): void {
-    let shouldPublish = false;
-    // Simple thread-safe check and add
-    if (this.events.length + 1 >= (this.options.maxPendingEvents || DEFAULT_MAX_PENDING_EVENTS)) {
-      shouldPublish = true;
-    }
     this.events.push(eventToAdd);
-    if (shouldPublish) {
+    if (this.events.length >= (this.options.maxPendingEvents || DEFAULT_MAX_PENDING_EVENTS)) {
       // Fire and forget - don't await to avoid blocking
       this.publishEvents().catch((error) => {
         this.logger?.error('Error publishing events:', error);
