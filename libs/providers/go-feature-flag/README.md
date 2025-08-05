@@ -90,14 +90,14 @@ const provider = new GoFeatureFlagProvider({
 #### InProcess Evaluation
 
 - **Performance**: Fastest evaluation with local caching
-- **Network**: Minimal network calls, only for configuration updates
+- **Network**: Minimal network calls, only for configuration updates and tracking
 - **Use Case**: High-performance applications, real-time evaluation
 
 #### Remote Evaluation
 
 - **Performance**: Network-dependent evaluation
-- **Network**: Each evaluation requires a network call
-- **Use Case**: Centralized control, complex targeting rules
+- **Network**: Each evaluation requires a network call, works well with side-cars or in the edge
+- **Use Case**: Centralized control
 
 ## Advanced Usage 🔧
 
@@ -132,7 +132,7 @@ const provider = new GoFeatureFlagProvider({
   endpoint: 'https://your-relay-proxy.com',
   evaluationType: EvaluationType.Remote,
   disableDataCollection: false, // Enable data collection
-  dataFlushInterval: 2000, // Flush every 2 seconds
+  dataFlushInterval: 20000, // Flush every 20 seconds
   maxPendingEvents: 5000, // Max 5000 pending events
 });
 ```
@@ -154,36 +154,6 @@ const provider = new GoFeatureFlagProvider({
   evaluationType: EvaluationType.Remote,
   exporterMetadata: metadata,
 });
-```
-
-### Custom Fetch Implementation
-
-For environments with specific HTTP requirements:
-
-```typescript
-const provider = new GoFeatureFlagProvider({
-  endpoint: 'https://your-relay-proxy.com',
-  evaluationType: EvaluationType.Remote,
-  fetchImplementation: customFetch, // Your custom fetch implementation
-});
-```
-
-### Error Handling
-
-The provider includes comprehensive error handling:
-
-```typescript
-try {
-  const flagValue = await client.getBooleanValue('my-feature-flag', false, context);
-} catch (error) {
-  if (error.code === 'FLAG_NOT_FOUND') {
-    // Handle flag not found
-  } else if (error.code === 'UNAUTHORIZED') {
-    // Handle authentication error
-  } else {
-    // Handle other errors
-  }
-}
 ```
 
 ## Flag Types Supported 🎯
@@ -231,97 +201,6 @@ client.track('user_action', context, {
 });
 ```
 
-## Performance Considerations ⚡
-
-### Caching Strategy
-
-- **InProcess**: Local caching with automatic invalidation on configuration changes
-- **Remote**: HTTP caching headers respected
-- **Configuration**: Automatic polling with configurable intervals
-
-### Best Practices
-
-1. **Use InProcess for high-frequency evaluations**
-2. **Configure appropriate polling intervals**
-3. **Monitor data collection volume**
-4. **Set reasonable timeouts for your network**
-
-## Troubleshooting 🔧
-
-### Common Issues
-
-**Configuration not updating**
-
-- Check `flagChangePollingIntervalMs` setting
-- Verify relay-proxy endpoint is accessible
-
-**High latency**
-
-- Consider switching to `InProcess` evaluation
-- Check network connectivity to relay-proxy
-
-**Data collection issues**
-
-- Verify `disableDataCollection` is not set to `true`
-- Check `maxPendingEvents` and `dataFlushInterval` settings
-
-### Debug Mode
-
-Enable debug logging:
-
-```typescript
-import { Logger } from '@openfeature/server-sdk';
-
-const logger = {
-  debug: (message: string) => console.log(`[DEBUG] ${message}`),
-  info: (message: string) => console.log(`[INFO] ${message}`),
-  warn: (message: string) => console.log(`[WARN] ${message}`),
-  error: (message: string) => console.log(`[ERROR] ${message}`),
-};
-
-const provider = new GoFeatureFlagProvider(
-  {
-    endpoint: 'https://your-relay-proxy.com',
-    evaluationType: EvaluationType.Remote,
-  },
-  logger,
-);
-```
-
-## API Reference 📚
-
-### GoFeatureFlagProvider
-
-The main provider class that implements the OpenFeature Provider interface.
-
-#### Constructor
-
-```typescript
-constructor(options: GoFeatureFlagProviderOptions, logger?: Logger)
-```
-
-#### Methods
-
-- `resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, context: EvaluationContext): Promise<ResolutionDetails<boolean>>`
-- `resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext): Promise<ResolutionDetails<string>>`
-- `resolveNumberEvaluation(flagKey: string, defaultValue: number, context: EvaluationContext): Promise<ResolutionDetails<number>>`
-- `resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>>`
-- `track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void`
-
-### EvaluationType
-
-Enum defining evaluation modes:
-
-- `EvaluationType.InProcess`: Local evaluation
-- `EvaluationType.Remote`: Remote evaluation
-
-### ExporterMetadata
-
-Class for adding custom metadata to evaluation events:
-
-- `add(key: string, value: string | boolean | number): ExporterMetadata`
-- `asObject(): Record<string, string | boolean | number>`
-
 ## Contributing 🤝
 
 We welcome contributions! Please see our [contributing guidelines](CONTRIBUTING.md) for details.
@@ -332,6 +211,5 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Support 💬
 
-- **Documentation**: [OpenFeature Documentation](https://openfeature.dev/)
-- **Issues**: [GitHub Issues](https://github.com/open-feature/js-sdk-contrib/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/open-feature/js-sdk-contrib/discussions)
+- **Documentation**: [GO Feature Flag Documentation](https://gofeatureflag.org/), [OpenFeature Documentation](https://openfeature.dev/)
+- **Issues**: [GitHub Issues](https://github.com/thomaspoignant/go-feature-flag/issues)
