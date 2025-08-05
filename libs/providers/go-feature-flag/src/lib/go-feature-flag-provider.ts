@@ -60,7 +60,7 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
       contextKind: getContextKind(context),
       key: trackingEventName,
       trackingEventDetails: trackingEventDetails ?? {},
-      creationDate: Date.now() / 1000,
+      creationDate: Math.floor(Date.now() / 1000),
       evaluationContext: context ?? {},
     };
     this.eventPublisher.addEvent(event);
