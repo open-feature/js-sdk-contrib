@@ -1191,6 +1191,16 @@ describe('GoFeatureFlagProvider', () => {
       jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/data\/collector/, async () => {
         return {
+          body: getConfigurationEndpointResult(),
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
+      });
+
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
+        return {
           body: JSON.stringify({}),
           status: 200,
           headers: {
@@ -1245,6 +1255,17 @@ describe('GoFeatureFlagProvider', () => {
           },
         };
       });
+
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
+        return {
+          body: JSON.stringify({}),
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
+      });
+
       const provider = new GoFeatureFlagProvider({
         endpoint: 'http://localhost:1031',
         dataFlushInterval: 100,
