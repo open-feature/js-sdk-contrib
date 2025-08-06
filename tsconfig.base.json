@@ -38,7 +38,7 @@
       "@openfeature/ofrep-core": ["libs/shared/ofrep-core/src/index.ts"],
       "@openfeature/ofrep-provider": ["libs/providers/ofrep/src/index.ts"],
       "@openfeature/ofrep-web-provider": ["libs/providers/ofrep-web/src/index.ts"],
-      "@openfeature/rocketflag-provider": ["libs/providers/src/index.ts"],
+      "@openfeature/rocketflag-provider": ["libs/providers/rocketflag/src/index.ts"],
       "@openfeature/unleash-web-provider": ["libs/providers/unleash-web/src/index.ts"]
     }
   },
