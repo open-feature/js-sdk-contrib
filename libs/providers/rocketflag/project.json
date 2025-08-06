@@ -1,7 +1,7 @@
 {
   "name": "RocketFlag",
   "$schema": "../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "providers/src",
+  "sourceRoot": "libs/providers/src",
   "projectType": "library",
   "release": {
     "version": {

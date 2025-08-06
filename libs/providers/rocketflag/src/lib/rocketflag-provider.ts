@@ -82,7 +82,8 @@ export function createRocketFlagProvider(client: RocketFlagClient): Provider & E
     runsOn: 'client' as const,
     hooks: [],
 
-    initialize: async (): Promise<void> => {
+    initialize: async (_context: EvaluationContext, initLogger?: Logger): Promise<void> => {
+      logger = initLogger;
       logger?.debug('Initialising RocketFlagProvider...');
     },
 
