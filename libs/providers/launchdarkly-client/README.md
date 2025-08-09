@@ -32,7 +32,7 @@ const ldOptions = {
   * you can change it using setContext. 
 
   */
-const ldOpenFeatureProvider = new LaunchDarklyClientProvider(clientEnvKey, options);
+const ldOpenFeatureProvider = new LaunchDarklyClientProvider(clientEnvKey, ldOptions);
 
 //set open feature provider and get client
 OpenFeature.setProvider(ldOpenFeatureProvider);
