@@ -75,7 +75,12 @@ export class LaunchDarklyClientProvider implements Provider {
       this.logger = basicLogger({ level: 'info' });
     }
     this.initializationTimeout = initializationTimeout;
-    this.ldOptions = { ...ldOptions, logger: this.logger };
+    this.ldOptions = {
+      ...ldOptions,
+      logger: this.logger,
+      wrapperName: 'open-feature-community-js-client',
+      wrapperVersion: '0.3.2', // {{ x-release-please-version }}
+    };
   }
 
   private get client(): LDClient {
