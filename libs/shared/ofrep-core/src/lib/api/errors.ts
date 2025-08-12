@@ -32,6 +32,7 @@ export class OFREPApiUnauthorizedError extends OFREPApiError {
     super(undefined, response, message, options);
     Object.setPrototypeOf(this, OFREPApiUnauthorizedError.prototype);
     this.name = OFREPApiUnauthorizedError.name;
+    this.message = message ?? 'OFREP request failed: unauthorized';
   }
 }
 
@@ -40,6 +41,7 @@ export class OFREPForbiddenError extends OFREPApiError {
     super(undefined, response, message, options);
     Object.setPrototypeOf(this, OFREPForbiddenError.prototype);
     this.name = OFREPForbiddenError.name;
+    this.message = message ?? 'OFREP request failed: forbidden';
   }
 }
 
