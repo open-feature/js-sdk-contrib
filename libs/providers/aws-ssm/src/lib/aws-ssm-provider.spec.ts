@@ -196,7 +196,7 @@ describe('aws-ssm-provider.ts - AwsSsmProvider', () => {
         reason: StandardResolutionReasons.STATIC,
       });
 
-      const result = await provider.resolveObjectEvaluation('test-object-success', -1, {});
+      const result = await provider.resolveObjectEvaluation('test-object-success', {}, {});
 
       expect(result).toEqual({
         value: { default: true },
