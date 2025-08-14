@@ -63,7 +63,10 @@
       "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "versioning": "default"
+      "versioning": "default",
+      "extra-files": [
+        "src/lib/launchdarkly-client-provider.ts"
+      ]
     },
     "libs/providers/go-feature-flag-web": {
       "release-type": "node",
