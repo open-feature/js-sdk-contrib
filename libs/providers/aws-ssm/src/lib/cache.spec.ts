@@ -25,8 +25,10 @@ describe('cache.ts - Cache', () => {
     expect(cache.get('test')).toEqual({ value: true, reason: 'test' });
   });
 
-  it('should not set any value when cache is disabled', () => {
-    expect(setSpy).not.toHaveBeenCalled();
+  it('should not set a value when cache is disabled', () => {
+    const cache = new Cache({ enabled: false });
+    cache.set('test', { value: true, reason: 'test' });
+    expect(cache.get('test')).toBeUndefined();
   });
 
   it('should clear the cache when cache is enabled and .clear() is called', () => {
