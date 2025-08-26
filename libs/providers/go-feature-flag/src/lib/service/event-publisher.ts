@@ -49,10 +49,19 @@ export class EventPublisher {
       return;
     }
     this.isRunning = true;
-    const flushInterval = this.options.dataFlushInterval || DEFAULT_FLUSH_INTERVAL_MS;
-    this.intervalId = setInterval(async () => {
-      await this.publishEvents();
-    }, flushInterval);
+    this.runPublisher();
+  }
+
+  /**
+   * Runs the publisher and sets up a periodic runner.
+   * @returns {Promise<void>} A promise that resolves when the publisher has run.
+   */
+  private async runPublisher(): Promise<void> {
+    await this.publishEvents();
+    if (this.isRunning) {
+      const flushInterval = this.options.dataFlushInterval || DEFAULT_FLUSH_INTERVAL_MS;
+      this.intervalId = setTimeout(() => this.runPublisher(), flushInterval);
+    }
   }
 
   /**
