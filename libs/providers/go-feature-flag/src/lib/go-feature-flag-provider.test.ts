@@ -967,7 +967,7 @@ describe('GoFeatureFlagProvider', () => {
     it('Should change evaluation details if config has changed', async () => {
       jest.useRealTimers();
       let callCount = 0;
-      fetchMock.mockIf(/^http:\/\/localhost:1031/, async () => {
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         callCount++;
         if (callCount <= 1) {
           return {
@@ -994,7 +994,7 @@ describe('GoFeatureFlagProvider', () => {
 
       const provider = new GoFeatureFlagProvider({
         endpoint: 'http://localhost:1031',
-        flagChangePollingIntervalMs: 200,
+        flagChangePollingIntervalMs: 150,
       });
 
       await OpenFeature.setProviderAndWait(testClientName, provider);
