@@ -1046,10 +1046,14 @@ describe('GoFeatureFlagProvider', () => {
     });
 
     it('Should error if flag configuration endpoint return a 401', async () => {
-      jest.useRealTimers();
-      fetchMock.mockResponseOnce(getConfigurationEndpointResult(), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
+        return {
+          body: '{}',
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
       });
 
       const provider = new GoFeatureFlagProvider({
