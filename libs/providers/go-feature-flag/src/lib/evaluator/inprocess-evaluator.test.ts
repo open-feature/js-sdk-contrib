@@ -7,6 +7,7 @@ import { EvaluationType } from '../model';
 // Mock the EvaluateWasm class
 jest.mock('../wasm/evaluate-wasm', () => ({
   EvaluateWasm: jest.fn().mockImplementation(() => ({
+    initialize: jest.fn().mockResolvedValue(undefined),
     evaluate: jest.fn().mockResolvedValue({
       value: true,
       reason: 'TARGETING_MATCH',

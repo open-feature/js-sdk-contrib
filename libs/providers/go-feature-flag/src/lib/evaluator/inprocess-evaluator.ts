@@ -64,8 +64,9 @@ export class InProcessEvaluator implements IEvaluator {
    * Initialize the evaluator.
    */
   async initialize(): Promise<void> {
-    await this.loadConfiguration(true);
+    await this.evaluationEngine.initialize();
 
+    await this.loadConfiguration(true);
     // Start periodic configuration polling
     if (this.options.flagChangePollingIntervalMs && this.options.flagChangePollingIntervalMs > 0) {
       this.periodicRunner = setInterval(

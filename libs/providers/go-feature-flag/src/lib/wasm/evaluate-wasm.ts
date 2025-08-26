@@ -23,17 +23,13 @@ export class EvaluateWasm {
   constructor(logger?: Logger) {
     this.logger = logger;
     this.go = new Go();
-    // Initialize WASM asynchronously
-    this.initializeWasm().catch((error) => {
-      logger?.error('Failed to initialize WASM:', error);
-    });
   }
 
   /**
    * Initializes the WASM module.
    * In a real implementation, this would load the WASM binary and instantiate it.
    */
-  private async initializeWasm(): Promise<void> {
+  public async initialize(): Promise<void> {
     try {
       // Load the WASM binary
       const wasmBuffer = await this.loadWasmBinary();
@@ -119,7 +115,7 @@ export class EvaluateWasm {
     try {
       // Ensure WASM is initialized
       if (!this.wasmExports || !this.wasmMemory) {
-        await this.initializeWasm();
+        await this.initialize();
       }
 
       // Serialize the input to JSON
