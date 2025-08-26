@@ -1093,9 +1093,15 @@ describe('GoFeatureFlagProvider', () => {
     });
 
     it('Should not apply a scheduled rollout in the future', async () => {
-      fetchMock.mockResponseOnce(getConfigurationEndpointResult('scheduled-rollout'), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
+      jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
+        return {
+          body: getConfigurationEndpointResult('scheduled-rollout'),
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
       });
 
       const provider = new GoFeatureFlagProvider({
