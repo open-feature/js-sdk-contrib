@@ -214,6 +214,7 @@ export class GoFeatureFlagApi {
       const goffResp = JSON.parse(body) as FlagConfigResponse;
       result.evaluationContextEnrichment = goffResp.evaluationContextEnrichment || {};
       result.flags = goffResp.flags || {};
+      console.log('result.flags', result.flags);
     } catch (error) {
       this.logger?.warn(`Failed to parse flag configuration response: ${error}. Response body: "${body}"`);
       // Return the default result with empty flags and enrichment
