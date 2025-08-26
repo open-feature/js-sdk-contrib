@@ -48,9 +48,9 @@ describe('GoFeatureFlagApi', () => {
       await api.retrieveFlagConfiguration();
 
       const request = mockFetch.getLastRequest();
-      expect(request!.url).toBe('http://localhost:8080/v1/flag/configuration');
-      expect(request!.options.method).toBe('POST');
-      expect(request!.options.body).toBe(JSON.stringify({ flags: [] }));
+      expect(request?.url).toBe('http://localhost:8080/v1/flag/configuration');
+      expect(request?.options.method).toBe('POST');
+      expect(request?.options.body).toEqual(JSON.stringify({ flags: [] }));
     });
 
     it('should include API key in authorization header when provided', async () => {
@@ -64,7 +64,7 @@ describe('GoFeatureFlagApi', () => {
       await api.retrieveFlagConfiguration();
 
       const request = mockFetch.getLastRequest();
-      expect(request!.options.headers).toHaveProperty('Authorization', 'Bearer my-api-key');
+      expect(request?.options.headers).toHaveProperty('Authorization', 'Bearer my-api-key');
     });
 
     it('should not include authorization header when API key is not provided', async () => {
