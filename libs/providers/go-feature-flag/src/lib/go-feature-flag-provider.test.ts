@@ -968,10 +968,6 @@ describe('GoFeatureFlagProvider', () => {
       jest.useRealTimers();
       let callCount = 0;
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async (request) => {
-        // read headers in the request
-        const headers = request.headers;
-        console.log('headers', headers.get('If-None-Match'));
-
         callCount++;
         if (callCount <= 1) {
           return {
