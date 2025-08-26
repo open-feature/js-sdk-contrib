@@ -69,12 +69,22 @@ export class InProcessEvaluator implements IEvaluator {
     await this.loadConfiguration(true);
     // Start periodic configuration polling
     if (this.options.flagChangePollingIntervalMs && this.options.flagChangePollingIntervalMs > 0) {
-      this.periodicRunner = setInterval(
-        () =>
-          this.loadConfiguration(false).catch((error) => this.logger?.error('Failed to load configuration:', error)),
-        this.options.flagChangePollingIntervalMs,
-      );
+      this.periodicRunner = setTimeout(() => this.poll(), this.options.flagChangePollingIntervalMs);
     }
+  }
+
+  /**
+   * Poll the configuration from the API.
+   */
+  private poll(): void {
+    this.loadConfiguration(false)
+      .catch((error) => this.logger?.error('Failed to load configuration:', error))
+      .finally(() => {
+        if (this.periodicRunner) {
+          // check if polling is still active
+          this.periodicRunner = setTimeout(() => this.poll(), this.options.flagChangePollingIntervalMs);
+        }
+      });
   }
 
   /**
