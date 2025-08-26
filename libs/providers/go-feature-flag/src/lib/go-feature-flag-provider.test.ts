@@ -967,7 +967,11 @@ describe('GoFeatureFlagProvider', () => {
     it('Should change evaluation details if config has changed', async () => {
       jest.useRealTimers();
       let callCount = 0;
-      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async (request) => {
+        // read headers in the request
+        const headers = request.headers;
+        console.log('headers', headers.get('If-None-Match'));
+
         callCount++;
         if (callCount <= 1) {
           return {
@@ -1077,14 +1081,21 @@ describe('GoFeatureFlagProvider', () => {
     });
 
     it('Should apply a scheduled rollout step', async () => {
-      fetchMock.mockResponseOnce(getConfigurationEndpointResult('scheduled-rollout'), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
+      jest.useRealTimers();
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
+        const res = getConfigurationEndpointResult('scheduled-rollout');
+        return {
+          body: res,
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
       });
 
       const provider = new GoFeatureFlagProvider({
         endpoint: 'http://localhost:1031',
-        flagChangePollingIntervalMs: 100,
+        flagChangePollingIntervalMs: 150,
       });
 
       await OpenFeature.setProviderAndWait(testClientName, provider);
@@ -1105,7 +1116,7 @@ describe('GoFeatureFlagProvider', () => {
     });
 
     it('Should not apply a scheduled rollout in the future', async () => {
-      jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
+      jest.setSystemTime(new Date('2021-01-01T01:00:00Z'));
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         return {
           body: getConfigurationEndpointResult('scheduled-rollout'),
@@ -1452,7 +1463,7 @@ describe('GoFeatureFlagProvider', () => {
   });
 });
 
-function getConfigurationEndpointResult(mode = 'default') {
+function getConfigurationEndpointResult(mode = 'default'): string {
   const filePath = path.resolve(__dirname, 'testdata', 'flag-configuration', mode + '.json');
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   return JSON.stringify(JSON.parse(fileContent));
