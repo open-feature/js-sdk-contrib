@@ -1237,11 +1237,15 @@ describe('GoFeatureFlagProvider', () => {
         ],
       };
 
-      const lastCall = fetchMock.mock.calls[fetchMock.mock.calls.length - 1];
-      expect(lastCall).toBeDefined();
-      expect(lastCall[0]).toBe('http://localhost:1031/v1/data/collector');
-      expect(lastCall[1]?.body).toBeDefined();
-      expect(JSON.parse(lastCall[1]?.body as string)).toEqual(want);
+      // Find the last call to /v1/data/collector
+      const dataCollectorCalls = fetchMock.mock.calls.filter(
+        (call) => call[0] === 'http://localhost:1031/v1/data/collector',
+      );
+      const lastDataCollectorCall = dataCollectorCalls[dataCollectorCalls.length - 1];
+      expect(lastDataCollectorCall).toBeDefined();
+      expect(lastDataCollectorCall[0]).toBe('http://localhost:1031/v1/data/collector');
+      expect(lastDataCollectorCall[1]?.body).toBeDefined();
+      expect(JSON.parse(lastDataCollectorCall[1]?.body as string)).toEqual(want);
     });
 
     it('should track events without tracking details', async () => {
