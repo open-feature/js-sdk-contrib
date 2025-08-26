@@ -67,13 +67,23 @@ export class MockFetch {
 
     // Check if we have a specific response for this URL
     if (this.responses.has(url)) {
-      return this.responses.get(url)! as unknown as Response;
+      const response = this.responses.get(url);
+      if (typeof response === 'function') {
+        // Allow for dynamic response functions (for advanced mocking)
+        return (response as any)(url, options) as Response;
+      }
+      return response as unknown as Response;
     }
 
     // Check if we have a response by status code
     const statusMatch = url.match(/(\d{3})/);
     if (statusMatch && this.responses.has(statusMatch[1])) {
-      return this.responses.get(statusMatch[1])! as unknown as Response;
+      const response = this.responses.get(statusMatch[1]);
+      if (typeof response === 'function') {
+        // Allow for dynamic response functions (for advanced mocking)
+        return (response as any)(url, options) as Response;
+      }
+      return response as unknown as Response;
     }
 
     // Check if we have a response by status code in the responses map
