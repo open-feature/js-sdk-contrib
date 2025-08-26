@@ -105,8 +105,13 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
    * Start the provider and initialize the event publisher.
    */
   async initialize(): Promise<void> {
-    this.evaluator && (await this.evaluator.initialize());
-    this.eventPublisher && (await this.eventPublisher.start());
+    try {
+      this.evaluator && (await this.evaluator.initialize());
+      this.eventPublisher && (await this.eventPublisher.start());
+    } catch (error) {
+      this.logger?.error('Failed to initialize the provider', error);
+      throw error;
+    }
   }
 
   /**
