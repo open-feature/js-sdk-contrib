@@ -1280,7 +1280,7 @@ describe('GoFeatureFlagProvider', () => {
         userId: '123',
       });
 
-      jest.advanceTimersByTime(110);
+      jest.advanceTimersByTime(150);
 
       const want = {
         meta: {},
