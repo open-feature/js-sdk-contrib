@@ -25,6 +25,9 @@ import type { LaunchDarklyProviderOptions } from './launchdarkly-provider-option
 import translateContext from './translate-context';
 import translateResult from './translate-result';
 
+const WRAPPER_NAME = 'open-feature-community-js-client';
+const WRAPPER_VERSION = '0.3.2'; // {{ x-release-please-version }}
+
 /**
  * Create a ResolutionDetails for an evaluation that produced a type different
  * from the expected type.
@@ -75,7 +78,12 @@ export class LaunchDarklyClientProvider implements Provider {
       this.logger = basicLogger({ level: 'info' });
     }
     this.initializationTimeout = initializationTimeout;
-    this.ldOptions = { ...ldOptions, logger: this.logger };
+    this.ldOptions = {
+      ...ldOptions,
+      logger: this.logger,
+      wrapperName: WRAPPER_NAME,
+      wrapperVersion: WRAPPER_VERSION,
+    };
   }
 
   private get client(): LDClient {
