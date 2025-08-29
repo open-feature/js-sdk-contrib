@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v1.0.1...ofrep-core-v1.1.0) (2025-08-14)
+
+
+### ✨ New Features
+
+* **ofrep:** adding error details for 401, 403 and 429 ([#1361](https://github.com/open-feature/js-sdk-contrib/issues/1361)) ([7db9221](https://github.com/open-feature/js-sdk-contrib/commit/7db922122dc24e732e6b38742fa1d465dd8c13f7))
+
 ## [1.0.1](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v1.0.0...ofrep-core-v1.0.1) (2025-03-12)
 
 
