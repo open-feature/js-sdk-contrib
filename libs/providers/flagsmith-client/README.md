@@ -1,6 +1,6 @@
-# Flagsmith Provider
+# Flagsmith OpenFeature provider for client-side JavaScript
 
-This provider is an implementation for the [JavaScript SDK](https://docs.flagsmith.com/clients/javascript/) of [Flagsmith](https://flagsmith.com).
+[Flagsmith](https://flagsmith.com) is an open-source feature flagging and remote configuration service. This provider implements the [Flagsmith JavaScript SDK](https://flagsmith.com/docs/clients/javascript/) for client-side applications.
 
 ## Installation
 
@@ -8,92 +8,109 @@ This provider is an implementation for the [JavaScript SDK](https://docs.flagsmi
 npm install @openfeature/flagsmith-client-provider
 ```
 
-## Initialising the provider
+Make sure that the SDK version is compatible with the `peerDependencies` one.
 
-The Flagsmith Provider can be created with the standard [initialization options](https://docs.flagsmith.com/clients/javascript/#example-initialising-the-sdk) and an optional Flagsmith instance to use.
+## Initializing the provider
+
+The Flagsmith OpenFeature provider can be created with the same [initialization options as the Flagsmith SDK](https://docs.flagsmith.com/clients/javascript/#initialisation-options).
 
 ```javascript
 import { FlagsmithClientProvider } from '@openfeature/flagsmith-client-provider';
 import { OpenFeature } from '@openfeature/web-sdk';
 
 const flagsmithClientProvider = new FlagsmithClientProvider({
-    environmentID: '<ENVIRONMENT_ID>'
+  environmentID: 'your_client_side_environment_key',
+  cacheFlags: true,
+  cacheOptions: {
+    skipAPI: true,
+  },
 });
-OpenFeature.setProvider(flagsmithClientProvider); // Attach the provider to OpenFeature
+OpenFeature.setProvider(flagsmithClientProvider);
 ```
 
-## Usage with React Native, SSR or custom instances
+## Examples
 
-The Flagsmith Provider can be constructed with a custom Flagsmith instance and optional server-side generated state, [initialization options](https://docs.flagsmith.com/clients/javascript/#example-initialising-the-sdk).
+See our [examples repository](https://github.com/Flagsmith/flagsmith-js-examples/tree/main/open-feature) for usage with various frameworks.
 
-Note: In order to use the React Native implementation of OpenFeature you will need to install both Flagsmith and react-native-flagsmith.
+## Usage with React Native
+
+To use the React Native implementation of OpenFeature, install `react-native-flagsmith`:
+
+```
+npm install flagsmith react-native-flagsmith
+```
+
+Then, pass the `flagsmith` instance from `react-native-flagsmith` when initializing the provider:
 
 ```javascript
-import flagsmith from 'react-native-flagsmith' // Could also be flagsmith/isomorphic, flagsmith-es or createFlagsmithInstance()
+import flagsmith from 'react-native-flagsmith';
 import { FlagsmithClientProvider } from '@openfeature/flagsmith-client-provider';
 import { OpenFeature } from '@openfeature/web-sdk';
 
 const flagsmithClientProvider = new FlagsmithClientProvider({
-    environmentID: '<ENVIRONMENT_ID>',
-    flagsmithInstance: flagsmith,
-    state: serverState,
+  environmentID: 'your_client_side_environment_key',
+  flagsmithInstance: flagsmith,
 });
-OpenFeature.setProvider(flagsmithClientProvider); // Attach the provider to OpenFeature
+OpenFeature.setProvider(flagsmithClientProvider);
 ```
 
-## Identifying and setting Traits
+See the [React Native example application](https://github.com/Flagsmith/flagsmith-js-examples/tree/main/open-feature/reactnative) for more details.
 
-In Flagsmith, users are [identified](https://docs.flagsmith.com/clients/javascript/#identifying-users) in order to allow for segmentation and percentage rollouts.
+## Flag targeting and dynamic evaluation
 
-To identify and set traits you can specify a targetingKey(identity) and optionally a set of traits. This will do the equivalent of ``flagsmith.identify(id, traits)`` or pass these to ``flagsmith.init`` if you are calling this before ``OpenFeature.setProvider``.
+In Flagsmith, users can be [identified](https://docs.flagsmith.com/clients/javascript/#identifying-users) to perform targeted flag rollouts.
+Traits are key-value pairs that can be used for [segment-based](https://docs.flagsmith.com/basic-features/segments) targeting.
+
+Flagsmith identifiers and traits make up the [OpenFeature evaluation context](https://openfeature.dev/specification/glossary/#evaluation-context).
+They correspond to OpenFeature [targeting keys](https://openfeature.dev/docs/reference/concepts/evaluation-context/#targeting-key) and context attributes respectively:
 
 ```javascript
-const flagsmithClientProvider = new FlagsmithClientProvider({
-  environmentID: '<ENVIRONMENT_ID>',
-});
 await OpenFeature.setContext({
   targetingKey: 'my-identity-id',
   traits: {
     myTraitKey: 'my-trait-value',
   },
 });
-OpenFeature.setProvider(flagsmithClientProvider); // Attach the provider to OpenFeature
 ```
 
-To reset the identity you can simply reset the context. This will do the equivalent of ``flagsmith.logout()`` 
+To reset the identity, set the context to an empty object:
 
 ```javascript
-await OpenFeature.setContext({ });
+await OpenFeature.setContext({});
 ```
 
-## Resolution reasoning
+## Resolution reasons
 
-In Flagsmith, features are evaluated based on the following  [Resolution reasons](https://openfeature.dev/specification/types/#resolution-details):
+This provider supports the following [resolution reasons](https://openfeature.dev/specification/types/#resolution-reason):
 
 ```typescript
-StandardResolutionReasons.CACHED | StandardResolutionReasons.STATIC | StandardResolutionReasons.DEFAULT | StandardResolutionReasons.ERROR
+import { StandardResolutionReasons } from '@openfeature/web-sdk';
+
+type FlagsmithResolutionReasons =
+  | typeof StandardResolutionReasons.STATIC
+  | typeof StandardResolutionReasons.CACHED
+  | typeof StandardResolutionReasons.DEFAULT
+  | typeof StandardResolutionReasons.ERROR;
 ```
-
-Note that resolutions of type SPLIT may be the result of targetted matching or percentage split however Flagsmith does not expose this information to client-side SDKs.
-
 
 ## Events
 
-The Flagsmith provider emits the
-following [OpenFeature events](https://openfeature.dev/specification/types#provider-events):
+This provider emits the following [events](https://openfeature.dev/specification/types#provider-events):
 
-- PROVIDER_READY
-- PROVIDER_ERROR
-- PROVIDER_CONFIGURATION_CHANGED
+```typescript
+import { ProviderEvents } from '@openfeature/web-sdk';
+
+type FlagsmithProviderEvents =
+  | typeof ProviderEvents.Ready
+  | typeof ProviderEvents.Stale
+  | typeof ProviderEvents.ConfigurationChanged
+  | typeof ProviderEvents.Error;
+```
 
 ## Building
 
-Run `nx package providers-flagsmith` to build the library.
+Run `nx package providers-flagsmith-client` to build the library.
 
 ## Running unit tests
 
-Run `nx test providers-flagsmith` to execute the unit tests via [Jest](https://jestjs.io).
-
-## Examples
-
-You can find examples using this provider in several frameworks [Here](https://github.com/Flagsmith/flagsmith-js-examples/tree/main/open-feature).
+Run `nx test providers-flagsmith-client` to execute the unit tests via [Jest](https://jestjs.io).
