@@ -68,7 +68,12 @@ describe('LaunchDarklyClientProvider', () => {
 
       const provider = new LaunchDarklyClientProvider(envKey, { logger, ...ldOptionsMock });
 
-      expect(provider['ldOptions']).toStrictEqual({ ...ldOptionsMock, logger });
+      expect(provider['ldOptions']).toStrictEqual({
+        ...ldOptionsMock,
+        logger,
+        wrapperName: 'open-feature-community-js-client',
+        wrapperVersion: expect.any(String),
+      });
     });
   });
 
@@ -81,7 +86,15 @@ describe('LaunchDarklyClientProvider', () => {
       await provider.initialize();
       expect(initialize).toHaveBeenCalledTimes(1);
       /* when not set in open feauture LD sdk initialize should be called with the anonymous context*/
-      expect(initialize).toHaveBeenCalledWith(envKey, { anonymous: true }, { logger });
+      expect(initialize).toHaveBeenCalledWith(
+        envKey,
+        { anonymous: true },
+        {
+          logger,
+          wrapperName: 'open-feature-community-js-client',
+          wrapperVersion: expect.any(String),
+        },
+      );
       expect(ldClientMock.waitForInitialization).toHaveBeenCalledWith(undefined);
     });
 
@@ -90,7 +103,15 @@ describe('LaunchDarklyClientProvider', () => {
       await provider.initialize();
       expect(initialize).toHaveBeenCalledTimes(1);
       /* when not set in open feauture LD sdk initialize should be called with the anonymous context*/
-      expect(initialize).toHaveBeenCalledWith(envKey, { anonymous: true }, { logger });
+      expect(initialize).toHaveBeenCalledWith(
+        envKey,
+        { anonymous: true },
+        {
+          logger,
+          wrapperName: 'open-feature-community-js-client',
+          wrapperVersion: expect.any(String),
+        },
+      );
       expect(ldClientMock.waitForInitialization).toHaveBeenCalledTimes(1);
       expect(ldClientMock.waitForInitialization).toHaveBeenCalledWith(5);
     });
