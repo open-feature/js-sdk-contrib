@@ -3,6 +3,7 @@
   "version": "0.3.2",
   "license": "Apache-2.0",
   "scripts": {
+    "build:global": "rollup -c rollup.config.mjs",
     "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
     "current-version": "echo $npm_package_version"
   },
@@ -12,5 +13,13 @@
   },
   "dependencies": {
     "lodash.isempty": "^4.4.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "rollup": "^4.46.2",
+    "rollup-plugin-esbuild": "^6.2.1"
   }
 }
