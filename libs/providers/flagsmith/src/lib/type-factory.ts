@@ -1,9 +1,15 @@
-import type { FlagValue } from '@openfeature/web-sdk';
+import type { FlagValue, JsonValue } from '@openfeature/server-sdk';
 
 export type FlagType = 'string' | 'number' | 'object' | 'boolean';
 
+const toNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  const parsed = parseFloat(value as string);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 /**
- * Ret a value of the specified type based on the type parameter.
+ * Return a value of the specified type based on the type parameter.
  *
  * @param value - The value to be converted or validated.
  * @param type - The target type for the conversion.
@@ -13,24 +19,25 @@ export const typeFactory = (
   value: string | number | boolean | null | undefined,
   type: FlagType,
 ): FlagValue | undefined => {
-  if (value === null) return undefined;
+  if (value === null || value === undefined) return undefined;
   switch (type) {
     case 'string':
-      return value !== null && typeof value !== 'undefined' ? `${value}` : value;
+      return value !== null && typeof value !== 'undefined' ? String(value) : undefined;
     case 'number':
-      return typeof value === 'number' ? value : parseFloat(value as string) || value;
+      return toNumber(value);
     case 'boolean':
-      return typeof value === 'boolean' ? value : false;
+      return typeof value === 'boolean' ? value : undefined;
     case 'object':
+      if (typeof value === 'object') return value as JsonValue;
       if (typeof value === 'string') {
         try {
           return JSON.parse(value);
         } catch (error) {
-          return value;
+          return undefined;
         }
       }
-      return value;
+      return undefined;
     default:
-      return value;
+      return undefined;
   }
 };
