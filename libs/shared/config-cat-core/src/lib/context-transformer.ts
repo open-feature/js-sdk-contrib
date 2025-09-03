@@ -4,8 +4,7 @@ import type { IUser as ConfigCatUser, UserAttributeValue } from '@configcat/sdk'
 function toUserAttributeValue(value: EvaluationContextValue): UserAttributeValue {
   // NOTE: The ConfigCat SDK doesn't support objects and non-string arrays as user attribute values
   // but we special-case these for backward compatibility.
-  if (typeof value === "object"
-    && (!Array.isArray(value) || !value.every((item) => typeof item === 'string'))) {
+  if (typeof value === 'object' && (!Array.isArray(value) || !value.every((item) => typeof item === 'string'))) {
     return JSON.stringify(value);
   }
 
@@ -13,8 +12,8 @@ function toUserAttributeValue(value: EvaluationContextValue): UserAttributeValue
   return value as UserAttributeValue;
 }
 
-function transformCustomContextValues(values: Record<string, EvaluationContextValue>): ConfigCatUser["custom"] {
-  let attributes: ConfigCatUser["custom"];
+function transformCustomContextValues(values: Record<string, EvaluationContextValue>): ConfigCatUser['custom'] {
+  let attributes: ConfigCatUser['custom'];
   for (const [key, value] of Object.entries(values)) {
     if (value != null) {
       const transformedValue = toUserAttributeValue(value);
@@ -39,7 +38,7 @@ export function transformContext(context: EvaluationContext): ConfigCatUser | un
 
   return {
     // NOTE: The ConfigCat SDK handles missing or unsupported identifier values.
-    identifier: targetingKey ?? context["identifier"] as string,
+    identifier: targetingKey ?? (context['identifier'] as string),
     email: stringOrUndefined(email),
     country: stringOrUndefined(country),
     custom: transformCustomContextValues(context),

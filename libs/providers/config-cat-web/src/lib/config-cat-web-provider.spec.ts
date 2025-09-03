@@ -7,7 +7,7 @@ import {
   LogLevel,
   OverrideBehaviour,
   prepareConfig,
-  SettingType
+  SettingType,
 } from '@configcat/sdk';
 import type { EventEmitter } from 'events';
 import { ProviderEvents, ParseError, FlagNotFoundError, TypeMismatchError } from '@openfeature/web-sdk';
@@ -73,7 +73,7 @@ describe('ConfigCatWebProvider', () => {
   describe('events', () => {
     it('should emit PROVIDER_CONFIGURATION_CHANGED event', () => {
       const handler = jest.fn();
-      const eventData = prepareConfig({ f: { 'myFlag': { t: SettingType.Boolean, v: { b: true }, i: "" } } });
+      const eventData = prepareConfig({ f: { myFlag: { t: SettingType.Boolean, v: { b: true }, i: '' } } });
 
       provider.events.addHandler(ProviderEvents.ConfigurationChanged, handler);
       configCatEmitter.emit('configChanged', eventData);
@@ -84,13 +84,13 @@ describe('ConfigCatWebProvider', () => {
     });
 
     it("should emit PROVIDER_READY event when underlying client is initialized after provider's initialize", async () => {
-      let currentFetch = () => new FetchResponse(503, "Service Unavailable", []);
+      let currentFetch = () => new FetchResponse(503, 'Service Unavailable', []);
 
-      const fakeConfigFetcher = new class implements IConfigCatConfigFetcher {
+      const fakeConfigFetcher = new (class implements IConfigCatConfigFetcher {
         fetchAsync(): Promise<FetchResponse> {
           return Promise.resolve(currentFetch());
         }
-      }();
+      })();
 
       const provider = ConfigCatWebProvider.create('configcat-sdk-1/1234567890123456789012/1234567890123456789012', {
         configFetcher: fakeConfigFetcher,
@@ -105,7 +105,7 @@ describe('ConfigCatWebProvider', () => {
 
       expect(readyHandler).toHaveBeenCalledTimes(0);
 
-      currentFetch = () => new FetchResponse(200, "OK", [], '{"f":{"booleanTrue":{"t":0,"v":{"b":true}}}}');
+      currentFetch = () => new FetchResponse(200, 'OK', [], '{"f":{"booleanTrue":{"t":0,"v":{"b":true}}}}');
 
       // Make sure that the internal cache is refreshed.
       await provider.configCatClient?.forceRefreshAsync();

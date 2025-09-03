@@ -8,15 +8,25 @@ import {
 } from '@openfeature/server-sdk';
 import type { PrimitiveType, PrimitiveTypeName } from '@openfeature/config-cat-core';
 import { isType, toResolutionDetails, transformContext, translateError } from '@openfeature/config-cat-core';
-import type { Config, IConfigCatClient, INodeAutoPollOptions, INodeLazyLoadingOptions, INodeManualPollOptions, SettingValue } from '@configcat/sdk';
+import type {
+  Config,
+  IConfigCatClient,
+  INodeAutoPollOptions,
+  INodeLazyLoadingOptions,
+  INodeManualPollOptions,
+  SettingValue,
+} from '@configcat/sdk';
 import { ClientCacheState, EvaluationErrorCode, getClient, PollingMode } from '@configcat/sdk';
 
-type OptionsForPollingMode<TMode extends PollingMode | undefined> =
-  TMode extends PollingMode.AutoPoll ? INodeAutoPollOptions :
-  TMode extends PollingMode.ManualPoll ? INodeManualPollOptions :
-  TMode extends PollingMode.LazyLoad ? INodeLazyLoadingOptions :
-  TMode extends undefined ? INodeAutoPollOptions :
-  never;
+type OptionsForPollingMode<TMode extends PollingMode | undefined> = TMode extends PollingMode.AutoPoll
+  ? INodeAutoPollOptions
+  : TMode extends PollingMode.ManualPoll
+    ? INodeManualPollOptions
+    : TMode extends PollingMode.LazyLoad
+      ? INodeLazyLoadingOptions
+      : TMode extends undefined
+        ? INodeAutoPollOptions
+        : never;
 
 export class ConfigCatProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();

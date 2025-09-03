@@ -30,8 +30,7 @@ export function toResolutionDetails<T>(
 }
 
 export function translateError(errorCode: Exclude<EvaluationErrorCode, EvaluationErrorCode.None>): OpenFeatureError {
-  switch (errorCode)
-  {
+  switch (errorCode) {
     case EvaluationErrorCode.InvalidConfigModel:
       return new ParseError();
     case EvaluationErrorCode.SettingValueTypeMismatch:

@@ -13,7 +13,7 @@ describe('context-transformer', () => {
         email: undefined,
         country: undefined,
         custom: {
-          targetingKey: context['targetingKey']
+          targetingKey: context['targetingKey'],
         },
       };
 
