@@ -98,7 +98,7 @@ User:
 
 ```json
 {
-  "targetingKey": "test",
+  "targetingKey": "userId",
   "email": "email",
   "country": "country",
   "customString": "customString",
@@ -121,10 +121,11 @@ User:
 
 ```json
 {
-  "identifier": "test",
+  "identifier": "userId",
   "email": "email",
   "country": "country",
   "custom": {
+    "targetingKey": "userId",
     "customString": "customString",
     "customBoolean": "true",
     "customNumber": 1,
