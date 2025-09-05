@@ -8,6 +8,32 @@ const toNumber = (value: unknown): number | undefined => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+const toBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') return value;
+  // I added this one in case true/false is passed as a number: wdyt ?
+  if (typeof value === 'number') {
+    return value !== 0;
+  }
+  if (typeof value === 'string') {
+    const lower = value.toLowerCase();
+    if (lower === 'true') return true;
+    if (lower === 'false') return false;
+  }
+  return undefined;
+};
+
+const toObject = (value: unknown): JsonValue | undefined => {
+  if (typeof value === 'object') return value as JsonValue;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      return undefined;
+    }
+  }
+  return undefined;
+};
+
 /**
  * Return a value of the specified type based on the type parameter.
  *
@@ -26,17 +52,9 @@ export const typeFactory = (
     case 'number':
       return toNumber(value);
     case 'boolean':
-      return typeof value === 'boolean' ? value : undefined;
+      return toBoolean(value);
     case 'object':
-      if (typeof value === 'object') return value as JsonValue;
-      if (typeof value === 'string') {
-        try {
-          return JSON.parse(value);
-        } catch (error) {
-          return undefined;
-        }
-      }
-      return undefined;
+      return toObject(value);
     default:
       return undefined;
   }
