@@ -26,7 +26,7 @@ import translateContext from './translate-context';
 import translateResult from './translate-result';
 
 const WRAPPER_NAME = 'open-feature-community-js-client';
-const WRAPPER_VERSION = '0.3.2'; // {{ x-release-please-version }}
+const WRAPPER_VERSION = '0.3.3'; // {{ x-release-please-version }}
 
 /**
  * Create a ResolutionDetails for an evaluation that produced a type different
