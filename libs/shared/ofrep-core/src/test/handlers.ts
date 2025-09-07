@@ -121,14 +121,21 @@ export const handlers = [
       }
 
       const scopeValue = new URL(info.request.url).searchParams.get('scope');
+      const key = info.params.key;
+      const reason = key.includes('null-value')
+        ? StandardResolutionReasons.DEFAULT
+        : requestBody.context?.targetingKey
+          ? StandardResolutionReasons.TARGETING_MATCH
+          : StandardResolutionReasons.STATIC;
+
+      const value = key.includes('null-value') ? null : true;
+      const variant = key.includes('null-value') ? undefined : scopeValue ? 'scoped' : 'default';
 
       return HttpResponse.json<EvaluationResponse>({
         key: info.params.key,
-        reason: requestBody.context?.targetingKey
-          ? StandardResolutionReasons.TARGETING_MATCH
-          : StandardResolutionReasons.STATIC,
-        variant: scopeValue ? 'scoped' : 'default',
-        value: true,
+        reason,
+        variant,
+        value,
         metadata: TEST_FLAG_METADATA,
       });
     },
