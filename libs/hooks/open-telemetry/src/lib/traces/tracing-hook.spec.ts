@@ -1,4 +1,5 @@
-import type { EvaluationDetails, HookContext } from '@openfeature/server-sdk';
+import type { EvaluationDetails, HookContext } from '@openfeature/core';
+import { ErrorCode } from '@openfeature/core';
 
 const addEvent = jest.fn();
 const recordException = jest.fn();
@@ -13,6 +14,7 @@ jest.mock('@opentelemetry/api', () => ({
 
 // Import must be after the mocks
 import { TracingHook } from './tracing-hook';
+import { ALL_EVENT_ATTRS } from '../conventions';
 
 describe('OpenTelemetry Hooks', () => {
   const hookContext: HookContext = {
@@ -56,15 +58,17 @@ describe('OpenTelemetry Hooks', () => {
 
         expect(addEvent).toBeCalledWith('feature_flag', {
           'feature_flag.key': 'testFlagKey',
-          'feature_flag.provider_name': 'testProvider',
-          'feature_flag.variant': 'enabled',
+          'feature_flag.provider.name': 'testProvider',
+          'feature_flag.result.variant': 'enabled',
         });
       });
 
-      it('should use a stringified value as the variant value on the span event', () => {
+      it('should use the error values on the span event', () => {
         const evaluationDetails: EvaluationDetails<boolean> = {
+          value: false,
           flagKey: hookContext.flagKey,
-          value: true,
+          errorCode: ErrorCode.PROVIDER_FATAL,
+          errorMessage: 'fake error message',
           flagMetadata: {},
         };
 
@@ -72,23 +76,9 @@ describe('OpenTelemetry Hooks', () => {
 
         expect(addEvent).toBeCalledWith('feature_flag', {
           'feature_flag.key': 'testFlagKey',
-          'feature_flag.provider_name': 'testProvider',
-          'feature_flag.variant': 'true',
-        });
-      });
-
-      it('should set the value without extra quotes if value is already a string', () => {
-        const evaluationDetails: EvaluationDetails<string> = {
-          flagKey: hookContext.flagKey,
-          value: 'already-string',
-          flagMetadata: {},
-        };
-        tracingHook.after(hookContext, evaluationDetails);
-
-        expect(addEvent).toBeCalledWith('feature_flag', {
-          'feature_flag.key': 'testFlagKey',
-          'feature_flag.provider_name': 'testProvider',
-          'feature_flag.variant': 'already-string',
+          'feature_flag.provider.name': 'testProvider',
+          'feature_flag.error.type': ErrorCode.PROVIDER_FATAL.toLowerCase(),
+          'feature_flag.error.message': 'fake error message',
         });
       });
 
@@ -103,6 +93,49 @@ describe('OpenTelemetry Hooks', () => {
 
         tracingHook.after(hookContext, evaluationDetails);
         expect(addEvent).not.toBeCalled();
+      });
+    });
+
+    describe('with value attribute', () => {
+      beforeEach(() => {
+        tracingHook = new TracingHook({
+          includeAttributes: ALL_EVENT_ATTRS,
+        });
+      });
+
+      it('should set the value', () => {
+        const evaluationDetails: EvaluationDetails<string> = {
+          flagKey: hookContext.flagKey,
+          value: 'already-string',
+          flagMetadata: {},
+        };
+        tracingHook.after(hookContext, evaluationDetails);
+
+        expect(addEvent).toBeCalledWith('feature_flag', {
+          'feature_flag.key': 'testFlagKey',
+          'feature_flag.provider.name': 'testProvider',
+          'feature_flag.result.value': 'already-string',
+        });
+      });
+
+      it('should use the error values and value on the span event', () => {
+        const evaluationDetails: EvaluationDetails<boolean> = {
+          value: false,
+          flagKey: hookContext.flagKey,
+          errorCode: ErrorCode.PROVIDER_FATAL,
+          errorMessage: 'fake error message',
+          flagMetadata: {},
+        };
+
+        tracingHook.after(hookContext, evaluationDetails);
+
+        expect(addEvent).toBeCalledWith('feature_flag', {
+          'feature_flag.key': 'testFlagKey',
+          'feature_flag.provider.name': 'testProvider',
+          'feature_flag.result.value': false,
+          'feature_flag.error.type': ErrorCode.PROVIDER_FATAL.toLowerCase(),
+          'feature_flag.error.message': 'fake error message',
+        });
       });
     });
 
@@ -136,8 +169,8 @@ describe('OpenTelemetry Hooks', () => {
 
           expect(addEvent).toBeCalledWith('feature_flag', {
             'feature_flag.key': 'testFlagKey',
-            'feature_flag.provider_name': 'testProvider',
-            'feature_flag.variant': 'enabled',
+            'feature_flag.provider.name': 'testProvider',
+            'feature_flag.result.variant': 'enabled',
             customAttr1: 'one',
             customAttr2: 2,
             customAttr3: true,
@@ -170,8 +203,8 @@ describe('OpenTelemetry Hooks', () => {
 
           expect(addEvent).toBeCalledWith('feature_flag', {
             'feature_flag.key': 'testFlagKey',
-            'feature_flag.provider_name': 'testProvider',
-            'feature_flag.variant': 'enabled',
+            'feature_flag.provider.name': 'testProvider',
+            'feature_flag.result.variant': 'enabled',
           });
         });
       });

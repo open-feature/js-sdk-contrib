@@ -1,4 +1,4 @@
-import type { FlagMetadata, Logger } from '@openfeature/server-sdk';
+import type { FlagMetadata, Logger } from '@openfeature/core';
 import type { Attributes } from '@opentelemetry/api';
 
 export type AttributeMapper = (flagMetadata: FlagMetadata) => Attributes;
@@ -17,7 +17,7 @@ export abstract class OpenTelemetryHook {
   protected safeAttributeMapper: AttributeMapper;
   protected abstract name: string;
 
-  constructor(options?: OpenTelemetryHookOptions, logger?: Logger) {
+  protected constructor(options?: OpenTelemetryHookOptions, logger?: Logger) {
     this.safeAttributeMapper = (flagMetadata: FlagMetadata) => {
       try {
         return options?.attributeMapper?.(flagMetadata) || {};
