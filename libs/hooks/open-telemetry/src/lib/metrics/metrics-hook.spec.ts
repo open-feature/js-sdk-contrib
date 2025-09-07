@@ -1,5 +1,5 @@
-import type { BeforeHookContext, EvaluationDetails, HookContext } from '@openfeature/server-sdk';
-import { StandardResolutionReasons } from '@openfeature/server-sdk';
+import type { BeforeHookContext, EvaluationDetails, HookContext } from '@openfeature/core';
+import { StandardResolutionReasons } from '@openfeature/core';
 import opentelemetry from '@opentelemetry/api';
 import type { DataPoint, ScopeMetrics } from '@opentelemetry/sdk-metrics';
 import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
@@ -8,10 +8,10 @@ import {
   ERROR_TOTAL_NAME,
   KEY_ATTR,
   PROVIDER_NAME_ATTR,
-  REASON_ATTR,
+  RESULT_REASON_ATTR,
   REQUESTS_TOTAL_NAME,
   SUCCESS_TOTAL_NAME,
-  VARIANT_ATTR,
+  RESULT_VARIANT_ATTR,
 } from '../conventions';
 import { MetricsHook } from './metrics-hook';
 import type { AttributeMapper } from '../otel-hook';
@@ -110,8 +110,8 @@ describe(MetricsHook.name, () => {
               point.value === 1 &&
               point.attributes[KEY_ATTR] === FLAG_KEY &&
               point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
-              point.attributes[VARIANT_ATTR] === VARIANT &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC,
+              point.attributes[RESULT_VARIANT_ATTR] === VARIANT &&
+              point.attributes[RESULT_REASON_ATTR] === StandardResolutionReasons.STATIC,
           ),
         ).toBeTruthy();
       });
@@ -143,8 +143,8 @@ describe(MetricsHook.name, () => {
               point.value === 1 &&
               point.attributes[KEY_ATTR] === FLAG_KEY &&
               point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
-              point.attributes[VARIANT_ATTR] === VALUE.toString() &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC,
+              point.attributes[RESULT_VARIANT_ATTR] === VALUE.toString() &&
+              point.attributes[RESULT_REASON_ATTR] === StandardResolutionReasons.STATIC,
           ),
         ).toBeTruthy();
       });
@@ -197,8 +197,8 @@ describe(MetricsHook.name, () => {
               point.value === 1 &&
               point.attributes[KEY_ATTR] === FLAG_KEY &&
               point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
-              point.attributes[VARIANT_ATTR] === VARIANT &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC &&
+              point.attributes[RESULT_VARIANT_ATTR] === VARIANT &&
+              point.attributes[RESULT_REASON_ATTR] === StandardResolutionReasons.STATIC &&
               // custom attributes should be present
               point.attributes[CUSTOM_ATTR_KEY_1] === CUSTOM_ATTR_VALUE_1 &&
               point.attributes[CUSTOM_ATTR_KEY_2] === CUSTOM_ATTR_VALUE_2,
@@ -243,8 +243,8 @@ describe(MetricsHook.name, () => {
               point.value === 1 &&
               point.attributes[KEY_ATTR] === FLAG_KEY &&
               point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
-              point.attributes[VARIANT_ATTR] === VARIANT &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC,
+              point.attributes[RESULT_VARIANT_ATTR] === VARIANT &&
+              point.attributes[RESULT_REASON_ATTR] === StandardResolutionReasons.STATIC,
           ),
         ).toBeTruthy();
       });
