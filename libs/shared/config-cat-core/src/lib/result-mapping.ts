@@ -1,17 +1,18 @@
-import type { IEvaluationDetails } from 'configcat-js-ssr';
+import type { EvaluationDetails } from '@configcat/sdk';
+import { EvaluationErrorCode } from '@configcat/sdk';
 import type { ResolutionDetails, ResolutionReason, JsonValue, OpenFeatureError } from '@openfeature/core';
 import {
   TypeMismatchError,
   StandardResolutionReasons,
   ParseError,
-  TargetingKeyMissingError,
   GeneralError,
   FlagNotFoundError,
+  ProviderNotReadyError,
 } from '@openfeature/core';
 
 export function toResolutionDetails<T>(
   value: T,
-  data: Omit<IEvaluationDetails, 'value'>,
+  data: Omit<EvaluationDetails, 'value'>,
   reason?: ResolutionReason,
 ): ResolutionDetails<T> {
   const matchedTargeting = data.matchedTargetingRule;
@@ -28,27 +29,19 @@ export function toResolutionDetails<T>(
   };
 }
 
-export function parseError(errorMessage: string | undefined): OpenFeatureError {
-  // Detecting the error type by checking the error message is awkward and fragile,
-  // but ConfigCat SDK doesn't allow a better way at the moment.
-  // However, there are plans to improve this situation, so let's revise this
-  // as soon as ConfigCat SDK implements returning error codes.
-
-  if (errorMessage) {
-    if (errorMessage.includes('Config JSON is not present')) {
+export function translateError(errorCode: Exclude<EvaluationErrorCode, EvaluationErrorCode.None>): OpenFeatureError {
+  switch (errorCode) {
+    case EvaluationErrorCode.InvalidConfigModel:
       return new ParseError();
-    }
-    if (errorMessage.includes('the key was not found in config JSON')) {
-      return new FlagNotFoundError();
-    }
-    if (
-      errorMessage.includes('The type of a setting must match the type of the specified default value') ||
-      /Setting value (?:is null|is undefined|'.*' is of an unsupported type)/.test(errorMessage)
-    ) {
+    case EvaluationErrorCode.SettingValueTypeMismatch:
       return new TypeMismatchError();
-    }
+    case EvaluationErrorCode.ConfigJsonNotAvailable:
+      return new ProviderNotReadyError();
+    case EvaluationErrorCode.SettingKeyMissing:
+      return new FlagNotFoundError();
+    default:
+      return new GeneralError();
   }
-  return new GeneralError();
 }
 
 export type PrimitiveTypeName = 'string' | 'boolean' | 'number' | 'object';

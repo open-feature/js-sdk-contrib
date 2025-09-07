@@ -7,9 +7,9 @@ import {
   TypeMismatchError,
 } from '@openfeature/web-sdk';
 import type { PrimitiveType, PrimitiveTypeName } from '@openfeature/config-cat-core';
-import { isType, parseError, toResolutionDetails, transformContext } from '@openfeature/config-cat-core';
-import type { IConfig, IConfigCatClient, OptionsForPollingMode, SettingValue } from 'configcat-js-ssr';
-import { ClientCacheState, getClient, PollingMode } from 'configcat-js-ssr';
+import { isType, toResolutionDetails, transformContext, translateError } from '@openfeature/config-cat-core';
+import type { Config, IConfigCatClient, IJSAutoPollOptions, SettingValue } from '@configcat/sdk';
+import { ClientCacheState, EvaluationErrorCode, getClient, PollingMode } from '@configcat/sdk';
 
 export class ConfigCatWebProvider implements Provider {
   public readonly events = new OpenFeatureEventEmitter();
@@ -27,7 +27,7 @@ export class ConfigCatWebProvider implements Provider {
     this._clientFactory = clientFactory;
   }
 
-  public static create(sdkKey: string, options?: OptionsForPollingMode<PollingMode.AutoPoll>) {
+  public static create(sdkKey: string, options?: IJSAutoPollOptions) {
     // Let's create a shallow copy to not mess up caller's options object.
     options = options ? { ...options } : {};
 
@@ -37,11 +37,16 @@ export class ConfigCatWebProvider implements Provider {
       options.setupHooks = (hooks) => {
         oldSetupHooks?.(hooks);
 
-        hooks.on('configChanged', (config: IConfig) =>
+        hooks.on('configChanged', (config: Config) => {
+          if (provider._client && !provider._isProviderReady) {
+            provider._isProviderReady = true;
+            provider.events.emit(ProviderEvents.Ready);
+          }
+
           provider.events.emit(ProviderEvents.ConfigurationChanged, {
-            flagsChanged: Object.keys(config.settings),
-          }),
-        );
+            flagsChanged: config.f ? Object.keys(config.f) : [],
+          });
+        });
       };
 
       return getClient(sdkKey, PollingMode.AutoPoll, options);
@@ -132,18 +137,8 @@ export class ConfigCatWebProvider implements Provider {
       transformContext(context),
     );
 
-    if (!this._isProviderReady && snapshot.cacheState !== ClientCacheState.NoFlagData) {
-      // Ideally, we would check ConfigCat client's initialization state in its "background" polling loop.
-      // This is not possible at the moment, so as a workaround, we do the check on feature flag evaluation.
-      // There are plans to improve this situation, so let's revise this
-      // as soon as ConfigCat SDK implements the necessary event.
-
-      this._isProviderReady = true;
-      setTimeout(() => this.events.emit(ProviderEvents.Ready), 0);
-    }
-
-    if (evaluationData.isDefaultValue) {
-      throw parseError(evaluationData.errorMessage);
+    if (evaluationData.errorCode !== EvaluationErrorCode.None) {
+      throw translateError(evaluationData.errorCode);
     }
 
     if (flagType !== 'object') {
