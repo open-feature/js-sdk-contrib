@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.3](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.3.2...launchdarkly-client-provider-v0.3.3) (2025-09-14)
+
+
+### 🐛 Bug Fixes
+
+* **launchdarkly-client--README.md:** fix typo - options -&gt; ldOptions ([#1367](https://github.com/open-feature/js-sdk-contrib/issues/1367)) ([9a7ef4f](https://github.com/open-feature/js-sdk-contrib/commit/9a7ef4fe1a8a0afef4358589cf066fb7b4ec1c0d))
+
+
+### ✨ New Features
+
+* Add wrapper information to the LaunchDarkly client-side provider. ([#1368](https://github.com/open-feature/js-sdk-contrib/issues/1368)) ([ef2869f](https://github.com/open-feature/js-sdk-contrib/commit/ef2869f63668dd2c9eefd5f216895c7c485a60aa))
+
 ## [0.3.2](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.3.1...launchdarkly-client-provider-v0.3.2) (2025-03-12)
 
 
