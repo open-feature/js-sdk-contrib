@@ -46,10 +46,10 @@ export const typeFactory = (
   value: string | number | boolean | null | undefined,
   type: FlagType,
 ): FlagValue | undefined => {
-  if (value === null || value === undefined) return undefined;
+  if (value === null || value === undefined || typeof value === 'undefined') return undefined;
   switch (type) {
     case 'string':
-      return value !== null && typeof value !== 'undefined' ? String(value) : undefined;
+      return String(value);
     case 'number':
       return toNumber(value);
     case 'boolean':
