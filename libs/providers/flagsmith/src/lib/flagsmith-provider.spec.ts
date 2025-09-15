@@ -331,11 +331,16 @@ describe('FlagsmithOpenFeatureProvider', () => {
         expect(result.reason).toBe(StandardResolutionReasons.DISABLED);
       });
 
-      it('should throw flag is not enabled with disabled boolean flag and returnValueForDisabledFlags (default)is false', async () => {
+      it('should return flag.enabled with disabled boolean flag and returnValueForDisabledFlags (default) is false', async () => {
         mockFlags.getFlag.mockReturnValue(mockFlagData.booleanDisabled);
-        await expect(
-          defaultProvider.resolveBooleanEvaluation('test-flag', false, evaluationContext, loggerMock),
-        ).rejects.toThrow(FlagsmithProviderError);
+        const result = await defaultProvider.resolveBooleanEvaluation(
+          'test-flag',
+          false,
+          evaluationContext,
+          loggerMock,
+        );
+        expect(result.value).toBe(false);
+        expect(result.reason).toBe(StandardResolutionReasons.DISABLED);
       });
 
       it('should return default value with error details when flag value type does not match requested type', async () => {

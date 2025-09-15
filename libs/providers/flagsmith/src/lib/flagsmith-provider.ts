@@ -114,13 +114,8 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
       throw new FlagsmithProviderError('An error occurred retrieving flags from Flagsmith client.', ErrorCode.GENERAL);
     }
 
-    // Do we want to raise an error if the flag is not found?
     if (!this.useFlagsmithDefaults && (!flag || flag?.isDefault)) {
       throw new FlagNotFoundError(`Flag '${flagKey}' was not found.`);
-    }
-
-    if (!(this.returnValueForDisabledFlags || flag.enabled)) {
-      throw new FlagsmithProviderError(`Flag '${flagKey}' is not enabled.`, ErrorCode.GENERAL);
     }
 
     if (!this.useBooleanConfigValue && flagType === 'boolean') {
@@ -128,6 +123,10 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
         value: flag.enabled,
         reason: flag.enabled ? StandardResolutionReasons.TARGETING_MATCH : StandardResolutionReasons.DISABLED,
       };
+    }
+
+    if (!(this.returnValueForDisabledFlags || flag.enabled)) {
+      throw new FlagsmithProviderError(`Flag '${flagKey}' is not enabled.`, ErrorCode.GENERAL);
     }
 
     const typedValue = typeFactory(flag.value, flagType);
