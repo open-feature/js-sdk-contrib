@@ -13,6 +13,7 @@ import {
   OpenFeatureEventEmitter,
   ProviderEvents,
   StandardResolutionReasons,
+  FlagValue,
 } from '@openfeature/server-sdk';
 import { Flags, Flagsmith, BaseFlag, TraitConfig, FlagsmithValue } from 'flagsmith-nodejs';
 import { FlagsmithProviderError } from './exceptions';
@@ -103,6 +104,7 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
     flagKey: string,
     flagType: FlagValueType,
     evaluationContext: EvaluationContext,
+    defaultValue: FlagValue,
   ): Promise<ResolutionDetails<any>> {
     let flag: BaseFlag;
     try {
@@ -130,7 +132,13 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
 
     const typedValue = typeFactory(flag.value, flagType);
     if (typedValue === undefined || typeof typedValue !== flagType) {
-      throw new TypeMismatchError(`flag key ${flagKey} is not of type ${flagType}`);
+      return {
+        value: defaultValue,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.TYPE_MISMATCH,
+        errorMessage: `Flag value ${flag.value} is not of type ${flagType}`,
+        flagMetadata: {},
+      };
     }
 
     if (flag?.isDefault) {
@@ -148,38 +156,38 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
 
   async resolveBooleanEvaluation(
     flagKey: string,
-    _: boolean,
+    defaultValue: boolean,
     context: EvaluationContext,
     __: Logger,
   ): Promise<ResolutionDetails<boolean>> {
-    return this.resolve(flagKey, 'boolean', context);
+    return this.resolve(flagKey, 'boolean', context, defaultValue);
   }
 
   async resolveStringEvaluation(
     flagKey: string,
-    _: string,
+    defaultValue: string,
     context: EvaluationContext,
     __: Logger,
   ): Promise<ResolutionDetails<string>> {
-    return this.resolve(flagKey, 'string', context);
+    return this.resolve(flagKey, 'string', context, defaultValue);
   }
 
   async resolveNumberEvaluation(
     flagKey: string,
-    _: number,
+    defaultValue: number,
     context: EvaluationContext,
     __: Logger,
   ): Promise<ResolutionDetails<number>> {
-    return this.resolve(flagKey, 'number', context);
+    return this.resolve(flagKey, 'number', context, defaultValue);
   }
 
   async resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
-    _: T,
+    defaultValue: T,
     context: EvaluationContext,
     __: Logger,
   ): Promise<ResolutionDetails<T>> {
-    return this.resolve(flagKey, 'object', context) as Promise<ResolutionDetails<T>>;
+    return this.resolve(flagKey, 'object', context, defaultValue) as Promise<ResolutionDetails<T>>;
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
