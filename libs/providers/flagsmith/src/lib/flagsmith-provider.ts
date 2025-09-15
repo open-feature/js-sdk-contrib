@@ -7,7 +7,6 @@ import {
   ErrorCode,
   FlagValueType,
   FlagNotFoundError,
-  TypeMismatchError,
   Logger,
   ProviderStatus,
   OpenFeatureEventEmitter,
