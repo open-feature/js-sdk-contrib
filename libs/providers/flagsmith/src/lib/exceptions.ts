@@ -1,9 +1,19 @@
 import { ErrorCode } from '@openfeature/core';
 
+interface ErrorOptions {
+  cause?: Error;
+}
+
 class FlagsmithProviderError extends Error {
-  constructor(message: string, public code: ErrorCode) {
+  public cause?: Error;
+  constructor(
+    message: string,
+    public code: ErrorCode,
+    options?: ErrorOptions,
+  ) {
     super(message);
-    this.name = "FlagsmithProviderError";
+    this.name = 'FlagsmithProviderError';
+    this.cause = options?.cause;
   }
 }
 
