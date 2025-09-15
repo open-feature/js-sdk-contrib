@@ -10,9 +10,11 @@ describe('context-transformer', () => {
 
       const user = {
         identifier: context['targetingKey'],
-        country: undefined,
-        custom: {},
         email: undefined,
+        country: undefined,
+        custom: {
+          targetingKey: context['targetingKey'],
+        },
       };
 
       expect(transformContext(context)).toEqual(user);
@@ -29,7 +31,11 @@ describe('context-transformer', () => {
         identifier: context['targetingKey'],
         email: context['email'],
         country: context['country'],
-        custom: {},
+        custom: {
+          targetingKey: context['targetingKey'],
+          email: context['email'],
+          country: context['country'],
+        },
       };
 
       expect(transformContext(context)).toEqual(user);
@@ -44,6 +50,7 @@ describe('context-transformer', () => {
       const user = {
         identifier: context['targetingKey'],
         custom: {
+          targetingKey: context['targetingKey'],
           customString: context['customString'],
         },
       };
@@ -51,7 +58,7 @@ describe('context-transformer', () => {
       expect(transformContext(context)).toEqual(user);
     });
 
-    it('map custom property with number to number', () => {
+    it('map custom property with number', () => {
       const context: EvaluationContext = {
         targetingKey: 'test',
         customNumber: 1,
@@ -60,14 +67,15 @@ describe('context-transformer', () => {
       const user = {
         identifier: context['targetingKey'],
         custom: {
-          customNumber: 1,
+          targetingKey: context['targetingKey'],
+          customNumber: context['customNumber'],
         },
       };
 
       expect(transformContext(context)).toEqual(user);
     });
 
-    it('map custom property with boolean to string', () => {
+    it('map custom property with boolean', () => {
       const context: EvaluationContext = {
         targetingKey: 'test',
         customBoolean: true,
@@ -76,7 +84,8 @@ describe('context-transformer', () => {
       const user = {
         identifier: context['targetingKey'],
         custom: {
-          customBoolean: 'true',
+          targetingKey: context['targetingKey'],
+          customBoolean: context['customBoolean'],
         },
       };
 
@@ -95,6 +104,7 @@ describe('context-transformer', () => {
       const user = {
         identifier: context['targetingKey'],
         custom: {
+          targetingKey: context['targetingKey'],
           customObject: JSON.stringify(context['customObject']),
         },
       };
@@ -111,7 +121,8 @@ describe('context-transformer', () => {
       const user = {
         identifier: context['targetingKey'],
         custom: {
-          customArray: ['one', 'two', 'three'],
+          targetingKey: context['targetingKey'],
+          customArray: context['customArray'],
         },
       };
 
@@ -127,6 +138,7 @@ describe('context-transformer', () => {
       const user = {
         identifier: context['targetingKey'],
         custom: {
+          targetingKey: context['targetingKey'],
           customArray: JSON.stringify(context['customArray']),
         },
       };
@@ -154,11 +166,29 @@ describe('context-transformer', () => {
         email: 'email',
         country: 'country',
         custom: {
-          customString: 'customString',
-          customBoolean: 'true',
-          customNumber: 1,
-          customObject: '{"prop1":"1","prop2":2}',
-          customArray: '[1,"2",false]',
+          targetingKey: context['targetingKey'],
+          email: context['email'],
+          country: context['country'],
+          customString: context['customString'],
+          customBoolean: context['customBoolean'],
+          customNumber: context['customNumber'],
+          customObject: JSON.stringify(context['customObject']),
+          customArray: JSON.stringify(context['customArray']),
+        },
+      };
+
+      expect(transformContext(context)).toEqual(user);
+    });
+
+    it('map identifier if targetingKey is not present', () => {
+      const context: EvaluationContext = {
+        identifier: 'test',
+      };
+
+      const user = {
+        identifier: 'test',
+        custom: {
+          identifier: context['identifier'],
         },
       };
 

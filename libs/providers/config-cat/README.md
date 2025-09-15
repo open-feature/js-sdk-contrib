@@ -14,19 +14,19 @@ The OpenFeature SDK is required as peer dependency.
 
 The minimum required version of `@openfeature/server-sdk` currently is `1.13.5`.
 
-The minimum required version of `configcat-node` currently is `11.3.1`.
+The minimum required version of `@configcat/sdk` currently is `1.0.1`.
 
 ```
-$ npm install @openfeature/server-sdk configcat-node
+$ npm install @openfeature/server-sdk @configcat/sdk
 ```
 
 ## Usage
 
-The ConfigCat provider uses the [ConfigCat Node.js SDK](https://configcat.com/docs/sdk-reference/node/).
+The ConfigCat provider uses the [ConfigCat Node.js SDK](https://configcat.com/docs/sdk-reference/js/node/).
 
 It can be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create```.
 
-The available options can be found in the [ConfigCat Node.js SDK](https://configcat.com/docs/sdk-reference/node/#creating-the-configcat-client).
+The available options can be found in the [ConfigCat Node.js SDK](https://configcat.com/docs/sdk-reference/js/node/#creating-the-configcat-client).
 
 ### Example using the default configuration
 
@@ -53,7 +53,7 @@ await OpenFeature.clearProviders();
 ```javascript
 import { OpenFeature } from "@openfeature/server-sdk";
 import { ConfigCatProvider } from '@openfeature/config-cat-provider';
-import { createConsoleLogger, LogLevel, PollingMode } from 'configcat-node';
+import { createConsoleLogger, LogLevel, PollingMode } from '@configcat/sdk';
 
 // Create and set the provider.
 const provider = ConfigCatProvider.create('<sdk_key>', PollingMode.LazyLoad, {
@@ -98,7 +98,7 @@ User:
 
 ```json
 {
-  "targetingKey": "test",
+  "targetingKey": "userId",
   "email": "email",
   "country": "country",
   "customString": "customString",
@@ -121,10 +121,11 @@ User:
 
 ```json
 {
-  "identifier": "test",
+  "identifier": "userId",
   "email": "email",
   "country": "country",
   "custom": {
+    "targetingKey": "userId",
     "customString": "customString",
     "customBoolean": "true",
     "customNumber": 1,

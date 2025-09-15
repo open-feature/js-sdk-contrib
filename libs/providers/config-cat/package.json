@@ -7,9 +7,10 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/server-sdk": "^1.13.5",
-    "configcat-node": "^11.3.1",
-    "@openfeature/config-cat-core": "0.1.1",
-    "configcat-common": "9.4.0"
+    "@configcat/sdk": "^1.0.1",
+    "@openfeature/server-sdk": "^1.13.5"
+  },
+  "dependencies": {
+    "@openfeature/config-cat-core": "0.1.1"
   }
 }
