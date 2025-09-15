@@ -10,9 +10,10 @@ const toNumber = (value: unknown): number | undefined => {
 
 const toBoolean = (value: unknown): boolean | undefined => {
   if (typeof value === 'boolean') return value;
-  // I added this one in case true/false is passed as a number: wdyt ?
   if (typeof value === 'number') {
-    return value !== 0;
+    if (value === 0) return false;
+    if (value === 1) return true;
+    return undefined;
   }
   if (typeof value === 'string') {
     const lower = value.toLowerCase();

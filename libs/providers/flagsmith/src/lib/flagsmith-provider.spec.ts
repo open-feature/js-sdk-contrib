@@ -6,6 +6,7 @@ import {
   StandardResolutionReasons,
   ProviderEvents,
   ProviderStatus,
+  ErrorCode,
 } from '@openfeature/server-sdk';
 import { Flagsmith, Flags, BaseFlag } from 'flagsmith-nodejs';
 import { FlagsmithProviderError } from './exceptions';
@@ -157,11 +158,18 @@ describe('FlagsmithOpenFeatureProvider', () => {
         expect(result.reason).toBe(StandardResolutionReasons.DISABLED);
       });
 
-      it('should throw TypeMismatchError when flag value type does not match requested type', async () => {
+      it('should return default value with error details when flag value type does not match requested type', async () => {
         mockFlags.getFlag.mockReturnValue(mockFlagData.jsonValidFlag);
-        await expect(
-          useBooleanConfigProvider.resolveBooleanEvaluation('disabled-flag', false, evaluationContext, loggerMock),
-        ).rejects.toThrow(TypeMismatchError);
+        const result = await useBooleanConfigProvider.resolveBooleanEvaluation(
+          'disabled-flag',
+          false,
+          evaluationContext,
+          loggerMock,
+        );
+        expect(result.value).toBe(false);
+        expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+        expect(result.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+        expect(result.errorMessage).toContain('is not of type boolean');
       });
 
       describe('useFlagsmithDefaults', () => {
@@ -330,16 +338,23 @@ describe('FlagsmithOpenFeatureProvider', () => {
         ).rejects.toThrow(FlagsmithProviderError);
       });
 
-      it('should throw TypeMismatchError when flag value type does not match requested type', async () => {
+      it('should return default value with error details when flag value type does not match requested type', async () => {
         const booleanConfigProvider = new FlagsmithOpenFeatureProvider(mockFlagsmith, {
           returnValueForDisabledFlags: false,
           useFlagsmithDefaults: false,
           useBooleanConfigValue: true,
         });
         mockFlags.getFlag.mockReturnValue(mockFlagData.stringFlag);
-        await expect(
-          booleanConfigProvider.resolveBooleanEvaluation('test-flag', false, evaluationContext, loggerMock),
-        ).rejects.toThrow(TypeMismatchError);
+        const result = await booleanConfigProvider.resolveBooleanEvaluation(
+          'test-flag',
+          false,
+          evaluationContext,
+          loggerMock,
+        );
+        expect(result.value).toBe(false);
+        expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+        expect(result.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+        expect(result.errorMessage).toContain('is not of type boolean');
       });
 
       it('should return false when flag value is numeric 0', async () => {
@@ -400,15 +415,22 @@ describe('FlagsmithOpenFeatureProvider', () => {
         ).rejects.toThrow(FlagsmithProviderError);
       });
 
-      it('should throw TypeMismatchError when flag value is undefined', async () => {
+      it('should return default value with error details when flag value is undefined', async () => {
         mockFlags.getFlag.mockReturnValue({
           enabled: true,
           value: undefined,
           isDefault: false,
         } as BaseFlag);
-        await expect(
-          defaultProvider.resolveStringEvaluation('test-flag', '', evaluationContext, loggerMock),
-        ).rejects.toThrow(TypeMismatchError);
+        const result = await defaultProvider.resolveStringEvaluation(
+          'test-flag',
+          'default-string',
+          evaluationContext,
+          loggerMock,
+        );
+        expect(result.value).toBe('default-string');
+        expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+        expect(result.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+        expect(result.errorMessage).toContain('is not of type string');
       });
 
       it('should return a string when flag value is number', async () => {
@@ -434,22 +456,26 @@ describe('FlagsmithOpenFeatureProvider', () => {
         expect(result.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
       });
 
-      it('should return a number when flag value is a number as string', async () => {
+      it('should return default value with error details when flag value is not a valid number', async () => {
         mockFlags.getFlag.mockReturnValue(mockFlagData.stringFlag);
-        await expect(
-          defaultProvider.resolveNumberEvaluation('test-flag', 0, evaluationContext, loggerMock),
-        ).rejects.toThrow(TypeMismatchError);
+        const result = await defaultProvider.resolveNumberEvaluation('test-flag', 42, evaluationContext, loggerMock);
+        expect(result.value).toBe(42);
+        expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+        expect(result.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+        expect(result.errorMessage).toContain('is not of type number');
       });
 
-      it('should throw TypeMismatchError when flag value is undefined', async () => {
+      it('should return default value with error details when flag value is not a valid number string', async () => {
         mockFlags.getFlag.mockReturnValue({
           enabled: true,
           value: 'not-a-number',
           isDefault: false,
         });
-        await expect(
-          defaultProvider.resolveNumberEvaluation('test-flag', 0, evaluationContext, loggerMock),
-        ).rejects.toThrow(TypeMismatchError);
+        const result = await defaultProvider.resolveNumberEvaluation('test-flag', 99, evaluationContext, loggerMock);
+        expect(result.value).toBe(99);
+        expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+        expect(result.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+        expect(result.errorMessage).toContain('is not of type number');
       });
 
       it('should return a number when flag value is a string with whitespace', async () => {
@@ -472,22 +498,38 @@ describe('FlagsmithOpenFeatureProvider', () => {
         expect(result.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
       });
 
-      it('should throw TypeMismatchError when flag value is invalid JSON', async () => {
+      it('should return default value with error details when flag value is invalid JSON', async () => {
         mockFlags.getFlag.mockReturnValue(mockFlagData.jsonInvalidFlag);
-        await expect(
-          defaultProvider.resolveObjectEvaluation('test-flag', {}, evaluationContext, loggerMock),
-        ).rejects.toThrow(TypeMismatchError);
+        const defaultObj = { default: true };
+        const result = await defaultProvider.resolveObjectEvaluation(
+          'test-flag',
+          defaultObj,
+          evaluationContext,
+          loggerMock,
+        );
+        expect(result.value).toEqual(defaultObj);
+        expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+        expect(result.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+        expect(result.errorMessage).toContain('is not of type object');
       });
 
-      it('should throw TypeMismatchError when flag value is undefined', async () => {
+      it('should return default value with error details when flag value is undefined', async () => {
         mockFlags.getFlag.mockReturnValue({
           enabled: true,
           value: undefined,
           isDefault: false,
         } as BaseFlag);
-        await expect(
-          defaultProvider.resolveObjectEvaluation('test-flag', {}, evaluationContext, loggerMock),
-        ).rejects.toThrow(TypeMismatchError);
+        const defaultObj = { fallback: 'value' };
+        const result = await defaultProvider.resolveObjectEvaluation(
+          'test-flag',
+          defaultObj,
+          evaluationContext,
+          loggerMock,
+        );
+        expect(result.value).toEqual(defaultObj);
+        expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+        expect(result.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+        expect(result.errorMessage).toContain('is not of type object');
       });
     });
 
@@ -512,16 +554,18 @@ describe('FlagsmithOpenFeatureProvider', () => {
         );
       });
 
-      it('should throw TypeMismatchError when flag value type does not match requested type', async () => {
+      it('should return default value with error details when flag value type does not match requested type', async () => {
         const provider = new FlagsmithOpenFeatureProvider(mockFlagsmith, {
           returnValueForDisabledFlags: false,
           useFlagsmithDefaults: false,
           useBooleanConfigValue: true,
         });
         mockFlags.getFlag.mockReturnValue(mockFlagData.stringFlag);
-        await expect(
-          provider.resolveBooleanEvaluation('test-flag', false, evaluationContext, loggerMock),
-        ).rejects.toThrow(TypeMismatchError);
+        const result = await provider.resolveBooleanEvaluation('test-flag', false, evaluationContext, loggerMock);
+        expect(result.value).toBe(false);
+        expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+        expect(result.errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+        expect(result.errorMessage).toContain('is not of type boolean');
       });
     });
   });
