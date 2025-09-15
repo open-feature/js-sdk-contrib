@@ -113,7 +113,7 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
       throw new FlagsmithProviderError('An error occurred retrieving flags from Flagsmith client.', ErrorCode.GENERAL);
     }
 
-    if (!this.useFlagsmithDefaults && (!flag || flag?.isDefault)) {
+    if (!flag || (!this.useFlagsmithDefaults && flag.isDefault)) {
       throw new FlagNotFoundError(`Flag '${flagKey}' was not found.`);
     }
 

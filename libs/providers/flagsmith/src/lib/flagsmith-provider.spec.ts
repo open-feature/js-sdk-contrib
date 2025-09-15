@@ -185,6 +185,18 @@ describe('FlagsmithOpenFeatureProvider', () => {
           ).rejects.toThrow(FlagNotFoundError);
         });
 
+        it('should throw FlagNotFoundError when flag does not exist (undefined) even with useFlagsmithDefaults true', async () => {
+          const provider = new FlagsmithOpenFeatureProvider(mockFlagsmith, {
+            returnValueForDisabledFlags: false,
+            useFlagsmithDefaults: true,
+            useBooleanConfigValue: false,
+          });
+          mockFlags.getFlag.mockReturnValue(undefined as any);
+          await expect(
+            provider.resolveBooleanEvaluation('nonexistent-flag', false, evaluationContext, loggerMock),
+          ).rejects.toThrow(FlagNotFoundError);
+        });
+
         it('should return flag.value when boolean flag is default and useFlagsmithDefaults is true', async () => {
           const useFlagsmithDefaultsProvider = new FlagsmithOpenFeatureProvider(mockFlagsmith, {
             returnValueForDisabledFlags: false,
