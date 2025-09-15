@@ -79,11 +79,12 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
   }
 
   private getFlags(evaluationContext: EvaluationContext): Promise<Flags> {
+    const traits =
+      evaluationContext.traits && typeof evaluationContext.traits === 'object'
+        ? (evaluationContext.traits as FlagsmithTrait)
+        : {};
     if (evaluationContext?.targetingKey) {
-      return this.client.getIdentityFlags(
-        evaluationContext.targetingKey,
-        (evaluationContext.traits as FlagsmithTrait | undefined) || {},
-      );
+      return this.client.getIdentityFlags(evaluationContext.targetingKey, traits);
     }
     return this.client.getEnvironmentFlags();
   }
@@ -110,7 +111,9 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
       const flags = await this.getFlags(evaluationContext);
       flag = flags.getFlag(flagKey);
     } catch (error) {
-      throw new FlagsmithProviderError('An error occurred retrieving flags from Flagsmith client.', ErrorCode.GENERAL);
+      throw new FlagsmithProviderError('An error occurred retrieving flags from Flagsmith client.', ErrorCode.GENERAL, {
+        cause: error as Error,
+      });
     }
 
     if (!flag || (!this.useFlagsmithDefaults && flag.isDefault)) {
