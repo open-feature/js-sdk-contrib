@@ -29,7 +29,14 @@ const environmentID = '0p3nf34tur3';
 export const defaultConfig: () => IInitConfig = () => ({
   environmentID,
   AsyncStorage: getAsyncStorageMock(),
-  fetch: getFetchMock(exampleFlagsmithResponse),
+  fetch: getFetchMock({
+    default: exampleFlagsmithResponse,
+    'api/v1/flags': exampleFlagsmithResponse,
+    'api/v1/identities': {
+      flags: exampleFlagsmithResponse,
+      traits: [],
+    },
+  }),
 });
 export const exampleBooleanFlagName = 'example_boolean_flag';
 export const exampleBooleanFlag = {
@@ -80,10 +87,13 @@ export const exampleJSONFlag = {
     name: exampleJSONFlagName,
   },
 };
-export const getFetchMock = (response: FeatureResponse[]) => {
-  return jest.fn().mockResolvedValue({
-    text: async () => JSON.stringify(response),
-    status: 200,
+export const getFetchMock = (routes: Record<string, FeatureResponse[] | IFlagsmithResponse>) => {
+  return jest.fn().mockImplementation((url: string) => {
+    const response = routes[url] || routes['default'];
+    return Promise.resolve({
+      text: async () => JSON.stringify(response),
+      status: 200,
+    });
   }) as unknown;
 };
 
@@ -101,10 +111,16 @@ export const exampleFlagsmithResponse = [
   exampleNumericFlag,
   exampleStringFlag,
 ];
-export const defaultState = {
+
+export const defaultStateWithoutEnvironment = {
   api: 'https://edge.api.flagsmith.com/api/v1/',
-  environmentID: environmentID,
   identity: undefined,
+  evaluationContext: {
+    environment: {
+      apiKey: environmentID,
+    },
+    identity: undefined,
+  },
   traits: {},
   flags: {
     [exampleBooleanFlag.feature.name]: {
@@ -132,5 +148,20 @@ export const defaultState = {
       enabled: exampleStringFlag.enabled,
       value: exampleStringFlag.feature_state_value,
     },
+  },
+};
+
+export const defaultState = {
+  ...defaultStateWithoutEnvironment,
+  environmentID: environmentID,
+};
+
+export const CACHE_KEY = 'FLAGSMITH_CACHE_DB';
+
+export const cacheConfig = {
+  cacheFlags: true,
+  cacheOptions: {
+    ttl: 1000,
+    storageKey: CACHE_KEY,
   },
 };

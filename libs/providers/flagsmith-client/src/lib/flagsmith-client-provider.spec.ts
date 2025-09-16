@@ -1,7 +1,9 @@
 import { FlagsmithClientProvider } from './flagsmith-client-provider';
 import {
+  cacheConfig,
   defaultConfig,
   defaultState,
+  defaultStateWithoutEnvironment,
   exampleBooleanFlag,
   exampleBooleanFlagName,
   exampleFloatFlagName,
@@ -9,6 +11,7 @@ import {
   exampleNumericFlagName,
   exampleStringFlagName,
   getFetchErrorMock,
+  CACHE_KEY,
 } from './flagsmith.mocks';
 import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from 'flagsmith';
@@ -25,7 +28,8 @@ describe('FlagsmithProvider', () => {
   beforeEach(async () => {
     // Clear all instances and calls to constructor and all methods of mock logger
     jest.clearAllMocks();
-    await Promise.all([OpenFeature.clearProviders(), OpenFeature.clearContexts()]);
+    await OpenFeature.clearContexts();
+    await OpenFeature.clearProviders();
   });
 
   describe('constructor', () => {
@@ -33,7 +37,7 @@ describe('FlagsmithProvider', () => {
       const config = defaultConfig();
       const provider = new FlagsmithClientProvider(config);
       await OpenFeature.setProviderAndWait(provider);
-      expect(provider.flagsmithClient.getState().environmentID).toEqual(config.environmentID);
+      expect(provider.flagsmithClient.getContext().environment?.apiKey).toEqual(config.environmentID);
     });
 
     it('calls onChange', async () => {
@@ -44,7 +48,7 @@ describe('FlagsmithProvider', () => {
       expect(onChange).toHaveBeenCalledTimes(1);
       await OpenFeature.setContext({ targetingKey: 'test' });
       expect(onChange).toHaveBeenCalledTimes(2);
-      expect(provider.flagsmithClient.getState().environmentID).toEqual(config.environmentID);
+      expect(provider.flagsmithClient.getContext().environment?.apiKey).toEqual(config.environmentID);
     });
 
     it('should allow a custom instance of Flagsmith to be used', async () => {
@@ -56,12 +60,23 @@ describe('FlagsmithProvider', () => {
     it('should initialize with SSR state and evaluate synchronously if provided', async () => {
       const config = defaultConfig();
       const state = {
-        ...defaultState,
+        ...defaultStateWithoutEnvironment,
         identity: 'test',
-        traits: { example: 1 },
+        traits: undefined,
         evaluationEvent: null,
-        ts: null,
+        ts: undefined,
+        evaluationContext: {
+          identity: {
+            identifier: 'test',
+            traits: {
+              test: {
+                value: '1',
+              },
+            },
+          },
+        },
       };
+
       const provider = new FlagsmithClientProvider({
         logger,
         ...config,
@@ -80,12 +95,13 @@ describe('FlagsmithProvider', () => {
       const config = defaultConfig();
       const provider = new FlagsmithClientProvider({
         ...config,
+        ...cacheConfig,
+        defaultFlags: defaultState.flags,
         logger,
-        cacheFlags: true,
         preventFetch: true,
       });
       await config.AsyncStorage.setItem(
-        'BULLET_TRAIN_DB',
+        CACHE_KEY,
         JSON.stringify({
           ...defaultState,
         }),
@@ -100,11 +116,11 @@ describe('FlagsmithProvider', () => {
       const config = defaultConfig();
       const provider = new FlagsmithClientProvider({
         ...config,
+        ...cacheConfig,
         logger,
-        cacheFlags: true,
       });
       await config.AsyncStorage.setItem(
-        'BULLET_TRAIN_DB',
+        CACHE_KEY,
         JSON.stringify({
           ...defaultState,
         }),
@@ -122,11 +138,11 @@ describe('FlagsmithProvider', () => {
       const config = defaultConfig();
       const provider = new FlagsmithClientProvider({
         ...config,
+        ...cacheConfig,
         logger,
-        cacheFlags: true,
       });
       await config.AsyncStorage.setItem(
-        'BULLET_TRAIN_DB',
+        CACHE_KEY,
         JSON.stringify({
           ...defaultState,
           flags: {
@@ -169,11 +185,12 @@ describe('FlagsmithProvider', () => {
       const config = defaultConfig();
       const provider = new FlagsmithClientProvider({
         ...config,
+        ...cacheConfig,
         logger,
         defaultFlags: defaultState.flags,
       });
       await config.AsyncStorage.setItem(
-        'BULLET_TRAIN_DB',
+        CACHE_KEY,
         JSON.stringify({
           ...defaultState,
         }),
@@ -192,10 +209,10 @@ describe('FlagsmithProvider', () => {
       const provider = new FlagsmithClientProvider({
         ...config,
         logger,
-        cacheFlags: true,
+        ...cacheConfig,
       });
       await config.AsyncStorage.setItem(
-        'BULLET_TRAIN_DB',
+        CACHE_KEY,
         JSON.stringify({
           ...defaultState,
           flags: {
@@ -303,7 +320,7 @@ describe('FlagsmithProvider', () => {
       });
       expect(errorHandler).toHaveBeenCalledTimes(1);
       expect(errorHandler).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Please specify a environment id' }),
+        expect.objectContaining({ message: 'Please provide `evaluationContext.environment` with non-empty `apiKey`' }),
       );
     });
     it('should call the stale handler when context changed', async () => {
@@ -325,11 +342,11 @@ describe('FlagsmithProvider', () => {
         ...config,
       });
       await OpenFeature.setProviderAndWait(provider);
-      expect(provider.flagsmithClient.getState().identity).toEqual(undefined);
+      expect(provider.flagsmithClient.getContext().identity?.identifier).toEqual(undefined);
       await OpenFeature.setContext({ targetingKey });
-      expect(provider.flagsmithClient.getState().identity).toEqual(targetingKey);
+      expect(provider.flagsmithClient.getContext().identity?.identifier).toEqual(targetingKey);
       await OpenFeature.setContext({});
-      expect(provider.flagsmithClient.getState().identity).toEqual(null);
+      expect(provider.flagsmithClient.getContext().identity).toEqual(null);
       expect(config.fetch).toHaveBeenNthCalledWith(
         1,
         `${provider.flagsmithClient.getState().api}flags/`,
@@ -339,9 +356,9 @@ describe('FlagsmithProvider', () => {
       );
       expect(config.fetch).toHaveBeenNthCalledWith(
         2,
-        `${provider.flagsmithClient.getState().api}identities/`,
+        `${provider.flagsmithClient.getState().api}identities/?identifier=test`,
         expect.objectContaining({
-          body: '{"identifier":"test","traits":[]}',
+          body: undefined,
         }),
       );
       expect(config.fetch).toHaveBeenNthCalledWith(
@@ -360,7 +377,7 @@ describe('FlagsmithProvider', () => {
       const provider = new FlagsmithClientProvider(config);
       await OpenFeature.setContext({ targetingKey, traits });
       await OpenFeature.setProviderAndWait(provider);
-      expect(provider.flagsmithClient.getState().identity).toEqual(targetingKey);
+      expect(provider.flagsmithClient.getContext().identity?.identifier).toEqual(targetingKey);
       expect(config.fetch).toHaveBeenCalledTimes(1);
       expect(config.fetch).toHaveBeenCalledWith(
         `${provider.flagsmithClient.getState().api}identities/`,
@@ -390,7 +407,7 @@ describe('FlagsmithProvider', () => {
       const provider = new FlagsmithClientProvider(config);
       await OpenFeature.setContext({ targetingKey, traits });
       await OpenFeature.setProviderAndWait(provider);
-      expect(provider.flagsmithClient.getState().identity).toEqual(targetingKey);
+      expect(provider.flagsmithClient.getContext().identity?.identifier).toEqual(targetingKey);
       expect(config.fetch).toHaveBeenCalledTimes(1);
       expect(config.fetch).toHaveBeenCalledWith(
         `${provider.flagsmithClient.getState().api}identities/`,
@@ -430,7 +447,9 @@ describe('FlagsmithProvider', () => {
         fetch: getFetchErrorMock(),
         environmentID: '',
       });
-      await expect(OpenFeature.setProviderAndWait(provider)).rejects.toThrow('Please specify a environment id');
+      await expect(OpenFeature.setProviderAndWait(provider)).rejects.toThrow(
+        'Please provide `evaluationContext.environment` with non-empty `apiKey`',
+      );
     });
   });
 });
