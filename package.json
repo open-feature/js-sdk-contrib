@@ -2,7 +2,8 @@
   "name": "js-sdk-contrib",
   "version": "0.0.0",
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=24.0.0",
+    "npm": "^8.0.0"
   },
   "license": "Apache-2.0",
   "scripts": {
@@ -19,6 +20,7 @@
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.759.0",
     "@bufbuild/protobuf": "^1.2.0",
+    "@configcat/sdk": "^1.0.1",
     "@connectrpc/connect": "^1.4.0",
     "@connectrpc/connect-web": "^1.4.0",
     "@flipt-io/flipt": "^1.2.0",
@@ -30,10 +32,7 @@
     "@protobuf-ts/runtime-rpc": "^2.9.0",
     "@swc/helpers": "0.5.17",
     "ajv": "^8.12.0",
-    "axios": "1.11.0",
-    "configcat-common": "9.4.0",
-    "configcat-js-ssr": "^8.4.3",
-    "configcat-node": "^11.3.1",
+    "axios": "1.12.0",
     "copy-anything": "^3.0.5",
     "flagsmith": "^9.3.1",
     "imurmurhash": "^0.1.4",
