@@ -2,7 +2,7 @@
 
 ## System Requirements
 
-node 16+, npm 8+ are recommended.
+node 20+, npm 8+ are recommended.
 
 ## Compilation target(s)
 
