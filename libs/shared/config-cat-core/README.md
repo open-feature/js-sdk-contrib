@@ -1,3 +1,3 @@
-# config-cat-core
+# ConfigCat Core
 
 The core implementation of ConfigCat providers.
