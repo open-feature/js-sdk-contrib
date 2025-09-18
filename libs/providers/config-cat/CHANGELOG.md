@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.7](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.7.6...config-cat-provider-v0.7.7) (2025-09-18)
+
+
+### 🐛 Bug Fixes
+
+* regenerate the package.json lockfile ([#1379](https://github.com/open-feature/js-sdk-contrib/issues/1379)) ([e921f24](https://github.com/open-feature/js-sdk-contrib/commit/e921f24a8b890fa88858fdd9b713316fd9f53f25))
+
 ## [0.7.6](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.7.5...config-cat-provider-v0.7.6) (2025-07-04)
 
 
