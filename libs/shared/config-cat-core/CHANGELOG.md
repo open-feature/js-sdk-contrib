@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-core-v0.2.1...config-cat-core-v0.2.2) (2025-09-18)
+
+
+### 🐛 Bug Fixes
+
+* regenerate the package.json lockfile ([#1379](https://github.com/open-feature/js-sdk-contrib/issues/1379)) ([e921f24](https://github.com/open-feature/js-sdk-contrib/commit/e921f24a8b890fa88858fdd9b713316fd9f53f25))
+
 ## [0.2.1](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-core-v0.2.0...config-cat-core-v0.2.1) (2025-09-18)
 
 

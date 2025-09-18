@@ -11,6 +11,6 @@
     "@openfeature/server-sdk": "^1.13.5"
   },
   "dependencies": {
-    "@openfeature/config-cat-core": "0.2.1"
+    "@openfeature/config-cat-core": "~0.2.2"
   }
 }
