@@ -11,6 +11,6 @@
     "@openfeature/web-sdk": "^1.0.0"
   },
   "dependencies": {
-    "@openfeature/config-cat-core": "0.1.1"
+    "@openfeature/config-cat-core": "0.2.1"
   }
 }
