@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-core-v0.2.0...config-cat-core-v0.2.1) (2025-09-18)
+
+
+### 🐛 Bug Fixes
+
+* publishing pipeline ([9d25d94](https://github.com/open-feature/js-sdk-contrib/commit/9d25d94d6b00c32bf2437f8fd793e0b8c631c3ff))
+
 ## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-core-v0.1.1...config-cat-core-v0.2.0) (2025-09-18)
 
 
