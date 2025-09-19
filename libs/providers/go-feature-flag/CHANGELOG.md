@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.9](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.8...go-feature-flag-provider-v0.7.9) (2025-09-19)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update dependency axios to v1.10.0 ([#1332](https://github.com/open-feature/js-sdk-contrib/issues/1332)) ([e501475](https://github.com/open-feature/js-sdk-contrib/commit/e5014755369e690fa5fee32bc40978f813fa17d5))
+* **deps:** update dependency axios to v1.9.0 ([#1314](https://github.com/open-feature/js-sdk-contrib/issues/1314)) ([1ffe54a](https://github.com/open-feature/js-sdk-contrib/commit/1ffe54af81f2db5ec6918432b6e39968ff965127))
+* **security:** update dependency axios to v1.11.0 [security] ([#1359](https://github.com/open-feature/js-sdk-contrib/issues/1359)) ([b9cbaf8](https://github.com/open-feature/js-sdk-contrib/commit/b9cbaf8b519164ca34243c1b7485bb06d364a22e))
+* **security:** update dependency axios to v1.12.0 [security] ([#1373](https://github.com/open-feature/js-sdk-contrib/issues/1373)) ([523d2de](https://github.com/open-feature/js-sdk-contrib/commit/523d2dec2310a6954f7926dbb3d5d07258c2862c))
+
 ## [0.7.8](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.7...go-feature-flag-provider-v0.7.8) (2025-05-26)
 
 
