@@ -1,11 +1,11 @@
-import type { BeforeHookContext, Logger } from '@openfeature/server-sdk';
+import type { BeforeHookContext, Logger } from '@openfeature/core';
 import {
   StandardResolutionReasons,
   type EvaluationDetails,
   type FlagValue,
-  type Hook,
+  type BaseHook,
   type HookContext,
-} from '@openfeature/server-sdk';
+} from '@openfeature/core';
 import type { Attributes, Counter, UpDownCounter } from '@opentelemetry/api';
 import { ValueType, metrics } from '@opentelemetry/api';
 import type { EvaluationAttributes, ExceptionAttributes } from '../conventions';
@@ -15,10 +15,10 @@ import {
   EXCEPTION_ATTR,
   KEY_ATTR,
   PROVIDER_NAME_ATTR,
-  REASON_ATTR,
+  RESULT_REASON_ATTR,
   REQUESTS_TOTAL_NAME,
   SUCCESS_TOTAL_NAME,
-  VARIANT_ATTR,
+  RESULT_VARIANT_ATTR,
 } from '../conventions';
 import type { OpenTelemetryHookOptions } from '../otel-hook';
 import { OpenTelemetryHook } from '../otel-hook';
@@ -39,7 +39,7 @@ const ERROR_DESCRIPTION = 'feature flag evaluation error counter';
  *
  * See {@link https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/feature-flags/}
  */
-export class MetricsHook extends OpenTelemetryHook implements Hook {
+export class MetricsHook extends OpenTelemetryHook implements BaseHook {
   protected name = MetricsHook.name;
   private readonly evaluationActiveUpDownCounter: UpDownCounter<EvaluationAttributes>;
   private readonly evaluationRequestCounter: Counter<EvaluationAttributes>;
@@ -83,8 +83,8 @@ export class MetricsHook extends OpenTelemetryHook implements Hook {
     this.evaluationSuccessCounter.add(1, {
       [KEY_ATTR]: hookContext.flagKey,
       [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
-      [VARIANT_ATTR]: evaluationDetails.variant ?? evaluationDetails.value?.toString(),
-      [REASON_ATTR]: evaluationDetails.reason ?? StandardResolutionReasons.UNKNOWN,
+      [RESULT_VARIANT_ATTR]: evaluationDetails.variant ?? evaluationDetails.value?.toString(),
+      [RESULT_REASON_ATTR]: evaluationDetails.reason ?? StandardResolutionReasons.UNKNOWN,
       ...this.safeAttributeMapper(evaluationDetails?.flagMetadata || {}),
     });
   }
