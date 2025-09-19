@@ -1,6 +1,6 @@
 {
   "libs/hooks/open-telemetry": "0.4.0",
-  "libs/providers/go-feature-flag": "0.7.8",
+  "libs/providers/go-feature-flag": "0.7.9",
   "libs/providers/flagd": "0.13.3",
   "libs/providers/flagd-web": "0.7.3",
   "libs/providers/env-var": "0.3.1",
