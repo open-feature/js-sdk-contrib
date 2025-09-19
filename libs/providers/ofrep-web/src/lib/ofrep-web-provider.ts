@@ -299,6 +299,14 @@ export class OFREPWebProvider implements Provider {
       };
     }
 
+    if (resolved.value === undefined || resolved.value === null) {
+      return {
+        value: defaultValue,
+        flagMetadata: resolved.flagMetadata,
+        reason: resolved.reason || StandardResolutionReasons.DEFAULT,
+      };
+    }
+
     if (typeof resolved.value !== type) {
       return {
         value: defaultValue,
