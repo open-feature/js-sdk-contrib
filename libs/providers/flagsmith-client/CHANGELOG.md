@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/flagsmith-client-provider-v0.1.3...flagsmith-client-provider-v0.1.4) (2025-09-19)
+
+
+### ✨ New Features
+
+* **flagsmith:** upgrade-provider-to-latest-flagsmith-client-version ([#1362](https://github.com/open-feature/js-sdk-contrib/issues/1362)) ([35d4653](https://github.com/open-feature/js-sdk-contrib/commit/35d46530e3f25b254f5e078dab51f98439a4d095))
+
 ## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/flagsmith-client-provider-v0.1.2...flagsmith-client-provider-v0.1.3) (2025-03-17)
 
 
