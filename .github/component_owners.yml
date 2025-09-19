@@ -20,6 +20,10 @@ components:
   libs/providers/flagd-web:
     - beeme1mr
     - toddbaert
+  libs/providers/flipt:
+    - markphelps
+  libs/providers/flipt-web:
+    - markphelps
   libs/providers/go-feature-flag:
     - thomaspoignant
   libs/providers/go-feature-flag-web:
@@ -28,10 +32,8 @@ components:
     - kinyoklion
     - mateoc
     - sago2k8
-  libs/providers/flipt:
-    - markphelps
-  libs/providers/flipt-web:
-    - markphelps
+  libs/providers/rocketflag:
+    - jgunnink
   libs/providers/unleash-web:
     - jarebudev
 
