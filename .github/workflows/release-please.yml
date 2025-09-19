@@ -22,7 +22,6 @@ jobs:
         if: ${{ steps.release.outputs.releases_created }}
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
-          fetch-depth: 0
           submodules: recursive
 
       - uses: bufbuild/buf-setup-action@a47c93e0b1648d5651a065437926377d060baa99 # v1.50.0
