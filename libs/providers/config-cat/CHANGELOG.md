@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.7.7](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.7.6...config-cat-provider-v0.7.7) (2025-09-19)
+## [0.8.0](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-provider-v0.7.6...config-cat-provider-v0.8.0) (2025-09-19)
 
 
 ### 🐛 Bug Fixes
