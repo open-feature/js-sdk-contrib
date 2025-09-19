@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.6...config-cat-web-provider-v0.2.0) (2025-09-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* Update the ConfigCat core library to v9
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates ([#1342](https://github.com/open-feature/js-sdk-contrib/issues/1342)) ([fca83c9](https://github.com/open-feature/js-sdk-contrib/commit/fca83c925c6a3d19bac9d647562fd534397b376b))
+* * regenerate the package.json lockfile ([#1379](https://github.com/open-feature/js-sdk-contrib/issues/1379)) ([e921f24](https://github.com/open-feature/js-sdk-contrib/commit/e921f24a8b890fa88858fdd9b713316fd9f53f25))
+
+
+### ✨ New Features
+
+* Update the ConfigCat core library to v9 ([601e7de](https://github.com/open-feature/js-sdk-contrib/commit/601e7de19948bc826778a076f27b46a8cb1fabca))
+
+See the [ConfigCat docs](https://github.com/configcat/js-sdk/releases) for more information. 
+
 ## [0.1.6](https://github.com/open-feature/js-sdk-contrib/compare/config-cat-web-provider-v0.1.5...config-cat-web-provider-v0.1.6) (2025-04-09)
 
 
