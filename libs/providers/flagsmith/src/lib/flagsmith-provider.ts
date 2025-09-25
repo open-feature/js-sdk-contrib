@@ -6,16 +6,12 @@ import {
   JsonValue,
   ErrorCode,
   FlagValueType,
-  FlagNotFoundError,
   Logger,
-  ProviderStatus,
-  OpenFeatureEventEmitter,
-  ProviderEvents,
   StandardResolutionReasons,
   FlagValue,
+  GeneralError,
 } from '@openfeature/server-sdk';
 import { Flags, Flagsmith, BaseFlag, TraitConfig, FlagsmithValue } from 'flagsmith-nodejs';
-import { FlagsmithProviderError } from './exceptions';
 import { typeFactory } from './type-factory';
 
 type FlagsmithTrait = Record<string, FlagsmithValue | TraitConfig>;
@@ -39,28 +35,10 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
 
   readonly runsOn = 'server';
 
-  public readonly events = new OpenFeatureEventEmitter();
-  private _status: ProviderStatus = ProviderStatus.NOT_READY;
-
-  get status(): ProviderStatus {
-    return this._status;
-  }
-
   private client: Flagsmith;
   private returnValueForDisabledFlags: boolean;
   private useFlagsmithDefaults: boolean;
   private useBooleanConfigValue: boolean;
-
-  private set status(status: ProviderStatus) {
-    if (this._status !== status) {
-      this._status = status;
-      if (status === ProviderStatus.READY) {
-        this.events.emit(ProviderEvents.Ready);
-      } else if (status === ProviderStatus.ERROR) {
-        this.events.emit(ProviderEvents.Error);
-      }
-    }
-  }
 
   /**
    * Creates a Flagsmith OpenFeature provider.
@@ -111,13 +89,18 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
       const flags = await this.getFlags(evaluationContext);
       flag = flags.getFlag(flagKey);
     } catch (error) {
-      throw new FlagsmithProviderError('An error occurred retrieving flags from Flagsmith client.', ErrorCode.GENERAL, {
+      throw new GeneralError('An error occurred retrieving flags from Flagsmith client.', {
         cause: error as Error,
       });
     }
 
     if (!flag || (!this.useFlagsmithDefaults && flag.isDefault)) {
-      throw new FlagNotFoundError(`Flag '${flagKey}' was not found.`);
+      return {
+        value: defaultValue,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.FLAG_NOT_FOUND,
+        errorMessage: `Flag '${flagKey}' was not found.`,
+      };
     }
 
     if (!this.useBooleanConfigValue && flagType === 'boolean') {
@@ -128,7 +111,7 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
     }
 
     if (!(this.returnValueForDisabledFlags || flag.enabled)) {
-      throw new FlagsmithProviderError(`Flag '${flagKey}' is not enabled.`, ErrorCode.GENERAL);
+      throw new GeneralError(`Flag '${flagKey}' is not enabled.`);
     }
 
     const typedValue = typeFactory(flag.value, flagType);
@@ -138,7 +121,6 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
         reason: StandardResolutionReasons.ERROR,
         errorCode: ErrorCode.TYPE_MISMATCH,
         errorMessage: `Flag value ${flag.value} is not of type ${flagType}`,
-        flagMetadata: {},
       };
     }
 
@@ -194,14 +176,8 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
   async initialize(context?: EvaluationContext): Promise<void> {
     try {
       await this.getFlags(context || {});
-      this.status = ProviderStatus.READY;
     } catch (error) {
-      this.status = ProviderStatus.ERROR;
       throw error;
     }
-  }
-
-  async onClose(): Promise<void> {
-    this.status = ProviderStatus.NOT_READY;
   }
 }

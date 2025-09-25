@@ -1,15 +1,6 @@
 import FlagsmithOpenFeatureProvider from './flagsmith-provider';
-import {
-  FlagNotFoundError,
-  TypeMismatchError,
-  Logger,
-  StandardResolutionReasons,
-  ProviderEvents,
-  ProviderStatus,
-  ErrorCode,
-} from '@openfeature/server-sdk';
+import { FlagNotFoundError, Logger, StandardResolutionReasons, ErrorCode, GeneralError } from '@openfeature/server-sdk';
 import { Flagsmith, Flags, BaseFlag } from 'flagsmith-nodejs';
-import { FlagsmithProviderError } from './exceptions';
 import { mockFlagData } from './flagsmith.mocks';
 
 jest.mock('flagsmith-nodejs');
@@ -60,66 +51,6 @@ describe('FlagsmithOpenFeatureProvider', () => {
 
     it('should set correct runsOn property', () => {
       expect(defaultProvider.runsOn).toEqual('server');
-    });
-  });
-
-  describe('provider status and events', () => {
-    it('should start with NOT_READY status', () => {
-      const provider = new FlagsmithOpenFeatureProvider(mockFlagsmith);
-      expect(provider.status).toBe(ProviderStatus.NOT_READY);
-    });
-
-    it('should set status to READY after successful initialization', async () => {
-      const provider = new FlagsmithOpenFeatureProvider(mockFlagsmith);
-      mockFlagsmith.getEnvironmentFlags.mockResolvedValue(mockFlags);
-
-      await provider.initialize();
-
-      expect(provider.status).toBe(ProviderStatus.READY);
-    });
-
-    it('should set status to ERROR when initialization fails', async () => {
-      const provider = new FlagsmithOpenFeatureProvider(mockFlagsmith);
-      mockFlagsmith.getEnvironmentFlags.mockRejectedValue(new Error('Connection failed'));
-
-      await expect(provider.initialize()).rejects.toThrow();
-      expect(provider.status).toBe(ProviderStatus.ERROR);
-    });
-
-    it('should emit ready event when status changes to READY', async () => {
-      const provider = new FlagsmithOpenFeatureProvider(mockFlagsmith);
-      const readyHandler = jest.fn();
-      provider.events.addHandler(ProviderEvents.Ready, readyHandler);
-
-      mockFlagsmith.getEnvironmentFlags.mockResolvedValue(mockFlags);
-      await provider.initialize();
-
-      expect(readyHandler).toHaveBeenCalled();
-    });
-
-    it('should emit error event when status changes to ERROR', async () => {
-      const provider = new FlagsmithOpenFeatureProvider(mockFlagsmith);
-      const errorHandler = jest.fn();
-      provider.events.addHandler(ProviderEvents.Error, errorHandler);
-
-      mockFlagsmith.getEnvironmentFlags.mockRejectedValue(new Error('Connection failed'));
-
-      try {
-        await provider.initialize();
-      } catch (error) {}
-
-      expect(errorHandler).toHaveBeenCalled();
-    });
-
-    it('should set status to NOT_READY when onClose is called', async () => {
-      const provider = new FlagsmithOpenFeatureProvider(mockFlagsmith);
-      mockFlagsmith.getEnvironmentFlags.mockResolvedValue(mockFlags);
-
-      await provider.initialize();
-      expect(provider.status).toBe(ProviderStatus.READY);
-
-      await provider.onClose();
-      expect(provider.status).toBe(ProviderStatus.NOT_READY);
     });
   });
 
@@ -180,9 +111,16 @@ describe('FlagsmithOpenFeatureProvider', () => {
             useBooleanConfigValue: false,
           });
           mockFlags.getFlag.mockReturnValue(mockFlagData.booleanDefault);
-          await expect(
-            useFlagsmithDefaultsProvider.resolveBooleanEvaluation('default-flag', false, evaluationContext, loggerMock),
-          ).rejects.toThrow(FlagNotFoundError);
+          const result = await useFlagsmithDefaultsProvider.resolveBooleanEvaluation(
+            'default-flag',
+            false,
+            evaluationContext,
+            loggerMock,
+          );
+          expect(result.value).toBe(false);
+          expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+          expect(result.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
+          expect(result.errorMessage).toContain("Flag 'default-flag' was not found.");
         });
 
         it('should throw FlagNotFoundError when flag does not exist (undefined) even with useFlagsmithDefaults true', async () => {
@@ -192,9 +130,16 @@ describe('FlagsmithOpenFeatureProvider', () => {
             useBooleanConfigValue: false,
           });
           mockFlags.getFlag.mockReturnValue(undefined as any);
-          await expect(
-            provider.resolveBooleanEvaluation('nonexistent-flag', false, evaluationContext, loggerMock),
-          ).rejects.toThrow(FlagNotFoundError);
+          const result = await provider.resolveBooleanEvaluation(
+            'nonexistent-flag',
+            false,
+            evaluationContext,
+            loggerMock,
+          );
+          expect(result.value).toBe(false);
+          expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+          expect(result.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
+          expect(result.errorMessage).toContain("Flag 'nonexistent-flag' was not found.");
         });
 
         it('should return flag.value when boolean flag is default and useFlagsmithDefaults is true', async () => {
@@ -255,7 +200,7 @@ describe('FlagsmithOpenFeatureProvider', () => {
         mockFlags.getFlag.mockReturnValue(mockFlagData.disabledFlag);
         await expect(
           defaultProvider.resolveStringEvaluation('disabled-flag', 'test-string', evaluationContext, loggerMock),
-        ).rejects.toThrow(FlagsmithProviderError);
+        ).rejects.toThrow(GeneralError);
       });
 
       it('should return string value when flag is disabled and returnValueForDisabledFlags is true', async () => {
@@ -429,7 +374,7 @@ describe('FlagsmithOpenFeatureProvider', () => {
         mockFlags.getFlag.mockReturnValue(mockFlagData.disabledFlag);
         await expect(
           defaultProvider.resolveStringEvaluation('test-flag', '', evaluationContext, loggerMock),
-        ).rejects.toThrow(FlagsmithProviderError);
+        ).rejects.toThrow(GeneralError);
       });
 
       it('should return default value with error details when flag value is undefined', async () => {
@@ -556,7 +501,7 @@ describe('FlagsmithOpenFeatureProvider', () => {
 
         await expect(
           defaultProvider.resolveBooleanEvaluation('test-flag', false, evaluationContext, loggerMock),
-        ).rejects.toThrow(FlagsmithProviderError);
+        ).rejects.toThrow(GeneralError);
       });
 
       it('should throw FlagNotFoundError when flag is not found and returnValueForDisabledFlags is false', async () => {
@@ -566,9 +511,11 @@ describe('FlagsmithOpenFeatureProvider', () => {
           useBooleanConfigValue: false,
         });
         mockFlagsmith.getIdentityFlags.mockRejectedValue(new Error('not found'));
-        await expect(provider.resolveBooleanEvaluation('not-exist', false, {}, loggerMock)).rejects.toThrow(
-          FlagNotFoundError,
-        );
+        const result = await provider.resolveBooleanEvaluation('not-exist', false, {}, loggerMock);
+        expect(result.value).toBe(false);
+        expect(result.reason).toBe(StandardResolutionReasons.ERROR);
+        expect(result.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
+        expect(result.errorMessage).toContain("Flag 'not-exist' was not found.");
       });
 
       it('should return default value with error details when flag value type does not match requested type', async () => {
