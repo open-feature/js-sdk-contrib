@@ -73,10 +73,9 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
    * @param flagKey - The feature flag key to resolve
    * @param flagType - The expected return type ('boolean' | 'string' | 'number' | 'object')
    * @param evaluationContext - OpenFeature evaluation context with targeting and traits
-   * @returns Promise resolving to the typed flag value
-   * @throws {FlagNotFoundError} When flag doesn't exist and useFlagsmithDefaults is false
-   * @throws {FlagsmithProviderError} When flag is disabled and returnValueForDisabledFlags is false
-   * @throws {TypeMismatchError} When flag value cannot be converted to requested type
+   * @returns Promise resolving to ResolutionDetails with the typed flag value, or error details
+   * @throws {GeneralError} When an error occurs retrieving flags from Flagsmith client
+   * @throws {GeneralError} When flag is disabled and returnValueForDisabledFlags is false
    */
   private async resolve(
     flagKey: string,
