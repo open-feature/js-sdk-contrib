@@ -165,7 +165,7 @@
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
-    "libs/providers/flagsmith-provider": {
+    "libs/providers/flagsmith": {
       "release-type": "node",
       "prerelease": false,
       "bump-minor-pre-major": true,
