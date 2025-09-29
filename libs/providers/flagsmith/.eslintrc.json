@@ -13,6 +13,17 @@
     {
       "files": ["*.js", "*.jsx"],
       "rules": {}
+    },
+    {
+      "files": ["*.json"],
+      "rules": {
+        "@nx/dependency-checks": [
+          "error",
+          {
+            "ignoredDependencies": ["flagsmith-nodejs"]
+          }
+        ]
+      }
     }
   ]
 }
