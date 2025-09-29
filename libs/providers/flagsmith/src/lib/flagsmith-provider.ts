@@ -1,17 +1,17 @@
 import {
-  Provider,
-  ProviderMetadata,
-  ResolutionDetails,
-  EvaluationContext,
-  JsonValue,
+  type Provider,
+  type ProviderMetadata,
+  type ResolutionDetails,
+  type EvaluationContext,
+  type JsonValue,
+  type FlagValueType,
+  type Logger,
+  type FlagValue,
   ErrorCode,
-  FlagValueType,
-  Logger,
-  StandardResolutionReasons,
-  FlagValue,
   GeneralError,
+  StandardResolutionReasons,
 } from '@openfeature/server-sdk';
-import { Flags, Flagsmith, BaseFlag, TraitConfig, FlagsmithValue } from 'flagsmith-nodejs';
+import { type Flags, type Flagsmith, type BaseFlag, type TraitConfig, type FlagsmithValue } from 'flagsmith-nodejs';
 import { typeFactory } from './type-factory';
 
 type FlagsmithTrait = Record<string, FlagsmithValue | TraitConfig>;
@@ -173,10 +173,6 @@ export default class FlagsmithOpenFeatureProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    try {
-      await this.getFlags(context || {});
-    } catch (error) {
-      throw error;
-    }
+    await this.getFlags(context || {});
   }
 }

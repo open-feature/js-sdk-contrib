@@ -1,6 +1,6 @@
 import FlagsmithOpenFeatureProvider from './flagsmith-provider';
-import { FlagNotFoundError, Logger, StandardResolutionReasons, ErrorCode, GeneralError } from '@openfeature/server-sdk';
-import { Flagsmith, Flags, BaseFlag } from 'flagsmith-nodejs';
+import { type Logger, StandardResolutionReasons, ErrorCode, GeneralError } from '@openfeature/server-sdk';
+import { type Flagsmith, type Flags, type BaseFlag } from 'flagsmith-nodejs';
 import { mockFlagData } from './flagsmith.mocks';
 
 jest.mock('flagsmith-nodejs');
@@ -129,7 +129,7 @@ describe('FlagsmithOpenFeatureProvider', () => {
             useFlagsmithDefaults: true,
             useBooleanConfigValue: false,
           });
-          mockFlags.getFlag.mockReturnValue(undefined as any);
+          mockFlags.getFlag.mockReturnValue(undefined as unknown as BaseFlag);
           const result = await provider.resolveBooleanEvaluation(
             'nonexistent-flag',
             false,
@@ -405,7 +405,7 @@ describe('FlagsmithOpenFeatureProvider', () => {
       it('should return a string when flag value is JSON', async () => {
         mockFlags.getFlag.mockReturnValue(mockFlagData.jsonValidFlag);
         const result = await defaultProvider.resolveStringEvaluation('test-flag', '', evaluationContext, loggerMock);
-        expect(result.value).toBe('{\"key\": \"value\", \"nested\": {\"prop\": true}}');
+        expect(result.value).toBe('{"key": "value", "nested": {"prop": true}}');
         expect(result.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
       });
     });
