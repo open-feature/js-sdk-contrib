@@ -35,6 +35,7 @@
     "axios": "1.12.0",
     "copy-anything": "^3.0.5",
     "flagsmith": "^9.3.1",
+    "flagsmith-nodejs": "^6.1.0",
     "imurmurhash": "^0.1.4",
     "json-logic-engine": "4.0.6",
     "launchdarkly-js-client-sdk": "^3.1.3",
