@@ -8,8 +8,8 @@ import type {
   Provider,
   ProviderEmittableEvents,
   ProviderMetadata,
-  TrackingEventDetails,
-} from '@openfeature/web-sdk';
+  TrackingEventDetails} from '@openfeature/web-sdk';
+import { MapHookData } from '@openfeature/web-sdk';
 import {
   DefaultLogger,
   ErrorCode,
@@ -21,7 +21,6 @@ import {
 import { FirstMatchStrategy } from './strategies/FirstMatchStrategy';
 import { FirstSuccessfulStrategy } from './strategies/FirstSuccessfulStrategy';
 import { ComparisonStrategy } from './strategies/ComparisonStrategy';
-import { MapHookData } from '@openfeature/server-sdk';
 
 class TestProvider implements Provider {
   public metadata: ProviderMetadata = {
