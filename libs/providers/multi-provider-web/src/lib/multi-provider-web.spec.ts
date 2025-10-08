@@ -10,6 +10,7 @@ import type {
   ProviderMetadata,
   TrackingEventDetails,
 } from '@openfeature/web-sdk';
+import { MapHookData } from '@openfeature/web-sdk';
 import {
   DefaultLogger,
   ErrorCode,
@@ -21,7 +22,6 @@ import {
 import { FirstMatchStrategy } from './strategies/FirstMatchStrategy';
 import { FirstSuccessfulStrategy } from './strategies/FirstSuccessfulStrategy';
 import { ComparisonStrategy } from './strategies/ComparisonStrategy';
-import type { BaseEvaluationStrategy } from './strategies/BaseEvaluationStrategy';
 
 class TestProvider implements Provider {
   public metadata: ProviderMetadata = {
@@ -64,6 +64,7 @@ const callBeforeHook = (
     clientMetadata: {} as any,
     providerMetadata: {} as any,
     logger: logger,
+    hookData: new MapHookData(),
   };
   multi.hooks[0].before?.(hookContext);
 };
@@ -271,6 +272,7 @@ describe('MultiProvider', () => {
           clientMetadata: {} as any,
           providerMetadata: {} as any,
           logger: logger,
+          hookData: new MapHookData(),
         };
 
         provider1.hooks = [
@@ -350,6 +352,7 @@ describe('MultiProvider', () => {
           clientMetadata: {} as any,
           providerMetadata: {} as any,
           logger: logger,
+          hookData: new MapHookData(),
         };
 
         provider1.hooks = [
