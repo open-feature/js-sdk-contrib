@@ -161,7 +161,7 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
       const cachedStageResult = got[stage];
       // throw cached errors
       if (cachedStageResult instanceof CachedError) {
-        throw got;
+        throw cachedStageResult;
       }
       if (cachedStageResult === true) {
         // already ran this stage for this key and is still in the debounce period
