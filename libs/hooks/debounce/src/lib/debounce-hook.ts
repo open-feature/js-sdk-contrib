@@ -84,6 +84,7 @@ export type Options<T extends FlagValue = FlagValue> = {
   /**
    * Whether or not to debounce and cache the errors thrown by hook stages.
    * If false (default) stages that throw will not be debounced and their errors not cached.
+   * If true, stages that throw will be debounced and their errors cached and re-thrown for the debounced period.
    */
   cacheErrors?: boolean;
   /**
@@ -150,16 +151,17 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
   ) {
     // the cache key is a concatenation of the result of calling keyGenCallback and the stage
     const dynamicKey = keyGenCallback();
-    const cacheKeySuffix = stage;
-    const cacheKey = `${dynamicKey}::${cacheKeySuffix}`;
 
     // if the keyGenCallback returns nothing, we don't do any caching
     if (dynamicKey) {
-      const cached = this.cache.get(cacheKey);
-      if (cached) {
+      const cacheKeySuffix = stage;
+      const cacheKey = `${dynamicKey}::${cacheKeySuffix}`;
+      const got = this.cache.get(cacheKey);
+
+      if (got) {
         // throw cached errors
-        if (cached instanceof CachedError) {
-          throw cached;
+        if (got instanceof CachedError) {
+          throw got;
         }
         return;
       } else {

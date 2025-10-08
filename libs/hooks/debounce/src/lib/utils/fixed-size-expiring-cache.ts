@@ -19,6 +19,9 @@ type Options = {
 
 /**
  * A very simple cache which lazily evicts and expires keys.
+ * The cache has a fixed max size, and when that size is exceeded, the oldest key is evicted based on insertion order.
+ * When a key is retrieved, if it has expired, it is removed from the cache and undefined is returned.
+ * If a key is set that already exists, it is updated and its recency (but not it's TTL) is updated.
  */
 export class FixedSizeExpiringCache<T> {
   private cacheMap = new Map<string, Entry<T>>();
@@ -68,6 +71,7 @@ export class FixedSizeExpiringCache<T> {
         this.evictOldest();
       }
       // delete first so that the order is updated when we re-set (Map keeps insertion order)
+      // this is only relevant for eviction when at max size
       this.cacheMap.delete(key);
       this.cacheMap.set(key, {
         value,
@@ -81,6 +85,7 @@ export class FixedSizeExpiringCache<T> {
    */
   private evictOldest() {
     // Map keeps insertion order, so the first key is the oldest
+    // this is only relevant when at max size
     const oldestKey = this.cacheMap.keys().next();
     if (!oldestKey.done) {
       this.cacheMap.delete(oldestKey.value);
