@@ -172,7 +172,7 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
         return;
       } else {
         try {
-          hookCallback();
+          hookCallback.call(this.innerHook);
           this.cache.set(cacheKey, true);
         } catch (error: unknown) {
           if (this.cacheErrors) {
@@ -184,7 +184,7 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
         return;
       }
     } else {
-      hookCallback();
+      hookCallback.call(this.innerHook);
     }
   }
 }
