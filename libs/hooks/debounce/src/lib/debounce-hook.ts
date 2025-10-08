@@ -97,6 +97,12 @@ export type Options<T extends FlagValue = FlagValue> = {
   maxCacheItems: number;
 };
 
+/**
+ * A hook that wraps another hook and debounces its execution based on the provided options.
+ * Each stage of the hook (before, after, error, finally) is debounced independently.
+ * If a stage is called with a cache key that has been seen within the debounce time, the inner hook's stage will not run.
+ * If no cache key supplier is provided for a stage, that stage will always run.
+ */
 export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
   private readonly cache: FixedSizeExpiringCache<true | CachedError>;
   private readonly cacheErrors: boolean;
