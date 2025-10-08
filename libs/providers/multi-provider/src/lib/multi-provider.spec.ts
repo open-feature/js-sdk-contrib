@@ -4,11 +4,13 @@ import type {
   FlagValue,
   FlagValueType,
   Hook,
+  HookContext,
   Logger,
   Provider,
   ProviderMetadata,
   TrackingEventDetails,
 } from '@openfeature/server-sdk';
+import { MapHookData } from '@openfeature/server-sdk';
 import {
   DefaultLogger,
   ErrorCode,
@@ -63,6 +65,7 @@ const callBeforeHook = async (
     clientMetadata: {} as any,
     providerMetadata: {} as any,
     logger: logger,
+    hookData: new MapHookData(),
   };
   await multi.hooks[0].before?.(hookContext);
 };
@@ -262,7 +265,7 @@ describe('MultiProvider', () => {
         const context = {
           test: true,
         };
-        const hookContext = {
+        const hookContext: HookContext = {
           context: context,
           flagKey: 'flag',
           flagValueType: 'boolean' as any,
@@ -270,6 +273,7 @@ describe('MultiProvider', () => {
           clientMetadata: {} as any,
           providerMetadata: {} as any,
           logger: logger,
+          hookData: new MapHookData(),
         };
 
         const weakMap = new WeakMap();
@@ -371,6 +375,7 @@ describe('MultiProvider', () => {
           clientMetadata: {} as any,
           providerMetadata: {} as any,
           logger: logger,
+          hookData: new MapHookData(),
         };
 
         const weakMap = new WeakMap();
