@@ -68,7 +68,7 @@ export class FixedSizeExpiringCache<T> {
    */
   set(key: string, value: T) {
     if (key) {
-      if (this.cacheMap.size >= this.maxItems) {
+      if (!this.cacheMap.has(key) && this.cacheMap.size >= this.maxItems) {
         this.evictOldest();
       }
       // delete first so that the order is updated when we re-set (Map keeps insertion order)
