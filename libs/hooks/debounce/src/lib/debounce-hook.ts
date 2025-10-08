@@ -111,7 +111,7 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
     private readonly innerHook: Hook,
     private readonly options: Options<T>,
   ) {
-    this.cacheErrors = options.cacheErrors || false;
+    this.cacheErrors = options.cacheErrors ?? false;
     this.cache = new FixedSizeExpiringCache<true | CachedError>({
       maxItems: options.maxCacheItems,
       ttlMs: options.debounceTime,
