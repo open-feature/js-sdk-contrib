@@ -18,8 +18,8 @@ It can be created by passing a configured Flagsmith client instance to the `Flag
 
 ```javascript
 import { OpenFeature } from '@openfeature/server-sdk';
-import FlagsmithOpenFeatureProvider from '@openfeature/flagsmith-provider';
-import Flagsmith from 'flagsmith-nodejs';
+import { FlagsmithOpenFeatureProvider } from '@openfeature/flagsmith-provider';
+import { Flagsmith } from 'flagsmith-nodejs';
 
 // Create the Flagsmith client
 const flagsmith = new Flagsmith({
