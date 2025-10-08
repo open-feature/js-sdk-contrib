@@ -26,15 +26,16 @@ Simply wrap your hook with the debounce hook by passing it a constructor arg, an
 In the example below, we wrap the "after" stage of a logging hook so that it only logs a maximum of once a minute for each flag key, no matter how many times that flag is evaluated.
 
 ```ts
-// a function defining the key for the hook stage; if this matches a recent key, the hook execution for this stage will be bypassed
-const supplier = (flagKey: string, context: EvaluationContext, details: EvaluationDetails<T>) => flagKey;
-
-const hook = new DebounceHook<string>(loggingHook, {
-  debounceTime: 60_000,             // how long to wait before the hook can fire again (applied to each stage independently) in milliseconds
-  afterCacheKeySupplier: supplier,  // if the key calculated by the supplier exists in the cache, the wrapped hook's stage will not run
+const debounceHook = new DebounceHook<string>(loggingHook, {
+  debounceTime: 60_000,             // how long to wait before the hook can fire again
   maxCacheItems: 100,               // max amount of items to keep in the cache; if exceeded, the oldest item is dropped
-  cacheErrors: false                // whether or not to debounce errors thrown by hook stages
 });
+
+// add the hook globally
+OpenFeature.addHooks(debounceHook);
+
+// or at a specific client
+client.addHooks(debounceHook);
 ```
 
 ## Development
