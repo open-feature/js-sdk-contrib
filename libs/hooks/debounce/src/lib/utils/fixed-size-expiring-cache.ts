@@ -40,7 +40,7 @@ export class FixedSizeExpiringCache<T> {
   }
 
   /**
-   * Gets a key from the cache, updating its recency.
+   * Gets a key from the cache.
    *
    * @param key key for the entry
    * @returns value or key or undefined
