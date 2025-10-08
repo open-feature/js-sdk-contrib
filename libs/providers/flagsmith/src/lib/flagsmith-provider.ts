@@ -19,7 +19,7 @@ type FlagsmithTrait = Record<string, FlagsmithValue | TraitConfig>;
 /**
  * Configuration options for the Flagsmith OpenFeature provider.
  */
-interface FlagsmithProviderConfig {
+export interface FlagsmithProviderConfig {
   /** Whether to return values for disabled flags instead of throwing errors */
   returnValueForDisabledFlags?: boolean;
   /** Whether to allow Flagsmith default flag values instead of treating as not found */
@@ -28,7 +28,7 @@ interface FlagsmithProviderConfig {
   useBooleanConfigValue?: boolean;
 }
 
-export default class FlagsmithOpenFeatureProvider implements Provider {
+export class FlagsmithOpenFeatureProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: 'flagsmith-provider',
   };
