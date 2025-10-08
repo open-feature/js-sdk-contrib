@@ -21,7 +21,7 @@ describe('DebounceHook', () => {
       afterCacheKeySupplier: supplier,
       errorCacheKeySupplier: supplier,
       finallyCacheKeySupplier: supplier,
-      ttlMs: 60_000,
+      debounceTime: 60_000,
       maxCacheItems: 100,
     });
 
@@ -85,7 +85,7 @@ describe('DebounceHook', () => {
 
       const hook = new DebounceHook<string>(innerHook, {
         beforeCacheKeySupplier: (flagKey: string) => flagKey,
-        ttlMs: 60_000,
+        debounceTime: 60_000,
         maxCacheItems: 1,
       });
 
@@ -97,7 +97,7 @@ describe('DebounceHook', () => {
       expect(innerHook.before).toHaveBeenCalledTimes(3);
     });
 
-    it('should rerun inner hook stage only after ttl', async () => {
+    it('should rerun inner hook only after debounce time', async () => {
       const innerHook: Hook = {
         before: jest.fn(),
       };
@@ -106,7 +106,7 @@ describe('DebounceHook', () => {
 
       const hook = new DebounceHook<string>(innerHook, {
         beforeCacheKeySupplier: (flagKey: string) => flagKey,
-        ttlMs: 500,
+        debounceTime: 500,
         maxCacheItems: 1,
       });
 
@@ -136,7 +136,7 @@ describe('DebounceHook', () => {
 
       // no suppliers defined, so we no-op (do no caching)
       const hook = new DebounceHook<string>(innerHook, {
-        ttlMs: 60_000,
+        debounceTime: 60_000,
         maxCacheItems: 100,
       });
 
@@ -182,7 +182,7 @@ describe('DebounceHook', () => {
       const hook = new DebounceHook<string>(innerErrorHook, {
         beforeCacheKeySupplier: (flagKey: string) => flagKey,
         maxCacheItems: 100,
-        ttlMs: 60_000,
+        debounceTime: 60_000,
         cacheErrors,
       });
 

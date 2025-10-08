@@ -23,17 +23,17 @@ NOTE: if you're using the React or Angular SDKs, you don't need to directly inst
 
 The hook maintains a simple expiring cache with a fixed max size and keeps a record of recent evaluations based on a user-defined key-generation function (keySupplier).
 Simply wrap your hook with the debounce hook by passing it a constructor arg, and then configure the remaining options.
-In the example below, we wrap a logging hook so that it only logs a maximum of once a minute for each flag key, no matter how many times that flag is evaluated.
+In the example below, we wrap the "after" stage of a logging hook so that it only logs a maximum of once a minute for each flag key, no matter how many times that flag is evaluated.
 
 ```ts
-// a function defining the key for the hook stage 
+// a function defining the key for the hook stage; if this matches a recent key, the hook execution for this stage will be bypassed
 const supplier = (flagKey: string, context: EvaluationContext, details: EvaluationDetails<T>) => flagKey;
 
 const hook = new DebounceHook<string>(loggingHook, {
+  debounceTime: 60_000,             // how long to wait before the hook can fire again (applied to each stage independently) in milliseconds
   afterCacheKeySupplier: supplier,  // if the key calculated by the supplier exists in the cache, the wrapped hook's stage will not run
-  ttlMs: 60_000,                    // how long to cache keys for
-  maxCacheItems: 100,               // max amount of items to keep in the LRU cache
-  cacheErrors: false                // whether or not to cache the errors thrown by hook stages
+  maxCacheItems: 100,               // max amount of items to keep in the cache; if exceeded, the oldest item is dropped
+  cacheErrors: false                // whether or not to debounce errors thrown by hook stages
 });
 ```
 

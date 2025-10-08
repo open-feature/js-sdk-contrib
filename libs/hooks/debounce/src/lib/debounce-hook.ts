@@ -87,9 +87,9 @@ export type Options<T extends FlagValue = FlagValue> = {
    */
   cacheErrors?: boolean;
   /**
-   * Time to live for items in cache in milliseconds.
+   * Debounce timeout - how long to wait before the hook can fire again (applied to each stage independently) in milliseconds.
    */
-  ttlMs: number;
+  debounceTime: number;
   /**
    * Max number of items to be kept in cache before the oldest entry falls out.
    */
@@ -107,7 +107,7 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
     this.cacheErrors = options.cacheErrors || false;
     this.cache = new FixedSizeExpiringCache<true | CachedError>({
       maxItems: options.maxCacheItems,
-      ttlMs: options.ttlMs,
+      ttlMs: options.debounceTime,
     });
   }
 
@@ -162,18 +162,19 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
           throw cached;
         }
         return;
-      }
-      try {
-        hookCallback();
-        this.cache.set(cacheKey, true);
-      } catch (error: unknown) {
-        if (this.cacheErrors) {
-          // cache error
-          this.cache.set(cacheKey, new CachedError(error));
+      } else {
+        try {
+          hookCallback();
+          this.cache.set(cacheKey, true);
+        } catch (error: unknown) {
+          if (this.cacheErrors) {
+            // cache error
+            this.cache.set(cacheKey, new CachedError(error));
+          }
+          throw error;
         }
-        throw error;
+        return;
       }
-      return;
     } else {
       hookCallback();
     }
