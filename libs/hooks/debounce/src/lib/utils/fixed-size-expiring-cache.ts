@@ -45,7 +45,7 @@ export class FixedSizeExpiringCache<T> {
    * @param key key for the entry
    * @returns value or key or undefined
    */
-  get(key: string): T | void {
+  get(key: string): T | undefined {
     if (key) {
       const entry = this.cacheMap.get(key);
       if (entry) {
@@ -56,6 +56,7 @@ export class FixedSizeExpiringCache<T> {
         }
       }
     }
+    return undefined;
   }
 
   /**

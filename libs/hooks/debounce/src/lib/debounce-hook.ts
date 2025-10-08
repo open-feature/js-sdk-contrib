@@ -1,17 +1,24 @@
-import type {
-  EvaluationContext,
-  EvaluationDetails,
-  FlagValue,
-  Hook,
-  HookContext,
-  HookHints,
+import type { Logger } from '@openfeature/web-sdk';
+import {
+  ErrorCode,
+  OpenFeatureError,
+  type EvaluationContext,
+  type EvaluationDetails,
+  type FlagValue,
+  type Hook,
+  type HookContext,
+  type HookHints,
 } from '@openfeature/web-sdk';
 import { FixedSizeExpiringCache } from './utils/fixed-size-expiring-cache';
+
+const DEFAULT_CACHE_KEY_SUPPLIER = (flagKey: string) => flagKey;
+type StageResult = true | CachedError;
+type HookStagesEntry = { before?: StageResult; after?: StageResult; error?: StageResult; finally?: StageResult };
 
 /**
  * An error cached from a previous hook invocation.
  */
-export class CachedError extends Error {
+export class CachedError extends OpenFeatureError {
   private _innerError: unknown;
 
   constructor(innerError: unknown) {
@@ -27,60 +34,27 @@ export class CachedError extends Error {
   get innerError() {
     return this._innerError;
   }
+
+  get code() {
+    if (this._innerError instanceof OpenFeatureError) {
+      return this._innerError.code;
+    }
+    return ErrorCode.GENERAL;
+  }
 }
 
-export type Options<T extends FlagValue = FlagValue> = {
+export type Options = {
   /**
-   * Function to generate the cache key for the before stage of the wrapped hook.
+   * Function to generate the cache key for the wrapped hook.
    * If the cache key is found in the cache, the hook stage will not run.
-   * If not defined, the DebounceHook will no-op for this stage (inner hook will always run for this stage).
+   * By default, the flag key is used as the cache key.
    *
    * @param flagKey the flag key
    * @param context the evaluation context
    * @returns cache key for this stage
+   * @default (flagKey) => flagKey
    */
-  beforeCacheKeySupplier?: (flagKey: string, context: EvaluationContext) => string | null | undefined;
-  /**
-   * Function to generate the cache key for the after stage of the wrapped hook.
-   * If the cache key is found in the cache, the hook stage will not run.
-   * If not defined, the DebounceHook will no-op for this stage (inner hook will always run for this stage).
-   *
-   * @param flagKey the flag key
-   * @param context the evaluation context
-   * @param details the evaluation details
-   * @returns cache key for this stage
-   */
-  afterCacheKeySupplier?: (
-    flagKey: string,
-    context: EvaluationContext,
-    details: EvaluationDetails<T>,
-  ) => string | null | undefined;
-  /**
-   * Function to generate the cache key for the error stage of the wrapped hook.
-   * If the cache key is found in the cache, the hook stage will not run.
-   * If not defined, the DebounceHook will no-op for this stage (inner hook will always run for this stage).
-   *
-   * @param flagKey the flag key
-   * @param context the evaluation context
-   * @param err the Error
-   * @returns cache key for this stage
-   */
-  errorCacheKeySupplier?: (flagKey: string, context: EvaluationContext, err: unknown) => string | null | undefined;
-  /**
-   * Function to generate the cache key for the error stage of the wrapped hook.
-   * If the cache key is found in the cache, the hook stage will not run.
-   * If not defined, the DebounceHook will no-op for this stage (inner hook will always run for this stage).
-   *
-   * @param flagKey the flag key
-   * @param context the evaluation context
-   * @param details the evaluation details
-   * @returns cache key for this stage
-   */
-  finallyCacheKeySupplier?: (
-    flagKey: string,
-    context: EvaluationContext,
-    details: EvaluationDetails<T>,
-  ) => string | null | undefined;
+  cacheKeySupplier?: (flagKey: string, context: EvaluationContext) => string | null | undefined;
   /**
    * Whether or not to debounce and cache the errors thrown by hook stages.
    * If false (default) stages that throw will not be debounced and their errors not cached.
@@ -95,24 +69,29 @@ export type Options<T extends FlagValue = FlagValue> = {
    * Max number of items to be kept in cache before the oldest entry falls out.
    */
   maxCacheItems: number;
+  /**
+   * Optional logger.
+   */
+  logger?: Logger;
 };
 
 /**
  * A hook that wraps another hook and debounces its execution based on the provided options.
- * Each stage of the hook (before, after, error, finally) is debounced independently.
- * If a stage is called with a cache key that has been seen within the debounce time, the inner hook's stage will not run.
+ * The cacheKeySupplier is used to generate a cache key for the hook, which is used to determine if the hook should be executed or skipped.
  * If no cache key supplier is provided for a stage, that stage will always run.
  */
 export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
-  private readonly cache: FixedSizeExpiringCache<true | CachedError>;
+  private readonly cache: FixedSizeExpiringCache<HookStagesEntry>;
   private readonly cacheErrors: boolean;
+  private readonly cacheKeySupplier: Options['cacheKeySupplier'];
 
   public constructor(
     private readonly innerHook: Hook,
-    private readonly options: Options<T>,
+    private readonly options: Options,
   ) {
     this.cacheErrors = options.cacheErrors ?? false;
-    this.cache = new FixedSizeExpiringCache<true | CachedError>({
+    this.cacheKeySupplier = options.cacheKeySupplier ?? DEFAULT_CACHE_KEY_SUPPLIER;
+    this.cache = new FixedSizeExpiringCache<HookStagesEntry>({
       maxItems: options.maxCacheItems,
       ttlMs: options.debounceTime,
     });
@@ -121,7 +100,7 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
   before(hookContext: HookContext, hookHints?: HookHints) {
     this.maybeSkipAndCache(
       'before',
-      () => this.options?.beforeCacheKeySupplier?.(hookContext.flagKey, hookContext.context),
+      () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
       () => this.innerHook?.before?.(hookContext, hookHints),
     );
   }
@@ -129,7 +108,7 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
   after(hookContext: HookContext, evaluationDetails: EvaluationDetails<T>, hookHints?: HookHints) {
     this.maybeSkipAndCache(
       'after',
-      () => this.options?.afterCacheKeySupplier?.(hookContext.flagKey, hookContext.context, evaluationDetails),
+      () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
       () => this.innerHook?.after?.(hookContext, evaluationDetails, hookHints),
     );
   }
@@ -137,7 +116,7 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
   error(hookContext: HookContext, err: unknown, hookHints?: HookHints) {
     this.maybeSkipAndCache(
       'error',
-      () => this.options?.errorCacheKeySupplier?.(hookContext.flagKey, hookContext.context, err),
+      () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
       () => this.innerHook?.error?.(hookContext, err, hookHints),
     );
   }
@@ -145,7 +124,7 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
   finally(hookContext: HookContext, evaluationDetails: EvaluationDetails<T>, hookHints?: HookHints) {
     this.maybeSkipAndCache(
       'finally',
-      () => this.options?.finallyCacheKeySupplier?.(hookContext.flagKey, hookContext.context, evaluationDetails),
+      () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
       () => this.innerHook?.finally?.(hookContext, evaluationDetails, hookHints),
     );
   }
@@ -156,34 +135,49 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
     hookCallback: () => void,
   ) {
     // the cache key is a concatenation of the result of calling keyGenCallback and the stage
-    const dynamicKey = keyGenCallback();
+    let dynamicKey: string | null | undefined;
 
-    // if the keyGenCallback returns nothing, we don't do any caching 
+    try {
+      dynamicKey = keyGenCallback();
+    } catch (e) {
+      // if the keyGenCallback throws, we log and run the hook stage
+      this.options.logger?.error(
+        `DebounceHook: cacheKeySupplier threw an error, running inner hook stage "${stage}" without debouncing.`,
+        e,
+      );
+    }
+
+    // if the keyGenCallback returns nothing, we don't do any caching
     if (!dynamicKey) {
       hookCallback.call(this.innerHook);
+      return;
     }
-    
+
     const cacheKeySuffix = stage;
     const cacheKey = `${dynamicKey}::${cacheKeySuffix}`;
     const got = this.cache.get(cacheKey);
 
     if (got) {
+      const cachedStageResult = got[stage];
       // throw cached errors
-      if (got instanceof CachedError) {
+      if (cachedStageResult instanceof CachedError) {
         throw got;
       }
-      return;
-    } 
-    
+      if (cachedStageResult === true) {
+        // already ran this stage for this key and is still in the debounce period
+        return;
+      }
+    }
+
     try {
       hookCallback.call(this.innerHook);
-      this.cache.set(cacheKey, true);
+      this.cache.set(cacheKey, { ...got, [stage]: true });
     } catch (error: unknown) {
       if (this.cacheErrors) {
         // cache error
-        this.cache.set(cacheKey, new CachedError(error));
+        this.cache.set(cacheKey, { ...got, [stage]: new CachedError(error) });
       }
       throw error;
-    }    
+    }
   }
 }

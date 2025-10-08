@@ -14,13 +14,7 @@ describe('DebounceHook', () => {
       finally: jest.fn(),
     };
 
-    const supplier = (flagKey: string) => flagKey;
-
     const hook = new DebounceHook<string>(innerHook, {
-      beforeCacheKeySupplier: supplier,
-      afterCacheKeySupplier: supplier,
-      errorCacheKeySupplier: supplier,
-      finallyCacheKeySupplier: supplier,
       debounceTime: 60_000,
       maxCacheItems: 100,
     });
@@ -71,6 +65,31 @@ describe('DebounceHook', () => {
         hints,
       );
     });
+
+    it('stages should be cached independently', () => {
+      const innerHook: Hook = {
+        before: jest.fn(),
+        after: jest.fn(),
+      };
+
+      const hook = new DebounceHook<boolean>(innerHook, {
+        debounceTime: 60_000,
+        maxCacheItems: 100,
+      });
+
+      const flagKey = 'my-flag';
+
+      hook.before({ flagKey } as HookContext, {});
+      hook.after({ flagKey } as HookContext, {
+        flagKey,
+        flagMetadata: {},
+        value: true,
+      });
+
+      // both should run
+      expect(innerHook.before).toHaveBeenCalledTimes(1);
+      expect(innerHook.after).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('options', () => {
@@ -84,7 +103,6 @@ describe('DebounceHook', () => {
       };
 
       const hook = new DebounceHook<string>(innerHook, {
-        beforeCacheKeySupplier: (flagKey: string) => flagKey,
         debounceTime: 60_000,
         maxCacheItems: 1,
       });
@@ -105,7 +123,6 @@ describe('DebounceHook', () => {
       const flagKey = 'some-flag';
 
       const hook = new DebounceHook<string>(innerHook, {
-        beforeCacheKeySupplier: (flagKey: string) => flagKey,
         debounceTime: 500,
         maxCacheItems: 1,
       });
@@ -122,7 +139,7 @@ describe('DebounceHook', () => {
       expect(innerHook.before).toHaveBeenCalledTimes(2);
     });
 
-    it('noop if supplier not defined', () => {
+    it('use custom supplier', () => {
       const innerHook: Hook = {
         before: jest.fn(),
         after: jest.fn(),
@@ -130,32 +147,20 @@ describe('DebounceHook', () => {
         finally: jest.fn(),
       };
 
-      const flagKey = 'some-flag';
       const context = {};
       const hints = {};
 
-      // no suppliers defined, so we no-op (do no caching)
       const hook = new DebounceHook<string>(innerHook, {
+        cacheKeySupplier: () => 'a-silly-const-key', // a constant key means all invocations are cached; just to test that the custom supplier is used
         debounceTime: 60_000,
         maxCacheItems: 100,
       });
 
-      const evaluationDetails: EvaluationDetails<string> = {
-        value: 'testValue',
-      } as EvaluationDetails<string>;
+      hook.before({ flagKey: 'flag1', context } as HookContext, hints);
+      hook.before({ flagKey: 'flag2', context } as HookContext, hints);
 
-      for (let i = 0; i < 3; i++) {
-        hook.before({ flagKey, context } as HookContext, hints);
-        hook.after({ flagKey, context } as HookContext, evaluationDetails, hints);
-        hook.error({ flagKey, context } as HookContext, hints);
-        hook.finally({ flagKey, context } as HookContext, evaluationDetails, hints);
-      }
-
-      // every invocation should have run since we have only maxCacheItems: 1
-      expect(innerHook.before).toHaveBeenCalledTimes(3);
-      expect(innerHook.after).toHaveBeenCalledTimes(3);
-      expect(innerHook.error).toHaveBeenCalledTimes(3);
-      expect(innerHook.finally).toHaveBeenCalledTimes(3);
+      // since we used a constant key, the second invocation should have been cached even though the flagKey was different
+      expect(innerHook.before).toHaveBeenCalledTimes(1);
     });
 
     it.each([
@@ -180,7 +185,6 @@ describe('DebounceHook', () => {
 
       // this hook caches error invocations
       const hook = new DebounceHook<string>(innerErrorHook, {
-        beforeCacheKeySupplier: (flagKey: string) => flagKey,
         maxCacheItems: 100,
         debounceTime: 60_000,
         cacheErrors,
