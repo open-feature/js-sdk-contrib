@@ -23,7 +23,7 @@ NOTE: if you're using the React or Angular OpenFeature SDKs, you don't need to d
 
 The hook maintains a simple expiring cache with a fixed max size and keeps a record of recent evaluations based on a user-defined key-generation function (keySupplier).
 Simply wrap your hook with the debounce hook by passing it a constructor arg, and then configure the remaining options.
-In the example below, we wrap the "after" stage of a logging hook so that it only logs a maximum of once a minute for each flag key, no matter how many times that flag is evaluated.
+In the example below, we wrap a logging hook. This debounces all its stages, so it only logs a maximum of once a minute for each flag key, no matter how many times that flag is evaluated.
 
 ```ts
 const debounceHook = new DebounceHook<string>(loggingHook, {
