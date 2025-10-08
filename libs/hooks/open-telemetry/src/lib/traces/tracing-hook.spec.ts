@@ -1,4 +1,5 @@
-import type { EvaluationDetails, HookContext } from '@openfeature/server-sdk';
+import type { EvaluationDetails, HookContext} from '@openfeature/server-sdk';
+import { MapHookData } from '@openfeature/server-sdk';
 
 const addEvent = jest.fn();
 const recordException = jest.fn();
@@ -30,6 +31,7 @@ describe('OpenTelemetry Hooks', () => {
     defaultValue: true,
     flagValueType: 'boolean',
     logger: console,
+    hookData: new MapHookData(),
   };
 
   let tracingHook: TracingHook;
