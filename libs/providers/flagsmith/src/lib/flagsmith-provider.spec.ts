@@ -1,4 +1,4 @@
-import FlagsmithOpenFeatureProvider from './flagsmith-provider';
+import { FlagsmithOpenFeatureProvider } from './flagsmith-provider';
 import { type Logger, StandardResolutionReasons, ErrorCode, GeneralError } from '@openfeature/server-sdk';
 import { type Flagsmith, type Flags, type BaseFlag } from 'flagsmith-nodejs';
 import { mockFlagData } from './flagsmith.mocks';
