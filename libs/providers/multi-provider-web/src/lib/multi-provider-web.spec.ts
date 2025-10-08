@@ -8,7 +8,8 @@ import type {
   Provider,
   ProviderEmittableEvents,
   ProviderMetadata,
-  TrackingEventDetails} from '@openfeature/web-sdk';
+  TrackingEventDetails,
+} from '@openfeature/web-sdk';
 import { MapHookData } from '@openfeature/web-sdk';
 import {
   DefaultLogger,
