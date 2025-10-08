@@ -17,7 +17,7 @@ Confirm that the following peer dependencies are installed:
 $ npm install @openfeature/web-sdk
 ```
 
-NOTE: if you're using the React or Angular SDKs, you don't need to directly install this web SDK.
+NOTE: if you're using the React or Angular OpenFeature SDKs, you don't need to directly install this web SDK.
 
 ## Usage
 
