@@ -134,7 +134,7 @@ describe('OpenTelemetry Hooks', () => {
         const hook: BaseHook = new EventHook({
           attributeMapper: (context, evalDetails) => ({
             key: context.context?.targetingKey,
-            custom: evalDetails?.flagMetadata.foo,
+            custom: evalDetails.flagMetadata.foo,
           }),
         });
         hook.before?.(hookContext);
@@ -251,7 +251,7 @@ describe('OpenTelemetry Hooks', () => {
         const hook: BaseHook = new SpanEventHook({
           attributeMapper: (context, evalDetails) => ({
             key: context.context?.targetingKey,
-            custom: evalDetails?.flagMetadata.foo,
+            custom: evalDetails.flagMetadata.foo,
           }),
         });
         const span = tracer.startSpan('test-span');
@@ -396,7 +396,7 @@ describe('OpenTelemetry Hooks', () => {
         const hook: BaseHook = new SpanHook({
           attributeMapper: (context, evalDetails) => ({
             key: context.context?.targetingKey,
-            custom: evalDetails?.flagMetadata.foo,
+            custom: evalDetails.flagMetadata.foo,
           }),
         });
 

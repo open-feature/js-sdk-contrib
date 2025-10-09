@@ -5,10 +5,7 @@ import type { Attributes } from '@opentelemetry/api';
 type EvaluationEvent = { name: string; attributes: Attributes };
 type TelemetryAttributesNames = [keyof typeof TelemetryAttribute][number] | string;
 
-export type AttributeMapper = (
-  hookContext: HookContext,
-  evaluationDetails?: EvaluationDetails<FlagValue>,
-) => Attributes;
+export type AttributeMapper = (hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>) => Attributes;
 
 export type EventMutator = (event: EvaluationEvent) => EvaluationEvent;
 
@@ -56,7 +53,7 @@ export abstract class OpenTelemetryHook {
   protected safeEventMutator: EventMutator;
 
   protected constructor(options?: OpenTelemetryHookOptions, logger?: Logger) {
-    this.safeAttributeMapper = (hookContext: HookContext, evaluationDetails?: EvaluationDetails<FlagValue>) => {
+    this.safeAttributeMapper = (hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>) => {
       try {
         return options?.attributeMapper?.(hookContext, evaluationDetails) || {};
       } catch (err) {
