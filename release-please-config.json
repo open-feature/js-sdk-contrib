@@ -7,7 +7,8 @@
       "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "versioning": "default"
+      "versioning": "default",
+      "extra-files": ["src/lib/traces/tracing-hooks.ts"]
     },
     "libs/providers/go-feature-flag": {
       "release-type": "node",

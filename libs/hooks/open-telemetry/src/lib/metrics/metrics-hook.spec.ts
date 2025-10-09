@@ -1,18 +1,10 @@
-import type { BeforeHookContext, EvaluationDetails, HookContext } from '@openfeature/server-sdk';
-import { StandardResolutionReasons } from '@openfeature/server-sdk';
+import type { BeforeHookContext, EvaluationDetails, HookContext } from '@openfeature/core';
+import { TelemetryAttribute } from '@openfeature/core';
+import { StandardResolutionReasons } from '@openfeature/core';
 import opentelemetry from '@opentelemetry/api';
 import type { DataPoint, ScopeMetrics } from '@opentelemetry/sdk-metrics';
 import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
-import {
-  ACTIVE_COUNT_NAME,
-  ERROR_TOTAL_NAME,
-  KEY_ATTR,
-  PROVIDER_NAME_ATTR,
-  REASON_ATTR,
-  REQUESTS_TOTAL_NAME,
-  SUCCESS_TOTAL_NAME,
-  VARIANT_ATTR,
-} from '../conventions';
+import { ACTIVE_COUNT_NAME, ERROR_TOTAL_NAME, REQUESTS_TOTAL_NAME, SUCCESS_TOTAL_NAME } from '../conventions';
 import { MetricsHook } from './metrics-hook';
 import type { AttributeMapper } from '../otel-hook';
 
@@ -61,8 +53,8 @@ describe(MetricsHook.name, () => {
           0,
           (point) =>
             point.value === 1 &&
-            point.attributes[KEY_ATTR] === FLAG_KEY &&
-            point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME,
+            point.attributes[TelemetryAttribute.KEY] === FLAG_KEY &&
+            point.attributes[TelemetryAttribute.PROVIDER] === PROVIDER_NAME,
         ),
       ).toBeTruthy();
       expect(
@@ -72,8 +64,8 @@ describe(MetricsHook.name, () => {
           0,
           (point) =>
             point.value === 1 &&
-            point.attributes[KEY_ATTR] === FLAG_KEY &&
-            point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME,
+            point.attributes[TelemetryAttribute.KEY] === FLAG_KEY &&
+            point.attributes[TelemetryAttribute.PROVIDER] === PROVIDER_NAME,
         ),
       ).toBeTruthy();
     });
@@ -108,10 +100,10 @@ describe(MetricsHook.name, () => {
             0,
             (point) =>
               point.value === 1 &&
-              point.attributes[KEY_ATTR] === FLAG_KEY &&
-              point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
-              point.attributes[VARIANT_ATTR] === VARIANT &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC,
+              point.attributes[TelemetryAttribute.KEY] === FLAG_KEY &&
+              point.attributes[TelemetryAttribute.PROVIDER] === PROVIDER_NAME &&
+              point.attributes[TelemetryAttribute.VARIANT] === VARIANT &&
+              point.attributes[TelemetryAttribute.REASON] === StandardResolutionReasons.STATIC,
           ),
         ).toBeTruthy();
       });
@@ -141,10 +133,10 @@ describe(MetricsHook.name, () => {
             1,
             (point) =>
               point.value === 1 &&
-              point.attributes[KEY_ATTR] === FLAG_KEY &&
-              point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
-              point.attributes[VARIANT_ATTR] === VALUE.toString() &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC,
+              point.attributes[TelemetryAttribute.KEY] === FLAG_KEY &&
+              point.attributes[TelemetryAttribute.PROVIDER] === PROVIDER_NAME &&
+              point.attributes[TelemetryAttribute.VARIANT] === VALUE.toString() &&
+              point.attributes[TelemetryAttribute.REASON] === StandardResolutionReasons.STATIC,
           ),
         ).toBeTruthy();
       });
@@ -178,7 +170,7 @@ describe(MetricsHook.name, () => {
         } as EvaluationDetails<number>;
 
         // configure a mapper for our custom properties
-        const attributeMapper: AttributeMapper = (flagMetadata) => {
+        const attributeMapper: AttributeMapper = (_, { flagMetadata }) => {
           return {
             [CUSTOM_ATTR_KEY_1]: flagMetadata[CUSTOM_ATTR_KEY_1],
             [CUSTOM_ATTR_KEY_2]: flagMetadata[CUSTOM_ATTR_KEY_2],
@@ -195,10 +187,10 @@ describe(MetricsHook.name, () => {
             2,
             (point) =>
               point.value === 1 &&
-              point.attributes[KEY_ATTR] === FLAG_KEY &&
-              point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
-              point.attributes[VARIANT_ATTR] === VARIANT &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC &&
+              point.attributes[TelemetryAttribute.KEY] === FLAG_KEY &&
+              point.attributes[TelemetryAttribute.PROVIDER] === PROVIDER_NAME &&
+              point.attributes[TelemetryAttribute.VARIANT] === VARIANT &&
+              point.attributes[TelemetryAttribute.REASON] === StandardResolutionReasons.STATIC &&
               // custom attributes should be present
               point.attributes[CUSTOM_ATTR_KEY_1] === CUSTOM_ATTR_VALUE_1 &&
               point.attributes[CUSTOM_ATTR_KEY_2] === CUSTOM_ATTR_VALUE_2,
@@ -241,10 +233,10 @@ describe(MetricsHook.name, () => {
             3,
             (point) =>
               point.value === 1 &&
-              point.attributes[KEY_ATTR] === FLAG_KEY &&
-              point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME &&
-              point.attributes[VARIANT_ATTR] === VARIANT &&
-              point.attributes[REASON_ATTR] === StandardResolutionReasons.STATIC,
+              point.attributes[TelemetryAttribute.KEY] === FLAG_KEY &&
+              point.attributes[TelemetryAttribute.PROVIDER] === PROVIDER_NAME &&
+              point.attributes[TelemetryAttribute.VARIANT] === VARIANT &&
+              point.attributes[TelemetryAttribute.REASON] === StandardResolutionReasons.STATIC,
           ),
         ).toBeTruthy();
       });
@@ -272,8 +264,8 @@ describe(MetricsHook.name, () => {
           1,
           (point) =>
             point.value === -1 &&
-            point.attributes[KEY_ATTR] === FLAG_KEY &&
-            point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME,
+            point.attributes[TelemetryAttribute.KEY] === FLAG_KEY &&
+            point.attributes[TelemetryAttribute.PROVIDER] === PROVIDER_NAME,
         ),
       ).toBeTruthy();
     });
@@ -302,8 +294,8 @@ describe(MetricsHook.name, () => {
           0,
           (point) =>
             point.value === 1 &&
-            point.attributes[KEY_ATTR] === FLAG_KEY &&
-            point.attributes[PROVIDER_NAME_ATTR] === PROVIDER_NAME,
+            point.attributes[TelemetryAttribute.KEY] === FLAG_KEY &&
+            point.attributes[TelemetryAttribute.PROVIDER] === PROVIDER_NAME,
         ),
       ).toBeTruthy();
     });
