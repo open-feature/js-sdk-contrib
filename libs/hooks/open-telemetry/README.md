@@ -109,13 +109,15 @@ All hooks support the following options via `OpenTelemetryHookOptions`:
 
 #### Custom Attributes
 
-Custom attributes can be extracted from [flag metadata](https://openfeature.dev/specification/types#flag-metadata) by supplying an `attributeMapper`:
+Custom attributes can be extracted from hook metadata or evaluation details by supplying an `attributeMapper`:
 
 ```typescript
+import { HookContext, EvaluationDetails, FlagValue } from '@openfeature/core';
 import { EventHook } from '@openfeature/open-telemetry-hooks';
 
-const attributeMapper = (flagMetadata) => ({
-  myCustomAttribute: flagMetadata.someFlagMetadataField,
+const attributeMapper = (hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>) => ({
+  myCustomAttributeFromContext: hookContext.context.targetingKey,
+  myCustomAttributeFromMetadata: evaluationDetails.flagMetadata.someFlagMetadataField,
 });
 
 const eventHook = new EventHook({ attributeMapper });

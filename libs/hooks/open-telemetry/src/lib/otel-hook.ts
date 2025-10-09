@@ -1,24 +1,21 @@
-import type {
-  EvaluationDetails,
-  FlagMetadata,
-  FlagValue,
-  HookContext,
-  Logger,
-  TelemetryAttribute,
-} from '@openfeature/core';
+import type { EvaluationDetails, FlagValue, HookContext, Logger, TelemetryAttribute } from '@openfeature/core';
 import { createEvaluationEvent } from '@openfeature/core';
 import type { Attributes } from '@opentelemetry/api';
 
 type EvaluationEvent = { name: string; attributes: Attributes };
 type TelemetryAttributesNames = [keyof typeof TelemetryAttribute][number] | string;
 
-export type AttributeMapper = (flagMetadata: FlagMetadata) => Attributes;
+export type AttributeMapper = (
+  hookContext: HookContext,
+  evaluationDetails?: EvaluationDetails<FlagValue>,
+) => Attributes;
 
 export type EventMutator = (event: EvaluationEvent) => EvaluationEvent;
 
 export type OpenTelemetryHookOptions = {
   /**
-   * A function that maps OpenFeature flag metadata values to OpenTelemetry attributes.
+   * A function that allows mapping OpenFeature hook context values and
+   * evaluation details to OpenTelemetry attributes.
    * This can be used to add custom attributes to the telemetry event.
    * Note: This function is applied after the excludeAttributes option.
    */
@@ -59,9 +56,9 @@ export abstract class OpenTelemetryHook {
   protected safeEventMutator: EventMutator;
 
   protected constructor(options?: OpenTelemetryHookOptions, logger?: Logger) {
-    this.safeAttributeMapper = (flagMetadata: FlagMetadata) => {
+    this.safeAttributeMapper = (hookContext: HookContext, evaluationDetails?: EvaluationDetails<FlagValue>) => {
       try {
-        return options?.attributeMapper?.(flagMetadata) || {};
+        return options?.attributeMapper?.(hookContext, evaluationDetails) || {};
       } catch (err) {
         logger?.debug(`${this.name}: error in attributeMapper, ${err.message}, ${err.stack}`);
         return {};
@@ -84,7 +81,7 @@ export abstract class OpenTelemetryHook {
     evaluationDetails: EvaluationDetails<FlagValue>,
   ): EvaluationEvent {
     const { name, attributes } = createEvaluationEvent(hookContext, evaluationDetails);
-    const customAttributes = this.safeAttributeMapper(evaluationDetails.flagMetadata);
+    const customAttributes = this.safeAttributeMapper(hookContext, evaluationDetails);
 
     for (const attributeToExclude of this.attributesToExclude) {
       delete attributes[attributeToExclude];

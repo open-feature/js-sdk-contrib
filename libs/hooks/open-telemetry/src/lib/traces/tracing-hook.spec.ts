@@ -15,6 +15,7 @@ import {
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
+import { AttributeMapper } from '../otel-hook';
 
 describe('OpenTelemetry Hooks', () => {
   let tracerProvider: NodeTracerProvider;
@@ -49,7 +50,7 @@ describe('OpenTelemetry Hooks', () => {
       flagKey: 'flag',
       flagValueType: 'boolean',
       defaultValue: true,
-      context: {},
+      context: { targetingKey: 'user_id' },
       logger: console,
       hookData: new MapHookData(),
     };
@@ -132,13 +133,17 @@ describe('OpenTelemetry Hooks', () => {
 
       it('should add custom attribute via attributeMapper', () => {
         const hook: BaseHook = new EventHook({
-          attributeMapper: (meta) => ({ custom: meta.foo }),
+          attributeMapper: (context, evalDetails) => ({
+            key: context.context?.targetingKey,
+            custom: evalDetails?.flagMetadata.foo,
+          }),
         });
         hook.before?.(hookContext);
         hook.after?.(hookContext, details);
         hook.finally?.(hookContext, details);
         const finished = memoryLogExporter.getFinishedLogRecords();
         expect(finished[0]?.attributes?.custom).toBe('bar');
+        expect(finished[0]?.attributes?.key).toBe('user_id');
       });
 
       it('should exclude attribute via excludeAttributes', () => {
@@ -245,7 +250,10 @@ describe('OpenTelemetry Hooks', () => {
 
       it('should add custom attribute via attributeMapper', () => {
         const hook: BaseHook = new SpanEventHook({
-          attributeMapper: (meta) => ({ custom: meta.foo }),
+          attributeMapper: (context, evalDetails) => ({
+            key: context.context?.targetingKey,
+            custom: evalDetails?.flagMetadata.foo,
+          }),
         });
         const span = tracer.startSpan('test-span');
         context.with(trace.setSpan(context.active(), span), () => {
@@ -257,6 +265,7 @@ describe('OpenTelemetry Hooks', () => {
         const finished = memorySpanExporter.getFinishedSpans();
         const attrs = finished[0].events[0].attributes;
         expect(attrs?.custom).toBe('bar');
+        expect(attrs?.key).toBe('user_id');
       });
 
       it('should exclude attribute via excludeAttributes', () => {
@@ -386,8 +395,12 @@ describe('OpenTelemetry Hooks', () => {
 
       it('should add custom attribute via attributeMapper', () => {
         const hook: BaseHook = new SpanHook({
-          attributeMapper: (meta) => ({ custom: meta.foo }),
+          attributeMapper: (context, evalDetails) => ({
+            key: context.context?.targetingKey,
+            custom: evalDetails?.flagMetadata.foo,
+          }),
         });
+
         const span = tracer.startSpan('test-span');
         context.with(trace.setSpan(context.active(), span), () => {
           hook.before?.(hookContext);
@@ -398,6 +411,7 @@ describe('OpenTelemetry Hooks', () => {
         const finished = memorySpanExporter.getFinishedSpans();
         const evalSpan = finished[0];
         expect(evalSpan.attributes?.custom).toBe('bar');
+        expect(evalSpan.attributes?.custom).toBe('user_id');
       });
 
       it('should exclude attribute via excludeAttributes', () => {
