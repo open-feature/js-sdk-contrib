@@ -87,8 +87,10 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements BaseHook {
   private readonly cacheKeySupplier: Options['cacheKeySupplier'];
 
   public constructor(
+    // this is a superset of web and server hook forms; validated by the test suite
     private readonly innerHook: BaseHook<
-      T,
+      FlagValue,
+      Record<string, unknown>,
       Promise<EvaluationContext | void> | EvaluationContext | void,
       Promise<void> | void
     >,

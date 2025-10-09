@@ -9,7 +9,7 @@ describe('DebounceHook', () => {
       jest.resetAllMocks();
     });
 
-    const innerHook: BaseHook<string, void, void> = {
+    const innerHook: BaseHook<string, Record<string, unknown>, void, void> = {
       before: jest.fn(),
       after: jest.fn(),
       error: jest.fn(),
@@ -69,7 +69,7 @@ describe('DebounceHook', () => {
     });
 
     it('stages should be cached independently', () => {
-      const innerHook: BaseHook<boolean, void, void> = {
+      const innerHook: BaseHook<boolean, Record<string, unknown>, void, void> = {
         before: jest.fn(),
         after: jest.fn(),
       };
@@ -100,7 +100,7 @@ describe('DebounceHook', () => {
     });
 
     it('maxCacheItems should limit size', () => {
-      const innerHook: BaseHook<string, void, void> = {
+      const innerHook: BaseHook<string, Record<string, unknown>, void, void> = {
         before: jest.fn(),
       };
 
@@ -118,7 +118,7 @@ describe('DebounceHook', () => {
     });
 
     it('should rerun inner hook only after debounce time', async () => {
-      const innerHook: BaseHook<string, void, void> = {
+      const innerHook: BaseHook<string, Record<string, unknown>, void, void> = {
         before: jest.fn(),
       };
 
@@ -142,7 +142,7 @@ describe('DebounceHook', () => {
     });
 
     it('use custom supplier', () => {
-      const innerHook: BaseHook<number, void, void> = {
+      const innerHook: BaseHook<number, Record<string, unknown>, void, void> = {
         before: jest.fn(),
         after: jest.fn(),
         error: jest.fn(),
@@ -177,7 +177,7 @@ describe('DebounceHook', () => {
         timesCalled: 1, // should be called once since we cached the error
       },
     ])('should cache errors if cacheErrors set', ({ cacheErrors, timesCalled }) => {
-      const innerErrorHook: BaseHook<string[], void, void> = {
+      const innerErrorHook: BaseHook<string[], Record<string, unknown>, void, void> = {
         before: jest.fn(() => {
           // throw an error
           throw new Error('fake!');
