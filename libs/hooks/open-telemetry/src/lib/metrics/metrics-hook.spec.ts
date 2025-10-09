@@ -170,7 +170,7 @@ describe(MetricsHook.name, () => {
         } as EvaluationDetails<number>;
 
         // configure a mapper for our custom properties
-        const attributeMapper: AttributeMapper = (flagMetadata) => {
+        const attributeMapper: AttributeMapper = (_, { flagMetadata }) => {
           return {
             [CUSTOM_ATTR_KEY_1]: flagMetadata[CUSTOM_ATTR_KEY_1],
             [CUSTOM_ATTR_KEY_2]: flagMetadata[CUSTOM_ATTR_KEY_2],
