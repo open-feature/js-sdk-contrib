@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.4.0...open-telemetry-hooks-v1.0.0) (2025-10-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* implement SemConv compatible OTEL hooks ([#1372](https://github.com/open-feature/js-sdk-contrib/issues/1372))
+
+### ✨ New Features
+
+* implement SemConv compatible OTEL hooks ([#1372](https://github.com/open-feature/js-sdk-contrib/issues/1372)) ([3619846](https://github.com/open-feature/js-sdk-contrib/commit/3619846dd48d68b5028cebc22958cdb1f7520d8d))
+
 ## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/open-telemetry-hooks-v0.3.0...open-telemetry-hooks-v0.4.0) (2024-03-25)
 
 

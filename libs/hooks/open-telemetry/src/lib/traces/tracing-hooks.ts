@@ -14,7 +14,7 @@ import type { SpanAttributesTracingHookData } from './tracing-hooks-internal';
 import { HookContextSpanKey } from './tracing-hooks-internal';
 
 const LIBRARY_NAME = '@openfeature/open-telemetry-hooks';
-const LIBRARY_VERSION = '0.4.0'; //x-release-please-version
+const LIBRARY_VERSION = '1.0.0'; //x-release-please-version
 
 /**
  * A hook that logs evaluation events to OpenTelemetry using an EventLogger.
