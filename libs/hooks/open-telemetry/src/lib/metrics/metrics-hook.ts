@@ -82,7 +82,7 @@ export class MetricsHook extends OpenTelemetryHook implements BaseHook {
       [TelemetryAttribute.PROVIDER]: hookContext.providerMetadata.name,
       [TelemetryAttribute.VARIANT]: evaluationDetails.variant ?? evaluationDetails.value?.toString(),
       [TelemetryAttribute.REASON]: evaluationDetails.reason ?? StandardResolutionReasons.UNKNOWN,
-      ...this.safeAttributeMapper(evaluationDetails?.flagMetadata || {}),
+      ...this.safeAttributeMapper(hookContext, evaluationDetails),
     });
   }
 

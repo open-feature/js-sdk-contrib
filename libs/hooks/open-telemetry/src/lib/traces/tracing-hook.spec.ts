@@ -410,7 +410,7 @@ describe('OpenTelemetry Hooks', () => {
         const finished = memorySpanExporter.getFinishedSpans();
         const evalSpan = finished[0];
         expect(evalSpan.attributes?.custom).toBe('bar');
-        expect(evalSpan.attributes?.custom).toBe('user_id');
+        expect(evalSpan.attributes?.key).toBe('user_id');
       });
 
       it('should exclude attribute via excludeAttributes', () => {
