@@ -15,7 +15,6 @@ import {
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
-import { AttributeMapper } from '../otel-hook';
 
 describe('OpenTelemetry Hooks', () => {
   let tracerProvider: NodeTracerProvider;
