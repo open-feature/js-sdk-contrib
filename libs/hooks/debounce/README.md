@@ -32,7 +32,7 @@ OpenFeature.addHooks(debounceHook);
 client.addHooks(debounceHook);
 ```
 
-The hook maintains a simple expiring cache with a fixed max size and keeps a record of recent evaluations based on an optional key-generation function (keySupplier).
+The hook maintains a simple expiring cache with a fixed max size and keeps a record of recent evaluations based on an optional key-generation function (cacheKeySupplier).
 Be default, the key-generation function is purely based on the flag key.
 Particularly in server use-cases, you may want to take the targetingKey or other contextual information into account in your debouncing:
 
