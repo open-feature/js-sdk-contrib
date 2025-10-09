@@ -1,5 +1,7 @@
-import type { EvaluationDetails, Hook, HookContext } from '@openfeature/web-sdk';
+import type { EvaluationDetails, BaseHook, HookContext } from '@openfeature/core';
 import { DebounceHook } from './debounce-hook';
+import type { Hook as WebSdkHook } from '@openfeature/web-sdk';
+import type { Hook as ServerSdkHook } from '@openfeature/server-sdk';
 
 describe('DebounceHook', () => {
   describe('caching', () => {
@@ -7,7 +9,7 @@ describe('DebounceHook', () => {
       jest.resetAllMocks();
     });
 
-    const innerHook: Hook = {
+    const innerHook: BaseHook<string, void, void> = {
       before: jest.fn(),
       after: jest.fn(),
       error: jest.fn(),
@@ -40,10 +42,10 @@ describe('DebounceHook', () => {
         calledTimesTotal: 2, // should not have been incremented, same cache key
       },
     ])('should cache each stage based on supplier', ({ flagKey, calledTimesTotal }) => {
-      hook.before({ flagKey, context } as HookContext, hints);
-      hook.after({ flagKey, context } as HookContext, evaluationDetails, hints);
-      hook.error({ flagKey, context } as HookContext, err, hints);
-      hook.finally({ flagKey, context } as HookContext, evaluationDetails, hints);
+      hook.before({ flagKey, context } as HookContext<string>, hints);
+      hook.after({ flagKey, context } as HookContext<string>, evaluationDetails, hints);
+      hook.error({ flagKey, context } as HookContext<string>, err, hints);
+      hook.finally({ flagKey, context } as HookContext<string>, evaluationDetails, hints);
 
       expect(innerHook.before).toHaveBeenNthCalledWith(calledTimesTotal, expect.objectContaining({ context }), hints);
       expect(innerHook.after).toHaveBeenNthCalledWith(
@@ -67,7 +69,7 @@ describe('DebounceHook', () => {
     });
 
     it('stages should be cached independently', () => {
-      const innerHook: Hook = {
+      const innerHook: BaseHook<boolean, void, void> = {
         before: jest.fn(),
         after: jest.fn(),
       };
@@ -79,8 +81,8 @@ describe('DebounceHook', () => {
 
       const flagKey = 'my-flag';
 
-      hook.before({ flagKey } as HookContext, {});
-      hook.after({ flagKey } as HookContext, {
+      hook.before({ flagKey } as HookContext<boolean>, {});
+      hook.after({ flagKey } as HookContext<boolean>, {
         flagKey,
         flagMetadata: {},
         value: true,
@@ -98,7 +100,7 @@ describe('DebounceHook', () => {
     });
 
     it('maxCacheItems should limit size', () => {
-      const innerHook: Hook = {
+      const innerHook: BaseHook<string, void, void> = {
         before: jest.fn(),
       };
 
@@ -107,57 +109,59 @@ describe('DebounceHook', () => {
         maxCacheItems: 1,
       });
 
-      hook.before({ flagKey: 'flag1' } as HookContext, {});
-      hook.before({ flagKey: 'flag2' } as HookContext, {});
-      hook.before({ flagKey: 'flag1' } as HookContext, {});
+      hook.before({ flagKey: 'flag1' } as HookContext<string>, {});
+      hook.before({ flagKey: 'flag2' } as HookContext<string>, {});
+      hook.before({ flagKey: 'flag1' } as HookContext<string>, {});
 
       // every invocation should have run since we have only maxCacheItems: 1
       expect(innerHook.before).toHaveBeenCalledTimes(3);
     });
 
     it('should rerun inner hook only after debounce time', async () => {
-      const innerHook: Hook = {
+      const innerHook: BaseHook<string, void, void> = {
         before: jest.fn(),
       };
 
       const flagKey = 'some-flag';
 
-      const hook = new DebounceHook<string>(innerHook, {
+      const hook = new DebounceHook(innerHook, {
         debounceTime: 500,
         maxCacheItems: 1,
       });
 
-      hook.before({ flagKey } as HookContext, {});
-      hook.before({ flagKey } as HookContext, {});
-      hook.before({ flagKey } as HookContext, {});
+      hook.before({ flagKey } as HookContext<string>, {});
+      hook.before({ flagKey } as HookContext<string>, {});
+      hook.before({ flagKey } as HookContext<string>, {});
 
       await new Promise((r) => setTimeout(r, 1000));
 
-      hook.before({ flagKey } as HookContext, {});
+      hook.before({ flagKey } as HookContext<string>, {});
 
       // only the first and last should have invoked the inner hook
       expect(innerHook.before).toHaveBeenCalledTimes(2);
     });
 
     it('use custom supplier', () => {
-      const innerHook: Hook = {
+      const innerHook: BaseHook<number, void, void> = {
         before: jest.fn(),
         after: jest.fn(),
         error: jest.fn(),
         finally: jest.fn(),
       };
 
-      const context = {};
+      const context = {
+        targetingKey: 'user123',
+      };
       const hints = {};
 
-      const hook = new DebounceHook<string>(innerHook, {
-        cacheKeySupplier: () => 'a-silly-const-key', // a constant key means all invocations are cached; just to test that the custom supplier is used
+      const hook = new DebounceHook<number>(innerHook, {
+        cacheKeySupplier: (_, context) => context.targetingKey, // we are caching purely based on the targetingKey in the context, so we will only ever cache one entry
         debounceTime: 60_000,
         maxCacheItems: 100,
       });
 
-      hook.before({ flagKey: 'flag1', context } as HookContext, hints);
-      hook.before({ flagKey: 'flag2', context } as HookContext, hints);
+      hook.before({ flagKey: 'flag1', context } as HookContext<number>, hints);
+      hook.before({ flagKey: 'flag2', context } as HookContext<number>, hints);
 
       // since we used a constant key, the second invocation should have been cached even though the flagKey was different
       expect(innerHook.before).toHaveBeenCalledTimes(1);
@@ -173,7 +177,7 @@ describe('DebounceHook', () => {
         timesCalled: 1, // should be called once since we cached the error
       },
     ])('should cache errors if cacheErrors set', ({ cacheErrors, timesCalled }) => {
-      const innerErrorHook: Hook = {
+      const innerErrorHook: BaseHook<string[], void, void> = {
         before: jest.fn(() => {
           // throw an error
           throw new Error('fake!');
@@ -184,16 +188,141 @@ describe('DebounceHook', () => {
       const context = {};
 
       // this hook caches error invocations
-      const hook = new DebounceHook<string>(innerErrorHook, {
+      const hook = new DebounceHook<string[]>(innerErrorHook, {
         maxCacheItems: 100,
         debounceTime: 60_000,
         cacheErrors,
       });
 
-      expect(() => hook.before({ flagKey, context } as HookContext)).toThrow();
-      expect(() => hook.before({ flagKey, context } as HookContext)).toThrow();
+      expect(() => hook.before({ flagKey, context } as HookContext<string[]>)).toThrow();
+      expect(() => hook.before({ flagKey, context } as HookContext<string[]>)).toThrow();
 
       expect(innerErrorHook.before).toHaveBeenCalledTimes(timesCalled);
+    });
+  });
+
+  describe('SDK compatibility', () => {
+    describe('web-sdk hooks', () => {
+      it('should debounce synchronous hooks', () => {
+        const innerWebSdkHook: WebSdkHook = {
+          before: jest.fn(),
+          after: jest.fn(),
+          error: jest.fn(),
+          finally: jest.fn(),
+        };
+
+        const hook = new DebounceHook<string>(innerWebSdkHook, {
+          debounceTime: 60_000,
+          maxCacheItems: 100,
+        });
+
+        const evaluationDetails: EvaluationDetails<string> = {
+          value: 'testValue',
+        } as EvaluationDetails<string>;
+        const err: Error = new Error('fake error!');
+        const context = {};
+        const hints = {};
+        const flagKey = 'flag1';
+
+        for (let i = 0; i < 2; i++) {
+          hook.before({ flagKey, context } as HookContext<string>, hints);
+          hook.after({ flagKey, context } as HookContext<string>, evaluationDetails, hints);
+          hook.error({ flagKey, context } as HookContext<string>, err, hints);
+          hook.finally({ flagKey, context } as HookContext<string>, evaluationDetails, hints);
+        }
+
+        expect(innerWebSdkHook.before).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('server-sdk hooks', () => {
+      const contextKey = 'key';
+      const contextValue = 'value';
+      const evaluationContext = { [contextKey]: contextValue };
+      it('should debounce synchronous hooks', () => {
+        const innerServerSdkHook: ServerSdkHook = {
+          before: jest.fn(() => {
+            return evaluationContext;
+          }),
+          after: jest.fn(),
+          error: jest.fn(),
+          finally: jest.fn(),
+        };
+
+        const hook = new DebounceHook<number>(innerServerSdkHook, {
+          debounceTime: 60_000,
+          maxCacheItems: 100,
+        });
+
+        const evaluationDetails: EvaluationDetails<number> = {
+          value: 1337,
+        } as EvaluationDetails<number>;
+        const err: Error = new Error('fake error!');
+        const context = {};
+        const hints = {};
+        const flagKey = 'flag1';
+
+        for (let i = 0; i < 2; i++) {
+          const returnedContext = hook.before({ flagKey, context } as HookContext<number>, hints);
+          // make sure we return the expected context each time
+          expect(returnedContext).toEqual(expect.objectContaining(evaluationContext));
+          hook.after({ flagKey, context } as HookContext<number>, evaluationDetails, hints);
+          hook.error({ flagKey, context } as HookContext<number>, err, hints);
+          hook.finally({ flagKey, context } as HookContext<number>, evaluationDetails, hints);
+        }
+
+        // all stages should have been called only once
+        expect(innerServerSdkHook.before).toHaveBeenCalledTimes(1);
+        expect(innerServerSdkHook.after).toHaveBeenCalledTimes(1);
+        expect(innerServerSdkHook.error).toHaveBeenCalledTimes(1);
+        expect(innerServerSdkHook.finally).toHaveBeenCalledTimes(1);
+      });
+
+      it('should debounce asynchronous hooks', async () => {
+        const delayMs = 100;
+        const innerServerSdkHook: ServerSdkHook = {
+          before: jest.fn(() => {
+            return new Promise((resolve) => setTimeout(() => resolve(evaluationContext), delayMs));
+          }),
+          after: jest.fn(() => {
+            return new Promise((resolve) => setTimeout(() => resolve(), delayMs));
+          }),
+          error: jest.fn(() => {
+            return new Promise((resolve) => setTimeout(() => resolve(), delayMs));
+          }),
+          finally: jest.fn(() => {
+            return new Promise((resolve) => setTimeout(() => resolve(), delayMs));
+          }),
+        };
+
+        const hook = new DebounceHook<number>(innerServerSdkHook, {
+          debounceTime: 60_000,
+          maxCacheItems: 100,
+        });
+
+        const evaluationDetails: EvaluationDetails<number> = {
+          value: 1337,
+        } as EvaluationDetails<number>;
+        const err: Error = new Error('fake error!');
+        const context = {};
+        const hints = {};
+        const flagKey = 'flag1';
+
+        for (let i = 0; i < 2; i++) {
+          const returnedContext = await hook.before({ flagKey, context } as HookContext<number>, hints);
+          // make sure we return the expected context each time
+          expect(returnedContext).toEqual(expect.objectContaining(evaluationContext));
+          await hook.after({ flagKey, context } as HookContext<number>, evaluationDetails, hints);
+          await hook.error({ flagKey, context } as HookContext<number>, err, hints);
+          await hook.finally({ flagKey, context } as HookContext<number>, evaluationDetails, hints);
+        }
+
+        // each stage should have been called only once
+        expect(innerServerSdkHook.before).toHaveBeenCalledTimes(1);
+        expect(innerServerSdkHook.after).toHaveBeenCalledTimes(1);
+        expect(innerServerSdkHook.error).toHaveBeenCalledTimes(1);
+        expect(innerServerSdkHook.finally).toHaveBeenCalledTimes(1);
+      });
     });
   });
 });

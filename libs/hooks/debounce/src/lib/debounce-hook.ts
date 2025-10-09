@@ -1,19 +1,20 @@
-import type { Logger } from '@openfeature/web-sdk';
+import type { Logger } from '@openfeature/core';
 import {
   ErrorCode,
   OpenFeatureError,
   type EvaluationContext,
   type EvaluationDetails,
   type FlagValue,
-  type Hook,
+  type BaseHook,
   type HookContext,
   type HookHints,
-} from '@openfeature/web-sdk';
+} from '@openfeature/core';
 import { FixedSizeExpiringCache } from './utils/fixed-size-expiring-cache';
 
 const DEFAULT_CACHE_KEY_SUPPLIER = (flagKey: string) => flagKey;
-type StageResult = true | CachedError;
+type StageResult = EvaluationContext | true | CachedError;
 type HookStagesEntry = { before?: StageResult; after?: StageResult; error?: StageResult; finally?: StageResult };
+type Stage = 'before' | 'after' | 'error' | 'finally';
 
 /**
  * An error cached from a previous hook invocation.
@@ -80,13 +81,17 @@ export type Options = {
  * The cacheKeySupplier is used to generate a cache key for the hook, which is used to determine if the hook should be executed or skipped.
  * If no cache key supplier is provided for a stage, that stage will always run.
  */
-export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
+export class DebounceHook<T extends FlagValue = FlagValue> implements BaseHook {
   private readonly cache: FixedSizeExpiringCache<HookStagesEntry>;
   private readonly cacheErrors: boolean;
   private readonly cacheKeySupplier: Options['cacheKeySupplier'];
 
   public constructor(
-    private readonly innerHook: Hook,
+    private readonly innerHook: BaseHook<
+      T,
+      Promise<EvaluationContext | void> | EvaluationContext | void,
+      Promise<void> | void
+    >,
     private readonly options: Options,
   ) {
     this.cacheErrors = options.cacheErrors ?? false;
@@ -97,32 +102,32 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
     });
   }
 
-  before(hookContext: HookContext, hookHints?: HookHints) {
-    this.maybeSkipAndCache(
+  before(hookContext: HookContext<T>, hookHints?: HookHints) {
+    return this.maybeSkipAndCache(
       'before',
       () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
       () => this.innerHook?.before?.(hookContext, hookHints),
     );
   }
 
-  after(hookContext: HookContext, evaluationDetails: EvaluationDetails<T>, hookHints?: HookHints) {
-    this.maybeSkipAndCache(
+  after(hookContext: HookContext<T>, evaluationDetails: EvaluationDetails<T>, hookHints?: HookHints) {
+    return this.maybeSkipAndCache(
       'after',
       () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
       () => this.innerHook?.after?.(hookContext, evaluationDetails, hookHints),
     );
   }
 
-  error(hookContext: HookContext, err: unknown, hookHints?: HookHints) {
-    this.maybeSkipAndCache(
+  error(hookContext: HookContext<T>, err: unknown, hookHints?: HookHints) {
+    return this.maybeSkipAndCache(
       'error',
       () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
       () => this.innerHook?.error?.(hookContext, err, hookHints),
     );
   }
 
-  finally(hookContext: HookContext, evaluationDetails: EvaluationDetails<T>, hookHints?: HookHints) {
-    this.maybeSkipAndCache(
+  finally(hookContext: HookContext<T>, evaluationDetails: EvaluationDetails<T>, hookHints?: HookHints) {
+    return this.maybeSkipAndCache(
       'finally',
       () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
       () => this.innerHook?.finally?.(hookContext, evaluationDetails, hookHints),
@@ -130,9 +135,9 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
   }
 
   private maybeSkipAndCache(
-    stage: 'before' | 'after' | 'error' | 'finally',
+    stage: Stage,
     keyGenCallback: () => string | null | undefined,
-    hookCallback: () => void,
+    hookCallback: () => Promise<EvaluationContext | void> | EvaluationContext | void,
   ) {
     // the cache key is a concatenation of the result of calling keyGenCallback and the stage
     let dynamicKey: string | null | undefined;
@@ -149,12 +154,10 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
 
     // if the keyGenCallback returns nothing, we don't do any caching
     if (!dynamicKey) {
-      hookCallback.call(this.innerHook);
-      return;
+      return hookCallback.call(this.innerHook);
     }
 
-    const cacheKeySuffix = stage;
-    const cacheKey = `${dynamicKey}::${cacheKeySuffix}`;
+    const cacheKey = `${dynamicKey}::cache-key`;
     const got = this.cache.get(cacheKey);
 
     if (got) {
@@ -163,21 +166,54 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements Hook {
       if (cachedStageResult instanceof CachedError) {
         throw cachedStageResult;
       }
-      if (cachedStageResult === true) {
+      if (cachedStageResult) {
         // already ran this stage for this key and is still in the debounce period
+        if (typeof cachedStageResult === 'object') {
+          // we have a cached context to return
+          return cachedStageResult;
+        }
         return;
       }
     }
 
+    // we have to be pretty careful here to support both web and server hooks;
+    // server hooks can be async, web hooks can't, we have to handle both cases.
     try {
-      hookCallback.call(this.innerHook);
-      this.cache.set(cacheKey, { ...got, [stage]: true });
-    } catch (error: unknown) {
-      if (this.cacheErrors) {
-        // cache error
-        this.cache.set(cacheKey, { ...got, [stage]: new CachedError(error) });
+      const maybePromiseOrContext = hookCallback.call(this.innerHook);
+      if (maybePromiseOrContext && typeof maybePromiseOrContext.then === 'function') {
+        // async hook result; cache after promise resolves
+        maybePromiseOrContext
+          .then((maybeContext) => {
+            this.cacheSuccess(cacheKey, stage, got, maybeContext);
+            return maybeContext;
+          })
+          .catch((error) => {
+            this.cacheError(cacheKey, stage, got, error);
+            throw error;
+          });
+      } else {
+        // sync hook result; cache now
+        this.cacheSuccess(cacheKey, stage, got, maybePromiseOrContext as void | EvaluationContext);
       }
+      return maybePromiseOrContext;
+    } catch (error: unknown) {
+      this.cacheError(cacheKey, stage, got, error);
       throw error;
+    }
+  }
+
+  private cacheSuccess(
+    key: string,
+    stage: Stage,
+    cached: HookStagesEntry | undefined,
+    maybeContext: EvaluationContext | void,
+  ): void {
+    this.cache.set(key, { ...cached, [stage]: maybeContext || true });
+  }
+
+  private cacheError(key: string, stage: Stage, cached: HookStagesEntry | undefined, error: unknown): void {
+    if (this.cacheErrors) {
+      this.cache.set(key, { ...cached, [stage]: new CachedError(error) });
     }
   }
 }

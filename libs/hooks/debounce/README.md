@@ -11,19 +11,13 @@ $ npm install @openfeature/debounce-hook
 
 ### Peer dependencies
 
-Confirm that the following peer dependencies are installed:
-
-```
-$ npm install @openfeature/web-sdk
-```
-
-NOTE: if you're using the React or Angular OpenFeature SDKs, you don't need to directly install the web SDK.
+This package only requires the `@openfeature/core` dependency, which is installed automatically no matter which OpenFeature JavaScript SDK you are using.
 
 ## Usage
 
-The hook maintains a simple expiring cache with a fixed max size and keeps a record of recent evaluations based on a user-defined key-generation function (keySupplier).
-Simply wrap your hook with the debounce hook by passing it a constructor arg, and then configure the remaining options.
-In the example below, we wrap a logging hook. This debounces all its stages, so it only logs a maximum of once a minute for each flag key, no matter how many times that flag is evaluated.
+Simply wrap your hook with the debounce hook by passing it as a constructor arg, and then configure the remaining options.
+In the example below, we wrap a logging hook.
+This debounces all its stages, so it only logs a maximum of once a minute for each flag key, no matter how many times that flag is evaluated.
 
 ```ts
 const debounceHook = new DebounceHook<string>(loggingHook, {
@@ -36,6 +30,18 @@ OpenFeature.addHooks(debounceHook);
 
 // or at a specific client
 client.addHooks(debounceHook);
+```
+
+The hook maintains a simple expiring cache with a fixed max size and keeps a record of recent evaluations based on an optional key-generation function (keySupplier).
+Be default, the key-generation function is purely based on the flag key.
+Particularly in server use-cases, you may want to take the targetingKey or other contextual information into account in your debouncing:
+
+```ts
+const debounceHook = new DebounceHook<string>(loggingHook, {
+  cacheKeySupplier: (flagKey, context) => flagKey + context.targetingKey, // cache on a combination of user and flag key
+  debounceTime: 60_000,            
+  maxCacheItems: 1000,              
+});
 ```
 
 ## Development
