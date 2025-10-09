@@ -1,11 +1,12 @@
-import type { BeforeHookContext, Logger } from '@openfeature/server-sdk';
+import type { BeforeHookContext, Logger } from '@openfeature/core';
+import { TelemetryAttribute } from '@openfeature/core';
 import {
   StandardResolutionReasons,
   type EvaluationDetails,
   type FlagValue,
-  type Hook,
+  type BaseHook,
   type HookContext,
-} from '@openfeature/server-sdk';
+} from '@openfeature/core';
 import type { Attributes, Counter, UpDownCounter } from '@opentelemetry/api';
 import { ValueType, metrics } from '@opentelemetry/api';
 import type { EvaluationAttributes, ExceptionAttributes } from '../conventions';
@@ -13,12 +14,8 @@ import {
   ACTIVE_COUNT_NAME,
   ERROR_TOTAL_NAME,
   EXCEPTION_ATTR,
-  KEY_ATTR,
-  PROVIDER_NAME_ATTR,
-  REASON_ATTR,
   REQUESTS_TOTAL_NAME,
   SUCCESS_TOTAL_NAME,
-  VARIANT_ATTR,
 } from '../conventions';
 import type { OpenTelemetryHookOptions } from '../otel-hook';
 import { OpenTelemetryHook } from '../otel-hook';
@@ -39,7 +36,7 @@ const ERROR_DESCRIPTION = 'feature flag evaluation error counter';
  *
  * See {@link https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/feature-flags/}
  */
-export class MetricsHook extends OpenTelemetryHook implements Hook {
+export class MetricsHook extends OpenTelemetryHook implements BaseHook {
   protected name = MetricsHook.name;
   private readonly evaluationActiveUpDownCounter: UpDownCounter<EvaluationAttributes>;
   private readonly evaluationRequestCounter: Counter<EvaluationAttributes>;
@@ -72,8 +69,8 @@ export class MetricsHook extends OpenTelemetryHook implements Hook {
 
   before(hookContext: BeforeHookContext) {
     const attributes: EvaluationAttributes = {
-      [KEY_ATTR]: hookContext.flagKey,
-      [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
+      [TelemetryAttribute.KEY]: hookContext.flagKey,
+      [TelemetryAttribute.PROVIDER]: hookContext.providerMetadata.name,
     };
     this.evaluationActiveUpDownCounter.add(1, attributes);
     this.evaluationRequestCounter.add(1, attributes);
@@ -81,26 +78,26 @@ export class MetricsHook extends OpenTelemetryHook implements Hook {
 
   after(hookContext: Readonly<HookContext<FlagValue>>, evaluationDetails: EvaluationDetails<FlagValue>) {
     this.evaluationSuccessCounter.add(1, {
-      [KEY_ATTR]: hookContext.flagKey,
-      [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
-      [VARIANT_ATTR]: evaluationDetails.variant ?? evaluationDetails.value?.toString(),
-      [REASON_ATTR]: evaluationDetails.reason ?? StandardResolutionReasons.UNKNOWN,
-      ...this.safeAttributeMapper(evaluationDetails?.flagMetadata || {}),
+      [TelemetryAttribute.KEY]: hookContext.flagKey,
+      [TelemetryAttribute.PROVIDER]: hookContext.providerMetadata.name,
+      [TelemetryAttribute.VARIANT]: evaluationDetails.variant ?? evaluationDetails.value?.toString(),
+      [TelemetryAttribute.REASON]: evaluationDetails.reason ?? StandardResolutionReasons.UNKNOWN,
+      ...this.safeAttributeMapper(hookContext, evaluationDetails),
     });
   }
 
   error(hookContext: Readonly<HookContext<FlagValue>>, error: unknown) {
     this.evaluationErrorCounter.add(1, {
-      [KEY_ATTR]: hookContext.flagKey,
-      [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
+      [TelemetryAttribute.KEY]: hookContext.flagKey,
+      [TelemetryAttribute.PROVIDER]: hookContext.providerMetadata.name,
       [EXCEPTION_ATTR]: (error as Error)?.message || 'Unknown error',
     });
   }
 
   finally(hookContext: Readonly<HookContext<FlagValue>>) {
     this.evaluationActiveUpDownCounter.add(-1, {
-      [KEY_ATTR]: hookContext.flagKey,
-      [PROVIDER_NAME_ATTR]: hookContext.providerMetadata.name,
+      [TelemetryAttribute.KEY]: hookContext.flagKey,
+      [TelemetryAttribute.PROVIDER]: hookContext.providerMetadata.name,
     });
   }
 }

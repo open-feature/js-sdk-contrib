@@ -1,1 +1,1 @@
-export * from './tracing-hook';
+export * from './tracing-hooks';
