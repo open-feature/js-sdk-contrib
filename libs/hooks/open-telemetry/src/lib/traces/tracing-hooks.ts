@@ -10,6 +10,8 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import type { OpenTelemetryHookOptions } from '../otel-hook';
 import { OpenTelemetryHook } from '../otel-hook';
+import type { SpanAttributesTracingHookData } from './tracing-hooks-internal';
+import { HookContextSpanKey } from './tracing-hooks-internal';
 
 const LIBRARY_NAME = '@openfeature/open-telemetry-hooks';
 const LIBRARY_VERSION = '0.4.0'; //x-release-please-version
@@ -103,8 +105,6 @@ export class SpanEventHook extends OpenTelemetryHook implements BaseHook {
 }
 
 const tracer = trace.getTracer(LIBRARY_NAME, LIBRARY_VERSION);
-const HookContextSpanKey = Symbol('evaluation_span');
-export type SpanAttributesTracingHookData = { [HookContextSpanKey]: Span };
 
 /**
  * A hook that creates a new span for each flag evaluation and sets the evaluation

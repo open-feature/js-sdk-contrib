@@ -4,7 +4,7 @@ import { NodeTracerProvider, SimpleSpanProcessor, InMemorySpanExporter } from '@
 import { logs } from '@opentelemetry/api-logs';
 import { LoggerProvider, SimpleLogRecordProcessor, InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import type { SpanAttributesTracingHookData } from './tracing-hooks';
+import type { SpanAttributesTracingHookData } from './tracing-hooks-internal';
 import { EventHook } from './tracing-hooks';
 import { SpanEventHook, SpanHook } from './tracing-hooks';
 import type { BaseHook, EvaluationDetails, FlagValue, HookContext } from '@openfeature/core';
