@@ -182,7 +182,7 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements BaseHook {
     // server hooks can be async, web hooks can't, we have to handle both cases.
     try {
       const maybePromiseOrContext = hookCallback.call(this.innerHook);
-      if (maybePromiseOrContext && typeof maybePromiseOrContext.then === 'function') {
+      if (this.isPromise(maybePromiseOrContext)) {
         // async hook result; cache after promise resolves
         maybePromiseOrContext
           .then((maybeContext) => {
@@ -195,13 +195,17 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements BaseHook {
           });
       } else {
         // sync hook result; cache now
-        this.cacheSuccess(cacheKey, stage, got, maybePromiseOrContext as void | EvaluationContext);
+        this.cacheSuccess(cacheKey, stage, got, maybePromiseOrContext);
       }
       return maybePromiseOrContext;
     } catch (error: unknown) {
       this.cacheError(cacheKey, stage, got, error);
       throw error;
     }
+  }
+
+  private isPromise<T>(value: T | Promise<T>): value is Promise<T> {
+    return !!value && typeof (value as Promise<unknown>).then === 'function';
   }
 
   private cacheSuccess(
