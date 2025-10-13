@@ -81,7 +81,15 @@ export type Options = {
  * The cacheKeySupplier is used to generate a cache key for the hook, which is used to determine if the hook should be executed or skipped.
  * If no cache key supplier is provided for a stage, that stage will always run.
  */
-export class DebounceHook<T extends FlagValue = FlagValue> implements BaseHook {
+export class DebounceHook<T extends FlagValue = FlagValue>
+  implements
+    BaseHook<
+      T,
+      Record<string, unknown>,
+      Promise<EvaluationContext | void> | EvaluationContext | void,
+      Promise<void> | void
+    >
+{
   private readonly cache: FixedSizeExpiringCache<HookStagesEntry>;
   private readonly cacheErrors: boolean;
   private readonly cacheKeySupplier: Options['cacheKeySupplier'];
@@ -136,11 +144,11 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements BaseHook {
     );
   }
 
-  private maybeSkipAndCache(
+  private maybeSkipAndCache<T extends Promise<EvaluationContext | void> | EvaluationContext | void>(
     stage: Stage,
     keyGenCallback: () => string | null | undefined,
-    hookCallback: () => Promise<EvaluationContext | void> | EvaluationContext | void,
-  ) {
+    hookCallback: () => T,
+  ): T | void {
     // the cache key is a concatenation of the result of calling keyGenCallback and the stage
     let dynamicKey: string | null | undefined;
 
@@ -172,9 +180,9 @@ export class DebounceHook<T extends FlagValue = FlagValue> implements BaseHook {
         // already ran this stage for this key and is still in the debounce period
         if (typeof cachedStageResult === 'object') {
           // we have a cached context to return
-          return cachedStageResult;
+          return cachedStageResult as T;
         }
-        return;
+        return; // cached run with void return
       }
     }
 

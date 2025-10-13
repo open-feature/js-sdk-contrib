@@ -1,7 +1,9 @@
 import type { EvaluationDetails, BaseHook, HookContext } from '@openfeature/core';
 import { DebounceHook } from './debounce-hook';
 import type { Hook as WebSdkHook } from '@openfeature/web-sdk';
+import { OpenFeature as OpenFeatureWeb } from '@openfeature/web-sdk';
 import type { Hook as ServerSdkHook } from '@openfeature/server-sdk';
+import { OpenFeature as OpenFeaturServer } from '@openfeature/server-sdk';
 
 describe('DebounceHook', () => {
   describe('caching', () => {
@@ -203,6 +205,23 @@ describe('DebounceHook', () => {
 
   describe('SDK compatibility', () => {
     describe('web-sdk hooks', () => {
+      it('should have type compatibility with API, client, evaluation', () => {
+        const webSdkHook = {} as WebSdkHook;
+
+        const hook = new DebounceHook<number>(webSdkHook, {
+          debounceTime: 60_000,
+          maxCacheItems: 100,
+        });
+
+        OpenFeatureWeb.addHooks(hook);
+        const client = OpenFeatureWeb.getClient().addHooks(hook);
+        client.getBooleanValue('flag', false, { hooks: [hook] });
+
+        // these expectations are silly, the real test here is making sure the above compiles
+        expect(OpenFeatureWeb.getHooks().length).toEqual(1);
+        expect(client.getHooks().length).toEqual(1);
+      });
+
       it('should debounce synchronous hooks', () => {
         const innerWebSdkHook: WebSdkHook = {
           before: jest.fn(),
@@ -239,6 +258,23 @@ describe('DebounceHook', () => {
       const contextKey = 'key';
       const contextValue = 'value';
       const evaluationContext = { [contextKey]: contextValue };
+      it('should have type compatibility with API, client, evaluation', () => {
+        const serverHook = {} as ServerSdkHook;
+
+        const hook = new DebounceHook<number>(serverHook, {
+          debounceTime: 60_000,
+          maxCacheItems: 100,
+        });
+
+        OpenFeaturServer.addHooks(hook);
+        const client = OpenFeaturServer.getClient().addHooks(hook);
+        client.getBooleanValue('flag', false, {}, { hooks: [hook] });
+
+        // these expectations are silly, the real test here is making sure the above compiles
+        expect(OpenFeaturServer.getHooks().length).toEqual(1);
+        expect(client.getHooks().length).toEqual(1);
+      });
+
       it('should debounce synchronous hooks', () => {
         const innerServerSdkHook: ServerSdkHook = {
           before: jest.fn(() => {
