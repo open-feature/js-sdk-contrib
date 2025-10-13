@@ -18,7 +18,7 @@ describe('DebounceHook', () => {
       finally: jest.fn(),
     };
 
-    const hook = new DebounceHook<string>(innerHook, {
+    const hook = new DebounceHook(innerHook, {
       debounceTime: 60_000,
       maxCacheItems: 100,
     });
@@ -76,7 +76,7 @@ describe('DebounceHook', () => {
         after: jest.fn(),
       };
 
-      const hook = new DebounceHook<boolean>(innerHook, {
+      const hook = new DebounceHook(innerHook, {
         debounceTime: 60_000,
         maxCacheItems: 100,
       });
@@ -106,7 +106,7 @@ describe('DebounceHook', () => {
         before: jest.fn(),
       };
 
-      const hook = new DebounceHook<string>(innerHook, {
+      const hook = new DebounceHook(innerHook, {
         debounceTime: 60_000,
         maxCacheItems: 1,
       });
@@ -156,7 +156,7 @@ describe('DebounceHook', () => {
       };
       const hints = {};
 
-      const hook = new DebounceHook<number>(innerHook, {
+      const hook = new DebounceHook(innerHook, {
         cacheKeySupplier: (_, context) => context.targetingKey, // we are caching purely based on the targetingKey in the context, so we will only ever cache one entry
         debounceTime: 60_000,
         maxCacheItems: 100,
@@ -190,7 +190,7 @@ describe('DebounceHook', () => {
       const context = {};
 
       // this hook caches error invocations
-      const hook = new DebounceHook<string[]>(innerErrorHook, {
+      const hook = new DebounceHook(innerErrorHook, {
         maxCacheItems: 100,
         debounceTime: 60_000,
         cacheErrors,
@@ -208,7 +208,7 @@ describe('DebounceHook', () => {
       it('should have type compatibility with API, client, evaluation', () => {
         const webSdkHook = {} as WebSdkHook;
 
-        const hook = new DebounceHook<number>(webSdkHook, {
+        const hook = new DebounceHook(webSdkHook, {
           debounceTime: 60_000,
           maxCacheItems: 100,
         });
@@ -230,7 +230,7 @@ describe('DebounceHook', () => {
           finally: jest.fn(),
         };
 
-        const hook = new DebounceHook<string>(innerWebSdkHook, {
+        const hook = new DebounceHook(innerWebSdkHook, {
           debounceTime: 60_000,
           maxCacheItems: 100,
         });
@@ -261,7 +261,7 @@ describe('DebounceHook', () => {
       it('should have type compatibility with API, client, evaluation', () => {
         const serverHook = {} as ServerSdkHook;
 
-        const hook = new DebounceHook<number>(serverHook, {
+        const hook = new DebounceHook(serverHook, {
           debounceTime: 60_000,
           maxCacheItems: 100,
         });
@@ -285,7 +285,7 @@ describe('DebounceHook', () => {
           finally: jest.fn(),
         };
 
-        const hook = new DebounceHook<number>(innerServerSdkHook, {
+        const hook = new DebounceHook(innerServerSdkHook, {
           debounceTime: 60_000,
           maxCacheItems: 100,
         });
@@ -331,9 +331,11 @@ describe('DebounceHook', () => {
           }),
         };
 
-        const hook = new DebounceHook<number>(innerServerSdkHook, {
+        const hook = new DebounceHook(innerServerSdkHook, {
           debounceTime: 60_000,
           maxCacheItems: 100,
+          cacheErrors: false,
+          logger: console,
         });
 
         const evaluationDetails: EvaluationDetails<number> = {

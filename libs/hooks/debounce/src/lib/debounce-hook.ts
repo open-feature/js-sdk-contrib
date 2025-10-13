@@ -81,15 +81,7 @@ export type Options = {
  * The cacheKeySupplier is used to generate a cache key for the hook, which is used to determine if the hook should be executed or skipped.
  * If no cache key supplier is provided for a stage, that stage will always run.
  */
-export class DebounceHook<T extends FlagValue = FlagValue>
-  implements
-    BaseHook<
-      T,
-      Record<string, unknown>,
-      Promise<EvaluationContext | void> | EvaluationContext | void,
-      Promise<void> | void
-    >
-{
+export class DebounceHook implements BaseHook {
   private readonly cache: FixedSizeExpiringCache<HookStagesEntry>;
   private readonly cacheErrors: boolean;
   private readonly cacheKeySupplier: Options['cacheKeySupplier'];
@@ -112,7 +104,7 @@ export class DebounceHook<T extends FlagValue = FlagValue>
     });
   }
 
-  before(hookContext: HookContext<T>, hookHints?: HookHints) {
+  before(hookContext: HookContext, hookHints?: HookHints) {
     return this.maybeSkipAndCache(
       'before',
       () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
@@ -120,7 +112,7 @@ export class DebounceHook<T extends FlagValue = FlagValue>
     );
   }
 
-  after(hookContext: HookContext<T>, evaluationDetails: EvaluationDetails<T>, hookHints?: HookHints) {
+  after(hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>, hookHints?: HookHints) {
     return this.maybeSkipAndCache(
       'after',
       () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
@@ -128,7 +120,7 @@ export class DebounceHook<T extends FlagValue = FlagValue>
     );
   }
 
-  error(hookContext: HookContext<T>, err: unknown, hookHints?: HookHints) {
+  error(hookContext: HookContext, err: unknown, hookHints?: HookHints) {
     return this.maybeSkipAndCache(
       'error',
       () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
@@ -136,7 +128,7 @@ export class DebounceHook<T extends FlagValue = FlagValue>
     );
   }
 
-  finally(hookContext: HookContext<T>, evaluationDetails: EvaluationDetails<T>, hookHints?: HookHints) {
+  finally(hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>, hookHints?: HookHints) {
     return this.maybeSkipAndCache(
       'finally',
       () => this.cacheKeySupplier?.(hookContext.flagKey, hookContext.context),
@@ -150,10 +142,10 @@ export class DebounceHook<T extends FlagValue = FlagValue>
     hookCallback: () => T,
   ): T | void {
     // the cache key is a concatenation of the result of calling keyGenCallback and the stage
-    let dynamicKey: string | null | undefined;
+    let cacheKey: string | null | undefined;
 
     try {
-      dynamicKey = keyGenCallback();
+      cacheKey = keyGenCallback();
     } catch (e) {
       // if the keyGenCallback throws, we log and run the hook stage
       this.options.logger?.error(
@@ -163,11 +155,10 @@ export class DebounceHook<T extends FlagValue = FlagValue>
     }
 
     // if the keyGenCallback returns nothing, we don't do any caching
-    if (!dynamicKey) {
+    if (!cacheKey) {
       return hookCallback.call(this.innerHook);
     }
 
-    const cacheKey = `${dynamicKey}::cache-key`;
     const got = this.cache.get(cacheKey);
 
     if (got) {
@@ -222,6 +213,7 @@ export class DebounceHook<T extends FlagValue = FlagValue>
     cached: HookStagesEntry | undefined,
     maybeContext: EvaluationContext | void,
   ): void {
+    // cache the context if we have one, otherwise just a true to indicate we ran this stage
     this.cache.set(key, { ...cached, [stage]: maybeContext || true });
   }
 

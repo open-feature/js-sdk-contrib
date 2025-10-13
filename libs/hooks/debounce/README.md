@@ -20,7 +20,7 @@ In the example below, we wrap a logging hook.
 This debounces all its stages, so it only logs a maximum of once a minute for each flag key, no matter how many times that flag is evaluated.
 
 ```ts
-const debounceHook = new DebounceHook<string>(loggingHook, {
+const debounceHook = new DebounceHook(loggingHook, {
   debounceTime: 60_000,             // how long to wait before the hook can fire again
   maxCacheItems: 100,               // max amount of items to keep in the cache; if exceeded, the oldest item is dropped
 });
@@ -34,13 +34,16 @@ client.addHooks(debounceHook);
 
 The hook maintains a simple expiring cache with a fixed max size and keeps a record of recent evaluations based on an optional key-generation function (cacheKeySupplier).
 Be default, the key-generation function is purely based on the flag key.
-Particularly in server use-cases, you may want to take the targetingKey or other contextual information into account in your debouncing:
+Particularly in server use-cases, you may want to take the targetingKey or other contextual information into account in your debouncing.
+Below we see an example using this, as well as other advanced options:
 
 ```ts
 const debounceHook = new DebounceHook<string>(loggingHook, {
   cacheKeySupplier: (flagKey, context) => flagKey + context.targetingKey, // cache on a combination of user and flag key
-  debounceTime: 60_000,            
-  maxCacheItems: 1000,              
+  debounceTime: 60_000, // debounce for 60 seconds (per user due to our cacheKeySupplier above)
+  maxCacheItems: 1000,  // cache a maximum of 1000 records
+  cacheErrors: false,   // don't debounce errors; always re-run if the last run threw 
+  logger: console,      // optional logger
 });
 ```
 
