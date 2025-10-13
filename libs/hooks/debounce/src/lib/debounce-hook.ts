@@ -214,7 +214,7 @@ export class DebounceHook implements BaseHook {
     maybeContext: EvaluationContext | void,
   ): void {
     // cache the context if we have one, otherwise just a true to indicate we ran this stage
-    this.cache.set(key, { ...cached, [stage]: maybeContext || true });
+    this.cache.set(key, { ...cached, [stage]: maybeContext ?? true });
   }
 
   private cacheError(key: string, stage: Stage, cached: HookStagesEntry | undefined, error: unknown): void {
