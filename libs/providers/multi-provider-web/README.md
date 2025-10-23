@@ -1,6 +1,6 @@
 # OpenFeature Multi-Provider
 
-> **⚠️ DEPRECATED**: This package is deprecated. The Multi-Provider is now included in `@openfeature/web-sdk`. Please migrate to use the SDK directly.
+> **⚠️ DEPRECATED**: This package is deprecated. The Multi-Provider is now included in `@openfeature/web-sdk`. Please migrate to use the SDK directly. See [Multi-Provider in @openfeature/web-sdk](https://github.com/open-feature/js-sdk/blob/main/packages/web/README.md#multi-provider).
 
 The Multi-Provider allows you to use multiple underlying providers as sources of flag data for the OpenFeature web SDK.
 When a flag is being evaluated, the Multi-Provider will consult each underlying provider it is managing in order to determine
