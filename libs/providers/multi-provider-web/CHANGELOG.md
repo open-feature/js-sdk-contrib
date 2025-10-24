@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/open-feature/js-sdk-contrib/compare/multi-provider-web-v0.0.3...multi-provider-web-v0.0.4) (2025-10-24)
+
+
+### ✨ New Features
+
+* **multi-provider:** Add Track Method Support to Multi-Provider ([#1323](https://github.com/open-feature/js-sdk-contrib/issues/1323)) ([91ba360](https://github.com/open-feature/js-sdk-contrib/commit/91ba360d3603728574b8d8b3b030e1faed2934b9))
+
 ## [0.0.3](https://github.com/open-feature/js-sdk-contrib/compare/multi-provider-web-v0.0.2...multi-provider-web-v0.0.3) (2024-12-24)
 
 
