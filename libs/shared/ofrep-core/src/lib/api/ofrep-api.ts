@@ -191,13 +191,22 @@ export function handleEvaluationError<T>(
 
 export function toResolutionDetails<T extends EvaluationFlagValue>(
   result: EvaluationSuccessResponse,
+  defaultValue: T,
 ): ResolutionDetails<T> {
-  return {
-    value: result.value as T,
-    variant: result.variant,
-    reason: result.reason,
-    flagMetadata: result.metadata && toFlagMetadata(result.metadata),
-  };
+  if (result.value === undefined || result.value === null) {
+    return {
+      value: defaultValue,
+      reason: result.reason || StandardResolutionReasons.DEFAULT,
+      flagMetadata: result.metadata && toFlagMetadata(result.metadata),
+    };
+  } else {
+    return {
+      value: result.value as T,
+      variant: result.variant,
+      reason: result.reason,
+      flagMetadata: result.metadata && toFlagMetadata(result.metadata),
+    };
+  }
 }
 
 export function toFlagMetadata(metadata: object): FlagMetadata {
