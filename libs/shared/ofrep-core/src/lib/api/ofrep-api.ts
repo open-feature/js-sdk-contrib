@@ -1,22 +1,21 @@
 import type { FlagMetadata, ResolutionDetails } from '@openfeature/core';
 import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 import type {
+  EvaluationFailureResponse,
   EvaluationFlagValue,
   EvaluationRequest,
   EvaluationSuccessResponse,
-  OFREPApiBulkEvaluationFailureResult,
   OFREPApiBulkEvaluationResult,
   OFREPApiEvaluationResult,
   OFREPEvaluationErrorHttpStatus,
   OFREPEvaluationSuccessHttpStatus,
 } from '../model';
 import {
-  OFREPEvaluationErrorHttpStatuses,
-  OFREPEvaluationSuccessHttpStatuses,
   isBulkEvaluationFailureResponse,
   isBulkEvaluationSuccessResponse,
   isEvaluationFailureResponse,
-  isEvaluationSuccessResponse,
+  OFREPEvaluationErrorHttpStatuses,
+  OFREPEvaluationSuccessHttpStatuses,
 } from '../model';
 import type { OFREPProviderBaseOptions } from '../provider';
 import { buildHeaders } from '../provider';
@@ -27,6 +26,7 @@ import {
   OFREPApiUnexpectedResponseError,
   OFREPForbiddenError,
 } from './errors';
+import { isDefined } from '../helpers';
 
 export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
 
@@ -44,6 +44,17 @@ function isomorphicFetch(): FetchAPI {
 }
 
 const DEFAULT_TIMEOUT_MS = 10_000;
+
+export const ErrorMessageMap: { [key in ErrorCode]: string } = {
+  [ErrorCode.FLAG_NOT_FOUND]: 'Flag was not found',
+  [ErrorCode.GENERAL]: 'General error',
+  [ErrorCode.INVALID_CONTEXT]: 'Context is invalid or could be parsed',
+  [ErrorCode.PARSE_ERROR]: 'Flag or flag configuration could not be parsed',
+  [ErrorCode.PROVIDER_FATAL]: 'Provider is in a fatal error state',
+  [ErrorCode.PROVIDER_NOT_READY]: 'Provider is not yet ready',
+  [ErrorCode.TARGETING_KEY_MISSING]: 'Targeting key is missing',
+  [ErrorCode.TYPE_MISMATCH]: 'Flag is not of expected type',
+};
 
 export class OFREPApi {
   private static readonly jsonRegex = new RegExp(/application\/[^+]*[+]?(json);?.*/, 'i');
@@ -66,7 +77,9 @@ export class OFREPApi {
     return (OFREPEvaluationSuccessHttpStatuses as readonly number[]).includes(status);
   }
 
-  private async doFetchRequest(req: Request): Promise<{ response: Response; body?: unknown }> {
+  private async doFetchRequest(
+    req: Request,
+  ): Promise<{ response: Response; body?: EvaluationSuccessResponse | EvaluationFailureResponse }> {
     let response: Response;
     try {
       const timeoutMs = this.baseOptions.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -122,7 +135,7 @@ export class OFREPApi {
     });
 
     const { response, body } = await this.doFetchRequest(request);
-    if (response.status === 200 && isEvaluationSuccessResponse(body)) {
+    if (response.status === 200 && body && !isEvaluationFailureResponse(body)) {
       return { httpStatus: response.status, value: body, httpResponse: response };
     } else if (OFREPApi.isOFREFErrorHttpStatus(response.status) && isEvaluationFailureResponse(body)) {
       return { httpStatus: response.status, value: body, httpResponse: response };
@@ -160,47 +173,65 @@ export class OFREPApi {
 }
 
 export function handleEvaluationError<T>(
-  resultOrError: OFREPApiBulkEvaluationFailureResult | Error,
+  resultOrError: EvaluationFailureResponse | Error,
   defaultValue: T,
-  callback?: (resultOrError: OFREPApiBulkEvaluationFailureResult | Error) => void,
+  callback?: (resultOrError: EvaluationFailureResponse | Error) => void,
 ): ResolutionDetails<T> {
   callback?.(resultOrError);
 
-  if ('value' in resultOrError) {
-    const code = resultOrError.value.errorCode || ErrorCode.GENERAL;
-    const message = resultOrError.value.errorCode;
-    const metadata = resultOrError.value.metadata;
+  if ('errorCode' in resultOrError) {
+    const code = resultOrError.errorCode ?? ErrorCode.GENERAL;
+    const message = resultOrError.errorDetails ?? ErrorMessageMap[resultOrError.errorCode] ?? resultOrError.errorCode;
+    const metadata = toFlagMetadata(resultOrError.metadata);
 
-    const resolution: ResolutionDetails<T> = {
+    return {
       value: defaultValue,
       reason: StandardResolutionReasons.ERROR,
       flagMetadata: metadata,
       errorCode: code,
       errorMessage: message,
     };
-
-    return resolution;
   } else {
-    if (resultOrError instanceof Error) {
-      throw resultOrError;
-    } else {
-      throw new Error('OFREP flag evaluation error', { cause: resultOrError });
-    }
+    throw resultOrError;
   }
 }
 
 export function toResolutionDetails<T extends EvaluationFlagValue>(
   result: EvaluationSuccessResponse,
+  defaultValue: T,
 ): ResolutionDetails<T> {
+  if (!isDefined(result.value)) {
+    return {
+      value: defaultValue,
+      variant: result.variant,
+      flagMetadata: result.metadata,
+      reason: result.reason || StandardResolutionReasons.DEFAULT,
+    };
+  }
+
+  if (typeof result.value !== typeof defaultValue) {
+    return {
+      value: defaultValue,
+      reason: StandardResolutionReasons.ERROR,
+      flagMetadata: result.metadata,
+      errorCode: ErrorCode.TYPE_MISMATCH,
+      errorMessage: ErrorMessageMap[ErrorCode.TYPE_MISMATCH],
+    };
+  }
+
   return {
     value: result.value as T,
     variant: result.variant,
     reason: result.reason,
-    flagMetadata: result.metadata && toFlagMetadata(result.metadata),
+    flagMetadata: toFlagMetadata(result.metadata),
   };
 }
 
-export function toFlagMetadata(metadata: object): FlagMetadata {
+export function toFlagMetadata(metadata?: object): FlagMetadata | undefined {
+  if (!metadata) {
+    return undefined;
+  }
+
   // OFREP metadata is defined as any object but OF metadata is defined as Record<string, string | number | boolean>
   const originalEntries = Object.entries(metadata);
   const onlyPrimitiveEntries = originalEntries.filter(([, value]) =>

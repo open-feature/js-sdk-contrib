@@ -1,4 +1,5 @@
 import type { EvaluationFlagValue, OFREPApiEvaluationResult, OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
+import { isEvaluationFailureResponse } from '@openfeature/ofrep-core';
 import {
   OFREPApi,
   OFREPApiTooManyRequestsError,
@@ -6,7 +7,7 @@ import {
   toResolutionDetails,
 } from '@openfeature/ofrep-core';
 import type { EvaluationContext, JsonValue, Provider, ResolutionDetails } from '@openfeature/server-sdk';
-import { ErrorCode, GeneralError, StandardResolutionReasons } from '@openfeature/server-sdk';
+import { GeneralError } from '@openfeature/server-sdk';
 
 export type OFREPProviderOptions = OFREPProviderBaseOptions;
 
@@ -91,19 +92,13 @@ export class OFREPProvider implements Provider {
     defaultValue: T,
   ): ResolutionDetails<T> {
     if (result.httpStatus !== 200) {
+      return handleEvaluationError(result.value, defaultValue);
+    }
+
+    if (isEvaluationFailureResponse(result)) {
       return handleEvaluationError(result, defaultValue);
     }
 
-    if (typeof result.value.value !== typeof defaultValue) {
-      return {
-        value: defaultValue,
-        reason: StandardResolutionReasons.ERROR,
-        flagMetadata: result.value.metadata,
-        errorCode: ErrorCode.TYPE_MISMATCH,
-        errorMessage: 'Flag is not of expected type',
-      };
-    }
-
-    return toResolutionDetails(result.value);
+    return toResolutionDetails(result.value, defaultValue);
   }
 }

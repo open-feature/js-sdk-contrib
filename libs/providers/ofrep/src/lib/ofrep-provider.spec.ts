@@ -6,7 +6,7 @@ import {
   OFREPApiUnexpectedResponseError,
   OFREPForbiddenError,
 } from '@openfeature/ofrep-core';
-import { ErrorCode, GeneralError, TypeMismatchError } from '@openfeature/server-sdk';
+import { ErrorCode, GeneralError } from '@openfeature/server-sdk';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { TEST_FLAG_METADATA } from '../../../../shared/ofrep-core/src/test/test-constants';
 // eslint-disable-next-line @nx/enforce-module-boundaries
@@ -164,6 +164,18 @@ describe('OFREPProvider should', () => {
     });
     const flag = await providerWithAuth.resolveBooleanEvaluation('my-flag', false, { expectedAuthHeader: 'secret' });
     expect(flag.value).toEqual(true);
+  });
+
+  it('should return default value if API does not return a value', async () => {
+    const flag = await provider.resolveNumberEvaluation('flag-without-value', 42, {
+      errors: { disabled: true },
+    });
+    expect(flag).toEqual({
+      value: 42,
+      variant: 'emptyVariant',
+      flagMetadata: TEST_FLAG_METADATA,
+      reason: 'DISABLED',
+    });
   });
 
   it('run successful evaluation of basic boolean flag', async () => {

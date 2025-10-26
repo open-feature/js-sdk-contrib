@@ -1,12 +1,16 @@
 import type { EvaluationRequest, EvaluationResponse } from '@openfeature/ofrep-core';
+import { ErrorMessageMap } from '@openfeature/ofrep-core';
 import {
+  type EvaluationFlagValue,
+  handleEvaluationError,
+  isEvaluationFailureResponse,
   OFREPApi,
   OFREPApiFetchError,
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
   OFREPForbiddenError,
-  isEvaluationFailureResponse,
-  isEvaluationSuccessResponse,
+  toFlagMetadata,
+  toResolutionDetails,
 } from '@openfeature/ofrep-core';
 import type {
   EvaluationContext,
@@ -30,18 +34,6 @@ import type { EvaluateFlagsResponse } from './model/evaluate-flags-response';
 import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import type { FlagCache, MetadataCache } from './model/in-memory-cache';
 import type { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
-import { isResolutionError } from './model/resolution-error';
-
-const ErrorMessageMap: { [key in ErrorCode]: string } = {
-  [ErrorCode.FLAG_NOT_FOUND]: 'Flag was not found',
-  [ErrorCode.GENERAL]: 'General error',
-  [ErrorCode.INVALID_CONTEXT]: 'Context is invalid or could be parsed',
-  [ErrorCode.PARSE_ERROR]: 'Flag or flag configuration could not be parsed',
-  [ErrorCode.PROVIDER_FATAL]: 'Provider is in a fatal error state',
-  [ErrorCode.PROVIDER_NOT_READY]: 'Provider is not yet ready',
-  [ErrorCode.TARGETING_KEY_MISSING]: 'Targeting key is missing',
-  [ErrorCode.TYPE_MISMATCH]: 'Flag is not of expected type',
-};
 
 export class OFREPWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 30000;
@@ -62,7 +54,7 @@ export class OFREPWebProvider implements Provider {
   private _pollingInterval: number;
   private _retryPollingAfter: Date | undefined;
   private _flagCache: FlagCache = {};
-  private _flagSetMetadataCache: MetadataCache = {};
+  private _flagSetMetadataCache?: MetadataCache = {};
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
 
@@ -109,28 +101,28 @@ export class OFREPWebProvider implements Provider {
     defaultValue: boolean,
     context: EvaluationContext,
   ): ResolutionDetails<boolean> {
-    return this._resolve(flagKey, 'boolean', defaultValue);
+    return this._resolve(flagKey, defaultValue);
   }
   resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
     context: EvaluationContext,
   ): ResolutionDetails<string> {
-    return this._resolve(flagKey, 'string', defaultValue);
+    return this._resolve(flagKey, defaultValue);
   }
   resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
     context: EvaluationContext,
   ): ResolutionDetails<number> {
-    return this._resolve(flagKey, 'number', defaultValue);
+    return this._resolve(flagKey, defaultValue);
   }
   resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
     context: EvaluationContext,
   ): ResolutionDetails<T> {
-    return this._resolve(flagKey, 'object', defaultValue);
+    return this._resolve(flagKey, defaultValue);
   }
 
   /**
@@ -204,36 +196,24 @@ export class OFREPWebProvider implements Provider {
       }
 
       const bulkSuccessResp = response.value;
-      const newCache: FlagCache = {};
-
-      if ('flags' in bulkSuccessResp && Array.isArray(bulkSuccessResp.flags)) {
-        bulkSuccessResp.flags.forEach((evalResp: EvaluationResponse) => {
-          if (isEvaluationFailureResponse(evalResp)) {
-            newCache[evalResp.key] = {
-              reason: StandardResolutionReasons.ERROR,
-              flagMetadata: evalResp.metadata,
-              errorCode: evalResp.errorCode,
-              errorDetails: evalResp.errorDetails,
-            };
-          }
-
-          if (isEvaluationSuccessResponse(evalResp) && evalResp.key) {
-            newCache[evalResp.key] = {
-              value: evalResp.value,
-              variant: evalResp.variant,
-              reason: evalResp.reason,
-              flagMetadata: evalResp.metadata,
-            };
-          }
-        });
-        const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
-        this._flagCache = newCache;
-        this._etag = response.httpResponse?.headers.get('etag');
-        this._flagSetMetadataCache = typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {};
-        return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
-      } else {
+      if (!('flags' in bulkSuccessResp) || !Array.isArray(bulkSuccessResp.flags)) {
         throw new Error('No flags in OFREP bulk evaluation response');
       }
+
+      const newCache = bulkSuccessResp.flags.reduce<FlagCache>((currentCache, currentResponse) => {
+        if (currentResponse.key) {
+          currentCache[currentResponse.key] = currentResponse;
+        }
+        return currentCache;
+      }, {});
+
+      const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
+      this._flagCache = newCache;
+      this._etag = response.httpResponse?.headers.get('etag');
+      this._flagSetMetadataCache = toFlagMetadata(
+        typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
+      );
+      return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError && error.retryAfterDate !== null) {
         this._retryPollingAfter = error.retryAfterDate;
@@ -278,7 +258,7 @@ export class OFREPWebProvider implements Provider {
    * @param defaultValue - default value
    * @private
    */
-  private _resolve<T extends FlagValue>(flagKey: string, type: string, defaultValue: T): ResolutionDetails<T> {
+  private _resolve<T extends FlagValue>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
     const resolved = this._flagCache[flagKey];
 
     if (!resolved) {
@@ -291,32 +271,18 @@ export class OFREPWebProvider implements Provider {
       };
     }
 
-    if (isResolutionError(resolved)) {
-      return {
-        ...resolved,
-        value: defaultValue,
-        errorMessage: ErrorMessageMap[resolved.errorCode],
-      };
+    return this.responseToResolutionDetails(resolved, defaultValue);
+  }
+
+  private responseToResolutionDetails<T extends EvaluationFlagValue>(
+    response: EvaluationResponse,
+    defaultValue: T,
+  ): ResolutionDetails<T> {
+    if (isEvaluationFailureResponse(response)) {
+      return handleEvaluationError(response, defaultValue);
     }
 
-    if (typeof resolved.value !== type) {
-      return {
-        value: defaultValue,
-        flagMetadata: resolved.flagMetadata,
-        reason: StandardResolutionReasons.ERROR,
-        errorCode: ErrorCode.TYPE_MISMATCH,
-        errorMessage: ErrorMessageMap[ErrorCode.TYPE_MISMATCH],
-      };
-    }
-
-    return {
-      variant: resolved.variant,
-      value: resolved.value as T,
-      flagMetadata: resolved.flagMetadata,
-      errorCode: resolved.errorCode,
-      errorMessage: resolved.errorMessage,
-      reason: resolved.reason,
-    };
+    return toResolutionDetails(response, defaultValue);
   }
 
   /**

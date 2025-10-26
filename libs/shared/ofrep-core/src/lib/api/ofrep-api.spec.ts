@@ -288,6 +288,16 @@ describe('OFREPApi', () => {
                 },
               },
             },
+            {
+              key: 'flag-without-value',
+              metadata: {
+                booleanKey: true,
+                numberKey: 1,
+                stringKey: 'string',
+              },
+              reason: 'DISABLED',
+              variant: 'emptyVariant',
+            },
           ],
         } satisfies BulkEvaluationSuccessResponse);
       });
@@ -366,6 +376,16 @@ describe('OFREPApi', () => {
                   also: true,
                 },
               },
+            },
+            {
+              key: 'flag-without-value',
+              metadata: {
+                booleanKey: true,
+                numberKey: 1,
+                stringKey: 'string',
+              },
+              reason: 'DISABLED',
+              variant: 'emptyVariant',
             },
           ],
         });
