@@ -52,7 +52,7 @@ export class GrpcFetch implements DataFetch {
     // 1. The request field (deprecated, for older flagd versions)
     // 2. The gRPC metadata header 'flagd-selector' (new standard)
     this._request = { providerId: '', selector: selector ? selector : '' };
-    
+
     // Create metadata with the flagd-selector header
     this._metadata = new Metadata();
     if (selector) {
