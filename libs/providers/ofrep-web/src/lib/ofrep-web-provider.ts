@@ -54,7 +54,7 @@ export class OFREPWebProvider implements Provider {
   private _pollingInterval: number;
   private _retryPollingAfter: Date | undefined;
   private _flagCache: FlagCache = {};
-  private _flagSetMetadataCache?: MetadataCache = {};
+  private _flagSetMetadataCache?: MetadataCache;
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
 
