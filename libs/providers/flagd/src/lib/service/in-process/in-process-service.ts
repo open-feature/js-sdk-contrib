@@ -19,6 +19,7 @@ export class InProcessService implements Service {
 
   constructor(
     private readonly config: Config,
+    setSyncContext: (syncContext: { [key: string]: any }) => void,
     dataFetcher?: DataFetch,
     logger?: Logger,
   ) {
@@ -27,7 +28,7 @@ export class InProcessService implements Service {
       ? dataFetcher
       : config.offlineFlagSourcePath
         ? new FileFetch(config.offlineFlagSourcePath, logger)
-        : new GrpcFetch(config, undefined, logger);
+        : new GrpcFetch(config, setSyncContext, undefined, logger);
   }
 
   connect(
