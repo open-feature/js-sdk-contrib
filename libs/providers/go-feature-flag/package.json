@@ -12,17 +12,9 @@
     "@openfeature/ofrep-provider": "0.2.1",
     "@jest/globals": "29.7.0"
   },
-<<<<<<< HEAD
   "dependencies": {},
   "devDependencies": {
     "@ljharb/eslint-config": "^21.2.0",
     "eslint-plugin-tree-shaking": "^1.12.2"
-=======
-  "dependencies": {
-    "object-hash": "^3.0.0",
-    "lru-cache": "^11.0.0",
-    "axios": "1.12.0",
-    "copy-anything": "^3.0.5"
->>>>>>> 523d2de (fix(security): update dependency axios to v1.12.0 [security] (#1373))
   }
 }
