@@ -13,7 +13,7 @@ export class FlagdProvider implements Provider {
     name: 'flagd',
   };
 
-  readonly hooks: Hook[] = [];
+  readonly hooks?: Hook[];
   readonly runsOn = 'server';
   readonly events = new OpenFeatureEventEmitter();
   private syncContext: { [key: string]: string } | null = null;
@@ -39,7 +39,7 @@ export class FlagdProvider implements Provider {
         this._service = new InProcessService(config, this.setSyncContext, undefined, logger);
 
         if (config?.offlineFlagSourcePath === undefined) {
-          this.hooks.push(new SyncMetadataHook(this.getSyncContext));
+          this.hooks = [new SyncMetadataHook(() => config.contextEnricher(this.getSyncContext()))];
         }
       } else {
         this._service = new GRPCService(config, undefined, logger);
