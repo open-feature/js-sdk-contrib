@@ -1,6 +1,12 @@
 import type { StrictResponse } from 'msw';
 import { http, HttpResponse } from 'msw';
-import type { BulkEvaluationResponse, EvaluationFailureResponse, EvaluationRequest, EvaluationResponse } from '../lib';
+import type {
+  BulkEvaluationResponse,
+  EvaluationFailureResponse,
+  EvaluationRequest,
+  EvaluationResponse,
+  EvaluationSuccessResponse,
+} from '../lib';
 import { TEST_FLAG_METADATA, TEST_FLAG_SET_METADATA } from './test-constants';
 import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 
@@ -117,6 +123,19 @@ export const handlers = [
             metadata: TEST_FLAG_METADATA,
           },
           { status: 400 },
+        );
+      }
+
+      if (errors?.['disabled']) {
+        return HttpResponse.json<EvaluationSuccessResponse>(
+          {
+            key: 'flag-without-value',
+            value: undefined,
+            metadata: TEST_FLAG_METADATA,
+            variant: 'emptyVariant',
+            reason: StandardResolutionReasons.DISABLED,
+          },
+          { status: 200 },
         );
       }
 
@@ -351,6 +370,13 @@ export const handlers = [
                   key: 'object-flag',
                   value: { complex: true, nested: { also: true } },
                   metadata: TEST_FLAG_METADATA,
+                },
+                {
+                  key: 'flag-without-value',
+                  value: undefined,
+                  metadata: TEST_FLAG_METADATA,
+                  variant: 'emptyVariant',
+                  reason: StandardResolutionReasons.DISABLED,
                 },
               ],
         },
