@@ -1,6 +1,7 @@
 import type { Config, FlagdProviderOptions } from './configuration';
 import { getConfig } from './configuration';
 import { DEFAULT_MAX_CACHE_SIZE } from './constants';
+import { EvaluationContext } from "@openfeature/server-sdk";
 
 describe('Configuration', () => {
   const OLD_ENV = process.env;
@@ -20,6 +21,7 @@ describe('Configuration', () => {
       resolverType: 'rpc',
       selector: '',
       deadlineMs: 500,
+      contextEnricher: expect.any(Function),
     });
   });
 
@@ -46,7 +48,7 @@ describe('Configuration', () => {
     process.env['FLAGD_OFFLINE_FLAG_SOURCE_PATH'] = offlineFlagSourcePath;
     process.env['FLAGD_DEFAULT_AUTHORITY'] = defaultAuthority;
 
-    expect(getConfig()).toStrictEqual({
+    expect(getConfig()).toEqual(expect.objectContaining({
       host,
       port,
       tls,
@@ -58,10 +60,21 @@ describe('Configuration', () => {
       offlineFlagSourcePath,
       defaultAuthority,
       deadlineMs: 500,
-    });
+    }));
+  });
+
+  it('should override context enricher', () => {
+    const contextEnricher = (syncContext: {[key: string]: string} | null) => { return { ...syncContext, extraKey: "extraValue" } as EvaluationContext };
+
+    expect(getConfig({ contextEnricher }).contextEnricher({})).toEqual({extraKey: "extraValue"});
+  });
+
+  it('should return identity function', () => {
+    expect(getConfig().contextEnricher({})).toStrictEqual({});
   });
 
   it('should use incoming options over defaults and environment variable', () => {
+    const contextEnricher = (syncContext: {[key: string]: string} | null) => { return { ...syncContext, extraKey: "extraValue" } as EvaluationContext };
     const options: FlagdProviderOptions = {
       host: 'test',
       port: 3000,
@@ -72,6 +85,7 @@ describe('Configuration', () => {
       selector: '',
       defaultAuthority: '',
       deadlineMs: 500,
+      contextEnricher: contextEnricher
     };
 
     process.env['FLAGD_HOST'] = 'override';
