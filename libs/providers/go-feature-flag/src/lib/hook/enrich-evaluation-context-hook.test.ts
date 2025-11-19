@@ -2,6 +2,7 @@ import { ExporterMetadata } from '../model';
 import { mockLogger } from '../testutil/mock-logger';
 import { EnrichEvaluationContextHook } from './enrich-evaluation-context-hook';
 import type { HookContext, EvaluationContext } from '@openfeature/server-sdk';
+import { MapHookData } from '@openfeature/server-sdk';
 
 describe('EnrichEvaluationContextHook', () => {
   let hook: EnrichEvaluationContextHook;
@@ -38,6 +39,7 @@ describe('EnrichEvaluationContextHook', () => {
         clientMetadata: { providerMetadata: { name: 'test' } },
         providerMetadata: { name: 'test' },
         logger: mockLogger,
+        hookData: new MapHookData(),
       };
 
       const result = await hook.before(context);
@@ -59,6 +61,7 @@ describe('EnrichEvaluationContextHook', () => {
         clientMetadata: { providerMetadata: { name: 'test' } },
         providerMetadata: { name: 'test' },
         logger: mockLogger,
+        hookData: new MapHookData(),
       };
 
       const result = await hook.before(context);
@@ -87,6 +90,7 @@ describe('EnrichEvaluationContextHook', () => {
         clientMetadata: { providerMetadata: { name: 'test' } },
         providerMetadata: { name: 'test' },
         logger: mockLogger,
+        hookData: new MapHookData(),
       };
 
       const result = await hook.before(context);
@@ -111,6 +115,7 @@ describe('EnrichEvaluationContextHook', () => {
         clientMetadata: { providerMetadata: { name: 'test' } },
         providerMetadata: { name: 'test' },
         logger: mockLogger,
+        hookData: new MapHookData(),
       };
 
       const result = await hook.before(context);

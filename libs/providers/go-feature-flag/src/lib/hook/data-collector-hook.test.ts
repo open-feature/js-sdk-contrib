@@ -2,6 +2,7 @@ import { DataCollectorHook } from './data-collector-hook';
 import type { IEvaluator } from '../evaluator/evaluator';
 import type { EventPublisher } from '../service/event-publisher';
 import type { HookContext, EvaluationDetails } from '@openfeature/server-sdk';
+import { MapHookData } from '@openfeature/server-sdk';
 import { EvaluatorNotFoundException, EventPublisherNotFoundException } from '../exception';
 import { mockLogger } from '../testutil/mock-logger';
 
@@ -52,6 +53,7 @@ describe('DataCollectorHook', () => {
         clientMetadata: { providerMetadata: { name: 'test' } },
         providerMetadata: { name: 'test' },
         logger: mockLogger,
+        hookData: new MapHookData(),
       };
 
       const details: EvaluationDetails<boolean> = {
@@ -79,6 +81,7 @@ describe('DataCollectorHook', () => {
         clientMetadata: { providerMetadata: { name: 'test' } },
         providerMetadata: { name: 'test' },
         logger: mockLogger,
+        hookData: new MapHookData(),
       };
 
       const details: EvaluationDetails<boolean> = {
@@ -115,6 +118,7 @@ describe('DataCollectorHook', () => {
         clientMetadata: { providerMetadata: { name: 'test' } },
         providerMetadata: { name: 'test' },
         logger: mockLogger,
+        hookData: new MapHookData(),
       };
 
       const details: EvaluationDetails<boolean> = {
@@ -152,6 +156,7 @@ describe('DataCollectorHook', () => {
         clientMetadata: { providerMetadata: { name: 'test' } },
         providerMetadata: { name: 'test' },
         logger: mockLogger,
+        hookData: new MapHookData(),
       };
 
       const error = new Error('Test error');
@@ -173,6 +178,7 @@ describe('DataCollectorHook', () => {
         clientMetadata: { providerMetadata: { name: 'test' } },
         providerMetadata: { name: 'test' },
         logger: mockLogger,
+        hookData: new MapHookData(),
       };
 
       const error = new Error('Test error');
