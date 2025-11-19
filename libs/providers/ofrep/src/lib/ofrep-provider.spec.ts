@@ -60,6 +60,14 @@ describe('OFREPProvider should', () => {
     );
   });
 
+  it.each([true, false])('returns default if value is null', async (defaultValue) => {
+    await expect(provider.resolveBooleanEvaluation('my-null-value-flag', defaultValue, {})).resolves.toStrictEqual({
+      value: defaultValue,
+      reason: 'DEFAULT',
+      flagMetadata: expect.objectContaining(TEST_FLAG_METADATA),
+    });
+  });
+
   it('throw OFREPApiUnauthorizedError on HTTP 401', async () => {
     await expect(provider.resolveBooleanEvaluation('my-flag', false, { expectedAuthHeader: 'secret' })).rejects.toThrow(
       OFREPApiUnauthorizedError,
