@@ -16,7 +16,7 @@ export class FlagdProvider implements Provider {
   readonly hooks: Hook[] = [];
   readonly runsOn = 'server';
   readonly events = new OpenFeatureEventEmitter();
-  private syncContext: { [key: string]: any } | null = null;
+  private syncContext: { [key: string]: string } | null = null;
 
   private readonly _service: Service;
 
@@ -49,11 +49,11 @@ export class FlagdProvider implements Provider {
     }
   }
 
-  setSyncContext(context: {[key: string]: any}) {
+  setSyncContext(context: {[key: string]: string}) {
     this.syncContext = context;
   }
 
-  getSyncContext(): {[key: string]: any} | null {
+  getSyncContext(): {[key: string]: string} | null {
     return this.syncContext;
   }
 

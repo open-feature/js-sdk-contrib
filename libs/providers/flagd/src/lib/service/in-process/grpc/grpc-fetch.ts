@@ -15,7 +15,7 @@ export class GrpcFetch implements DataFetch {
   private readonly _syncClient: FlagSyncServiceClient;
   private readonly _request: SyncFlagsRequest;
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
-  private readonly _setSyncContext: (syncContext: { [key: string]: any }) => void;
+  private readonly _setSyncContext: (syncContext: { [key: string]: string }) => void;
   private _logger: Logger | undefined;
   /**
    * Initialized will be set to true once the initial connection is successful
@@ -30,7 +30,7 @@ export class GrpcFetch implements DataFetch {
    */
   private _isConnected = false;
 
-  constructor(config: Config, setSyncContext: (syncContext: {[key: string]: any }) => void, syncServiceClient?: FlagSyncServiceClient, logger?: Logger) {
+  constructor(config: Config, setSyncContext: (syncContext: {[key: string]: string }) => void, syncServiceClient?: FlagSyncServiceClient, logger?: Logger) {
     const { host, port, tls, socketPath, selector, defaultAuthority } = config;
     let clientOptions: ClientOptions | undefined;
     if (defaultAuthority) {
@@ -87,7 +87,7 @@ export class GrpcFetch implements DataFetch {
 
         try {
           if (data.syncContext) {
-            this._setSyncContext(data.syncContext);
+            this._setSyncContext(data.syncContext as { [key: string]: string });
           }
           const changes = dataCallback(data.flagConfiguration);
           if (this._initialized && changes.length > 0) {

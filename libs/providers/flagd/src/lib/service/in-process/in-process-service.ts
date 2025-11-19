@@ -19,7 +19,7 @@ export class InProcessService implements Service {
 
   constructor(
     private readonly config: Config,
-    setSyncContext: (syncContext: { [key: string]: any }) => void,
+    setSyncContext: (syncContext: { [key: string]: string }) => void,
     dataFetcher?: DataFetch,
     logger?: Logger,
   ) {
