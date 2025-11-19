@@ -1,8 +1,8 @@
 import { OFREPWebProvider } from './ofrep-web-provider';
 import TestLogger from '../../test/test-logger';
+import { ClientProviderEvents, ClientProviderStatus, OpenFeature } from '@openfeature/web-sdk';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
-import { ClientProviderEvents, ClientProviderStatus, OpenFeature } from '@openfeature/web-sdk';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { TEST_FLAG_METADATA, TEST_FLAG_SET_METADATA } from '../../../../shared/ofrep-core/src/test/test-constants';
 
@@ -159,6 +159,24 @@ describe('OFREPWebProvider', () => {
     expect(flag.flagMetadata).toEqual(TEST_FLAG_SET_METADATA);
   });
 
+  it('should return default value if API does not return a value', async () => {
+    const flagKey = 'flag-without-value';
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    await OpenFeature.setContext(defaultContext);
+    await OpenFeature.setProviderAndWait(providerName, provider);
+    const client = OpenFeature.getClient(providerName);
+
+    const flag = client.getNumberDetails(flagKey, 42);
+    expect(flag).toEqual({
+      flagKey,
+      value: 42,
+      variant: 'emptyVariant',
+      flagMetadata: TEST_FLAG_METADATA,
+      reason: 'DISABLED',
+    });
+  });
+
   it('should return EvaluationDetails if the flag exists', async () => {
     const flagKey = 'bool-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
@@ -190,7 +208,7 @@ describe('OFREPWebProvider', () => {
       flagKey,
       value: false,
       errorCode: 'PARSE_ERROR',
-      errorMessage: 'Flag or flag configuration could not be parsed',
+      errorMessage: 'custom error details',
       reason: 'ERROR',
       flagMetadata: {},
     });
