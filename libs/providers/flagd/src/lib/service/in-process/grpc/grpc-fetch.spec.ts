@@ -84,7 +84,7 @@ describe('grpc fetch', () => {
 
   it('should handle SyncContext from SyncFlagsResponse', (done) => {
     const initFlagConfig = '{"flags":{}}';
-    const syncContext = {"test": "example"};
+    const syncContext = { test: 'example' };
 
     const fetch = new GrpcFetch(cfg, setSyncContext, serviceMock);
     fetch

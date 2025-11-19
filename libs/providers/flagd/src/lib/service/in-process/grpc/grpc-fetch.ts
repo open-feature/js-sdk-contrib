@@ -30,7 +30,12 @@ export class GrpcFetch implements DataFetch {
    */
   private _isConnected = false;
 
-  constructor(config: Config, setSyncContext: (syncContext: {[key: string]: string }) => void, syncServiceClient?: FlagSyncServiceClient, logger?: Logger) {
+  constructor(
+    config: Config,
+    setSyncContext: (syncContext: { [key: string]: string }) => void,
+    syncServiceClient?: FlagSyncServiceClient,
+    logger?: Logger,
+  ) {
     const { host, port, tls, socketPath, selector, defaultAuthority } = config;
     let clientOptions: ClientOptions | undefined;
     if (defaultAuthority) {

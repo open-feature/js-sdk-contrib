@@ -5,8 +5,8 @@ import { getConfig } from './configuration';
 import { GRPCService } from './service/grpc/grpc-service';
 import type { Service } from './service/service';
 import { InProcessService } from './service/in-process/in-process-service';
-import { Hook } from "@openfeature/web-sdk";
-import { SyncMetadataHook } from "./SyncMetadataHook";
+import type { Hook } from '@openfeature/web-sdk';
+import { SyncMetadataHook } from './SyncMetadataHook';
 
 export class FlagdProvider implements Provider {
   metadata = {
@@ -35,7 +35,7 @@ export class FlagdProvider implements Provider {
     const config = getConfig(options);
 
     if (service === undefined) {
-      if (config.resolverType === "in-process") {
+      if (config.resolverType === 'in-process') {
         this._service = new InProcessService(config, this.setSyncContext, undefined, logger);
 
         if (config?.offlineFlagSourcePath === undefined) {
@@ -49,11 +49,11 @@ export class FlagdProvider implements Provider {
     }
   }
 
-  setSyncContext(context: {[key: string]: string}) {
+  setSyncContext(context: { [key: string]: string }) {
     this.syncContext = context;
   }
 
-  getSyncContext(): {[key: string]: string} | null {
+  getSyncContext(): { [key: string]: string } | null {
     return this.syncContext;
   }
 

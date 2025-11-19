@@ -31,7 +31,11 @@ describe('In-process-service', () => {
     it('should include scope as flag metadata', async () => {
       // given
       const selector = 'devFlags';
-      const service = new InProcessService({ deadlineMs: 500, host: '', port: 0, tls: false, selector }, jest.fn(), dataFetcher);
+      const service = new InProcessService(
+        { deadlineMs: 500, host: '', port: 0, tls: false, selector },
+        jest.fn(),
+        dataFetcher,
+      );
 
       // when
       await service.connect(jest.fn, jest.fn, jest.fn);
@@ -44,7 +48,11 @@ describe('In-process-service', () => {
     it('should not override existing scope in flag metadata', async () => {
       // given
       const selector = 'devFlags';
-      const service = new InProcessService({ deadlineMs: 500, host: '', port: 0, tls: false, selector }, jest.fn(), dataFetcher);
+      const service = new InProcessService(
+        { deadlineMs: 500, host: '', port: 0, tls: false, selector },
+        jest.fn(),
+        dataFetcher,
+      );
 
       // when
       await service.connect(jest.fn, jest.fn, jest.fn);

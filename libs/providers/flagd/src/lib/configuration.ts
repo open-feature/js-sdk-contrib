@@ -1,5 +1,5 @@
 import { DEFAULT_MAX_CACHE_SIZE } from './constants';
-import { EvaluationContext } from "@openfeature/core";
+import type { EvaluationContext } from '@openfeature/core';
 
 export type CacheOption = 'lru' | 'disabled';
 export type ResolverType = 'rpc' | 'in-process';
@@ -85,7 +85,6 @@ export interface Config {
 }
 
 interface FlagdConfig extends Config {
-
   /**
    * Function providing an EvaluationContext to mix into every evaluation.
    * The syncContext from the SyncFlagsResponse
@@ -95,8 +94,7 @@ interface FlagdConfig extends Config {
    * This function runs every time the provider (re)connects, and its result is cached and used in every evaluation.
    * By default, the entire sync response (converted to a Structure) is used.
    */
-  contextEnricher: (syncContext: {[key: string]: string} | null) => EvaluationContext
-
+  contextEnricher: (syncContext: { [key: string]: string } | null) => EvaluationContext;
 }
 
 export type FlagdProviderOptions = Partial<FlagdConfig>;
@@ -108,7 +106,7 @@ const DEFAULT_CONFIG: Omit<FlagdConfig, 'port' | 'resolverType'> = {
   selector: '',
   cache: 'lru',
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
-  contextEnricher: (syncContext: {[key: string]: string} | null) => syncContext as EvaluationContext
+  contextEnricher: (syncContext: { [key: string]: string } | null) => syncContext as EvaluationContext,
 };
 
 const DEFAULT_RPC_CONFIG: FlagdConfig = { ...DEFAULT_CONFIG, resolverType: 'rpc', port: 8013 };
