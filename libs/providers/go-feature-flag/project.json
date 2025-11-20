@@ -16,6 +16,14 @@
         }
       ]
     },
+    "copy-wasm": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["node scripts/copy-latest-wasm.js"],
+        "cwd": "libs/providers/go-feature-flag",
+        "parallel": false
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"]
@@ -25,11 +33,21 @@
       "outputs": ["{workspaceRoot}/coverage/libs/providers/go-feature-flag"],
       "options": {
         "jestConfig": "libs/providers/go-feature-flag/jest.config.ts"
-      }
+      },
+      "dependsOn": [
+        {
+          "target": "copy-wasm"
+        }
+      ]
     },
     "package": {
       "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
+      "dependsOn": [
+        {
+          "target": "copy-wasm"
+        }
+      ],
       "options": {
         "project": "libs/providers/go-feature-flag/package.json",
         "outputPath": "dist/libs/providers/go-feature-flag",
