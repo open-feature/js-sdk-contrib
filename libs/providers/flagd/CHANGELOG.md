@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.3...flagd-provider-v0.13.4) (2025-11-20)
+
+
+### ✨ New Features
+
+* support no default variant  ([#1354](https://github.com/open-feature/js-sdk-contrib/issues/1354)) ([f2efa55](https://github.com/open-feature/js-sdk-contrib/commit/f2efa559410751dfab80f1e749a86dc04703189c))
+
 ## [0.13.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.2...flagd-provider-v0.13.3) (2025-02-07)
 
 
