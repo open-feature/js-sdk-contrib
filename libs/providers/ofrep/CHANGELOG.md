@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-provider-v0.2.1...ofrep-provider-v0.2.2) (2025-11-20)
+
+
+### ✨ New Features
+
+* implement OFREP code default ([#1396](https://github.com/open-feature/js-sdk-contrib/issues/1396)) ([4dba624](https://github.com/open-feature/js-sdk-contrib/commit/4dba6249a93be2bff5aa13baaf7c3b78d52ef715))
+
 ## [0.2.1](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-provider-v0.2.0...ofrep-provider-v0.2.1) (2025-02-13)
 
 
