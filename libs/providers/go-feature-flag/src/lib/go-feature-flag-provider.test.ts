@@ -642,7 +642,7 @@ describe('GoFeatureFlagProvider', () => {
         value: 1,
         reason: 'ERROR',
         errorCode: ErrorCode.FLAG_NOT_FOUND,
-        errorMessage: ErrorCode.FLAG_NOT_FOUND,
+        errorMessage: 'Flag was not found',
         flagKey: 'not_found_key',
         flagMetadata: {},
       };
@@ -679,7 +679,7 @@ describe('GoFeatureFlagProvider', () => {
         value: 1,
         reason: 'ERROR',
         errorCode: ErrorCode.TYPE_MISMATCH,
-        errorMessage: ErrorCode.TYPE_MISMATCH,
+        errorMessage: 'Flag is not of expected type',
         flagKey: 'type_mismatch_key',
         flagMetadata: {},
       };
