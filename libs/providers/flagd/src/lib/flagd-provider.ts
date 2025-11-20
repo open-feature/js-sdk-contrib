@@ -5,7 +5,7 @@ import { getConfig } from './configuration';
 import { GRPCService } from './service/grpc/grpc-service';
 import type { Service } from './service/service';
 import { InProcessService } from './service/in-process/in-process-service';
-import type { Hook } from '@openfeature/web-sdk';
+import type { Hook } from '@openfeature/server-sdk';
 import { SyncMetadataHook } from './SyncMetadataHook';
 
 export class FlagdProvider implements Provider {
@@ -36,7 +36,7 @@ export class FlagdProvider implements Provider {
 
     if (service === undefined) {
       if (config.resolverType === 'in-process') {
-        this._service = new InProcessService(config, this.setSyncContext, undefined, logger);
+        this._service = new InProcessService(config, this.setSyncContext.bind(this), undefined, logger);
 
         if (config?.offlineFlagSourcePath === undefined) {
           this.hooks = [new SyncMetadataHook(() => config.contextEnricher(this.getSyncContext()))];

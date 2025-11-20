@@ -1,6 +1,4 @@
-import type { Hook } from '@openfeature/web-sdk';
-import type { EvaluationContext } from '@openfeature/server-sdk';
-import type { BeforeHookContext, HookHints } from '@openfeature/core';
+import type { Hook, EvaluationContext, BeforeHookContext, HookHints } from '@openfeature/server-sdk';
 
 export class SyncMetadataHook implements Hook {
   enrichedContext: () => EvaluationContext;
@@ -9,7 +7,7 @@ export class SyncMetadataHook implements Hook {
     this.enrichedContext = enrichedContext;
   }
 
-  public before(): EvaluationContext {
-    return this.enrichedContext.apply(this);
+  public before(hookContext: BeforeHookContext, hookHints?: HookHints): EvaluationContext {
+    return this.enrichedContext();
   }
 }
