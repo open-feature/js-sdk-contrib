@@ -66,8 +66,8 @@ describe('Configuration', () => {
   });
 
   it('should override context enricher', () => {
-    const contextEnricher = (syncContext: { [key: string]: string } | null) => {
-      return { ...syncContext, extraKey: 'extraValue' } as EvaluationContext;
+    const contextEnricher = (syncContext: EvaluationContext | null): EvaluationContext => {
+      return { ...syncContext, extraKey: 'extraValue' };
     };
 
     expect(getConfig({ contextEnricher }).contextEnricher({})).toEqual({ extraKey: 'extraValue' });
@@ -78,8 +78,8 @@ describe('Configuration', () => {
   });
 
   it('should use incoming options over defaults and environment variable', () => {
-    const contextEnricher = (syncContext: { [key: string]: string } | null) => {
-      return { ...syncContext, extraKey: 'extraValue' } as EvaluationContext;
+    const contextEnricher = (syncContext: EvaluationContext | null): EvaluationContext => {
+      return { ...syncContext, extraKey: 'extraValue' };
     };
     const options: FlagdProviderOptions = {
       host: 'test',

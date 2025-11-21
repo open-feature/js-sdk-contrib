@@ -1,6 +1,6 @@
 import type { ClientReadableStream, ServiceError, ClientOptions } from '@grpc/grpc-js';
 import { credentials } from '@grpc/grpc-js';
-import type { Logger } from '@openfeature/server-sdk';
+import type { EvaluationContext, Logger } from '@openfeature/server-sdk';
 import { GeneralError } from '@openfeature/server-sdk';
 import type { SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { FlagSyncServiceClient } from '../../../../proto/ts/flagd/sync/v1/sync';
@@ -15,7 +15,7 @@ export class GrpcFetch implements DataFetch {
   private readonly _syncClient: FlagSyncServiceClient;
   private readonly _request: SyncFlagsRequest;
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
-  private readonly _setSyncContext: (syncContext: { [key: string]: string }) => void;
+  private readonly _setSyncContext: (syncContext: EvaluationContext) => void;
   private _logger: Logger | undefined;
   /**
    * Initialized will be set to true once the initial connection is successful
@@ -32,7 +32,7 @@ export class GrpcFetch implements DataFetch {
 
   constructor(
     config: Config,
-    setSyncContext: (syncContext: { [key: string]: string }) => void,
+    setSyncContext: (syncContext: EvaluationContext) => void,
     syncServiceClient?: FlagSyncServiceClient,
     logger?: Logger,
   ) {
@@ -92,7 +92,7 @@ export class GrpcFetch implements DataFetch {
 
         try {
           if (data.syncContext) {
-            this._setSyncContext(data.syncContext as { [key: string]: string });
+            this._setSyncContext(data.syncContext);
           }
           const changes = dataCallback(data.flagConfiguration);
           if (this._initialized && changes.length > 0) {

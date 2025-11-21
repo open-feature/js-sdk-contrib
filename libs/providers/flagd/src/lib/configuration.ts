@@ -94,7 +94,7 @@ interface FlagdConfig extends Config {
    * This function runs every time the provider (re)connects, and its result is cached and used in every evaluation.
    * By default, the entire sync response (as a JSON Object) is used.
    */
-  contextEnricher: (syncContext: { [key: string]: string } | null) => EvaluationContext;
+  contextEnricher: (syncContext: EvaluationContext | null) => EvaluationContext;
 }
 
 export type FlagdProviderOptions = Partial<FlagdConfig>;
@@ -106,7 +106,7 @@ const DEFAULT_CONFIG: Omit<FlagdConfig, 'port' | 'resolverType'> = {
   selector: '',
   cache: 'lru',
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
-  contextEnricher: (syncContext: { [key: string]: string } | null) => syncContext ?? {},
+  contextEnricher: (syncContext: EvaluationContext | null) => syncContext ?? {},
 };
 
 const DEFAULT_RPC_CONFIG: FlagdConfig = { ...DEFAULT_CONFIG, resolverType: 'rpc', port: 8013 };
