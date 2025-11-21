@@ -1,6 +1,6 @@
 import type { ClientReadableStream, ServiceError, ClientOptions } from '@grpc/grpc-js';
 import { credentials } from '@grpc/grpc-js';
-import type { Logger } from '@openfeature/server-sdk';
+import type { EvaluationContext, Logger } from '@openfeature/server-sdk';
 import { GeneralError } from '@openfeature/server-sdk';
 import type { SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { FlagSyncServiceClient } from '../../../../proto/ts/flagd/sync/v1/sync';
@@ -15,6 +15,7 @@ export class GrpcFetch implements DataFetch {
   private readonly _syncClient: FlagSyncServiceClient;
   private readonly _request: SyncFlagsRequest;
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
+  private readonly _setSyncContext: (syncContext: EvaluationContext) => void;
   private _logger: Logger | undefined;
   /**
    * Initialized will be set to true once the initial connection is successful
@@ -29,7 +30,12 @@ export class GrpcFetch implements DataFetch {
    */
   private _isConnected = false;
 
-  constructor(config: Config, syncServiceClient?: FlagSyncServiceClient, logger?: Logger) {
+  constructor(
+    config: Config,
+    setSyncContext: (syncContext: EvaluationContext) => void,
+    syncServiceClient?: FlagSyncServiceClient,
+    logger?: Logger,
+  ) {
     const { host, port, tls, socketPath, selector, defaultAuthority } = config;
     let clientOptions: ClientOptions | undefined;
     if (defaultAuthority) {
@@ -46,6 +52,7 @@ export class GrpcFetch implements DataFetch {
           clientOptions,
         );
 
+    this._setSyncContext = setSyncContext;
     this._logger = logger;
     this._request = { providerId: '', selector: selector ? selector : '' };
   }
@@ -84,6 +91,9 @@ export class GrpcFetch implements DataFetch {
         this._logger?.debug(`Received sync payload`);
 
         try {
+          if (data.syncContext) {
+            this._setSyncContext(data.syncContext);
+          }
           const changes = dataCallback(data.flagConfiguration);
           if (this._initialized && changes.length > 0) {
             changedCallback(changes);

@@ -5,14 +5,18 @@ import { getConfig } from './configuration';
 import { GRPCService } from './service/grpc/grpc-service';
 import type { Service } from './service/service';
 import { InProcessService } from './service/in-process/in-process-service';
+import type { Hook } from '@openfeature/server-sdk';
+import { SyncMetadataHook } from './SyncMetadataHook';
 
 export class FlagdProvider implements Provider {
   metadata = {
     name: 'flagd',
   };
 
+  readonly hooks?: Hook[];
   readonly runsOn = 'server';
   readonly events = new OpenFeatureEventEmitter();
+  private syncContext: EvaluationContext | null = null;
 
   private readonly _service: Service;
 
@@ -30,11 +34,27 @@ export class FlagdProvider implements Provider {
   ) {
     const config = getConfig(options);
 
-    this._service = service
-      ? service
-      : config.resolverType === 'in-process'
-        ? new InProcessService(config, undefined, logger)
-        : new GRPCService(config, undefined, logger);
+    if (service === undefined) {
+      if (config.resolverType === 'in-process') {
+        this._service = new InProcessService(config, this.setSyncContext.bind(this), undefined, logger);
+
+        if (config?.offlineFlagSourcePath === undefined) {
+          this.hooks = [new SyncMetadataHook(() => config.contextEnricher(this.getSyncContext()))];
+        }
+      } else {
+        this._service = new GRPCService(config, undefined, logger);
+      }
+    } else {
+      this._service = service;
+    }
+  }
+
+  setSyncContext(context: EvaluationContext) {
+    this.syncContext = context;
+  }
+
+  getSyncContext(): EvaluationContext | null {
+    return this.syncContext;
   }
 
   async initialize(): Promise<void> {
