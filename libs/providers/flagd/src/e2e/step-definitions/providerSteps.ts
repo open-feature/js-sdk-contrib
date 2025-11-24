@@ -69,13 +69,14 @@ export const providerSteps: Steps =
     });
 
     function mapProviderState(state: string): ProviderStatus {
-      const key = state.toUpperCase().replace('-', '_') as keyof typeof ProviderStatus;
+      const mappedState = state.toUpperCase().replace('-', '_');
+      const status = Object.values(ProviderStatus).find((s) => s === mappedState);
 
-      if (!(key in ProviderStatus)) {
-        throw new Error('Unknown provider status');
+      if (!status) {
+        throw new Error(`Unknown provider status: ${state}`);
       }
 
-      return ProviderStatus[key];
+      return status;
     }
 
     then(/^the client should be in (.*) state/, (providerState: string) => {
