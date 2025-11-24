@@ -30,6 +30,7 @@ describe('Configuration', () => {
     const port = 8080;
     const tls = true;
     const socketPath = '/tmp/flagd.socks';
+    const certPath = '/etc/cert/ca.crt';
     const maxCacheSize = 333;
     const cache = 'disabled';
     const resolverType = 'in-process';
@@ -41,6 +42,7 @@ describe('Configuration', () => {
     process.env['FLAGD_PORT'] = `${port}`;
     process.env['FLAGD_TLS'] = `${tls}`;
     process.env['FLAGD_SOCKET_PATH'] = socketPath;
+    process.env['FLAGD_SERVER_CERT_PATH'] = certPath;
     process.env['FLAGD_CACHE'] = cache;
     process.env['FLAGD_MAX_CACHE_SIZE'] = `${maxCacheSize}`;
     process.env['FLAGD_SOURCE_SELECTOR'] = `${selector}`;
@@ -54,6 +56,7 @@ describe('Configuration', () => {
         port,
         tls,
         socketPath,
+        certPath,
         maxCacheSize,
         cache,
         resolverType,
@@ -99,6 +102,7 @@ describe('Configuration', () => {
       host: 'test',
       port: 3000,
       tls: true,
+      certPath: '/custom/cert.pem',
       maxCacheSize: 1000,
       cache: 'lru',
       resolverType: 'rpc',
@@ -112,6 +116,7 @@ describe('Configuration', () => {
     process.env['FLAGD_PORT'] = '8080';
     process.env['FLAGD_SYNC_PORT'] = '9090';
     process.env['FLAGD_TLS'] = 'false';
+    process.env['FLAGD_SERVER_CERT_PATH'] = '/env/cert.pem';
     process.env['FLAGD_DEFAULT_AUTHORITY'] = 'test-authority-override';
 
     expect(getConfig(options)).toStrictEqual(options);

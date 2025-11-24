@@ -1,4 +1,6 @@
+import { credentials } from '@grpc/grpc-js';
 import type { ClientReadableStream } from '@grpc/grpc-js';
+import { readFileSync, existsSync } from 'node:fs';
 
 export const closeStreamIfDefined = (stream: ClientReadableStream<unknown> | undefined) => {
   /**
@@ -13,4 +15,19 @@ export const closeStreamIfDefined = (stream: ClientReadableStream<unknown> | und
     stream.cancel();
     stream.destroy();
   }
+};
+
+/**
+ * Creates gRPC channel credentials based on TLS and certificate path configuration.
+ * @returns Channel credentials for gRPC connection
+ */
+export const createChannelCredentials = (tls: boolean, certPath?: string) => {
+  if (!tls) {
+    return credentials.createInsecure();
+  }
+  if (certPath && existsSync(certPath)) {
+    const rootCerts = readFileSync(certPath);
+    return credentials.createSsl(rootCerts);
+  }
+  return credentials.createSsl();
 };
