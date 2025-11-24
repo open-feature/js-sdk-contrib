@@ -18,6 +18,7 @@ const disconnectCallback = jest.fn();
 const removeAllListeners = jest.fn();
 const cancel = jest.fn();
 const destroy = jest.fn();
+const setSyncContext = jest.fn();
 
 let onDataCallback: (data: SyncFlagsResponse) => void = () => ({});
 let onErrorCallback: (err: Error) => void = () => ({});
@@ -59,11 +60,12 @@ describe('grpc fetch', () => {
 
   it('should handle data sync and emit callbacks', (done) => {
     const flagConfiguration = '{"flags":{}}';
-    const fetch = new GrpcFetch(cfg, serviceMock);
+    const fetch = new GrpcFetch(cfg, setSyncContext, serviceMock);
     fetch
       .connect(dataCallback, reconnectCallback, jest.fn(), disconnectCallback)
       .then(() => {
         try {
+          expect(setSyncContext).toHaveBeenCalledTimes(0);
           expect(dataCallback).toHaveBeenCalledTimes(1);
           expect(dataCallback).toHaveBeenCalledWith(flagConfiguration);
           expect(changedCallback).toHaveBeenCalledTimes(0);
@@ -80,6 +82,32 @@ describe('grpc fetch', () => {
     onDataCallback({ flagConfiguration });
   });
 
+  it('should handle SyncContext from SyncFlagsResponse', (done) => {
+    const initFlagConfig = '{"flags":{}}';
+    const syncContext = { test: 'example' };
+
+    const fetch = new GrpcFetch(cfg, setSyncContext, serviceMock);
+    fetch
+      .connect(dataCallback, reconnectCallback, changedCallback, disconnectCallback)
+      .then(() => {
+        try {
+          // Callback assertions
+          expect(setSyncContext).toHaveBeenCalledTimes(1);
+          expect(setSyncContext).toHaveBeenCalledWith(syncContext);
+
+          done();
+        } catch (err) {
+          done(err);
+        }
+      })
+      .catch((err) => {
+        done(err);
+      });
+
+    // First connection
+    onDataCallback({ flagConfiguration: initFlagConfig, syncContext: syncContext });
+  });
+
   it('should handle data sync reconnection', (done) => {
     const initFlagConfig = '{"flags":{}}';
     const updatedFlagConfig =
@@ -87,7 +115,7 @@ describe('grpc fetch', () => {
     const reconnectFlagConfig =
       '{"flags":{"test":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"}}}';
 
-    const fetch = new GrpcFetch(cfg, serviceMock);
+    const fetch = new GrpcFetch(cfg, jest.fn(), serviceMock);
     fetch
       .connect(dataCallback, reconnectCallback, changedCallback, disconnectCallback)
       .then(() => {
@@ -128,7 +156,7 @@ describe('grpc fetch', () => {
   });
 
   it('should handle error and watch channel for reconnect', (done) => {
-    const fetch = new GrpcFetch(cfg, serviceMock);
+    const fetch = new GrpcFetch(cfg, jest.fn(), serviceMock);
     fetch.connect(jest.fn(), jest.fn(), jest.fn(), disconnectCallback).catch((err) => {
       try {
         expect(err).toBeInstanceOf(Error);

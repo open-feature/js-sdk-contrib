@@ -1,6 +1,7 @@
 import type { Config, FlagdProviderOptions } from './configuration';
 import { getConfig } from './configuration';
 import { DEFAULT_MAX_CACHE_SIZE } from './constants';
+import type { EvaluationContext } from '@openfeature/server-sdk';
 
 describe('Configuration', () => {
   const OLD_ENV = process.env;
@@ -20,6 +21,7 @@ describe('Configuration', () => {
       resolverType: 'rpc',
       selector: '',
       deadlineMs: 500,
+      contextEnricher: expect.any(Function),
     });
   });
 
@@ -46,19 +48,33 @@ describe('Configuration', () => {
     process.env['FLAGD_OFFLINE_FLAG_SOURCE_PATH'] = offlineFlagSourcePath;
     process.env['FLAGD_DEFAULT_AUTHORITY'] = defaultAuthority;
 
-    expect(getConfig()).toStrictEqual({
-      host,
-      port,
-      tls,
-      socketPath,
-      maxCacheSize,
-      cache,
-      resolverType,
-      selector,
-      offlineFlagSourcePath,
-      defaultAuthority,
-      deadlineMs: 500,
-    });
+    expect(getConfig()).toEqual(
+      expect.objectContaining({
+        host,
+        port,
+        tls,
+        socketPath,
+        maxCacheSize,
+        cache,
+        resolverType,
+        selector,
+        offlineFlagSourcePath,
+        defaultAuthority,
+        deadlineMs: 500,
+      }),
+    );
+  });
+
+  it('should override context enricher', () => {
+    const contextEnricher = (syncContext: EvaluationContext | null): EvaluationContext => {
+      return { ...syncContext, extraKey: 'extraValue' };
+    };
+
+    expect(getConfig({ contextEnricher }).contextEnricher({})).toEqual({ extraKey: 'extraValue' });
+  });
+
+  it('should return identity function', () => {
+    expect(getConfig().contextEnricher({})).toStrictEqual({});
   });
 
   it('should use flagd sync port over flagd port environment option', () => {
@@ -76,6 +92,9 @@ describe('Configuration', () => {
   });
 
   it('should use incoming options over defaults and environment variable', () => {
+    const contextEnricher = (syncContext: EvaluationContext | null): EvaluationContext => {
+      return { ...syncContext, extraKey: 'extraValue' };
+    };
     const options: FlagdProviderOptions = {
       host: 'test',
       port: 3000,
@@ -86,6 +105,7 @@ describe('Configuration', () => {
       selector: '',
       defaultAuthority: '',
       deadlineMs: 500,
+      contextEnricher: contextEnricher,
     };
 
     process.env['FLAGD_HOST'] = 'override';

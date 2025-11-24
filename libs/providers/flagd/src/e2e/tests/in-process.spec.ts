@@ -22,7 +22,7 @@ describe('in-process', () => {
       // remove filters as we add support for features
       // see: https://github.com/open-feature/js-sdk-contrib/issues/1096 and child issues
       tagFilter:
-        '@in-process and not @targetURI and not @forbidden and not @customCert and not @events and not @sync and not @grace and not @metadata and not @unixsocket and not @sync-payload and not @contextEnrichment',
+        '@in-process and not @targetURI and not @forbidden and not @customCert and not @events and not @sync and not @grace and not @metadata and not @unixsocket',
       scenarioNameTemplate: (vars) => {
         return `${vars.scenarioTitle} (${vars.scenarioTags.join(',')} ${vars.featureTags.join(',')})`;
       },
