@@ -86,7 +86,8 @@
       "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "versioning": "default"
+      "versioning": "default",
+      "release-as": "2.0.0"
     },
     "libs/providers/flipt": {
       "release-type": "node",
