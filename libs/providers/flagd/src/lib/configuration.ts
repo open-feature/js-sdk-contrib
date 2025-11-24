@@ -116,6 +116,7 @@ const DEFAULT_IN_PROCESS_CONFIG: FlagdConfig = { ...DEFAULT_CONFIG, resolverType
 enum ENV_VAR {
   FLAGD_HOST = 'FLAGD_HOST',
   FLAGD_PORT = 'FLAGD_PORT',
+  FLAGD_SYNC_PORT = 'FLAGD_SYNC_PORT',
   FLAGD_DEADLINE_MS = 'FLAGD_DEADLINE_MS',
   FLAGD_TLS = 'FLAGD_TLS',
   FLAGD_SOCKET_PATH = 'FLAGD_SOCKET_PATH',
@@ -151,6 +152,9 @@ const getEnvVarConfig = (): Partial<Config> => {
     }),
     ...(Number(process.env[ENV_VAR.FLAGD_PORT]) && {
       port: Number(process.env[ENV_VAR.FLAGD_PORT]),
+    }),
+    ...(Number(process.env[ENV_VAR.FLAGD_SYNC_PORT]) && {
+      port: Number(process.env[ENV_VAR.FLAGD_SYNC_PORT]),
     }),
     ...(Number(process.env[ENV_VAR.FLAGD_DEADLINE_MS]) && {
       deadlineMs: Number(process.env[ENV_VAR.FLAGD_DEADLINE_MS]),

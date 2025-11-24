@@ -71,6 +71,21 @@ export const providerSteps: Steps =
       state.providerType = providerType;
     });
 
+    function mapProviderState(state: string): ProviderStatus {
+      const mappedState = state.toUpperCase().replace('-', '_');
+      const status = Object.values(ProviderStatus).find((s) => s === mappedState);
+
+      if (!status) {
+        throw new Error(`Unknown provider status: ${state}`);
+      }
+
+      return status;
+    }
+
+    then(/^the client should be in (.*) state/, (providerState: string) => {
+      expect(state.client?.providerStatus).toBe(mapProviderState(providerState));
+    });
+
     when(/^the connection is lost for (\d+)s$/, async (time) => {
       console.log('stopping flagd');
       await fetch('http://' + container.getLaunchpadUrl() + '/restart?seconds=' + time);
@@ -78,27 +93,5 @@ export const providerSteps: Steps =
 
     when('the flag was modified', async () => {
       await fetch('http://' + container.getLaunchpadUrl() + '/change');
-    });
-
-    function mapProviderState(state: string): ProviderStatus {
-      switch (state) {
-        case 'fatal':
-          return ProviderStatus.FATAL;
-        case 'error':
-          return ProviderStatus.ERROR;
-        case 'ready':
-          return ProviderStatus.READY;
-        case 'stale':
-          return ProviderStatus.STALE;
-        case 'not-ready':
-          return ProviderStatus.NOT_READY;
-
-        default:
-          throw new Error('Unknown provider status');
-      }
-    }
-
-    and(/^the client should be in (.*) state/, (providerState: string) => {
-      expect(state.client?.providerStatus).toBe(mapProviderState(providerState));
     });
   };

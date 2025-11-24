@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v1.2.0...ofrep-core-v2.0.0) (2025-11-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* release 2.0.0 ([#1409](https://github.com/open-feature/js-sdk-contrib/issues/1409))
+
+### chore
+
+* release 2.0.0 ([#1409](https://github.com/open-feature/js-sdk-contrib/issues/1409)) ([0546d3f](https://github.com/open-feature/js-sdk-contrib/commit/0546d3f9c5d0ccf337635fd41a56d26cadad6929))
+
 ## [1.2.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v1.1.0...ofrep-core-v1.2.0) (2025-11-19)
 
 

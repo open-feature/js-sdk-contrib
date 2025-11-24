@@ -77,6 +77,20 @@ describe('Configuration', () => {
     expect(getConfig().contextEnricher({})).toStrictEqual({});
   });
 
+  it('should use flagd sync port over flagd port environment option', () => {
+    const port = 8080;
+    const syncPort = 9090;
+
+    process.env['FLAGD_PORT'] = `${port}`;
+    process.env['FLAGD_SYNC_PORT'] = `${syncPort}`;
+
+    expect(getConfig()).toStrictEqual(
+      expect.objectContaining({
+        port: syncPort,
+      }),
+    );
+  });
+
   it('should use incoming options over defaults and environment variable', () => {
     const contextEnricher = (syncContext: EvaluationContext | null): EvaluationContext => {
       return { ...syncContext, extraKey: 'extraValue' };
@@ -96,6 +110,7 @@ describe('Configuration', () => {
 
     process.env['FLAGD_HOST'] = 'override';
     process.env['FLAGD_PORT'] = '8080';
+    process.env['FLAGD_SYNC_PORT'] = '9090';
     process.env['FLAGD_TLS'] = 'false';
     process.env['FLAGD_DEFAULT_AUTHORITY'] = 'test-authority-override';
 
@@ -104,6 +119,11 @@ describe('Configuration', () => {
 
   it('should ignore an valid port set as an environment variable', () => {
     process.env['FLAGD_PORT'] = 'invalid number';
+    expect(getConfig()).toStrictEqual(expect.objectContaining({ port: 8013 }));
+  });
+
+  it('should ignore an invalid sync port set as an environment variable', () => {
+    process.env['FLAGD_SYNC_PORT'] = 'invalid number';
     expect(getConfig()).toStrictEqual(expect.objectContaining({ port: 8013 }));
   });
 
