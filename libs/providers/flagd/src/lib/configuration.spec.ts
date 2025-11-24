@@ -102,7 +102,7 @@ describe('Configuration', () => {
     expect(getConfig()).toStrictEqual(expect.objectContaining({ port: 8013 }));
   });
 
-  it('should ignore an valid sync port set as an environment variable', () => {
+  it('should ignore an invalid sync port set as an environment variable', () => {
     process.env['FLAGD_SYNC_PORT'] = 'invalid number';
     expect(getConfig()).toStrictEqual(expect.objectContaining({ port: 8013 }));
   });
