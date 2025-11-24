@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.3.4...ofrep-web-provider-v0.3.5) (2025-11-24)
+
+
+### 🐛 Bug Fixes
+
+* use ofrep-core ^2.0.0 for ofrep providers ([#1411](https://github.com/open-feature/js-sdk-contrib/issues/1411)) ([c105aa3](https://github.com/open-feature/js-sdk-contrib/commit/c105aa3eb3b59b490c0fe7445f31e6e5e2a2f6ee))
+
 ## [0.3.4](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.3.3...ofrep-web-provider-v0.3.4) (2025-11-19)
 
 
