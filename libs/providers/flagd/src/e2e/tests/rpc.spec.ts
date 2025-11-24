@@ -23,7 +23,7 @@ describe('rpc', () => {
       tagFilter:
         // remove filters as we add support for features
         // see: https://github.com/open-feature/js-sdk-contrib/issues/1096 and child issues
-        '@rpc and not @targetURI and not @customCert and not @forbidden and not @events and not @stream and not @grace and not @metadata and not @contextEnrichment and not @caching',
+        '@rpc and not @targetURI and not @customCert and not @forbidden and not @events and not @stream and not @grace and not @metadata and not @caching and not @unixsocket',
       scenarioNameTemplate: (vars) => {
         return `${vars.scenarioTitle} (${vars.scenarioTags.join(',')} ${vars.featureTags.join(',')})`;
       },
