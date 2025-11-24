@@ -1,5 +1,5 @@
 import type { ClientOptions, ClientReadableStream, ClientUnaryCall, ServiceError } from '@grpc/grpc-js';
-import { credentials, status } from '@grpc/grpc-js';
+import { status } from '@grpc/grpc-js';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 import type { EvaluationContext, FlagValue, JsonValue, Logger, ResolutionDetails } from '@openfeature/server-sdk';
 import {
@@ -11,7 +11,6 @@ import {
 } from '@openfeature/server-sdk';
 import { LRUCache } from 'lru-cache';
 import { promisify } from 'node:util';
-import { readFileSync, existsSync } from 'node:fs';
 
 import type {
   EventStreamResponse,
