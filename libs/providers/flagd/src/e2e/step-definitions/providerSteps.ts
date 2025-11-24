@@ -3,6 +3,7 @@ import { FlagdContainer } from '../tests/flagdContainer';
 import type { State, Steps } from './state';
 import { FlagdProvider } from '../../lib/flagd-provider';
 import type { FlagdProviderOptions } from '../../lib/configuration';
+import { ProviderStatus } from '@openfeature/server-sdk';
 
 export const providerSteps: Steps =
   (state: State) =>
@@ -65,6 +66,20 @@ export const providerSteps: Steps =
 
       state.client = OpenFeature.getClient(providerType);
       state.providerType = providerType;
+    });
+
+    function mapProviderState(state: string): ProviderStatus {
+      const key = state.toUpperCase().replace('-', '_') as keyof typeof ProviderStatus;
+
+      if (!(key in ProviderStatus)) {
+        throw new Error('Unknown provider status');
+      }
+
+      return ProviderStatus[key];
+    }
+
+    then(/^the client should be in (.*) state/, (providerState: string) => {
+      expect(state.client?.providerStatus).toBe(mapProviderState(providerState));
     });
 
     when(/^the connection is lost for (\d+)s$/, async (time) => {
