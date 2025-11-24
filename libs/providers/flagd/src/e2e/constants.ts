@@ -12,6 +12,7 @@ export const EVENTS_FEATURE = getGherkinTestPath('events.feature');
 export const METADATA_FEATURE = getGherkinTestPath('metadata.feature');
 export const RPC_CACHING_FEATURE = getGherkinTestPath('rpc-caching.feature');
 export const SELECTOR_FEATURE = getGherkinTestPath('selector.feature');
+export const SYNC_PAYLOAD_FEATURE = getGherkinTestPath('sync-payload.feature');
 export const TARGETING_FEATURE = getGherkinTestPath('targeting.feature');
 export const GHERKIN_EVALUATION_FEATURE = getGherkinTestPath(
   'evaluation.feature',

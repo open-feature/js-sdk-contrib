@@ -19,6 +19,8 @@ export function mapValueToType(value: string, type: string): any {
       return value.toLowerCase() as ResolverType;
     case 'CacheType':
       return value as CacheOption;
+    case 'StringList':
+      return value.split(',').map((item) => item.trim());
     case 'Object':
       if (value == 'null') {
         return undefined;

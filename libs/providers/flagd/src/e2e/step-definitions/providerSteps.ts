@@ -1,3 +1,4 @@
+import { ProviderStatus } from '@openfeature/server-sdk';
 import { OpenFeature } from '@openfeature/server-sdk';
 import { FlagdContainer } from '../tests/flagdContainer';
 import type { State, Steps } from './state';
@@ -6,7 +7,7 @@ import type { FlagdProviderOptions } from '../../lib/configuration';
 
 export const providerSteps: Steps =
   (state: State) =>
-  ({ given, when, then }) => {
+  ({ given, when, then, and }) => {
     const container: FlagdContainer = FlagdContainer.build();
     beforeAll(async () => {
       console.log('Setting flagd provider...');
@@ -33,26 +34,29 @@ export const providerSteps: Steps =
       const flagdOptions: FlagdProviderOptions = {
         resolverType: state.resolverType,
         deadlineMs: 2000,
+        ...state.config,
+        ...state.options,
       };
+
       let type = 'default';
       switch (providerType) {
-        default:
-          flagdOptions['port'] = container.getPort(state.resolverType);
-          if (state?.options?.['selector']) {
-            flagdOptions['selector'] = state?.options?.['selector'] as string;
-          }
-          break;
         case 'unavailable':
           flagdOptions['port'] = 9999;
           break;
         case 'ssl':
           // TODO: modify this to support ssl
           flagdOptions['port'] = container.getPort(state.resolverType);
-          if (state?.config?.selector) {
-            flagdOptions['selector'] = state.config.selector;
-          }
           type = 'ssl';
           break;
+        case 'stable':
+          flagdOptions['port'] = container.getPort(state.resolverType);
+          break;
+        case 'syncpayload':
+          flagdOptions['port'] = container.getPort(state.resolverType);
+          type = 'sync-payload';
+          break;
+        default:
+          throw new Error('unknown provider type: ' + providerType);
       }
 
       await fetch('http://' + container.getLaunchpadUrl() + '/start?config=' + type);
@@ -74,5 +78,27 @@ export const providerSteps: Steps =
 
     when('the flag was modified', async () => {
       await fetch('http://' + container.getLaunchpadUrl() + '/change');
+    });
+
+    function mapProviderState(state: string): ProviderStatus {
+      switch (state) {
+        case 'fatal':
+          return ProviderStatus.FATAL;
+        case 'error':
+          return ProviderStatus.ERROR;
+        case 'ready':
+          return ProviderStatus.READY;
+        case 'stale':
+          return ProviderStatus.STALE;
+        case 'not-ready':
+          return ProviderStatus.NOT_READY;
+
+        default:
+          throw new Error('Unknown provider status');
+      }
+    }
+
+    and(/^the client should be in (.*) state/, (providerState: string) => {
+      expect(state.client?.providerStatus).toBe(mapProviderState(providerState));
     });
   };
