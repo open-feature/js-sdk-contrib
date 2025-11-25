@@ -14,7 +14,8 @@ describe('config', () => {
   autoBindSteps(
     loadFeatures(CONFIG_FEATURE, {
       scenarioNameTemplate: (vars) => {
-        return `${vars.scenarioTitle} (${vars.scenarioTags.join(',')} ${vars.featureTags.join(',')})`;
+        const tags = [...vars.scenarioTags, ...vars.featureTags];
+        return `${vars.scenarioTitle}${tags.length > 0 ? ` (${tags.join(', ')})` : ''}`;
       },
     }),
     [configSteps(state)],
