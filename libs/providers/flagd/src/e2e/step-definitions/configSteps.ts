@@ -3,8 +3,6 @@ import type { State, Steps } from './state';
 import { CacheOption, getConfig, ResolverType } from '../../lib/configuration';
 import { mapValueToType } from './utils';
 
-const originalEnv = { ...process.env };
-
 export const configSteps: Steps = (state: State) => {
   function mapName(name: string): string {
     switch (name) {
@@ -16,11 +14,16 @@ export const configSteps: Steps = (state: State) => {
   }
 
   return ({ given, when, then }: StepsDefinitionCallbackOptions) => {
+    const originalEnv = process.env;
     beforeEach(() => {
       state.options = {};
       state.config = undefined;
       state.events = [];
       process.env = { ...originalEnv };
+    });
+
+    afterEach(() => {
+      process.env = originalEnv;
     });
     given(/^an option "(.*)" of type "(.*)" with value "(.*)"$/, (name: string, type: string, value: string) => {
       state.options[mapName(name)] = mapValueToType(value, type);
