@@ -14,17 +14,15 @@ export const configSteps: Steps = (state: State) => {
   }
 
   return ({ given, when, then }: StepsDefinitionCallbackOptions) => {
-    const originalEnv = process.env;
     beforeEach(() => {
       state.options = {};
       state.config = undefined;
       state.events = [];
-      process.env = { ...originalEnv };
+      const originalEnv = { ...process.env };
+      Object.keys(process.env).forEach((key) => delete process.env[key]);
+      Object.assign(process.env, originalEnv);
     });
 
-    afterEach(() => {
-      process.env = originalEnv;
-    });
     given(/^an option "(.*)" of type "(.*)" with value "(.*)"$/, (name: string, type: string, value: string) => {
       state.options[mapName(name)] = mapValueToType(value, type);
     });

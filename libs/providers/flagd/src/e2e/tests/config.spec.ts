@@ -3,7 +3,6 @@ import type { State } from '../step-definitions/state';
 import { autoBindSteps, loadFeatures } from 'jest-cucumber';
 import { CONFIG_FEATURE } from '../constants';
 
-jest.setTimeout(50000);
 describe('config', () => {
   const state: State = {
     resolverType: 'in-process',
