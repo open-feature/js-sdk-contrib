@@ -13,12 +13,13 @@ export const configSteps: Steps = (state: State) => {
     }
   }
 
+  const originalEnv = { ...process.env };
+
   return ({ given, when, then }: StepsDefinitionCallbackOptions) => {
     beforeEach(() => {
       state.options = {};
       state.config = undefined;
       state.events = [];
-      const originalEnv = { ...process.env };
       Object.keys(process.env).forEach((key) => delete process.env[key]);
       Object.assign(process.env, originalEnv);
     });
