@@ -1,4 +1,5 @@
 import { DEFAULT_MAX_CACHE_SIZE } from './constants';
+import type { EvaluationContext } from '@openfeature/server-sdk';
 
 export type CacheOption = 'lru' | 'disabled';
 export type ResolverType = 'rpc' | 'in-process';
@@ -83,24 +84,39 @@ export interface Config {
   defaultAuthority?: string;
 }
 
-export type FlagdProviderOptions = Partial<Config>;
+interface FlagdConfig extends Config {
+  /**
+   * Function providing an EvaluationContext to mix into every evaluation.
+   * The syncContext from the SyncFlagsResponse
+   * (https://buf.build/open-feature/flagd/docs/main:flagd.sync.v1#flagd.sync.v1.SyncFlagsResponse),
+   * represented as a {@link dev.openfeature.sdk.Structure}, is passed as an argument.
+   *
+   * This function runs every time the provider (re)connects, and its result is cached and used in every evaluation.
+   * By default, the entire sync response (as a JSON Object) is used.
+   */
+  contextEnricher: (syncContext: EvaluationContext | null) => EvaluationContext;
+}
 
-const DEFAULT_CONFIG: Omit<Config, 'port' | 'resolverType'> = {
+export type FlagdProviderOptions = Partial<FlagdConfig>;
+
+const DEFAULT_CONFIG: Omit<FlagdConfig, 'port' | 'resolverType'> = {
   deadlineMs: 500,
   host: 'localhost',
   tls: false,
   selector: '',
   cache: 'lru',
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
+  contextEnricher: (syncContext: EvaluationContext | null) => syncContext ?? {},
 };
 
-const DEFAULT_RPC_CONFIG: Config = { ...DEFAULT_CONFIG, resolverType: 'rpc', port: 8013 };
+const DEFAULT_RPC_CONFIG: FlagdConfig = { ...DEFAULT_CONFIG, resolverType: 'rpc', port: 8013 };
 
-const DEFAULT_IN_PROCESS_CONFIG: Config = { ...DEFAULT_CONFIG, resolverType: 'in-process', port: 8015 };
+const DEFAULT_IN_PROCESS_CONFIG: FlagdConfig = { ...DEFAULT_CONFIG, resolverType: 'in-process', port: 8015 };
 
 enum ENV_VAR {
   FLAGD_HOST = 'FLAGD_HOST',
   FLAGD_PORT = 'FLAGD_PORT',
+  FLAGD_SYNC_PORT = 'FLAGD_SYNC_PORT',
   FLAGD_DEADLINE_MS = 'FLAGD_DEADLINE_MS',
   FLAGD_TLS = 'FLAGD_TLS',
   FLAGD_SOCKET_PATH = 'FLAGD_SOCKET_PATH',
@@ -137,6 +153,9 @@ const getEnvVarConfig = (): Partial<Config> => {
     ...(Number(process.env[ENV_VAR.FLAGD_PORT]) && {
       port: Number(process.env[ENV_VAR.FLAGD_PORT]),
     }),
+    ...(Number(process.env[ENV_VAR.FLAGD_SYNC_PORT]) && {
+      port: Number(process.env[ENV_VAR.FLAGD_SYNC_PORT]),
+    }),
     ...(Number(process.env[ENV_VAR.FLAGD_DEADLINE_MS]) && {
       deadlineMs: Number(process.env[ENV_VAR.FLAGD_DEADLINE_MS]),
     }),
@@ -167,7 +186,7 @@ const getEnvVarConfig = (): Partial<Config> => {
   };
 };
 
-export function getConfig(options: FlagdProviderOptions = {}) {
+export function getConfig(options: FlagdProviderOptions = {}): FlagdConfig {
   const envVarConfig = getEnvVarConfig();
   const defaultConfig =
     options.resolverType == 'in-process' || envVarConfig.resolverType == 'in-process'

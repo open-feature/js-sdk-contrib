@@ -1,6 +1,7 @@
 import type { Config, FlagdProviderOptions } from './configuration';
 import { getConfig } from './configuration';
 import { DEFAULT_MAX_CACHE_SIZE } from './constants';
+import type { EvaluationContext } from '@openfeature/server-sdk';
 
 describe('Configuration', () => {
   const OLD_ENV = process.env;
@@ -20,6 +21,7 @@ describe('Configuration', () => {
       resolverType: 'rpc',
       selector: '',
       deadlineMs: 500,
+      contextEnricher: expect.any(Function),
     });
   });
 
@@ -46,22 +48,53 @@ describe('Configuration', () => {
     process.env['FLAGD_OFFLINE_FLAG_SOURCE_PATH'] = offlineFlagSourcePath;
     process.env['FLAGD_DEFAULT_AUTHORITY'] = defaultAuthority;
 
-    expect(getConfig()).toStrictEqual({
-      host,
-      port,
-      tls,
-      socketPath,
-      maxCacheSize,
-      cache,
-      resolverType,
-      selector,
-      offlineFlagSourcePath,
-      defaultAuthority,
-      deadlineMs: 500,
-    });
+    expect(getConfig()).toEqual(
+      expect.objectContaining({
+        host,
+        port,
+        tls,
+        socketPath,
+        maxCacheSize,
+        cache,
+        resolverType,
+        selector,
+        offlineFlagSourcePath,
+        defaultAuthority,
+        deadlineMs: 500,
+      }),
+    );
+  });
+
+  it('should override context enricher', () => {
+    const contextEnricher = (syncContext: EvaluationContext | null): EvaluationContext => {
+      return { ...syncContext, extraKey: 'extraValue' };
+    };
+
+    expect(getConfig({ contextEnricher }).contextEnricher({})).toEqual({ extraKey: 'extraValue' });
+  });
+
+  it('should return identity function', () => {
+    expect(getConfig().contextEnricher({})).toStrictEqual({});
+  });
+
+  it('should use flagd sync port over flagd port environment option', () => {
+    const port = 8080;
+    const syncPort = 9090;
+
+    process.env['FLAGD_PORT'] = `${port}`;
+    process.env['FLAGD_SYNC_PORT'] = `${syncPort}`;
+
+    expect(getConfig()).toStrictEqual(
+      expect.objectContaining({
+        port: syncPort,
+      }),
+    );
   });
 
   it('should use incoming options over defaults and environment variable', () => {
+    const contextEnricher = (syncContext: EvaluationContext | null): EvaluationContext => {
+      return { ...syncContext, extraKey: 'extraValue' };
+    };
     const options: FlagdProviderOptions = {
       host: 'test',
       port: 3000,
@@ -72,10 +105,12 @@ describe('Configuration', () => {
       selector: '',
       defaultAuthority: '',
       deadlineMs: 500,
+      contextEnricher: contextEnricher,
     };
 
     process.env['FLAGD_HOST'] = 'override';
     process.env['FLAGD_PORT'] = '8080';
+    process.env['FLAGD_SYNC_PORT'] = '9090';
     process.env['FLAGD_TLS'] = 'false';
     process.env['FLAGD_DEFAULT_AUTHORITY'] = 'test-authority-override';
 
@@ -84,6 +119,11 @@ describe('Configuration', () => {
 
   it('should ignore an valid port set as an environment variable', () => {
     process.env['FLAGD_PORT'] = 'invalid number';
+    expect(getConfig()).toStrictEqual(expect.objectContaining({ port: 8013 }));
+  });
+
+  it('should ignore an invalid sync port set as an environment variable', () => {
+    process.env['FLAGD_SYNC_PORT'] = 'invalid number';
     expect(getConfig()).toStrictEqual(expect.objectContaining({ port: 8013 }));
   });
 

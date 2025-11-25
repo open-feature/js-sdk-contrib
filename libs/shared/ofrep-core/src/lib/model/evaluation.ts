@@ -7,7 +7,13 @@ export interface EvaluationRequest {
   context?: EvaluationContext;
 }
 
-export type EvaluationFlagValue = FlagValue;
+/**
+ * The possible values resulting from a flag evaluation.
+ * In OFREP, a "disabled" flag is represented by undefined value
+ * https://github.com/open-feature/protocol/issues/46
+ * https://github.com/open-feature/protocol/pull/49/files
+ */
+export type EvaluationFlagValue = FlagValue | undefined;
 
 export interface MetadataResponse {
   /**
@@ -32,15 +38,7 @@ export interface EvaluationSuccessResponse extends MetadataResponse {
   /**
    * Flag evaluation result
    */
-  value: EvaluationFlagValue;
-}
-
-export function isEvaluationSuccessResponse(response: unknown): response is EvaluationSuccessResponse {
-  if (!response || typeof response !== 'object') {
-    return false;
-  }
-
-  return 'value' in response;
+  value?: EvaluationFlagValue;
 }
 
 export interface EvaluationFailureResponse extends MetadataResponse {

@@ -1,3 +1,4 @@
+import { ProviderStatus } from '@openfeature/server-sdk';
 import { OpenFeature } from '@openfeature/server-sdk';
 import { FlagdContainer } from '../tests/flagdContainer';
 import type { State, Steps } from './state';
@@ -6,7 +7,7 @@ import type { FlagdProviderOptions } from '../../lib/configuration';
 
 export const providerSteps: Steps =
   (state: State) =>
-  ({ given, when, then }) => {
+  ({ given, when, then, and }) => {
     const container: FlagdContainer = FlagdContainer.build();
     beforeAll(async () => {
       console.log('Setting flagd provider...');
@@ -33,26 +34,29 @@ export const providerSteps: Steps =
       const flagdOptions: FlagdProviderOptions = {
         resolverType: state.resolverType,
         deadlineMs: 2000,
+        ...state.config,
+        ...state.options,
       };
+
       let type = 'default';
       switch (providerType) {
-        default:
-          flagdOptions['port'] = container.getPort(state.resolverType);
-          if (state?.options?.['selector']) {
-            flagdOptions['selector'] = state?.options?.['selector'] as string;
-          }
-          break;
         case 'unavailable':
           flagdOptions['port'] = 9999;
           break;
         case 'ssl':
           // TODO: modify this to support ssl
           flagdOptions['port'] = container.getPort(state.resolverType);
-          if (state?.config?.selector) {
-            flagdOptions['selector'] = state.config.selector;
-          }
           type = 'ssl';
           break;
+        case 'stable':
+          flagdOptions['port'] = container.getPort(state.resolverType);
+          break;
+        case 'syncpayload':
+          flagdOptions['port'] = container.getPort(state.resolverType);
+          type = 'sync-payload';
+          break;
+        default:
+          throw new Error('unknown provider type: ' + providerType);
       }
 
       await fetch('http://' + container.getLaunchpadUrl() + '/start?config=' + type);
@@ -65,6 +69,21 @@ export const providerSteps: Steps =
 
       state.client = OpenFeature.getClient(providerType);
       state.providerType = providerType;
+    });
+
+    function mapProviderState(state: string): ProviderStatus {
+      const mappedState = state.toUpperCase().replace('-', '_');
+      const status = Object.values(ProviderStatus).find((s) => s === mappedState);
+
+      if (!status) {
+        throw new Error(`Unknown provider status: ${state}`);
+      }
+
+      return status;
+    }
+
+    then(/^the client should be in (.*) state/, (providerState: string) => {
+      expect(state.client?.providerStatus).toBe(mapProviderState(providerState));
     });
 
     when(/^the connection is lost for (\d+)s$/, async (time) => {
