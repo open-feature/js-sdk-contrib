@@ -20,7 +20,9 @@ export const configSteps: Steps = (state: State) => {
       state.options = {};
       state.config = undefined;
       state.events = [];
-      Object.keys(process.env).forEach((key) => delete process.env[key]);
+      Object.keys(process.env)
+        .filter((key) => !Object.prototype.hasOwnProperty.call(originalEnv, key))
+        .forEach((key) => delete process.env[key]);
       Object.assign(process.env, originalEnv);
     });
 
