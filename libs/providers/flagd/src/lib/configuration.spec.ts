@@ -2,6 +2,10 @@ import type { Config, FlagdProviderOptions } from './configuration';
 import { getConfig } from './configuration';
 import { DEFAULT_MAX_CACHE_SIZE } from './constants';
 import type { EvaluationContext } from '@openfeature/server-sdk';
+import { configSteps } from '../e2e/step-definitions/configSteps';
+import type { State } from '../e2e/step-definitions/state';
+import { autoBindSteps, loadFeatures } from 'jest-cucumber';
+import { CONFIG_FEATURE } from '../e2e';
 
 describe('Configuration', () => {
   const OLD_ENV = process.env;
@@ -162,5 +166,24 @@ describe('Configuration', () => {
         expect(getConfig(options)).toStrictEqual(expect.objectContaining({ port, resolverType }));
       });
     });
+  });
+
+  describe('config.feature', () => {
+    const state: State = {
+      resolverType: 'in-process',
+      options: {},
+      config: undefined,
+      events: [],
+    };
+
+    autoBindSteps(
+      loadFeatures(CONFIG_FEATURE, {
+        scenarioNameTemplate: (vars) => {
+          const tags = [...new Set([...vars.scenarioTags, ...vars.featureTags])];
+          return `${vars.scenarioTitle}${tags.length > 0 ? ` (${tags.join(', ')})` : ''}`;
+        },
+      }),
+      [configSteps(state)],
+    );
   });
 });
