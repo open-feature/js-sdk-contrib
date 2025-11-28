@@ -1,5 +1,5 @@
 import type { ClientOptions, ClientReadableStream, ClientUnaryCall, ServiceError } from '@grpc/grpc-js';
-import { credentials, status } from '@grpc/grpc-js';
+import { status } from '@grpc/grpc-js';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 import type { EvaluationContext, FlagValue, JsonValue, Logger, ResolutionDetails } from '@openfeature/server-sdk';
 import {
@@ -11,6 +11,7 @@ import {
 } from '@openfeature/server-sdk';
 import { LRUCache } from 'lru-cache';
 import { promisify } from 'node:util';
+
 import type {
   EventStreamResponse,
   ResolveBooleanRequest,
@@ -29,7 +30,7 @@ import type { Config } from '../../configuration';
 import { DEFAULT_MAX_CACHE_SIZE, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
 import type { Service } from '../service';
-import { closeStreamIfDefined } from '../common';
+import { closeStreamIfDefined, createChannelCredentials } from '../common';
 
 type AnyResponse =
   | ResolveBooleanResponse
@@ -79,7 +80,7 @@ export class GRPCService implements Service {
     client?: ServiceClient,
     private logger?: Logger,
   ) {
-    const { host, port, tls, socketPath, defaultAuthority } = config;
+    const { host, port, tls, socketPath, certPath, defaultAuthority } = config;
     let clientOptions: ClientOptions | undefined;
     if (defaultAuthority) {
       clientOptions = {
@@ -87,13 +88,11 @@ export class GRPCService implements Service {
       };
     }
 
+    const channelCredentials = createChannelCredentials(tls, certPath);
+
     this._client = client
       ? client
-      : new ServiceClient(
-          socketPath ? `unix://${socketPath}` : `${host}:${port}`,
-          tls ? credentials.createSsl() : credentials.createInsecure(),
-          clientOptions,
-        );
+      : new ServiceClient(socketPath ? `unix://${socketPath}` : `${host}:${port}`, channelCredentials, clientOptions);
     this._deadline = config.deadlineMs;
 
     if (config.cache === 'lru') {
