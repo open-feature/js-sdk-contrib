@@ -13,10 +13,19 @@ export const configSteps: Steps = (state: State) => {
     }
   }
 
+  const originalEnv = { ...process.env };
+
   return ({ given, when, then }: StepsDefinitionCallbackOptions) => {
     beforeEach(() => {
       state.options = {};
+      state.config = undefined;
+      state.events = [];
+      Object.keys(process.env)
+        .filter((key) => !Object.prototype.hasOwnProperty.call(originalEnv, key))
+        .forEach((key) => delete process.env[key]);
+      Object.assign(process.env, originalEnv);
     });
+
     given(/^an option "(.*)" of type "(.*)" with value "(.*)"$/, (name: string, type: string, value: string) => {
       state.options[mapName(name)] = mapValueToType(value, type);
     });
