@@ -4,6 +4,9 @@ import { FlagdContainer } from '../tests/flagdContainer';
 import type { State, Steps } from './state';
 import { FlagdProvider } from '../../lib/flagd-provider';
 import type { FlagdProviderOptions } from '../../lib/configuration';
+import { getGherkinTestPath } from '@openfeature/flagd-core';
+import { resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 
 export const providerSteps: Steps =
   (state: State) =>
@@ -43,11 +46,20 @@ export const providerSteps: Steps =
         case 'unavailable':
           flagdOptions['port'] = 9999;
           break;
-        case 'ssl':
-          // TODO: modify this to support ssl
+        case 'ssl': {
           flagdOptions['port'] = container.getPort(state.resolverType);
+          flagdOptions['tls'] = true;
+          const certPath = resolve(getGherkinTestPath('custom-root-cert.crt', 'test-harness/ssl/'));
+          flagdOptions['certPath'] = certPath;
+          if (!existsSync(certPath)) {
+            throw new Error('Certificate file not found at path: ' + certPath);
+          }
+          if (state?.config?.selector) {
+            flagdOptions['selector'] = state.config.selector;
+          }
           type = 'ssl';
           break;
+        }
         case 'stable':
           flagdOptions['port'] = container.getPort(state.resolverType);
           break;

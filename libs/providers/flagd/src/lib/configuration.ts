@@ -41,6 +41,13 @@ export interface Config {
   socketPath?: string;
 
   /**
+   * TLS certificate path to use when TLS connectivity is enabled.
+   *
+   * @example "/etc/cert/ca.crt"
+   */
+  certPath?: string;
+
+  /**
    * Resolver type to use by the provider.
    *
    * Options include rpc & in-process.
@@ -120,6 +127,7 @@ enum ENV_VAR {
   FLAGD_DEADLINE_MS = 'FLAGD_DEADLINE_MS',
   FLAGD_TLS = 'FLAGD_TLS',
   FLAGD_SOCKET_PATH = 'FLAGD_SOCKET_PATH',
+  FLAGD_SERVER_CERT_PATH = 'FLAGD_SERVER_CERT_PATH',
   FLAGD_CACHE = 'FLAGD_CACHE',
   FLAGD_MAX_CACHE_SIZE = 'FLAGD_MAX_CACHE_SIZE',
   FLAGD_SOURCE_SELECTOR = 'FLAGD_SOURCE_SELECTOR',
@@ -164,6 +172,9 @@ const getEnvVarConfig = (): Partial<Config> => {
     }),
     ...(process.env[ENV_VAR.FLAGD_SOCKET_PATH] && {
       socketPath: process.env[ENV_VAR.FLAGD_SOCKET_PATH],
+    }),
+    ...(process.env[ENV_VAR.FLAGD_SERVER_CERT_PATH] && {
+      certPath: process.env[ENV_VAR.FLAGD_SERVER_CERT_PATH],
     }),
     ...((process.env[ENV_VAR.FLAGD_CACHE] === 'lru' || process.env[ENV_VAR.FLAGD_CACHE] === 'disabled') && {
       cache: process.env[ENV_VAR.FLAGD_CACHE],
