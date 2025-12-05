@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.3...flagd-provider-v0.13.4) (2025-12-05)
+
+
+### ✨ New Features
+
+* Add FLAGD_SYNC_PORT support for in-process providers with backwards compatibility ([#1413](https://github.com/open-feature/js-sdk-contrib/issues/1413)) ([8feffee](https://github.com/open-feature/js-sdk-contrib/commit/8feffee5029e37b2d3c8b7f94b959587f836ddea))
+* Add tests for config feature ([#1407](https://github.com/open-feature/js-sdk-contrib/issues/1407)) ([1bccd11](https://github.com/open-feature/js-sdk-contrib/commit/1bccd1116d733eda444c88765085c7bb5da8f352))
+* support no default variant  ([#1354](https://github.com/open-feature/js-sdk-contrib/issues/1354)) ([f2efa55](https://github.com/open-feature/js-sdk-contrib/commit/f2efa559410751dfab80f1e749a86dc04703189c))
+* Use SyncContext from SyncFlagsResponse instead of Metadata Request ([#1401](https://github.com/open-feature/js-sdk-contrib/issues/1401)) ([17fd726](https://github.com/open-feature/js-sdk-contrib/commit/17fd726871fca1e33855651fb465388d7d083e64))
+
 ## [0.13.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.2...flagd-provider-v0.13.3) (2025-02-07)
 
 
