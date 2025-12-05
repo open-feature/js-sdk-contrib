@@ -94,6 +94,25 @@ To enable this mode, you should provide a valid flag configuration file with the
 Offline mode uses `fs.watchFile` and polls every 5 seconds for changes to the file.
 This mode is useful for local development, test cases, and for offline applications.
 
+### Selector (in-process mode only)
+
+The `selector` option allows filtering flag configurations from the sync service in in-process mode. This is useful when multiple flag configurations are available and you want to target a specific subset.
+
+```ts
+  OpenFeature.setProvider(new FlagdProvider({
+      resolverType: 'in-process',
+      selector: 'app=weather',
+  }))
+```
+
+> [!NOTE]
+> **Selector Implementation Details**: As of this release, the selector is sent to flagd via both:
+> 1. The `flagd-selector` gRPC metadata header (new standard, see [flagd#1814](https://github.com/open-feature/flagd/issues/1814))
+> 2. The `selector` field in the `SyncFlagsRequest` message (deprecated, for backward compatibility)
+>
+> The request field will be removed in a future major version once the deprecation period ends.
+> This dual approach ensures compatibility with both newer and older flagd versions during the transition period.
+
 ### Default Authority usage (optional)
 
 This is useful for complex routing or service-discovery use cases that involve a proxy (e.g., Envoy).

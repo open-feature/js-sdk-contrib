@@ -2,6 +2,7 @@ import { GrpcFetch } from './grpc-fetch';
 import type { Config } from '../../../configuration';
 import type { FlagSyncServiceClient, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
+import type { Metadata } from '@grpc/grpc-js';
 
 let watchStateCallback: () => void = () => ({});
 const mockChannel = {
@@ -170,5 +171,56 @@ describe('grpc fetch', () => {
     });
 
     onErrorCallback(new Error('Some connection error'));
+  });
+
+  it('should send selector via flagd-selector metadata header', async () => {
+    const selector = 'app=weather';
+    const cfgWithSelector: Config = { ...cfg, selector };
+    const flagConfiguration = '{"flags":{}}';
+
+    const fetch = new GrpcFetch(cfgWithSelector, serviceMock);
+    const connectPromise = fetch.connect(dataCallback, reconnectCallback, jest.fn(), disconnectCallback);
+    onDataCallback({ flagConfiguration });
+    await connectPromise;
+
+    // Verify syncFlags was called
+    expect(serviceMock.syncFlags).toHaveBeenCalled();
+
+    // Check that both request and metadata were passed
+    const callArgs = (serviceMock.syncFlags as jest.Mock).mock.calls[0];
+    expect(callArgs).toHaveLength(2);
+
+    // Verify the request contains selector (for backward compatibility)
+    expect(callArgs[0].selector).toBe(selector);
+
+    // Verify the metadata contains flagd-selector header
+    const metadata = callArgs[1] as Metadata;
+    expect(metadata).toBeDefined();
+    expect(metadata.get('flagd-selector')).toEqual([selector]);
+  });
+
+  it('should handle empty selector gracefully', async () => {
+    const cfgWithoutSelector: Config = { ...cfg, selector: '' };
+    const flagConfiguration = '{"flags":{}}';
+
+    const fetch = new GrpcFetch(cfgWithoutSelector, serviceMock);
+    const connectPromise = fetch.connect(dataCallback, reconnectCallback, jest.fn(), disconnectCallback);
+    onDataCallback({ flagConfiguration });
+    await connectPromise;
+
+    // Verify syncFlags was called
+    expect(serviceMock.syncFlags).toHaveBeenCalled();
+
+    // Check that both request and metadata were passed
+    const callArgs = (serviceMock.syncFlags as jest.Mock).mock.calls[0];
+    expect(callArgs).toHaveLength(2);
+
+    // Verify the request contains empty selector
+    expect(callArgs[0].selector).toBe('');
+
+    // Verify the metadata does not contain flagd-selector header
+    const metadata = callArgs[1] as Metadata;
+    expect(metadata).toBeDefined();
+    expect(metadata.get('flagd-selector')).toEqual([]);
   });
 });

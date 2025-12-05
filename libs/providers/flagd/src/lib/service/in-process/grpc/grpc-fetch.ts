@@ -1,5 +1,5 @@
 import type { ClientReadableStream, ServiceError, ClientOptions } from '@grpc/grpc-js';
-import { credentials } from '@grpc/grpc-js';
+import { credentials, Metadata } from '@grpc/grpc-js';
 import type { EvaluationContext, Logger } from '@openfeature/server-sdk';
 import { GeneralError } from '@openfeature/server-sdk';
 import type { SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
@@ -14,6 +14,7 @@ import type { DataFetch } from '../data-fetch';
 export class GrpcFetch implements DataFetch {
   private readonly _syncClient: FlagSyncServiceClient;
   private readonly _request: SyncFlagsRequest;
+  private readonly _metadata: Metadata;
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
   private readonly _setSyncContext: (syncContext: EvaluationContext) => void;
   private _logger: Logger | undefined;
@@ -54,7 +55,16 @@ export class GrpcFetch implements DataFetch {
 
     this._setSyncContext = setSyncContext;
     this._logger = logger;
+    // For backward compatibility during the deprecation period, we send the selector in both:
+    // 1. The request field (deprecated, for older flagd versions)
+    // 2. The gRPC metadata header 'flagd-selector' (new standard)
     this._request = { providerId: '', selector: selector ? selector : '' };
+
+    // Create metadata with the flagd-selector header
+    this._metadata = new Metadata();
+    if (selector) {
+      this._metadata.set('flagd-selector', selector);
+    }
   }
 
   async connect(
@@ -86,7 +96,7 @@ export class GrpcFetch implements DataFetch {
     this._logger?.debug('Starting gRPC sync connection');
     closeStreamIfDefined(this._syncStream);
     try {
-      this._syncStream = this._syncClient.syncFlags(this._request);
+      this._syncStream = this._syncClient.syncFlags(this._request, this._metadata);
       this._syncStream.on('data', (data: SyncFlagsResponse) => {
         this._logger?.debug(`Received sync payload`);
 
