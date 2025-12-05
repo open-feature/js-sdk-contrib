@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.6...go-feature-flag-web-provider-v0.2.7) (2025-12-05)
+
+
+### 🐛 Bug Fixes
+
+* **GOFF:** Adding missing exports for GO Feature Flag Web Provider ([#1418](https://github.com/open-feature/js-sdk-contrib/issues/1418)) ([e9e5e2b](https://github.com/open-feature/js-sdk-contrib/commit/e9e5e2b948e3897f68e66aae6c9fc905bd12f5ee))
+
 ## [0.2.6](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.5...go-feature-flag-web-provider-v0.2.6) (2025-05-26)
 
 
