@@ -73,6 +73,11 @@
             "glob": "README.md",
             "input": "./libs/providers/go-feature-flag",
             "output": "./"
+          },
+          {
+            "glob": "**/*.wasm",
+            "input": "./libs/providers/go-feature-flag/src/lib/wasm/wasm-module",
+            "output": "./src/lib/wasm/wasm-module"
           }
         ]
       }
