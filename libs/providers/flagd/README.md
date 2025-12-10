@@ -33,6 +33,7 @@ Options can be defined in the constructor or as environment variables. Construct
 | port                                   | FLAGD_PORT                     | number  | [resolver specific defaults](#resolver-type-specific-defaults) |                  |
 | tls                                    | FLAGD_TLS                      | boolean | false                                                          |                  |
 | socketPath                             | FLAGD_SOCKET_PATH              | string  | -                                                              |                  |
+| certPath                               | FLAGD_SERVER_CERT_PATH         | string  | -                                                              |                  |
 | resolverType                           | FLAGD_RESOLVER                 | string  | rpc                                                            | rpc, in-process  |
 | offlineFlagSourcePath                  | FLAGD_OFFLINE_FLAG_SOURCE_PATH | string  | -                                                              |                  |
 | selector                               | FLAGD_SOURCE_SELECTOR          | string  | -                                                              |                  |
