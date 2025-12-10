@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.1](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.0...go-feature-flag-provider-v1.0.1) (2025-12-05)
+
+
+### 🐛 Bug Fixes
+
+* **GOFF:** Adding missing exports for GO Feature Flag server Provider ([#1417](https://github.com/open-feature/js-sdk-contrib/issues/1417)) ([59b26dc](https://github.com/open-feature/js-sdk-contrib/commit/59b26dce5468719fe6068deed02711e567621ae1))
+* **GOFF:** ensure that wasm module is part of the package ([#1422](https://github.com/open-feature/js-sdk-contrib/issues/1422)) ([2c44901](https://github.com/open-feature/js-sdk-contrib/commit/2c449014c29ecb961e7e7d13c039e468be6b5d63))
+
+## [1.0.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.9...go-feature-flag-provider-v1.0.0) (2025-11-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **go-feature-flag:** Introduce in-process evaluation + tracking ([#1365](https://github.com/open-feature/js-sdk-contrib/issues/1365))
+
+### ✨ New Features
+
+* **go-feature-flag:** Introduce in-process evaluation + tracking ([#1365](https://github.com/open-feature/js-sdk-contrib/issues/1365)) ([bfb10a3](https://github.com/open-feature/js-sdk-contrib/commit/bfb10a377e989029a98c3a82836a7eefd0738606))
+
 ## [0.7.9](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v0.7.8...go-feature-flag-provider-v0.7.9) (2025-09-19)
 
 
