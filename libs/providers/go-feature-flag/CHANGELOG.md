@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.2...go-feature-flag-provider-v1.0.2) (2025-12-17)
+
+
+### 🐛 Bug Fixes
+
+* **goff:** fix issue in package stage ([#1428](https://github.com/open-feature/js-sdk-contrib/issues/1428)) ([412856a](https://github.com/open-feature/js-sdk-contrib/commit/412856a366ade55535ce9ddd7a7da7215c92aeb9))
+
 ## [1.0.2](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.1...go-feature-flag-provider-v1.0.2) (2025-12-17)
 
 
