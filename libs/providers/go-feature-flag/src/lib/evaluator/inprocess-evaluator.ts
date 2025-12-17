@@ -195,7 +195,7 @@ export class InProcessEvaluator implements IEvaluator {
    */
   async dispose(): Promise<void> {
     if (this.periodicRunner) {
-      clearInterval(this.periodicRunner);
+      clearTimeout(this.periodicRunner);
       this.periodicRunner = undefined;
     }
     return this.evaluationEngine.dispose();
