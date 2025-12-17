@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.1...go-feature-flag-provider-v1.0.2) (2025-12-17)
+
+
+### 🐛 Bug Fixes
+
+* **goff:** change the way to load wasm module ([#1425](https://github.com/open-feature/js-sdk-contrib/issues/1425)) ([f0da3af](https://github.com/open-feature/js-sdk-contrib/commit/f0da3af937a8370b14fab1d8db395779747f20f5))
+
 ## [1.0.1](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.0...go-feature-flag-provider-v1.0.1) (2025-12-05)
 
 
