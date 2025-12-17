@@ -2,7 +2,7 @@ import { EventPublisher } from './event-publisher';
 import type { GoFeatureFlagProviderOptions } from '../go-feature-flag-provider-options';
 import { ExporterMetadata, type FeatureEvent, type TrackingEvent } from '../model';
 import { InvalidOptionsException } from '../exception';
-import { Logger } from '@openfeature/core';
+import { type Logger } from '@openfeature/core';
 
 // Mock the GoFeatureFlagApi
 jest.mock('./api');
