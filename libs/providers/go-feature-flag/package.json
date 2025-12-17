@@ -9,11 +9,11 @@
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.17.1",
     "@openfeature/core": "^1.6.0",
-    "@openfeature/ofrep-provider": "0.2.1",
-    "@jest/globals": "29.7.0"
+    "@openfeature/ofrep-provider": "0.2.1"
   },
   "dependencies": {},
   "devDependencies": {
+    "@jest/globals": "29.7.0",
     "@ljharb/eslint-config": "^21.2.0",
     "eslint-plugin-tree-shaking": "^1.12.2"
   }
