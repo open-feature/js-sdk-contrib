@@ -16,7 +16,7 @@ export class EventPublisher {
   /** The events to publish. */
   private readonly events: ExportEvent[] = [];
   /** The interval ID for the periodic runner. */
-  private intervalId?: NodeJS.Timeout;
+  private intervalId?: ReturnType<typeof setTimeout>;
   /** Whether the event publisher is running. */
   private isRunning = false;
   /** The logger to use for logging. */
