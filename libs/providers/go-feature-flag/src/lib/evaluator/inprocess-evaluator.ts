@@ -38,7 +38,7 @@ export class InProcessEvaluator implements IEvaluator {
   private lastUpdate: Date = new Date(0);
   private flags: Record<string, Flag> = {};
   private evaluationContextEnrichment: Record<string, JsonValue> = {};
-  private periodicRunner?: NodeJS.Timeout;
+  private periodicRunner?: ReturnType<typeof setTimeout>;
 
   /**
    * Constructor of the InProcessEvaluator.
@@ -195,7 +195,7 @@ export class InProcessEvaluator implements IEvaluator {
    */
   async dispose(): Promise<void> {
     if (this.periodicRunner) {
-      clearInterval(this.periodicRunner);
+      clearTimeout(this.periodicRunner);
       this.periodicRunner = undefined;
     }
     return this.evaluationEngine.dispose();
