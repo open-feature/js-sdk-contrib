@@ -94,7 +94,7 @@ export class EvaluateWasm {
       // Try multiple resolution strategies to find the WASM file
       let wasmPath: string | null = null;
       const attemptedPaths: string[] = [];
-      
+
       // Strategy 1: Try relative to current file (works in source and test environments)
       const currentDir = __dirname;
       const relativePath = path.join(currentDir, 'wasm-module', 'gofeatureflag-evaluation.wasm');
@@ -107,7 +107,14 @@ export class EvaluateWasm {
           const packageName = require('../../../package.json').name;
           const packageJsonPath = require.resolve(`${packageName}/package.json`);
           const packageRoot = path.dirname(packageJsonPath);
-          const resolvedPath = path.join(packageRoot, 'src', 'lib', 'wasm', 'wasm-module', 'gofeatureflag-evaluation.wasm');
+          const resolvedPath = path.join(
+            packageRoot,
+            'src',
+            'lib',
+            'wasm',
+            'wasm-module',
+            'gofeatureflag-evaluation.wasm',
+          );
           attemptedPaths.push(resolvedPath);
           if (fs.existsSync(resolvedPath)) {
             wasmPath = resolvedPath;
@@ -118,9 +125,7 @@ export class EvaluateWasm {
       }
 
       if (!wasmPath || !fs.existsSync(wasmPath)) {
-        throw new Error(
-          `WASM file not found. Tried: ${attemptedPaths.join(', ')}`
-        );
+        throw new Error(`WASM file not found. Tried: ${attemptedPaths.join(', ')}`);
       }
 
       // Read the file as a buffer and convert to ArrayBuffer
