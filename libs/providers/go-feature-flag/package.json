@@ -13,7 +13,6 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@jest/globals": "29.7.0",
     "@ljharb/eslint-config": "^21.2.0",
     "eslint-plugin-tree-shaking": "^1.12.2"
   }
