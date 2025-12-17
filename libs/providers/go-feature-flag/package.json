@@ -7,10 +7,9 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/server-sdk": "^1.17.1",
-    "@openfeature/core": "^1.6.0",
-    "@openfeature/ofrep-provider": "0.2.1",
-    "@jest/globals": "29.7.0"
+    "@openfeature/server-sdk": "^1.19.0",
+    "@openfeature/core": "^1.9.1",
+    "@openfeature/ofrep-provider": "0.2.1"
   },
   "dependencies": {},
   "devDependencies": {

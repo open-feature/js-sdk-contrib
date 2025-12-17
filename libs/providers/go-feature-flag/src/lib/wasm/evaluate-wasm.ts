@@ -91,17 +91,53 @@ export class EvaluateWasm {
    */
   private async loadWasmBinary(): Promise<ArrayBuffer> {
     try {
-      // Construct the path to the WASM file relative to the current module
-      const wasmPath = path.join(__dirname, 'wasm-module', 'gofeatureflag-evaluation.wasm');
+      // Try multiple resolution strategies to find the WASM file
+      let wasmPath: string | null = null;
+      const attemptedPaths: string[] = [];
+
+      // Strategy 1: Try relative to current file (works in source and test environments)
+      const currentDir = __dirname;
+      const relativePath = path.join(currentDir, 'wasm-module', 'gofeatureflag-evaluation.wasm');
+      attemptedPaths.push(relativePath);
+      if (fs.existsSync(relativePath)) {
+        wasmPath = relativePath;
+      } else {
+        // Strategy 2: Try using require.resolve to find package.json (works in installed packages)
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const packageName = require('../../../package.json').name;
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const packageJsonPath = require.resolve(`${packageName}/package.json`);
+          const packageRoot = path.dirname(packageJsonPath);
+          const resolvedPath = path.join(
+            packageRoot,
+            'src',
+            'lib',
+            'wasm',
+            'wasm-module',
+            'gofeatureflag-evaluation.wasm',
+          );
+          attemptedPaths.push(resolvedPath);
+          if (fs.existsSync(resolvedPath)) {
+            wasmPath = resolvedPath;
+          }
+        } catch (resolveError) {
+          // require.resolve failed, continue to next strategy
+        }
+      }
+
+      if (!wasmPath || !fs.existsSync(wasmPath)) {
+        throw new Error(`WASM file not found. Tried: ${attemptedPaths.join(', ')}`);
+      }
 
       // Read the file as a buffer and convert to ArrayBuffer
       const buffer = fs.readFileSync(wasmPath);
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
       return arrayBuffer as ArrayBuffer;
     } catch (error) {
-      throw new WasmNotLoadedException(
-        `Failed to load WASM binary: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger?.error(`Failed to load WASM binary: ${errorMessage}`, error);
+      throw new WasmNotLoadedException(`Failed to load WASM binary: ${errorMessage}`);
     }
   }
 

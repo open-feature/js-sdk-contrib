@@ -1,11 +1,20 @@
 import { ExporterMetadata } from '../model';
-import { mockLogger } from '../testutil/mock-logger';
 import { EnrichEvaluationContextHook } from './enrich-evaluation-context-hook';
-import type { HookContext, EvaluationContext } from '@openfeature/server-sdk';
+import type { HookContext, EvaluationContext, Logger } from '@openfeature/server-sdk';
 import { MapHookData } from '@openfeature/server-sdk';
 
 describe('EnrichEvaluationContextHook', () => {
   let hook: EnrichEvaluationContextHook;
+  let mockLogger: jest.Mocked<Logger>;
+
+  beforeEach(() => {
+    mockLogger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    } as any;
+  });
 
   describe('constructor', () => {
     it('should handle null metadata', () => {
