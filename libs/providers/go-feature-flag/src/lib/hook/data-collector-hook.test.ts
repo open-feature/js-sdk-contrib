@@ -1,15 +1,15 @@
 import { DataCollectorHook } from './data-collector-hook';
 import type { IEvaluator } from '../evaluator/evaluator';
 import type { EventPublisher } from '../service/event-publisher';
-import type { HookContext, EvaluationDetails } from '@openfeature/server-sdk';
+import type { HookContext, EvaluationDetails, Logger } from '@openfeature/server-sdk';
 import { MapHookData } from '@openfeature/server-sdk';
 import { EvaluatorNotFoundException, EventPublisherNotFoundException } from '../exception';
-import { mockLogger } from '../testutil/mock-logger';
 
 describe('DataCollectorHook', () => {
   let mockEvaluator: jest.Mocked<IEvaluator>;
   let mockEventPublisher: jest.Mocked<EventPublisher>;
   let hook: DataCollectorHook;
+  let mockLogger: jest.Mocked<Logger>;
 
   beforeEach(() => {
     mockEvaluator = {
@@ -27,6 +27,13 @@ describe('DataCollectorHook', () => {
       start: jest.fn(),
       stop: jest.fn(),
     } as unknown as jest.Mocked<EventPublisher>;
+
+    mockLogger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    } as any;
 
     hook = new DataCollectorHook(mockEvaluator, mockEventPublisher);
   });

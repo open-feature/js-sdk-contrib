@@ -104,6 +104,7 @@ export class EvaluateWasm {
       } else {
         // Strategy 2: Try using require.resolve to find package.json (works in installed packages)
         try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const packageName = require('../../../package.json').name;
           // eslint-disable-next-line @typescript-eslint/no-var-requires
           const packageJsonPath = require.resolve(`${packageName}/package.json`);

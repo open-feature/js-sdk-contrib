@@ -2,7 +2,7 @@ import { EventPublisher } from './event-publisher';
 import type { GoFeatureFlagProviderOptions } from '../go-feature-flag-provider-options';
 import { ExporterMetadata, type FeatureEvent, type TrackingEvent } from '../model';
 import { InvalidOptionsException } from '../exception';
-import { mockLogger } from '../testutil/mock-logger';
+import { Logger } from '@openfeature/core';
 
 // Mock the GoFeatureFlagApi
 jest.mock('./api');
@@ -11,6 +11,7 @@ describe('EventPublisher', () => {
   let eventPublisher: EventPublisher;
   let mockApi: any;
   let mockOptions: GoFeatureFlagProviderOptions;
+  let mockLogger: jest.Mocked<Logger>;
 
   beforeEach(() => {
     mockApi = {
@@ -23,6 +24,13 @@ describe('EventPublisher', () => {
       maxPendingEvents: 5,
       exporterMetadata: new ExporterMetadata().add('test', 'metadata'),
     };
+
+    mockLogger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    } as any;
 
     eventPublisher = new EventPublisher(mockApi, mockOptions);
   });
