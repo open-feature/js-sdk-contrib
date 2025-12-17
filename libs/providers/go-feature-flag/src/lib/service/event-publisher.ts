@@ -74,7 +74,7 @@ export class EventPublisher {
     }
     this.isRunning = false;
     if (this.intervalId) {
-      clearInterval(this.intervalId);
+      clearTimeout(this.intervalId);
       this.intervalId = undefined;
     }
     // Publish any remaining events
