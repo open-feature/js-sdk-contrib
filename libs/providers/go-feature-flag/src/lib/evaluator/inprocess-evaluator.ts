@@ -46,7 +46,7 @@ export class InProcessEvaluator implements IEvaluator {
   private lastUpdate: Date = new Date(0);
   private flags: Record<string, Flag> = {};
   private evaluationContextEnrichment: Record<string, JsonValue> = {};
-  private periodicRunner?: ReturnType<typeof setTimeout>;
+  private periodicRunner?: NodeJS.Timeout;
   private configurationState: ConfigurationState = ConfigurationState.NOT_INITIALIZED;
   /**
    * Constructor of the InProcessEvaluator.
