@@ -155,7 +155,7 @@ function checkEnvVarResolverType() {
   );
 }
 
-const getEnvVarConfig = (): Partial<FlagdConfig & FlagdGrpcConfig> => {
+const getEnvVarConfig = (): Partial<Config & FlagdGrpcConfig> => {
   let provider = undefined;
   if (
     process.env[ENV_VAR.FLAGD_RESOLVER] &&
