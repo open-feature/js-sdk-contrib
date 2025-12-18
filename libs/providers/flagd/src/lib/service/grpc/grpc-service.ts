@@ -69,6 +69,7 @@ export class GRPCService implements Service {
   private _cacheEnabled = false;
   private _eventStream: ClientReadableStream<EventStreamResponse> | undefined = undefined;
   private _deadline: number;
+  private _streamDeadline: number;
 
   private get _cacheActive() {
     // the cache is "active" (able to be used) if the config enabled it, AND the gRPC stream is live
@@ -94,6 +95,7 @@ export class GRPCService implements Service {
       ? client
       : new ServiceClient(socketPath ? `unix://${socketPath}` : `${host}:${port}`, channelCredentials, clientOptions);
     this._deadline = config.deadlineMs;
+    this._streamDeadline = config.streamDeadlineMs;
 
     if (config.cache === 'lru') {
       this._cacheEnabled = true;
@@ -211,7 +213,7 @@ export class GRPCService implements Service {
     disconnectCallback: (message: string) => void,
   ) {
     const channel = this._client.getChannel();
-    channel.watchConnectivityState(channel.getConnectivityState(true), Infinity, () => {
+    channel.watchConnectivityState(channel.getConnectivityState(true), this._streamDeadline, () => {
       this.listen(reconnectCallback, changedCallback, disconnectCallback);
     });
   }

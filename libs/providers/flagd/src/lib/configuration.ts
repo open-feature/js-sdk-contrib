@@ -27,6 +27,13 @@ export interface Config {
   deadlineMs: number;
 
   /**
+   * The deadline for streaming connections.
+   *
+   * @default 600000
+   */
+  streamDeadlineMs: number;
+
+  /**
    * Determines if TLS should be used.
    *
    * @default false
@@ -108,6 +115,7 @@ export type FlagdProviderOptions = Partial<FlagdConfig>;
 
 const DEFAULT_CONFIG: Omit<FlagdConfig, 'port' | 'resolverType'> = {
   deadlineMs: 500,
+  streamDeadlineMs: 600000,
   host: 'localhost',
   tls: false,
   selector: '',
@@ -125,6 +133,7 @@ enum ENV_VAR {
   FLAGD_PORT = 'FLAGD_PORT',
   FLAGD_SYNC_PORT = 'FLAGD_SYNC_PORT',
   FLAGD_DEADLINE_MS = 'FLAGD_DEADLINE_MS',
+  FLAGD_STREAM_DEADLINE_MS = 'FLAGD_STREAM_DEADLINE_MS',
   FLAGD_TLS = 'FLAGD_TLS',
   FLAGD_SOCKET_PATH = 'FLAGD_SOCKET_PATH',
   FLAGD_SERVER_CERT_PATH = 'FLAGD_SERVER_CERT_PATH',
@@ -166,6 +175,9 @@ const getEnvVarConfig = (): Partial<Config> => {
     }),
     ...(Number(process.env[ENV_VAR.FLAGD_DEADLINE_MS]) && {
       deadlineMs: Number(process.env[ENV_VAR.FLAGD_DEADLINE_MS]),
+    }),
+    ...(Number(process.env[ENV_VAR.FLAGD_STREAM_DEADLINE_MS]) && {
+      streamDeadlineMs: Number(process.env[ENV_VAR.FLAGD_STREAM_DEADLINE_MS]),
     }),
     ...(process.env[ENV_VAR.FLAGD_TLS] && {
       tls: process.env[ENV_VAR.FLAGD_TLS]?.toLowerCase() === 'true',
