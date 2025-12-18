@@ -3,7 +3,7 @@ import type { EvaluationContext, Logger } from '@openfeature/server-sdk';
 import { GeneralError } from '@openfeature/server-sdk';
 import type { SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { FlagSyncServiceClient } from '../../../../proto/ts/flagd/sync/v1/sync';
-import type { Config } from '../../../configuration';
+import type { FlagdGrpcConfig } from '../../../configuration';
 import { buildClientOptions, closeStreamIfDefined, createChannelCredentials } from '../../common';
 import type { DataFetch } from '../data-fetch';
 
@@ -13,6 +13,7 @@ import type { DataFetch } from '../data-fetch';
 export class GrpcFetch implements DataFetch {
   private readonly _syncClient: FlagSyncServiceClient;
   private readonly _request: SyncFlagsRequest;
+  private readonly _streamDeadlineMs: number;
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
   private readonly _setSyncContext: (syncContext: EvaluationContext) => void;
   private _logger: Logger | undefined;
@@ -30,7 +31,7 @@ export class GrpcFetch implements DataFetch {
   private _isConnected = false;
 
   constructor(
-    config: Config,
+    config: FlagdGrpcConfig,
     setSyncContext: (syncContext: EvaluationContext) => void,
     syncServiceClient?: FlagSyncServiceClient,
     logger?: Logger,
@@ -47,6 +48,7 @@ export class GrpcFetch implements DataFetch {
           clientOptions,
         );
 
+    this._streamDeadlineMs = config.streamDeadlineMs;
     this._setSyncContext = setSyncContext;
     this._logger = logger;
     this._request = { providerId: '', selector: selector ? selector : '' };
@@ -81,7 +83,7 @@ export class GrpcFetch implements DataFetch {
     this._logger?.debug('Starting gRPC sync connection');
     closeStreamIfDefined(this._syncStream);
     try {
-      this._syncStream = this._syncClient.syncFlags(this._request);
+      this._syncStream = this._syncClient.syncFlags(this._request, { deadline: this._streamDeadlineMs });
       this._syncStream.on('data', (data: SyncFlagsResponse) => {
         this._logger?.debug(`Received sync payload`);
 

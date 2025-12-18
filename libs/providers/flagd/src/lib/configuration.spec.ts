@@ -27,6 +27,7 @@ describe('Configuration', () => {
       retryBackoffMs: 1000,
       selector: '',
       deadlineMs: 500,
+      streamDeadlineMs: 600000,
       contextEnricher: expect.any(Function),
       keepAliveTime: 0,
       retryGracePeriod: DEFAULT_RETRY_GRACE_PERIOD,
@@ -46,6 +47,7 @@ describe('Configuration', () => {
     const offlineFlagSourcePath = '/tmp/flags.json';
     const defaultAuthority = 'test-authority';
     const keepAliveTime = 30000;
+    const streamDeadlineMs = 700000;
     const retryGracePeriod = 10;
 
     process.env['FLAGD_HOST'] = host;
@@ -61,6 +63,7 @@ describe('Configuration', () => {
     process.env['FLAGD_DEFAULT_AUTHORITY'] = defaultAuthority;
     process.env['FLAGD_KEEP_ALIVE_TIME_MS'] = `${keepAliveTime}`;
     process.env['FLAGD_RETRY_GRACE_PERIOD'] = `${retryGracePeriod}`;
+    process.env['FLAGD_STREAM_DEADLINE_MS'] = `${streamDeadlineMs}`;
 
     expect(getConfig()).toEqual(
       expect.objectContaining({
@@ -76,6 +79,7 @@ describe('Configuration', () => {
         offlineFlagSourcePath,
         defaultAuthority,
         deadlineMs: 500,
+        streamDeadlineMs,
         keepAliveTime,
         retryGracePeriod,
       }),
@@ -125,6 +129,7 @@ describe('Configuration', () => {
       selector: '',
       defaultAuthority: '',
       deadlineMs: 500,
+      streamDeadlineMs: 600000,
       contextEnricher: contextEnricher,
       keepAliveTime: 30000,
       retryGracePeriod: 15,
