@@ -305,7 +305,7 @@ describe(FlagdProvider.name, () => {
           undefined,
           undefined,
           new GRPCService(
-            { deadlineMs: 100, host: '', port: 123, tls: false, cache: 'lru' },
+            { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false, cache: 'lru' },
             streamingServiceClientMock,
           ),
         )
@@ -333,7 +333,7 @@ describe(FlagdProvider.name, () => {
             undefined,
             undefined,
             new GRPCService(
-              { deadlineMs: 100, host: '', port: 123, tls: false, cache: 'lru' },
+              { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false, cache: 'lru' },
               streamingServiceClientMock,
             ),
           ),
@@ -385,7 +385,7 @@ describe(FlagdProvider.name, () => {
             undefined,
             undefined,
             new GRPCService(
-              { deadlineMs: 100, host: '', port: 123, tls: false, cache: 'lru' },
+              { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false, cache: 'lru' },
               streamingServiceClientMock,
             ),
           ),
@@ -420,7 +420,7 @@ describe(FlagdProvider.name, () => {
             undefined,
             undefined,
             new GRPCService(
-              { deadlineMs: 100, host: '', port: 123, tls: false, cache: 'lru' },
+              { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false, cache: 'lru' },
               streamingServiceClientMock,
             ),
           ),
@@ -512,7 +512,7 @@ describe(FlagdProvider.name, () => {
           undefined,
           undefined,
           new GRPCService(
-            { deadlineMs: 100, host: '', port: 123, tls: false, cache: 'lru' },
+            { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false, cache: 'lru' },
             streamingServiceClientMock,
           ),
         );
