@@ -26,7 +26,7 @@ import type {
   ResolveStringResponse,
 } from '../../../proto/ts/flagd/evaluation/v1/evaluation';
 import { ServiceClient } from '../../../proto/ts/flagd/evaluation/v1/evaluation';
-import type { Config } from '../../configuration';
+import type { FlagdGrpcConfig } from '../../configuration';
 import { DEFAULT_MAX_CACHE_SIZE, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
 import type { Service } from '../service';
@@ -77,7 +77,7 @@ export class GRPCService implements Service {
   }
 
   constructor(
-    config: Config,
+    config: FlagdGrpcConfig,
     client?: ServiceClient,
     private logger?: Logger,
   ) {

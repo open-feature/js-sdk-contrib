@@ -27,13 +27,6 @@ export interface Config {
   deadlineMs: number;
 
   /**
-   * The deadline for streaming connections.
-   *
-   * @default 600000
-   */
-  streamDeadlineMs: number;
-
-  /**
    * Determines if TLS should be used.
    *
    * @default false
@@ -111,9 +104,18 @@ interface FlagdConfig extends Config {
   contextEnricher: (syncContext: EvaluationContext | null) => EvaluationContext;
 }
 
-export type FlagdProviderOptions = Partial<FlagdConfig>;
+export interface FlagdGrpcConfig extends FlagdConfig {
+  /**
+   * The deadline for streaming connections.
+   *
+   * @default 600000
+   */
+  streamDeadlineMs: number;
+}
 
-const DEFAULT_CONFIG: Omit<FlagdConfig, 'port' | 'resolverType'> = {
+export type FlagdProviderOptions = Partial<FlagdGrpcConfig>;
+
+const DEFAULT_CONFIG: Omit<FlagdGrpcConfig, 'port' | 'resolverType'> = {
   deadlineMs: 500,
   streamDeadlineMs: 600000,
   host: 'localhost',
@@ -124,9 +126,9 @@ const DEFAULT_CONFIG: Omit<FlagdConfig, 'port' | 'resolverType'> = {
   contextEnricher: (syncContext: EvaluationContext | null) => syncContext ?? {},
 };
 
-const DEFAULT_RPC_CONFIG: FlagdConfig = { ...DEFAULT_CONFIG, resolverType: 'rpc', port: 8013 };
+const DEFAULT_RPC_CONFIG: FlagdGrpcConfig = { ...DEFAULT_CONFIG, resolverType: 'rpc', port: 8013 };
 
-const DEFAULT_IN_PROCESS_CONFIG: FlagdConfig = { ...DEFAULT_CONFIG, resolverType: 'in-process', port: 8015 };
+const DEFAULT_IN_PROCESS_CONFIG: FlagdGrpcConfig = { ...DEFAULT_CONFIG, resolverType: 'in-process', port: 8015 };
 
 enum ENV_VAR {
   FLAGD_HOST = 'FLAGD_HOST',
@@ -209,7 +211,7 @@ const getEnvVarConfig = (): Partial<Config> => {
   };
 };
 
-export function getConfig(options: FlagdProviderOptions = {}): FlagdConfig {
+export function getConfig(options: FlagdProviderOptions = {}): FlagdGrpcConfig {
   const envVarConfig = getEnvVarConfig();
   const defaultConfig =
     options.resolverType == 'in-process' || envVarConfig.resolverType == 'in-process'
