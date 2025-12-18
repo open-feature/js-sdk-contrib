@@ -144,7 +144,10 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ deadlineMs: 100, host: '', port: 123, tls: false }, basicServiceClientMock),
+          new GRPCService(
+            { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false },
+            basicServiceClientMock,
+          ),
         ),
       );
       client = OpenFeature.getClient('basic test');
@@ -589,7 +592,10 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ deadlineMs: 100, host: '', port: 123, tls: false }, errServiceClientMock),
+          new GRPCService(
+            { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false },
+            errServiceClientMock,
+          ),
         ),
       );
       client = OpenFeature.getClient('errors test');
@@ -676,7 +682,10 @@ describe(FlagdProvider.name, () => {
         new FlagdProvider(
           undefined,
           undefined,
-          new GRPCService({ deadlineMs: 100, host: '', port: 123, tls: false }, errServiceClientMock),
+          new GRPCService(
+            { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false },
+            errServiceClientMock,
+          ),
         ),
       );
     });

@@ -104,7 +104,7 @@ interface FlagdConfig extends Config {
   contextEnricher: (syncContext: EvaluationContext | null) => EvaluationContext;
 }
 
-export interface FlagdGrpcConfig extends FlagdConfig {
+export interface FlagdGrpcConfig extends Config {
   /**
    * The deadline for streaming connections.
    *
@@ -113,9 +113,9 @@ export interface FlagdGrpcConfig extends FlagdConfig {
   streamDeadlineMs: number;
 }
 
-export type FlagdProviderOptions = Partial<FlagdGrpcConfig>;
+export type FlagdProviderOptions = Partial<FlagdConfig & FlagdGrpcConfig>;
 
-const DEFAULT_CONFIG: Omit<FlagdGrpcConfig, 'port' | 'resolverType'> = {
+const DEFAULT_CONFIG: Omit<FlagdConfig & FlagdGrpcConfig, 'port' | 'resolverType'> = {
   deadlineMs: 500,
   streamDeadlineMs: 600000,
   host: 'localhost',
@@ -126,9 +126,9 @@ const DEFAULT_CONFIG: Omit<FlagdGrpcConfig, 'port' | 'resolverType'> = {
   contextEnricher: (syncContext: EvaluationContext | null) => syncContext ?? {},
 };
 
-const DEFAULT_RPC_CONFIG: FlagdGrpcConfig = { ...DEFAULT_CONFIG, resolverType: 'rpc', port: 8013 };
+const DEFAULT_RPC_CONFIG: FlagdConfig = { ...DEFAULT_CONFIG, resolverType: 'rpc', port: 8013 };
 
-const DEFAULT_IN_PROCESS_CONFIG: FlagdGrpcConfig = { ...DEFAULT_CONFIG, resolverType: 'in-process', port: 8015 };
+const DEFAULT_IN_PROCESS_CONFIG: FlagdConfig = { ...DEFAULT_CONFIG, resolverType: 'in-process', port: 8015 };
 
 enum ENV_VAR {
   FLAGD_HOST = 'FLAGD_HOST',
@@ -155,7 +155,7 @@ function checkEnvVarResolverType() {
   );
 }
 
-const getEnvVarConfig = (): Partial<Config> => {
+const getEnvVarConfig = (): Partial<FlagdConfig & FlagdGrpcConfig> => {
   let provider = undefined;
   if (
     process.env[ENV_VAR.FLAGD_RESOLVER] &&
@@ -211,7 +211,7 @@ const getEnvVarConfig = (): Partial<Config> => {
   };
 };
 
-export function getConfig(options: FlagdProviderOptions = {}): FlagdGrpcConfig {
+export function getConfig(options: FlagdProviderOptions = {}): FlagdConfig & FlagdGrpcConfig {
   const envVarConfig = getEnvVarConfig();
   const defaultConfig =
     options.resolverType == 'in-process' || envVarConfig.resolverType == 'in-process'
@@ -221,5 +221,6 @@ export function getConfig(options: FlagdProviderOptions = {}): FlagdGrpcConfig {
     ...defaultConfig,
     ...envVarConfig,
     ...options,
+    streamDeadlineMs: options.streamDeadlineMs ?? envVarConfig.streamDeadlineMs ?? DEFAULT_CONFIG.streamDeadlineMs,
   };
 }
