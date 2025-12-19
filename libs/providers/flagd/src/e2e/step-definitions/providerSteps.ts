@@ -73,6 +73,10 @@ export const providerSteps: Steps =
           flagdOptions['port'] = container.getPort(state.resolverType);
           type = 'sync-payload';
           break;
+        case 'metadata': 
+          flagdOptions['port'] = container.getPort(state.resolverType);
+          type = 'metadata';
+          break;
         default:
           throw new Error('unknown provider type: ' + providerType);
       }
