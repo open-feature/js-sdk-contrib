@@ -73,10 +73,13 @@ export const flagSteps: Steps =
     });
 
     then('the resolved metadata should contain', (table) => {
-      // TODO: implement metadata tests, https://github.com/open-feature/js-sdk-contrib/issues/1290
+      table.forEach((row: { key: string; metadata_type: string; value: string }) => {
+        const expectedValue = mapValueToType(row.value, row.metadata_type);
+        expect(state.details?.flagMetadata).toHaveProperty(row.key, expectedValue);
+      });
     });
 
     then('the resolved metadata is empty', () => {
-      // TODO: implement metadata tests, https://github.com/open-feature/js-sdk-contrib/issues/1290
+      expect(state.details?.flagMetadata).toEqual({});
     });
   };
