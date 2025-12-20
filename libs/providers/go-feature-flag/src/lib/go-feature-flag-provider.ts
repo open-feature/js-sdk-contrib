@@ -117,7 +117,7 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
   /**
    * Dispose the provider and stop the event publisher.
    */
-  async dispose(): Promise<void> {
+  async onClose(): Promise<void> {
     this.evaluator && (await this.evaluator.dispose());
     this.eventPublisher && (await this.eventPublisher.stop());
   }
