@@ -114,17 +114,17 @@ export class EvaluateWasm {
             // Extract the path from node_modules onwards
             const fromNodeModules = currentDir.substring(nodeModulesIndex + nodeModulesPathStr.length);
             const parts = fromNodeModules.split(path.sep);
-            
+
             // Find the package name (scoped packages have @scope/package format)
             let packageName = parts[0];
             if (parts[0].startsWith('@') && parts.length > 1) {
               packageName = `${parts[0]}/${parts[1]}`;
             }
-            
+
             // Get the node_modules directory
             const nodeModulesDir = currentDir.substring(0, nodeModulesIndex + nodeModulesPathStr.length);
             const packageRoot = path.join(nodeModulesDir, packageName);
-            
+
             // Construct path relative to package root
             const nodeModulesPath = path.join(
               packageRoot,
