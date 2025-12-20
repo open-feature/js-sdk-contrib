@@ -12,6 +12,7 @@ import {
   ProviderNotReadyError,
   type ResolutionDetails,
   ServerProviderEvents,
+  StandardResolutionReasons,
   TargetingKeyMissingError,
   TypeMismatchError,
 } from '@openfeature/server-sdk';
@@ -21,6 +22,12 @@ import type { GoFeatureFlagProviderOptions } from '../go-feature-flag-provider-o
 import type { EvaluationResponse, Flag, WasmInput } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
+
+enum ConfigurationState {
+  INITIALIZED = 'initialized',
+  NOT_INITIALIZED = 'not_initialized',
+  ERROR = 'error',
+}
 
 /**
  * InProcessEvaluator is an implementation of the IEvaluator interface that evaluates feature flags in-process.
@@ -39,7 +46,7 @@ export class InProcessEvaluator implements IEvaluator {
   private flags: Record<string, Flag> = {};
   private evaluationContextEnrichment: Record<string, JsonValue> = {};
   private periodicRunner?: ReturnType<typeof setTimeout>;
-
+  private configurationState: ConfigurationState = ConfigurationState.NOT_INITIALIZED;
   /**
    * Constructor of the InProcessEvaluator.
    * @param api - API to contact GO Feature Flag
@@ -65,10 +72,17 @@ export class InProcessEvaluator implements IEvaluator {
    */
   async initialize(): Promise<void> {
     await this.evaluationEngine.initialize();
-    await this.loadConfiguration(true);
-    // Start periodic configuration polling
-    if (this.options.flagChangePollingIntervalMs && this.options.flagChangePollingIntervalMs > 0) {
-      this.periodicRunner = setTimeout(() => this.poll(), this.options.flagChangePollingIntervalMs);
+    try {
+      await this.loadConfiguration(true);
+      this.configurationState = ConfigurationState.INITIALIZED;
+      // Start periodic configuration polling
+      if (this.options.flagChangePollingIntervalMs && this.options.flagChangePollingIntervalMs > 0) {
+        this.periodicRunner = setTimeout(() => this.poll(), this.options.flagChangePollingIntervalMs);
+      }
+    } catch (error) {
+      this.logger?.error('Failed to initialize evaluator:', error);
+      this.configurationState = ConfigurationState.ERROR;
+      throw error;
     }
   }
 
@@ -168,9 +182,10 @@ export class InProcessEvaluator implements IEvaluator {
     this.handleError(response, flagKey);
 
     if (response.value !== null && response.value !== undefined) {
-      return this.prepareResponse(response, flagKey, response.value as T);
+      if (typeof response.value === 'object' || Array.isArray(response.value)) {
+        return this.prepareResponse(response, flagKey, response.value as T);
+      }
     }
-
     throw new TypeMismatchError(`Flag ${flagKey} had unexpected type, expected object.`);
   }
 
@@ -213,6 +228,16 @@ export class InProcessEvaluator implements IEvaluator {
     defaultValue: unknown,
     evaluationContext?: EvaluationContext,
   ): Promise<EvaluationResponse> {
+    // If the provider is not initialized, return a default value and an error
+    if (this.configurationState !== ConfigurationState.INITIALIZED) {
+      return {
+        value: defaultValue as JsonValue,
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: ErrorCode.GENERAL,
+        errorDetails: 'Provider is not initialized, impossible to retrieve configuration',
+        trackEvents: true,
+      };
+    }
     const flag = this.flags[flagKey];
     if (!flag) {
       return {
