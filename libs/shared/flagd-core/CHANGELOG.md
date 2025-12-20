@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.1.0...flagd-core-v1.2.0) (2025-12-20)
+
+
+### 🐛 Bug Fixes
+
+* **security:** update vulnerability-updates ([#1342](https://github.com/open-feature/js-sdk-contrib/issues/1342)) ([fca83c9](https://github.com/open-feature/js-sdk-contrib/commit/fca83c925c6a3d19bac9d647562fd534397b376b))
+
+
+### ✨ New Features
+
+* Add FLAGD_SYNC_PORT support for in-process providers with backwards compatibility ([#1413](https://github.com/open-feature/js-sdk-contrib/issues/1413)) ([8feffee](https://github.com/open-feature/js-sdk-contrib/commit/8feffee5029e37b2d3c8b7f94b959587f836ddea))
+* support no default variant  ([#1354](https://github.com/open-feature/js-sdk-contrib/issues/1354)) ([f2efa55](https://github.com/open-feature/js-sdk-contrib/commit/f2efa559410751dfab80f1e749a86dc04703189c))
+
 ## [1.1.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.0.0...flagd-core-v1.1.0) (2025-07-04)
 
 
