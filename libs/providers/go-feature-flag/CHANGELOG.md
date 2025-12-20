@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.2...go-feature-flag-provider-v1.0.3) (2025-12-20)
+
+
+### 🐛 Bug Fixes
+
+* **go-feature-flag:** error when packaging the WASM file ([#1432](https://github.com/open-feature/js-sdk-contrib/issues/1432)) ([f5075c8](https://github.com/open-feature/js-sdk-contrib/commit/f5075c8b80e73b4afb8b2b2dcc43c80328764ff8))
+
 ## [1.0.2](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.2...go-feature-flag-provider-v1.0.2) (2025-12-17)
 
 
