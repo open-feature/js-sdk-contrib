@@ -22,7 +22,6 @@ import type { GoFeatureFlagProviderOptions } from '../go-feature-flag-provider-o
 import type { EvaluationResponse, Flag, WasmInput } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
-import { ErrorMessageMap } from '@openfeature/ofrep-core';
 
 enum ConfigurationState {
   INITIALIZED = 'initialized',
@@ -46,7 +45,7 @@ export class InProcessEvaluator implements IEvaluator {
   private lastUpdate: Date = new Date(0);
   private flags: Record<string, Flag> = {};
   private evaluationContextEnrichment: Record<string, JsonValue> = {};
-  private periodicRunner?: NodeJS.Timeout;
+  private periodicRunner?: ReturnType<typeof setTimeout>;
   private configurationState: ConfigurationState = ConfigurationState.NOT_INITIALIZED;
   /**
    * Constructor of the InProcessEvaluator.
