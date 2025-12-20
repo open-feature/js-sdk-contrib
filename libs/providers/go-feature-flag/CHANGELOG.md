@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.3...go-feature-flag-provider-v1.0.4) (2025-12-20)
+
+
+### 🐛 Bug Fixes
+
+* **go-feature-flag:** OnClose method fix ([#1435](https://github.com/open-feature/js-sdk-contrib/issues/1435)) ([1731ab6](https://github.com/open-feature/js-sdk-contrib/commit/1731ab64737ff551482c3b6278364e1559aa00e2))
+
 ## [1.0.3](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.2...go-feature-flag-provider-v1.0.3) (2025-12-20)
 
 
