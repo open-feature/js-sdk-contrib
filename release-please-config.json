@@ -17,8 +17,7 @@
       "prerelease": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "versioning": "default",
-      "release-as": "1.0.2"
+      "versioning": "default"
     },
     "libs/providers/flagd": {
       "release-type": "node",
