@@ -95,20 +95,63 @@ export class EvaluateWasm {
       let wasmPath: string | null = null;
       const attemptedPaths: string[] = [];
 
-      // Strategy 1: Try relative to current file (works in source and test environments)
-      const currentDir = __dirname;
+      // Strategy 1: Try relative to current file (works in source, test, and installed packages)
+      // Resolve symlinks to get the real path
+      const currentDir = fs.realpathSync(__dirname);
       const relativePath = path.join(currentDir, 'wasm-module', 'gofeatureflag-evaluation.wasm');
       attemptedPaths.push(relativePath);
       if (fs.existsSync(relativePath)) {
         wasmPath = relativePath;
-      } else {
-        // Strategy 2: Try using require.resolve to find package.json (works in installed packages)
+      }
+
+      // Strategy 2: If relative path didn't work and we're in node_modules, find package root
+      if (!wasmPath) {
+        try {
+          // Check if we're inside node_modules
+          const nodeModulesPathStr = path.sep + 'node_modules' + path.sep;
+          const nodeModulesIndex = currentDir.indexOf(nodeModulesPathStr);
+          if (nodeModulesIndex !== -1) {
+            // Extract the path from node_modules onwards
+            const fromNodeModules = currentDir.substring(nodeModulesIndex + nodeModulesPathStr.length);
+            const parts = fromNodeModules.split(path.sep);
+            
+            // Find the package name (scoped packages have @scope/package format)
+            let packageName = parts[0];
+            if (parts[0].startsWith('@') && parts.length > 1) {
+              packageName = `${parts[0]}/${parts[1]}`;
+            }
+            
+            // Get the node_modules directory
+            const nodeModulesDir = currentDir.substring(0, nodeModulesIndex + nodeModulesPathStr.length);
+            const packageRoot = path.join(nodeModulesDir, packageName);
+            
+            // Construct path relative to package root
+            const nodeModulesPath = path.join(
+              packageRoot,
+              'src',
+              'lib',
+              'wasm',
+              'wasm-module',
+              'gofeatureflag-evaluation.wasm',
+            );
+            attemptedPaths.push(nodeModulesPath);
+            if (fs.existsSync(nodeModulesPath)) {
+              wasmPath = nodeModulesPath;
+            }
+          }
+        } catch (resolveError) {
+          // Resolution failed, continue to next strategy
+        }
+      }
+
+      // Strategy 3: Try using require.resolve to find package.json (fallback for edge cases)
+      if (!wasmPath) {
         try {
           // eslint-disable-next-line @typescript-eslint/no-var-requires
           const packageName = require('../../../package.json').name;
           // eslint-disable-next-line @typescript-eslint/no-var-requires
           const packageJsonPath = require.resolve(`${packageName}/package.json`);
-          const packageRoot = path.dirname(packageJsonPath);
+          const packageRoot = fs.realpathSync(path.dirname(packageJsonPath));
           const resolvedPath = path.join(
             packageRoot,
             'src',
@@ -122,7 +165,7 @@ export class EvaluateWasm {
             wasmPath = resolvedPath;
           }
         } catch (resolveError) {
-          // require.resolve failed, continue to next strategy
+          // require.resolve failed, continue
         }
       }
 
