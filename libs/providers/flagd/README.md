@@ -40,6 +40,7 @@ Options can be defined in the constructor or as environment variables. Construct
 | cache                                  | FLAGD_CACHE                    | string  | lru                                                            | lru, disabled    |
 | maxCacheSize                           | FLAGD_MAX_CACHE_SIZE           | int     | 1000                                                           |                  |
 | defaultAuthority                       | FLAGD_DEFAULT_AUTHORITY        | string  | -                                                              | rpc, in-process  |
+| keepAliveTime                            | FLAGD_KEEP_ALIVE_TIME_MS       | number  | 0                                                              | rpc, in-process  |
 
 #### Resolver type-specific Defaults
 
@@ -104,6 +105,19 @@ Please refer to this [GitHub issue](https://github.com/open-feature/js-sdk-contr
   OpenFeature.setProvider(new FlagdProvider({
       resolverType: 'in-process',
       defaultAuthority: 'b-target-api.service',
+  }))
+```
+
+### Keepalive Configuration (optional)
+
+gRPC keepalive prevents idle connections from being closed.
+This option only applies to RPC and in-process resolvers (streaming connections).
+Set to `0` to disable keepalive (default).
+
+```ts
+  OpenFeature.setProvider(new FlagdProvider({
+      resolverType: 'in-process',
+      keepAliveTime: 30000, // Send keepalive ping every 30 seconds
   }))
 ```
 
