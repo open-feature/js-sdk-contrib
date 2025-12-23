@@ -1,6 +1,7 @@
 import { credentials } from '@grpc/grpc-js';
-import type { ClientReadableStream, ChannelCredentials } from '@grpc/grpc-js';
+import type { ClientReadableStream, ChannelCredentials, ClientOptions } from '@grpc/grpc-js';
 import { readFileSync, existsSync } from 'node:fs';
+import type { Config } from '../../configuration';
 
 export const closeStreamIfDefined = (stream: ClientReadableStream<unknown> | undefined) => {
   /**
@@ -31,3 +32,31 @@ export const createChannelCredentials = (tls: boolean, certPath?: string): Chann
   }
   return credentials.createSsl();
 };
+
+/**
+ * Mapping of configuration options to gRPC client options.
+ */
+const CONFIG_TO_GRPC_OPTIONS: {
+  configKey: keyof Config;
+  grpcKey: string;
+  condition?: (value: unknown) => boolean;
+}[] = [
+  { configKey: 'defaultAuthority', grpcKey: 'grpc.default_authority' },
+  { configKey: 'keepAliveTime', grpcKey: 'grpc.keepalive_time_ms', condition: (time) => Number(time) > 0 },
+];
+
+/**
+ * Builds gRPC client options from config.
+ */
+export function buildClientOptions(config: Config): ClientOptions | undefined {
+  const options: Partial<ClientOptions> = {};
+
+  for (const { configKey, grpcKey, condition } of CONFIG_TO_GRPC_OPTIONS) {
+    const value = config[configKey];
+    if (value !== undefined && (!condition || condition(value))) {
+      options[grpcKey] = value;
+    }
+  }
+
+  return Object.keys(options).length > 0 ? options : undefined;
+}
