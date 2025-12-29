@@ -77,7 +77,7 @@
           {
             "glob": "**/*.wasm",
             "input": "./libs/providers/go-feature-flag/src/lib/wasm/wasm-module",
-            "output": "./src/lib/wasm/wasm-module"
+            "output": "./wasm-module"
           }
         ]
       }
