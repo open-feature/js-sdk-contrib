@@ -42,6 +42,7 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
   constructor(options: GoFeatureFlagProviderOptions, logger?: Logger) {
     this.validateInputOptions(options);
     this.options = options;
+    this.options.endpoint = this.options.endpoint?.replace(/\/+$/, '');
     this.logger = logger;
     const api = new GoFeatureFlagApi(options);
     this.evaluator = this.getEvaluator(options, api, logger);
