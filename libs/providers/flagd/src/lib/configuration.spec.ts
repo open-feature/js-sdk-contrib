@@ -25,6 +25,7 @@ describe('Configuration', () => {
       resolverType: 'rpc',
       selector: '',
       deadlineMs: 500,
+      streamDeadlineMs: 600000,
       contextEnricher: expect.any(Function),
     });
   });
@@ -41,6 +42,7 @@ describe('Configuration', () => {
     const selector = 'app=weather';
     const offlineFlagSourcePath = '/tmp/flags.json';
     const defaultAuthority = 'test-authority';
+    const streamDeadlineMs = 700000;
 
     process.env['FLAGD_HOST'] = host;
     process.env['FLAGD_PORT'] = `${port}`;
@@ -53,6 +55,7 @@ describe('Configuration', () => {
     process.env['FLAGD_RESOLVER'] = `${resolverType}`;
     process.env['FLAGD_OFFLINE_FLAG_SOURCE_PATH'] = offlineFlagSourcePath;
     process.env['FLAGD_DEFAULT_AUTHORITY'] = defaultAuthority;
+    process.env['FLAGD_STREAM_DEADLINE_MS'] = `${streamDeadlineMs}`;
 
     expect(getConfig()).toEqual(
       expect.objectContaining({
@@ -68,6 +71,7 @@ describe('Configuration', () => {
         offlineFlagSourcePath,
         defaultAuthority,
         deadlineMs: 500,
+        streamDeadlineMs,
       }),
     );
   });
@@ -113,6 +117,7 @@ describe('Configuration', () => {
       selector: '',
       defaultAuthority: '',
       deadlineMs: 500,
+      streamDeadlineMs: 600000,
       contextEnricher: contextEnricher,
     };
 
