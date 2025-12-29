@@ -40,6 +40,9 @@ Options can be defined in the constructor or as environment variables. Construct
 | cache                                  | FLAGD_CACHE                    | string  | lru                                                            | lru, disabled    |
 | maxCacheSize                           | FLAGD_MAX_CACHE_SIZE           | int     | 1000                                                           |                  |
 | defaultAuthority                       | FLAGD_DEFAULT_AUTHORITY        | string  | -                                                              | rpc, in-process  |
+| retryBackoffMs                         | FLAGD_RETRY_BACKOFF_MS         | int     | 1000                                                           |                  |
+| retryBackoffMaxMs                      | FLAGD_RETRY_BACKOFF_MAX_MS     | int     | 120000                                                         |                  |
+
 
 #### Resolver type-specific Defaults
 

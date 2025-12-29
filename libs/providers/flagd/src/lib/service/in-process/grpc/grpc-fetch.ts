@@ -28,6 +28,18 @@ export class GrpcFetch implements DataFetch {
    * false if the connection is lost.
    */
   private _isConnected = false;
+  /**
+   * Backoff configuration for reconnection attempts
+   */
+  private readonly _initialBackoffMs: number;
+  private readonly _maxBackoffMs: number;
+  private readonly BACKOFF_MULTIPLIER = 2;
+  /**
+   * Current backoff delay and retry attempt counter
+   */
+  private _currentBackoffMs = 0;
+  private _retryAttempt = 0;
+  private _reconnectTimeout: NodeJS.Timeout | undefined;
 
   constructor(
     config: Config,
@@ -56,6 +68,9 @@ export class GrpcFetch implements DataFetch {
     this._setSyncContext = setSyncContext;
     this._logger = logger;
     this._request = { providerId: '', selector: selector ? selector : '' };
+    this._initialBackoffMs = config.retryBackoffMs ?? 1000;
+    this._maxBackoffMs = config.retryBackoffMaxMs ?? 120000;
+    this._currentBackoffMs = this._initialBackoffMs;
   }
 
   async connect(
@@ -72,6 +87,10 @@ export class GrpcFetch implements DataFetch {
 
   async disconnect() {
     this._logger?.debug('Disconnecting gRPC sync connection');
+    if (this._reconnectTimeout) {
+      clearTimeout(this._reconnectTimeout);
+      this._reconnectTimeout = undefined;
+    }
     closeStreamIfDefined(this._syncStream);
     this._syncClient.close();
   }
@@ -111,6 +130,8 @@ export class GrpcFetch implements DataFetch {
           reconnectCallback();
         }
         this._isConnected = true;
+        this._currentBackoffMs = this._initialBackoffMs;
+        this._retryAttempt = 0;
       });
 
       this._syncStream.on('error', (err: ServiceError | undefined) => {
@@ -158,9 +179,20 @@ export class GrpcFetch implements DataFetch {
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: (message: string) => void,
   ) {
-    const channel = this._syncClient.getChannel();
-    channel.watchConnectivityState(channel.getConnectivityState(true), Infinity, () => {
-      this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
-    });
+    this._retryAttempt++;
+    const backoffMs = this._currentBackoffMs;
+
+    this._logger?.debug(`Reconnecting in ${backoffMs}ms (attempt ${this._retryAttempt})`);
+
+    this._reconnectTimeout = setTimeout(() => {
+      this._reconnectTimeout = undefined;
+      const channel = this._syncClient.getChannel();
+      channel.watchConnectivityState(channel.getConnectivityState(true), Infinity, () => {
+        this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
+      });
+    }, backoffMs);
+
+    // Update backoff for next attempt using exponential backoff
+    this._currentBackoffMs = Math.min(this._currentBackoffMs * this.BACKOFF_MULTIPLIER, this._maxBackoffMs);
   }
 }
