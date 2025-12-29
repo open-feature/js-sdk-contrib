@@ -30,7 +30,7 @@ import type { Config } from '../../configuration';
 import { DEFAULT_MAX_CACHE_SIZE, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
 import type { Service } from '../service';
-import { closeStreamIfDefined, createChannelCredentials } from '../common';
+import { buildClientOptions, closeStreamIfDefined, createChannelCredentials } from '../common';
 
 type AnyResponse =
   | ResolveBooleanResponse
@@ -80,14 +80,8 @@ export class GRPCService implements Service {
     client?: ServiceClient,
     private logger?: Logger,
   ) {
-    const { host, port, tls, socketPath, certPath, defaultAuthority } = config;
-    let clientOptions: ClientOptions | undefined;
-    if (defaultAuthority) {
-      clientOptions = {
-        'grpc.default_authority': defaultAuthority,
-      };
-    }
-
+    const { host, port, tls, socketPath, certPath } = config;
+    const clientOptions = buildClientOptions(config);
     const channelCredentials = createChannelCredentials(tls, certPath);
 
     this._client = client

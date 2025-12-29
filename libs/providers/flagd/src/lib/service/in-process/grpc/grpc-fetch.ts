@@ -1,10 +1,10 @@
-import type { ClientReadableStream, ServiceError, ClientOptions } from '@grpc/grpc-js';
+import type { ClientReadableStream, ServiceError } from '@grpc/grpc-js';
 import type { EvaluationContext, Logger } from '@openfeature/server-sdk';
 import { GeneralError } from '@openfeature/server-sdk';
 import type { SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { FlagSyncServiceClient } from '../../../../proto/ts/flagd/sync/v1/sync';
 import type { Config } from '../../../configuration';
-import { closeStreamIfDefined, createChannelCredentials } from '../../common';
+import { buildClientOptions, closeStreamIfDefined, createChannelCredentials } from '../../common';
 import type { DataFetch } from '../data-fetch';
 
 /**
@@ -35,14 +35,8 @@ export class GrpcFetch implements DataFetch {
     syncServiceClient?: FlagSyncServiceClient,
     logger?: Logger,
   ) {
-    const { host, port, tls, socketPath, certPath, selector, defaultAuthority } = config;
-    let clientOptions: ClientOptions | undefined;
-    if (defaultAuthority) {
-      clientOptions = {
-        'grpc.default_authority': defaultAuthority,
-      };
-    }
-
+    const { host, port, tls, socketPath, certPath, selector } = config;
+    const clientOptions = buildClientOptions(config);
     const channelCredentials = createChannelCredentials(tls, certPath);
 
     this._syncClient = syncServiceClient
