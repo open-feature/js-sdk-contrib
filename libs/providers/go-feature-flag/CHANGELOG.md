@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.4...go-feature-flag-provider-v1.0.5) (2025-12-29)
+
+
+### 🐛 Bug Fixes
+
+* **go-feature-flag:** Move wasm file outside of src ([#1440](https://github.com/open-feature/js-sdk-contrib/issues/1440)) ([a9ad08d](https://github.com/open-feature/js-sdk-contrib/commit/a9ad08d7e1e9810bdb6121ef8b113f6d1cdba3ca))
+
 ## [1.0.4](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.3...go-feature-flag-provider-v1.0.4) (2025-12-20)
 
 
