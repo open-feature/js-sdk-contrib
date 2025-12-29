@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/go-feature-flag-provider",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "license": "Apache-2.0",
   "scripts": {
     "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
