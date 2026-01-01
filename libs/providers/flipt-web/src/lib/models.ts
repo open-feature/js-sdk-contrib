@@ -1,4 +1,5 @@
 export interface FliptWebProviderOptions {
+  environment?: string;
   url?: string;
   authentication?: FliptWebProviderAuthentication;
   fetcher?: FliptFetcher;

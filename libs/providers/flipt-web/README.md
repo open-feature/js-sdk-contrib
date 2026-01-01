@@ -50,6 +50,7 @@ You can pass the following options to the `FliptWebProvider` constructor:
 
 | Option name    | Type   | Default                 | Description                                                                                                                                                                               |
 | -------------- | ------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| environment    | string |                         | (optional) The environment to use when evaluating flags (Flipt v2).                                                                                                                       |
 | url            | string | <http://localhost:8080> | URL where your Flipt server is located.                                                                                                                                                   |
 | authentication | object |                         | (optional) If Flipt is configured to authenticate the requests, you should provide an `authentication` object to the provider. See: [`FliptWebProviderAuthentication`](src/lib/models.ts) |
 
