@@ -1,4 +1,5 @@
 import { GeneralError, TypeMismatchError } from '@openfeature/web-sdk';
+import { FliptClient } from '@flipt-io/flipt-client-js/browser';
 import { FliptWebProvider } from './flipt-web-provider';
 import fs from 'fs';
 import path from 'path';
@@ -23,6 +24,16 @@ describe('FliptWebProvider', () => {
 
   it('should be and instance of FliptWebProvider', () => {
     expect(provider).toBeInstanceOf(FliptWebProvider);
+  });
+
+  it('should pass environment to the Flipt client', async () => {
+    const initSpy = jest.spyOn(FliptClient, 'init').mockResolvedValue({} as FliptClient);
+    const envProvider = new FliptWebProvider('default', { url: endpoint, fetcher, environment: 'staging' });
+
+    await envProvider.initialize();
+
+    expect(initSpy).toHaveBeenCalledWith(expect.objectContaining({ environment: 'staging' }));
+    initSpy.mockRestore();
   });
 
   describe('method resolveStringEvaluation', () => {
