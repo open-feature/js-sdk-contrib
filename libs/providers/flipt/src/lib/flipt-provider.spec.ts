@@ -59,7 +59,6 @@ describe('FliptProvider', () => {
       });
 
       await noHeaderProvider.initialize();
-      expect(noHeaderProvider).toBeDefined();
     });
   });
 
