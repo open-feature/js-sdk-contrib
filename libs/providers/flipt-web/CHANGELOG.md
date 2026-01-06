@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.6](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.5...flipt-web-provider-v0.1.6) (2026-01-06)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update dependency @flipt-io/flipt-client-js to v0.0.6 ([#1309](https://github.com/open-feature/js-sdk-contrib/issues/1309)) ([d3ad93e](https://github.com/open-feature/js-sdk-contrib/commit/d3ad93e3a92340ea405ddeeb9bb084cd58f0b552))
+* **deps:** update dependency @flipt-io/flipt-client-js to v0.2.0 ([#1331](https://github.com/open-feature/js-sdk-contrib/issues/1331)) ([ddbde61](https://github.com/open-feature/js-sdk-contrib/commit/ddbde614e987093b71a079d3acffa76874cf87c8))
+* remove incorrect undici dep ([#1319](https://github.com/open-feature/js-sdk-contrib/issues/1319)) ([6ab7f1a](https://github.com/open-feature/js-sdk-contrib/commit/6ab7f1abfc4a1b5b22b715359cfa56a98a414e8d))
+
+
+### ✨ New Features
+
+* **flipt-web:** add environment option for Flipt v2 ([#1442](https://github.com/open-feature/js-sdk-contrib/issues/1442)) ([792c37b](https://github.com/open-feature/js-sdk-contrib/commit/792c37b55308c5b48d959348c926ae2a26cdaae6))
+
 ## [0.1.5](https://github.com/open-feature/js-sdk-contrib/compare/flipt-web-provider-v0.1.4...flipt-web-provider-v0.1.5) (2025-06-06)
 
 
