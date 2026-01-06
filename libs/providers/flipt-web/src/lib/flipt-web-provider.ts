@@ -41,6 +41,7 @@ export class FliptWebProvider implements Provider {
   async initializeClient() {
     try {
       this._client = await FliptClient.init({
+        environment: this._options?.environment,
         namespace: this._namespace || 'default',
         url: this._options?.url || 'http://localhost:8080',
         fetcher: this._options?.fetcher,
