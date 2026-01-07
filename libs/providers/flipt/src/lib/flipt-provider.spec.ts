@@ -20,6 +20,48 @@ describe('FliptProvider', () => {
     await provider.initialize();
   });
 
+  describe('initialization with custom headers', () => {
+    it('should pass custom headers to FliptClient during initialization', async () => {
+      const customHeaders = { 'X-Custom-Header': 'custom-value', 'X-Flipt-Environment': 'abcd' };
+      const customProvider = new FliptProvider('default', {
+        url: 'http://localhost:8080',
+        headers: customHeaders,
+      });
+
+      await customProvider.initialize();
+
+      // Mock the endpoint and verify headers are sent in the request
+      fetchMock.post(
+        `${endpoint}/evaluate/v1/boolean`,
+        {
+          enabled: true,
+          reason: 'MATCH_EVALUATION_REASON',
+          requestId: 'test-id',
+          requestDurationMillis: 0.5,
+          timestamp: '2024-01-15T19:06:33.721025Z',
+          flagKey: 'test_flag',
+        },
+        { overwriteRoutes: true },
+      );
+
+      await customProvider.resolveBooleanEvaluation('test_flag', false, { targetingKey: 'user123' });
+
+      // Verify the request was made with the custom headers
+      const lastCall = fetchMock.lastCall();
+      expect(lastCall).toBeDefined();
+      const requestOptions = lastCall?.[1];
+      expect(requestOptions?.headers).toEqual(expect.objectContaining(customHeaders));
+    });
+
+    it('should initialize provider without headers', async () => {
+      const noHeaderProvider = new FliptProvider('default', {
+        url: 'http://localhost:8080',
+      });
+
+      await noHeaderProvider.initialize();
+    });
+  });
+
   describe('method resolveStringEvaluation', () => {
     it('should return default value for missing value', async () => {
       fetchMock.post(

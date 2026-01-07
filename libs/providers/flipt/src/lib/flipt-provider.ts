@@ -19,6 +19,7 @@ import { transformContext } from './context-transformer';
 export interface FliptClientParameters {
   url: string;
   authenticationStrategy?: AuthenticationStrategy;
+  headers?: Record<string, string>;
 }
 
 export class FliptProvider implements Provider {
@@ -76,6 +77,7 @@ export class FliptProvider implements Provider {
     this.client = new FliptClient({
       url: this.clientParameters.url,
       authenticationStrategy: this.clientParameters.authenticationStrategy,
+      headers: this.clientParameters.headers,
     });
     this.status = ProviderStatus.READY;
   }
