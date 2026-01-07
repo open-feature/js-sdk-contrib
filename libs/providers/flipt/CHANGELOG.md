@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/flipt-provider-v0.1.3...flipt-provider-v0.1.4) (2026-01-07)
+
+
+### 🐛 Bug Fixes
+
+* **flipt:** add custom headers support to Flipt provider ([#1444](https://github.com/open-feature/js-sdk-contrib/issues/1444)) ([64ad3fd](https://github.com/open-feature/js-sdk-contrib/commit/64ad3fd7802290f366d2666905733fb0956c16a5))
+
 ## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/flipt-provider-v0.1.2...flipt-provider-v0.1.3) (2025-04-10)
 
 
