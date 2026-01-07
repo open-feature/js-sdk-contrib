@@ -26,6 +26,7 @@ describe('Configuration', () => {
       selector: '',
       deadlineMs: 500,
       contextEnricher: expect.any(Function),
+      keepAliveTime: 0,
     });
   });
 
@@ -41,6 +42,7 @@ describe('Configuration', () => {
     const selector = 'app=weather';
     const offlineFlagSourcePath = '/tmp/flags.json';
     const defaultAuthority = 'test-authority';
+    const keepAliveTime = 30000;
 
     process.env['FLAGD_HOST'] = host;
     process.env['FLAGD_PORT'] = `${port}`;
@@ -53,6 +55,7 @@ describe('Configuration', () => {
     process.env['FLAGD_RESOLVER'] = `${resolverType}`;
     process.env['FLAGD_OFFLINE_FLAG_SOURCE_PATH'] = offlineFlagSourcePath;
     process.env['FLAGD_DEFAULT_AUTHORITY'] = defaultAuthority;
+    process.env['FLAGD_KEEP_ALIVE_TIME_MS'] = `${keepAliveTime}`;
 
     expect(getConfig()).toEqual(
       expect.objectContaining({
@@ -68,6 +71,7 @@ describe('Configuration', () => {
         offlineFlagSourcePath,
         defaultAuthority,
         deadlineMs: 500,
+        keepAliveTime,
       }),
     );
   });
@@ -114,6 +118,7 @@ describe('Configuration', () => {
       defaultAuthority: '',
       deadlineMs: 500,
       contextEnricher: contextEnricher,
+      keepAliveTime: 30000,
     };
 
     process.env['FLAGD_HOST'] = 'override';
@@ -122,6 +127,7 @@ describe('Configuration', () => {
     process.env['FLAGD_TLS'] = 'false';
     process.env['FLAGD_SERVER_CERT_PATH'] = '/env/cert.pem';
     process.env['FLAGD_DEFAULT_AUTHORITY'] = 'test-authority-override';
+    process.env['FLAGD_KEEP_ALIVE_TIME_MS'] = '30000';
 
     expect(getConfig(options)).toStrictEqual(options);
   });
