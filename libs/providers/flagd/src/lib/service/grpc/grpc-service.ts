@@ -95,6 +95,10 @@ export class GRPCService implements Service {
     }
   }
 
+  clearCache(): void {
+    this._cache?.clear();
+  }
+
   connect(
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,

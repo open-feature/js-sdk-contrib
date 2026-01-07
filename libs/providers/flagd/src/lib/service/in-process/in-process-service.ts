@@ -31,6 +31,10 @@ export class InProcessService implements Service {
         : new GrpcFetch(config, setSyncContext, undefined, logger);
   }
 
+  clearCache(): void {
+    // in-process service does not cache flags
+  }
+
   connect(
     reconnectCallback: () => void,
     changedCallback: (flagsChanged: string[]) => void,

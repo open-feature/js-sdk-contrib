@@ -28,7 +28,7 @@ export const providerSteps: Steps =
       await OpenFeature.close();
       if (state.client) {
         await fetch('http://' + container.getLaunchpadUrl() + '/stop');
-        await new Promise((r) => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, 500));
       }
       return Promise.resolve();
     }, 50000);
@@ -37,6 +37,7 @@ export const providerSteps: Steps =
       const flagdOptions: FlagdProviderOptions = {
         resolverType: state.resolverType,
         deadlineMs: 2000,
+        retryGracePeriod: 2,
         ...state.config,
         ...state.options,
       };
@@ -72,7 +73,7 @@ export const providerSteps: Steps =
       }
 
       await fetch('http://' + container.getLaunchpadUrl() + '/start?config=' + type);
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 500));
       if (providerType == 'unavailable') {
         OpenFeature.setProvider(providerType, new FlagdProvider(flagdOptions));
       } else {
@@ -101,9 +102,11 @@ export const providerSteps: Steps =
     when(/^the connection is lost for (\d+)s$/, async (time) => {
       console.log('stopping flagd');
       await fetch('http://' + container.getLaunchpadUrl() + '/restart?seconds=' + time);
+      await new Promise((r) => setTimeout(r, 1500));
     });
 
     when('the flag was modified', async () => {
       await fetch('http://' + container.getLaunchpadUrl() + '/change');
+      await new Promise((r) => setTimeout(r, 1000));
     });
   };
