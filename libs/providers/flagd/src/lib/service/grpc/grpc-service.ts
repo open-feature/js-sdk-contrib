@@ -26,7 +26,7 @@ import type {
   ResolveStringResponse,
 } from '../../../proto/ts/flagd/evaluation/v1/evaluation';
 import { ServiceClient } from '../../../proto/ts/flagd/evaluation/v1/evaluation';
-import type { Config } from '../../configuration';
+import type { FlagdGrpcConfig } from '../../configuration';
 import { DEFAULT_MAX_CACHE_SIZE, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
 import type { Service } from '../service';
@@ -69,6 +69,7 @@ export class GRPCService implements Service {
   private _cacheEnabled = false;
   private _eventStream: ClientReadableStream<EventStreamResponse> | undefined = undefined;
   private _deadline: number;
+  private _streamDeadline: number;
 
   private get _cacheActive() {
     // the cache is "active" (able to be used) if the config enabled it, AND the gRPC stream is live
@@ -76,7 +77,7 @@ export class GRPCService implements Service {
   }
 
   constructor(
-    config: Config,
+    config: FlagdGrpcConfig,
     client?: ServiceClient,
     private logger?: Logger,
   ) {
@@ -88,6 +89,7 @@ export class GRPCService implements Service {
       ? client
       : new ServiceClient(socketPath ? `unix://${socketPath}` : `${host}:${port}`, channelCredentials, clientOptions);
     this._deadline = config.deadlineMs;
+    this._streamDeadline = config.streamDeadlineMs;
 
     if (config.cache === 'lru') {
       this._cacheEnabled = true;
@@ -162,7 +164,8 @@ export class GRPCService implements Service {
     // close the previous stream if we're reconnecting
     closeStreamIfDefined(this._eventStream);
 
-    const stream = this._client.eventStream({ waitForReady: true }, {});
+    const deadline = this._streamDeadline != 0 ? Date.now() + this._streamDeadline : undefined;
+    const stream = this._client.eventStream({ waitForReady: true }, { deadline });
     stream.on('error', (err: Error) => {
       rejectConnect?.(err);
       this.handleError(reconnectCallback, changedCallback, disconnectCallback);

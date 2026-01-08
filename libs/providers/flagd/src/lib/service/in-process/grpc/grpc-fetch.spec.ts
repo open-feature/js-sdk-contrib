@@ -1,5 +1,5 @@
 import { GrpcFetch } from './grpc-fetch';
-import type { Config } from '../../../configuration';
+import type { FlagdGrpcConfig } from '../../../configuration';
 import type { FlagSyncServiceClient, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 
@@ -45,13 +45,14 @@ const serviceMock: FlagSyncServiceClient = {
 } as unknown as FlagSyncServiceClient;
 
 describe('grpc fetch', () => {
-  const cfg: Config = {
+  const cfg: FlagdGrpcConfig = {
     deadlineMs: 500,
     host: 'localhost',
     port: 8000,
     tls: false,
     socketPath: '',
     defaultAuthority: 'test-authority',
+    streamDeadlineMs: 600000,
   };
 
   afterEach(() => {

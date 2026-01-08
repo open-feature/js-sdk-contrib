@@ -7,7 +7,7 @@ import type {
   Logger,
   ResolutionDetails,
 } from '@openfeature/server-sdk';
-import type { Config } from '../../configuration';
+import type { FlagdGrpcConfig } from '../../configuration';
 import type { Service } from '../service';
 import type { DataFetch } from './data-fetch';
 import { FileFetch } from './file/file-fetch';
@@ -18,7 +18,7 @@ export class InProcessService implements Service {
   private _dataFetcher: DataFetch;
 
   constructor(
-    private readonly config: Config,
+    private readonly config: FlagdGrpcConfig,
     setSyncContext: (syncContext: EvaluationContext) => void,
     dataFetcher?: DataFetch,
     logger?: Logger,
