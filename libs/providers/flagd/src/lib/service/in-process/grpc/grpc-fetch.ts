@@ -4,7 +4,7 @@ import { GeneralError } from '@openfeature/server-sdk';
 import type { SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { FlagSyncServiceClient } from '../../../../proto/ts/flagd/sync/v1/sync';
 import type { Config } from '../../../configuration';
-import { buildClientOptions, closeStreamIfDefined, createChannelCredentials} from '../../common';
+import { buildClientOptions, closeStreamIfDefined, createChannelCredentials } from '../../common';
 import type { DataFetch } from '../data-fetch';
 
 /**
