@@ -1,5 +1,4 @@
-import { ProviderStatus } from '@openfeature/server-sdk';
-import { OpenFeature } from '@openfeature/server-sdk';
+import { OpenFeature, ProviderStatus } from '@openfeature/server-sdk';
 import { FlagdContainer } from '../tests/flagdContainer';
 import type { State, Steps } from './state';
 import { FlagdProvider } from '../../lib/flagd-provider';
@@ -13,23 +12,22 @@ export const providerSteps: Steps =
   ({ given, when, then, and }) => {
     const container: FlagdContainer = FlagdContainer.build();
     beforeAll(async () => {
-      console.log('Setting flagd provider...');
-
+      console.log('Setting test harness...');
       return await container.start();
     }, 50000);
 
     afterAll(async () => {
-      await OpenFeature.close();
+      console.log('Stopping test harness...');
       await container.stop();
     });
 
+    beforeEach(() => {
+      OpenFeature.clearProviders();
+    });
+
     afterEach(async () => {
-      // everything breaks without this
+      await fetch('http://' + container.getLaunchpadUrl() + '/stop');
       await OpenFeature.close();
-      if (state.client) {
-        await fetch('http://' + container.getLaunchpadUrl() + '/stop');
-        await new Promise((r) => setTimeout(r, 500));
-      }
       return Promise.resolve();
     }, 50000);
 
@@ -73,7 +71,7 @@ export const providerSteps: Steps =
       }
 
       await fetch('http://' + container.getLaunchpadUrl() + '/start?config=' + type);
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 100));
       if (providerType == 'unavailable') {
         OpenFeature.setProvider(providerType, new FlagdProvider(flagdOptions));
       } else {
@@ -100,13 +98,11 @@ export const providerSteps: Steps =
     });
 
     when(/^the connection is lost for (\d+)s$/, async (time) => {
-      console.log('stopping flagd');
+      console.log('Restarting flagd...');
       await fetch('http://' + container.getLaunchpadUrl() + '/restart?seconds=' + time);
-      await new Promise((r) => setTimeout(r, 1500));
     });
 
     when('the flag was modified', async () => {
       await fetch('http://' + container.getLaunchpadUrl() + '/change');
-      await new Promise((r) => setTimeout(r, 1000));
     });
   };
