@@ -164,7 +164,8 @@ export class GRPCService implements Service {
     // close the previous stream if we're reconnecting
     closeStreamIfDefined(this._eventStream);
 
-    const stream = this._client.eventStream({ waitForReady: true }, { deadline: this._streamDeadline });
+    const deadline = this._streamDeadline != 0 ? Date.now() + this._streamDeadline : undefined;
+    const stream = this._client.eventStream({ waitForReady: true }, { deadline });
     stream.on('error', (err: Error) => {
       rejectConnect?.(err);
       this.handleError(reconnectCallback, changedCallback, disconnectCallback);

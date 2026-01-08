@@ -83,7 +83,8 @@ export class GrpcFetch implements DataFetch {
     this._logger?.debug('Starting gRPC sync connection');
     closeStreamIfDefined(this._syncStream);
     try {
-      this._syncStream = this._syncClient.syncFlags(this._request, { deadline: this._streamDeadlineMs });
+      const deadline = this._streamDeadlineMs != 0 ? Date.now() + this._streamDeadlineMs : undefined;
+      this._syncStream = this._syncClient.syncFlags(this._request, { deadline });
       this._syncStream.on('data', (data: SyncFlagsResponse) => {
         this._logger?.debug(`Received sync payload`);
 
