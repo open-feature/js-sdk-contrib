@@ -69,6 +69,8 @@ export class FlagdProvider implements Provider {
         this.handleChanged.bind(this),
         this.handleError.bind(this),
       );
+      this.clearErrorTimer();
+      this._isErrorState = false;
       this.logger?.debug(`${this.metadata.name}: ready`);
     } catch (err) {
       this.logger?.error(`${this.metadata.name}: error during initialization: ${(err as Error)?.message}`);
@@ -133,9 +135,6 @@ export class FlagdProvider implements Provider {
     this._isErrorState = true;
     this.events.emit(ProviderEvents.Stale, { message });
 
-    if (this._errorTimer) {
-      clearTimeout(this._errorTimer);
-    }
     this._errorTimer = setTimeout(() => {
       if (this._isErrorState) {
         this.logger?.error(
