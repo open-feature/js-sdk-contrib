@@ -52,7 +52,7 @@ describe('grpc fetch', () => {
     tls: false,
     socketPath: '',
     defaultAuthority: 'test-authority',
-    streamDeadlineMs: 500,
+    streamDeadlineMs: 600000,
   };
 
   afterEach(() => {

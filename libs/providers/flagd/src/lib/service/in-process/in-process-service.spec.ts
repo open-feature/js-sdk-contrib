@@ -14,7 +14,7 @@ describe('In-process-service', () => {
   it('should sync and allow to resolve flags', async () => {
     // given
     const service = new InProcessService(
-      { deadlineMs: 500, host: '', port: 0, tls: false, streamDeadlineMs: 500 },
+      { deadlineMs: 500, host: '', port: 0, tls: false, streamDeadlineMs: 600000 },
       jest.fn(),
       dataFetcher,
     );
@@ -36,7 +36,7 @@ describe('In-process-service', () => {
       // given
       const selector = 'devFlags';
       const service = new InProcessService(
-        { deadlineMs: 500, host: '', port: 0, tls: false, selector, streamDeadlineMs: 500 },
+        { deadlineMs: 500, host: '', port: 0, tls: false, selector, streamDeadlineMs: 600000 },
         jest.fn(),
         dataFetcher,
       );
@@ -53,7 +53,7 @@ describe('In-process-service', () => {
       // given
       const selector = 'devFlags';
       const service = new InProcessService(
-        { deadlineMs: 500, host: '', port: 0, tls: false, selector, streamDeadlineMs: 500 },
+        { deadlineMs: 500, host: '', port: 0, tls: false, selector, streamDeadlineMs: 600000 },
         jest.fn(),
         dataFetcher,
       );
