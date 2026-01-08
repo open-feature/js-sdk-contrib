@@ -49,8 +49,6 @@ describe('grpc fetch', () => {
     deadlineMs: 500,
     host: 'localhost',
     port: 8000,
-    retryBackoffMs: 1500,
-    retryBackoffMaxMs: 3000,
     tls: false,
     socketPath: '',
     defaultAuthority: 'test-authority',

@@ -1,5 +1,5 @@
 import { credentials, status } from '@grpc/grpc-js';
-import type { ClientReadableStream, ChannelCredentials } from '@grpc/grpc-js';
+import type { ClientReadableStream, ChannelCredentials, ClientOptions } from '@grpc/grpc-js';
 import { readFileSync, existsSync } from 'node:fs';
 import type { Config } from '../../configuration';
 
@@ -48,8 +48,14 @@ const CONFIG_TO_GRPC_OPTIONS: {
 /**
  * Builds gRPC client options from config.
  */
-export function buildClientOptions(config: Config): ClientOptions | undefined {
-  const options: Partial<ClientOptions> = {};
+export function buildClientOptions(config: Config): ClientOptions {
+  const options: Partial<ClientOptions> = {
+    'grpc.service_config': buildRetryPolicy(
+      'flagd.service.v1.FlagService',
+      config.retryBackoffMs,
+      config.retryBackoffMaxMs,
+    ),
+  };
 
   for (const { configKey, grpcKey, condition } of CONFIG_TO_GRPC_OPTIONS) {
     const value = config[configKey];
@@ -58,7 +64,7 @@ export function buildClientOptions(config: Config): ClientOptions | undefined {
     }
   }
 
-  return Object.keys(options).length > 0 ? options : undefined;
+  return options;
 }
 
 /**
