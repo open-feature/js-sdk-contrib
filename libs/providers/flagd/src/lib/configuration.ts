@@ -91,6 +91,16 @@ export interface Config {
   defaultAuthority?: string;
 
   /**
+   * Initial retry backoff in milliseconds.
+   */
+  retryBackoffMs?: number;
+
+  /**
+   * Maximum retry backoff in milliseconds.
+   */
+  retryBackoffMaxMs?: number;
+
+  /**
    * gRPC client KeepAlive in milliseconds. Disabled with 0.
    * Only applies to RPC and in-process resolvers.
    *
@@ -131,6 +141,8 @@ const DEFAULT_CONFIG: Omit<FlagdConfig, 'port' | 'resolverType'> = {
   cache: 'lru',
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
   contextEnricher: (syncContext: EvaluationContext | null) => syncContext ?? {},
+  retryBackoffMs: 1000,
+  retryBackoffMaxMs: 120000,
   keepAliveTime: 0,
   retryGracePeriod: DEFAULT_RETRY_GRACE_PERIOD,
 };
@@ -153,6 +165,8 @@ enum ENV_VAR {
   FLAGD_RESOLVER = 'FLAGD_RESOLVER',
   FLAGD_OFFLINE_FLAG_SOURCE_PATH = 'FLAGD_OFFLINE_FLAG_SOURCE_PATH',
   FLAGD_DEFAULT_AUTHORITY = 'FLAGD_DEFAULT_AUTHORITY',
+  FLAGD_RETRY_BACKOFF_MS = 'FLAGD_RETRY_BACKOFF_MS',
+  FLAGD_RETRY_BACKOFF_MAX_MS = 'FLAGD_RETRY_BACKOFF_MAX_MS',
   FLAGD_KEEP_ALIVE_TIME_MS = 'FLAGD_KEEP_ALIVE_TIME_MS',
   FLAGD_RETRY_GRACE_PERIOD = 'FLAGD_RETRY_GRACE_PERIOD',
 }
@@ -214,6 +228,12 @@ const getEnvVarConfig = (): Partial<Config> => {
     }),
     ...(process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY] && {
       defaultAuthority: process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY],
+    }),
+    ...(Number(process.env[ENV_VAR.FLAGD_RETRY_BACKOFF_MS]) && {
+      retryBackoffMs: Number(process.env[ENV_VAR.FLAGD_RETRY_BACKOFF_MS]),
+    }),
+    ...(Number(process.env[ENV_VAR.FLAGD_RETRY_BACKOFF_MAX_MS]) && {
+      retryBackoffMaxMs: Number(process.env[ENV_VAR.FLAGD_RETRY_BACKOFF_MAX_MS]),
     }),
     ...(Number(process.env[ENV_VAR.FLAGD_KEEP_ALIVE_TIME_MS]) && {
       keepAliveTime: Number(process.env[ENV_VAR.FLAGD_KEEP_ALIVE_TIME_MS]),
