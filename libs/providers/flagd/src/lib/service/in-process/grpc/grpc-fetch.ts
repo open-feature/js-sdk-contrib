@@ -4,7 +4,7 @@ import { GeneralError } from '@openfeature/server-sdk';
 import type { SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { FlagSyncServiceClient } from '../../../../proto/ts/flagd/sync/v1/sync';
 import type { Config } from '../../../configuration';
-import { buildClientOptions, closeStreamIfDefined, createChannelCredentials } from '../../common';
+import { buildRetryPolicy, buildClientOptions, closeStreamIfDefined, createChannelCredentials} from '../../common';
 import type { DataFetch } from '../data-fetch';
 
 /**
@@ -37,6 +37,12 @@ export class GrpcFetch implements DataFetch {
   ) {
     const { host, port, tls, socketPath, certPath, selector } = config;
     const clientOptions = buildClientOptions(config);
+    clientOptions['grpc.service_config'] = buildRetryPolicy(
+      'flagd.sync.v1.FlagSyncService',
+      config.retryBackoffMs,
+      config.retryBackoffMaxMs,
+    );
+
     const channelCredentials = createChannelCredentials(tls, certPath);
 
     this._syncClient = syncServiceClient

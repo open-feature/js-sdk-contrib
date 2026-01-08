@@ -28,7 +28,7 @@ Options can be defined in the constructor or as environment variables. Construct
 ### Available Configuration Options
 
 | Option name                            | Environment variable name      | Type    | Default                                                        | Supported values |
-| -------------------------------------- | ------------------------------ | ------- |----------------------------------------------------------------| ---------------- |
+| -------------------------------------- | ------------------------------ | ------- |----------------------------------------------------------------|------------------|
 | host                                   | FLAGD_HOST                     | string  | localhost                                                      |                  |
 | port                                   | FLAGD_PORT                     | number  | [resolver specific defaults](#resolver-type-specific-defaults) |                  |
 | tls                                    | FLAGD_TLS                      | boolean | false                                                          |                  |
@@ -40,7 +40,9 @@ Options can be defined in the constructor or as environment variables. Construct
 | cache                                  | FLAGD_CACHE                    | string  | lru                                                            | lru, disabled    |
 | maxCacheSize                           | FLAGD_MAX_CACHE_SIZE           | int     | 1000                                                           |                  |
 | defaultAuthority                       | FLAGD_DEFAULT_AUTHORITY        | string  | -                                                              | rpc, in-process  |
-| keepAliveTime                            | FLAGD_KEEP_ALIVE_TIME_MS       | number  | 0                                                              | rpc, in-process  |
+| keepAliveTime                          | FLAGD_KEEP_ALIVE_TIME_MS       | number  | 0                                                              | rpc, in-process  |
+| retryBackoffMs                         | FLAGD_RETRY_BACKOFF_MS         | int     | 1000                                                           | in-process       |
+| retryBackoffMaxMs                      | FLAGD_RETRY_BACKOFF_MAX_MS     | int     | 120000                                                         | in-process       |
 
 #### Resolver type-specific Defaults
 
