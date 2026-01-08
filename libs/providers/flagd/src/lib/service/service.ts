@@ -36,4 +36,6 @@ export interface Service {
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>>;
+
+  clearCache(): void;
 }

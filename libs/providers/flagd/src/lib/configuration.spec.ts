@@ -1,6 +1,6 @@
 import type { Config, FlagdProviderOptions } from './configuration';
 import { getConfig } from './configuration';
-import { DEFAULT_MAX_CACHE_SIZE } from './constants';
+import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_RETRY_GRACE_PERIOD } from './constants';
 import type { EvaluationContext } from '@openfeature/server-sdk';
 import { configSteps } from '../e2e/step-definitions/configSteps';
 import type { State } from '../e2e/step-definitions/state';
@@ -27,6 +27,7 @@ describe('Configuration', () => {
       deadlineMs: 500,
       contextEnricher: expect.any(Function),
       keepAliveTime: 0,
+      retryGracePeriod: DEFAULT_RETRY_GRACE_PERIOD,
     });
   });
 
@@ -43,6 +44,7 @@ describe('Configuration', () => {
     const offlineFlagSourcePath = '/tmp/flags.json';
     const defaultAuthority = 'test-authority';
     const keepAliveTime = 30000;
+    const retryGracePeriod = 10;
 
     process.env['FLAGD_HOST'] = host;
     process.env['FLAGD_PORT'] = `${port}`;
@@ -56,6 +58,7 @@ describe('Configuration', () => {
     process.env['FLAGD_OFFLINE_FLAG_SOURCE_PATH'] = offlineFlagSourcePath;
     process.env['FLAGD_DEFAULT_AUTHORITY'] = defaultAuthority;
     process.env['FLAGD_KEEP_ALIVE_TIME_MS'] = `${keepAliveTime}`;
+    process.env['FLAGD_RETRY_GRACE_PERIOD'] = `${retryGracePeriod}`;
 
     expect(getConfig()).toEqual(
       expect.objectContaining({
@@ -72,6 +75,7 @@ describe('Configuration', () => {
         defaultAuthority,
         deadlineMs: 500,
         keepAliveTime,
+        retryGracePeriod,
       }),
     );
   });
@@ -119,6 +123,7 @@ describe('Configuration', () => {
       deadlineMs: 500,
       contextEnricher: contextEnricher,
       keepAliveTime: 30000,
+      retryGracePeriod: 15,
     };
 
     process.env['FLAGD_HOST'] = 'override';
@@ -128,6 +133,7 @@ describe('Configuration', () => {
     process.env['FLAGD_SERVER_CERT_PATH'] = '/env/cert.pem';
     process.env['FLAGD_DEFAULT_AUTHORITY'] = 'test-authority-override';
     process.env['FLAGD_KEEP_ALIVE_TIME_MS'] = '30000';
+    process.env['FLAGD_RETRY_GRACE_PERIOD'] = '20';
 
     expect(getConfig(options)).toStrictEqual(options);
   });

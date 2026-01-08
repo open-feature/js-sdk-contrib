@@ -1,4 +1,4 @@
-import { DEFAULT_MAX_CACHE_SIZE } from './constants';
+import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_RETRY_GRACE_PERIOD } from './constants';
 import type { EvaluationContext } from '@openfeature/server-sdk';
 
 export type CacheOption = 'lru' | 'disabled';
@@ -97,6 +97,15 @@ export interface Config {
    * @default 0
    */
   keepAliveTime?: number;
+
+  /**
+   * Grace period in seconds before provider moves from STALE to ERROR.
+   * When the provider disconnects, it emits STALE. If disconnected for longer
+   * than retryGracePeriod, it emits ERROR.
+   *
+   * @default 5
+   */
+  retryGracePeriod?: number;
 }
 
 interface FlagdConfig extends Config {
@@ -123,6 +132,7 @@ const DEFAULT_CONFIG: Omit<FlagdConfig, 'port' | 'resolverType'> = {
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
   contextEnricher: (syncContext: EvaluationContext | null) => syncContext ?? {},
   keepAliveTime: 0,
+  retryGracePeriod: DEFAULT_RETRY_GRACE_PERIOD,
 };
 
 const DEFAULT_RPC_CONFIG: FlagdConfig = { ...DEFAULT_CONFIG, resolverType: 'rpc', port: 8013 };
@@ -144,6 +154,7 @@ enum ENV_VAR {
   FLAGD_OFFLINE_FLAG_SOURCE_PATH = 'FLAGD_OFFLINE_FLAG_SOURCE_PATH',
   FLAGD_DEFAULT_AUTHORITY = 'FLAGD_DEFAULT_AUTHORITY',
   FLAGD_KEEP_ALIVE_TIME_MS = 'FLAGD_KEEP_ALIVE_TIME_MS',
+  FLAGD_RETRY_GRACE_PERIOD = 'FLAGD_RETRY_GRACE_PERIOD',
 }
 
 function checkEnvVarResolverType() {
@@ -206,6 +217,9 @@ const getEnvVarConfig = (): Partial<Config> => {
     }),
     ...(Number(process.env[ENV_VAR.FLAGD_KEEP_ALIVE_TIME_MS]) && {
       keepAliveTime: Number(process.env[ENV_VAR.FLAGD_KEEP_ALIVE_TIME_MS]),
+    }),
+    ...(process.env[ENV_VAR.FLAGD_RETRY_GRACE_PERIOD] && {
+      retryGracePeriod: Number(process.env[ENV_VAR.FLAGD_RETRY_GRACE_PERIOD]),
     }),
   };
 };

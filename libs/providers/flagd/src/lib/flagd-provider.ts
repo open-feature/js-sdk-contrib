@@ -7,6 +7,7 @@ import type { Service } from './service/service';
 import { InProcessService } from './service/in-process/in-process-service';
 import type { Hook } from '@openfeature/server-sdk';
 import { SyncMetadataHook } from './SyncMetadataHook';
+import { DEFAULT_RETRY_GRACE_PERIOD } from './constants';
 
 export class FlagdProvider implements Provider {
   metadata = {
@@ -19,6 +20,9 @@ export class FlagdProvider implements Provider {
   private syncContext: EvaluationContext | null = null;
 
   private readonly _service: Service;
+  private readonly _retryGracePeriod: number;
+  private _errorTimer?: NodeJS.Timeout;
+  private _isErrorState = false;
 
   /**
    * Construct a new flagd provider.
@@ -33,6 +37,7 @@ export class FlagdProvider implements Provider {
     service?: Service,
   ) {
     const config = getConfig(options);
+    this._retryGracePeriod = config.retryGracePeriod ?? DEFAULT_RETRY_GRACE_PERIOD;
 
     if (service === undefined) {
       if (config.resolverType === 'in-process') {
@@ -64,6 +69,8 @@ export class FlagdProvider implements Provider {
         this.handleChanged.bind(this),
         this.handleError.bind(this),
       );
+      this.clearErrorTimer();
+      this._isErrorState = false;
       this.logger?.debug(`${this.metadata.name}: ready`);
     } catch (err) {
       this.logger?.error(`${this.metadata.name}: error during initialization: ${(err as Error)?.message}`);
@@ -74,6 +81,7 @@ export class FlagdProvider implements Provider {
 
   onClose(): Promise<void> {
     this.logger?.debug(`${this.metadata.name}: shutting down`);
+    this.clearErrorTimer();
     return this._service.disconnect();
   }
 
@@ -114,14 +122,39 @@ export class FlagdProvider implements Provider {
   }
 
   private handleReconnect(): void {
+    this.clearErrorTimer();
+    this._isErrorState = false;
     this.events.emit(ProviderEvents.Ready);
   }
 
   private handleError(message: string): void {
-    this.events.emit(ProviderEvents.Error, { message });
+    if (this._isErrorState) {
+      return;
+    }
+
+    this._isErrorState = true;
+    this.events.emit(ProviderEvents.Stale, { message });
+
+    this._errorTimer = setTimeout(() => {
+      if (this._isErrorState) {
+        this.logger?.error(
+          `${this.metadata.name}: not reconnected within ${this._retryGracePeriod}s grace period, emitting ERROR`,
+        );
+        this._service.clearCache();
+        this.events.emit(ProviderEvents.Error, { message });
+      }
+      this._errorTimer = undefined;
+    }, this._retryGracePeriod * 1000);
   }
 
   private handleChanged(flagsChanged: string[]): void {
     this.events.emit(ProviderEvents.ConfigurationChanged, { flagsChanged });
+  }
+
+  private clearErrorTimer(): void {
+    if (this._errorTimer) {
+      clearTimeout(this._errorTimer);
+      this._errorTimer = undefined;
+    }
   }
 }

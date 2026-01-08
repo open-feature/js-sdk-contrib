@@ -2,6 +2,8 @@ import { ServerProviderEvents } from '@openfeature/server-sdk';
 import type { State, Steps } from './state';
 import { waitFor } from './utils';
 
+const DEFAULT_TIMEOUT_MS = 10000;
+
 export const eventSteps: Steps =
   (state: State) =>
   ({ given, when, then }) => {
@@ -28,7 +30,9 @@ export const eventSteps: Steps =
     });
 
     then(/^the (.*) event handler should have been executed$/, async (type: string) => {
-      await waitFor(() => expect(state.events.find((value) => value.type == type)).toBeDefined(), { timeout: 20000 });
+      await waitFor(() => expect(state.events.find((value) => value.type == type)).toBeDefined(), {
+        timeout: DEFAULT_TIMEOUT_MS,
+      });
       expect(state.events.find((value) => value.type == type)).toBeDefined();
     });
 
@@ -39,11 +43,14 @@ export const eventSteps: Steps =
     });
 
     when(/^a (.*) event was fired$/, async (type: string) => {
-      await waitFor(() => expect(state.events.find((value) => value.type == type)), { timeout: 2000 });
-      expect(state.events.find((value) => value.type == type)).toBeDefined();
+      await waitFor(() => expect(state.events.find((value) => value.type == type)).toBeDefined(), {
+        timeout: DEFAULT_TIMEOUT_MS,
+      });
     });
 
     then('the flag should be part of the event payload', async () => {
-      await waitFor(() => expect(state.events.find((value) => value.type == 'change')), { timeout: 2000 });
+      await waitFor(() => expect(state.events.find((value) => value.type == 'change')), {
+        timeout: DEFAULT_TIMEOUT_MS,
+      });
     });
   };
