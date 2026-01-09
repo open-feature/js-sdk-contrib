@@ -8,7 +8,6 @@ import {
   ParseError,
   StandardResolutionReasons,
   TypeMismatchError,
-  ProviderFatalError,
 } from '@openfeature/server-sdk';
 import { LRUCache } from 'lru-cache';
 import { promisify } from 'node:util';
@@ -36,6 +35,8 @@ import {
   closeStreamIfDefined,
   createChannelCredentials,
   createFatalStatusCodesSet,
+  handleFatalStatusCodeError,
+  isFatalStatusCodeError,
 } from '../common';
 
 type AnyResponse =
@@ -178,14 +179,8 @@ export class GRPCService implements Service {
     const stream = this._client.eventStream({ waitForReady: true }, { deadline });
     stream.on('error', (err: Error) => {
       // Check if error is a fatal status code on first connection only
-      const serviceError = err as ServiceError;
-      if (!this._initialized && serviceError?.code !== undefined && this._fatalStatusCodes.has(serviceError.code)) {
-        this.logger?.error(
-          `Encountered fatal status code ${serviceError.code} (${serviceError.message}) on first connection, will not retry`,
-        );
-        const errorMessage = `PROVIDER_FATAL: ${serviceError.message}`;
-        disconnectCallback(errorMessage);
-        rejectConnect?.(new ProviderFatalError(serviceError.message));
+      if (isFatalStatusCodeError(err, this._initialized, this._fatalStatusCodes)) {
+        handleFatalStatusCodeError(err, this.logger, disconnectCallback, rejectConnect);
         return;
       }
       rejectConnect?.(err);
