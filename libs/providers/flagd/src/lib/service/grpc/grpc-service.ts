@@ -1,4 +1,4 @@
-import type { ClientOptions, ClientReadableStream, ClientUnaryCall, ServiceError } from '@grpc/grpc-js';
+import type { ClientReadableStream, ClientUnaryCall, ServiceError } from '@grpc/grpc-js';
 import { status } from '@grpc/grpc-js';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 import type { EvaluationContext, FlagValue, JsonValue, Logger, ResolutionDetails } from '@openfeature/server-sdk';
@@ -8,6 +8,7 @@ import {
   ParseError,
   StandardResolutionReasons,
   TypeMismatchError,
+  ProviderFatalError,
 } from '@openfeature/server-sdk';
 import { LRUCache } from 'lru-cache';
 import { promisify } from 'node:util';
@@ -30,7 +31,12 @@ import type { FlagdGrpcConfig } from '../../configuration';
 import { DEFAULT_MAX_CACHE_SIZE, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
 import type { Service } from '../service';
-import { buildClientOptions, closeStreamIfDefined, createChannelCredentials } from '../common';
+import {
+  buildClientOptions,
+  closeStreamIfDefined,
+  createChannelCredentials,
+  createFatalStatusCodesSet,
+} from '../common';
 
 type AnyResponse =
   | ResolveBooleanResponse
@@ -69,6 +75,8 @@ export class GRPCService implements Service {
   private _cacheEnabled = false;
   private _eventStream: ClientReadableStream<EventStreamResponse> | undefined = undefined;
   private _deadline: number;
+  private readonly _fatalStatusCodes: Set<number>;
+  private _initialized = false;
   private _streamDeadline: number;
 
   private get _cacheActive() {
@@ -95,6 +103,8 @@ export class GRPCService implements Service {
       this._cacheEnabled = true;
       this._cache = new LRUCache({ maxSize: config.maxCacheSize || DEFAULT_MAX_CACHE_SIZE, sizeCalculation: () => 1 });
     }
+
+    this._fatalStatusCodes = createFatalStatusCodesSet(config.fatalStatusCodes, logger);
   }
 
   clearCache(): void {
@@ -167,12 +177,24 @@ export class GRPCService implements Service {
     const deadline = this._streamDeadline != 0 ? Date.now() + this._streamDeadline : undefined;
     const stream = this._client.eventStream({ waitForReady: true }, { deadline });
     stream.on('error', (err: Error) => {
+      // Check if error is a fatal status code on first connection only
+      const serviceError = err as ServiceError;
+      if (!this._initialized && serviceError?.code !== undefined && this._fatalStatusCodes.has(serviceError.code)) {
+        this.logger?.error(
+          `Encountered fatal status code ${serviceError.code} (${serviceError.message}) on first connection, will not retry`,
+        );
+        const errorMessage = `PROVIDER_FATAL: ${serviceError.message}`;
+        disconnectCallback(errorMessage);
+        rejectConnect?.(new ProviderFatalError(serviceError.message));
+        return;
+      }
       rejectConnect?.(err);
       this.handleError(reconnectCallback, changedCallback, disconnectCallback);
     });
     stream.on('data', (message) => {
       if (message.type === EVENT_PROVIDER_READY) {
         this.logger?.debug(`${FlagdProvider.name}: streaming connection established with flagd`);
+        this._initialized = true;
         // if resolveConnect is undefined, this is a reconnection; we only want to fire the reconnect callback in that case
         if (resolveConnect) {
           resolveConnect();
