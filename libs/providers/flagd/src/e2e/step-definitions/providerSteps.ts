@@ -1,5 +1,5 @@
 import { OpenFeature, ProviderStatus } from '@openfeature/server-sdk';
-import { FlagdContainer } from '../tests/flagdContainer';
+import { FlagdComposeContainer } from '../tests/flagdComposeContainer';
 import type { State, Steps } from './state';
 import { FlagdProvider } from '../../lib/flagd-provider';
 import type { FlagdProviderOptions } from '../../lib/configuration';
@@ -10,7 +10,7 @@ import { existsSync } from 'node:fs';
 export const providerSteps: Steps =
   (state: State) =>
   ({ given, when, then, and }) => {
-    const container: FlagdContainer = FlagdContainer.build();
+    const container: FlagdComposeContainer = FlagdComposeContainer.build();
     beforeAll(async () => {
       console.log('Setting test harness...');
       return await container.start();
@@ -45,6 +45,9 @@ export const providerSteps: Steps =
         case 'unavailable':
           flagdOptions['port'] = 9999;
           break;
+        case 'forbidden':
+          flagdOptions['port'] = container.getForbiddenPort();
+          break;
         case 'ssl': {
           flagdOptions['port'] = container.getPort(state.resolverType);
           flagdOptions['tls'] = true;
@@ -72,7 +75,7 @@ export const providerSteps: Steps =
 
       await fetch('http://' + container.getLaunchpadUrl() + '/start?config=' + type);
       await new Promise((r) => setTimeout(r, 100));
-      if (providerType == 'unavailable') {
+      if (providerType == 'unavailable' || providerType == 'forbidden') {
         OpenFeature.setProvider(providerType, new FlagdProvider(flagdOptions));
       } else {
         await OpenFeature.setProviderAndWait(providerType, new FlagdProvider(flagdOptions));

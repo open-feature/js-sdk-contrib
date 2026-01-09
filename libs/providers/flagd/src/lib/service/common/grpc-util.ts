@@ -2,6 +2,7 @@ import { credentials, status } from '@grpc/grpc-js';
 import type { ClientReadableStream, ChannelCredentials, ClientOptions } from '@grpc/grpc-js';
 import { readFileSync, existsSync } from 'node:fs';
 import type { Config } from '../../configuration';
+import type { Logger } from '@openfeature/server-sdk';
 
 export const closeStreamIfDefined = (stream: ClientReadableStream<unknown> | undefined) => {
   /**
@@ -93,4 +94,44 @@ export const buildRetryPolicy = (serviceName: string, retryBackoffMs?: number, r
       },
     ],
   });
+};
+
+function getStatusCodeMap(): Map<string, number> {
+  const map = new Map<string, number>();
+
+  for (const [key, value] of Object.entries(status)) {
+    if (typeof value === 'number') {
+      map.set(key, value);
+    }
+  }
+
+  return map;
+}
+
+/**
+ * Converts an array of gRPC status code strings to a Set of numeric codes.
+ * @param fatalStatusCodes Array of status code strings.
+ * @param logger Optional logger for warning about unknown codes
+ * @returns Set of numeric status codes
+ */
+export const createFatalStatusCodesSet = (fatalStatusCodes?: string[], logger?: Logger): Set<number> => {
+  const codes = new Set<number>();
+
+  if (!fatalStatusCodes?.length) {
+    return codes;
+  }
+
+  const codeMap = getStatusCodeMap();
+
+  for (const codeStr of fatalStatusCodes) {
+    const numericCode = codeMap.get(codeStr);
+
+    if (numericCode !== undefined) {
+      codes.add(numericCode);
+    } else {
+      logger?.warn(`Unknown gRPC status code: "${codeStr}". Valid codes: ${Array.from(codeMap.keys()).join(', ')}`);
+    }
+  }
+
+  return codes;
 };
