@@ -4,7 +4,14 @@ import { GeneralError } from '@openfeature/server-sdk';
 import type { SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { FlagSyncServiceClient } from '../../../../proto/ts/flagd/sync/v1/sync';
 import type { FlagdGrpcConfig } from '../../../configuration';
-import { buildClientOptions, closeStreamIfDefined, createChannelCredentials } from '../../common';
+import {
+  buildClientOptions,
+  closeStreamIfDefined,
+  createChannelCredentials,
+  createFatalStatusCodesSet,
+  handleFatalStatusCodeError,
+  isFatalStatusCodeError,
+} from '../../common';
 import type { DataFetch } from '../data-fetch';
 
 /**
@@ -17,6 +24,7 @@ export class GrpcFetch implements DataFetch {
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
   private readonly _setSyncContext: (syncContext: EvaluationContext) => void;
   private _logger: Logger | undefined;
+  private readonly _fatalStatusCodes: Set<number>;
   /**
    * Initialized will be set to true once the initial connection is successful
    * and the first payload has been received. Subsequent reconnects will not
@@ -52,6 +60,7 @@ export class GrpcFetch implements DataFetch {
     this._setSyncContext = setSyncContext;
     this._logger = logger;
     this._request = { providerId: '', selector: selector ? selector : '' };
+    this._fatalStatusCodes = createFatalStatusCodesSet(config.fatalStatusCodes, logger);
   }
 
   async connect(
@@ -140,6 +149,13 @@ export class GrpcFetch implements DataFetch {
     disconnectCallback: (message: string) => void,
     rejectConnect?: (reason: Error) => void,
   ) {
+    // Check if error is a fatal status code on first connection only
+    if (isFatalStatusCodeError(err, this._initialized, this._fatalStatusCodes)) {
+      this._isConnected = false;
+      handleFatalStatusCodeError(err, this._logger, disconnectCallback, rejectConnect);
+      return;
+    }
+
     this._logger?.error('Connection error, attempting to reconnect');
     this._logger?.debug(err);
     this._isConnected = false;

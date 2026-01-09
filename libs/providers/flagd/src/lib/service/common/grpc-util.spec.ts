@@ -1,5 +1,22 @@
-import { buildClientOptions, buildRetryPolicy } from './grpc-util';
+import {
+  buildClientOptions,
+  buildRetryPolicy,
+  createFatalStatusCodesSet,
+  handleFatalStatusCodeError,
+  isFatalStatusCodeError,
+} from './grpc-util';
+import type { ServiceError } from '@grpc/grpc-js';
+import { status } from '@grpc/grpc-js';
+
 import type { Config } from '../../configuration';
+import type { Logger } from '@openfeature/server-sdk';
+
+const createMockLogger = (): Logger => ({
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+});
 
 describe('buildClientOptions', () => {
   const baseConfig: Config = {
@@ -45,5 +62,67 @@ describe('buildClientOptions', () => {
       'grpc.keepalive_time_ms': 5000,
       'grpc.service_config': buildRetryPolicy('flagd.service.v1.FlagService', 100, 200),
     });
+  });
+});
+
+describe('createFatalStatusCodesSet', () => {
+  it('should return empty set when no codes provided', () => {
+    const result = createFatalStatusCodesSet();
+    expect(result.size).toBe(0);
+  });
+
+  it('should convert valid status code strings to numbers', () => {
+    const result = createFatalStatusCodesSet(['UNAVAILABLE', 'UNAUTHENTICATED']);
+    expect(result.has(status.UNAVAILABLE)).toBe(true);
+    expect(result.has(status.UNAUTHENTICATED)).toBe(true);
+  });
+
+  it('should warn about invalid status codes', () => {
+    const logger = createMockLogger();
+    createFatalStatusCodesSet(['INVALID_CODE'], logger);
+    expect(logger.warn).toHaveBeenCalledWith('Unknown gRPC status code: "INVALID_CODE"');
+  });
+});
+
+describe('isFatalStatusCodeError', () => {
+  it('should return true when error code is in fatal codes and not initialized', () => {
+    const error = { code: status.UNAUTHENTICATED } as ServiceError;
+    const fatalCodes = new Set([status.UNAUTHENTICATED]);
+
+    const result = isFatalStatusCodeError(error, false, fatalCodes);
+    expect(result).toBe(true);
+  });
+
+  it('should return false when error code is not in fatal codes', () => {
+    const error = { code: status.UNAVAILABLE } as ServiceError;
+    const fatalCodes = new Set([status.UNAUTHENTICATED]);
+
+    const result = isFatalStatusCodeError(error, false, fatalCodes);
+    expect(result).toBe(false);
+  });
+
+  it('should return false when error has no code', () => {
+    const error = new Error('test error');
+    const fatalCodes = new Set([status.UNAUTHENTICATED]);
+
+    const result = isFatalStatusCodeError(error, false, fatalCodes);
+    expect(result).toBe(false);
+  });
+});
+
+describe('handleFatalStatusCodeError', () => {
+  it('should log error and call callbacks', () => {
+    const error = { code: status.UNAUTHENTICATED, message: 'auth failed' } as ServiceError;
+    const logger = createMockLogger();
+    const disconnectCallback = jest.fn();
+    const rejectConnect = jest.fn();
+
+    handleFatalStatusCodeError(error, logger, disconnectCallback, rejectConnect);
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Encountered fatal status code 16 (auth failed) on first connection, will not retry',
+    );
+    expect(disconnectCallback).toHaveBeenCalledWith('PROVIDER_FATAL: auth failed');
+    expect(rejectConnect).toHaveBeenCalled();
   });
 });

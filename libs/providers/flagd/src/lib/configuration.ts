@@ -109,6 +109,12 @@ export interface Config {
   keepAliveTime?: number;
 
   /**
+   * List of gRPC fatal status codes that should cause the provider to fail without retrying.
+   * @default []
+   */
+  fatalStatusCodes?: string[];
+
+  /**
    * Grace period in seconds before provider moves from STALE to ERROR.
    * When the provider disconnects, it emits STALE. If disconnected for longer
    * than retryGracePeriod, it emits ERROR.
@@ -179,6 +185,7 @@ enum ENV_VAR {
   FLAGD_RETRY_BACKOFF_MS = 'FLAGD_RETRY_BACKOFF_MS',
   FLAGD_RETRY_BACKOFF_MAX_MS = 'FLAGD_RETRY_BACKOFF_MAX_MS',
   FLAGD_KEEP_ALIVE_TIME_MS = 'FLAGD_KEEP_ALIVE_TIME_MS',
+  FLAGD_FATAL_STATUS_CODES = 'FLAGD_FATAL_STATUS_CODES',
   FLAGD_RETRY_GRACE_PERIOD = 'FLAGD_RETRY_GRACE_PERIOD',
 }
 
@@ -251,6 +258,12 @@ const getEnvVarConfig = (): Partial<Config & FlagdGrpcConfig> => {
     }),
     ...(Number(process.env[ENV_VAR.FLAGD_KEEP_ALIVE_TIME_MS]) && {
       keepAliveTime: Number(process.env[ENV_VAR.FLAGD_KEEP_ALIVE_TIME_MS]),
+    }),
+    ...(process.env[ENV_VAR.FLAGD_FATAL_STATUS_CODES] && {
+      fatalStatusCodes: process.env[ENV_VAR.FLAGD_FATAL_STATUS_CODES]
+        .split(',')
+        .map((code) => code.trim())
+        .filter((code) => code.length > 0),
     }),
     ...(process.env[ENV_VAR.FLAGD_RETRY_GRACE_PERIOD] && {
       retryGracePeriod: Number(process.env[ENV_VAR.FLAGD_RETRY_GRACE_PERIOD]),
