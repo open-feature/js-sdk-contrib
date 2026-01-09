@@ -1,6 +1,6 @@
 import type { ClientReadableStream, ServiceError } from '@grpc/grpc-js';
 import type { EvaluationContext, Logger } from '@openfeature/server-sdk';
-import { GeneralError, ProviderFatalError } from '@openfeature/server-sdk';
+import { GeneralError } from '@openfeature/server-sdk';
 import type { SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { FlagSyncServiceClient } from '../../../../proto/ts/flagd/sync/v1/sync';
 import type { FlagdGrpcConfig } from '../../../configuration';
@@ -9,6 +9,8 @@ import {
   closeStreamIfDefined,
   createChannelCredentials,
   createFatalStatusCodesSet,
+  handleFatalStatusCodeError,
+  isFatalStatusCodeError,
 } from '../../common';
 import type { DataFetch } from '../data-fetch';
 
@@ -148,15 +150,9 @@ export class GrpcFetch implements DataFetch {
     rejectConnect?: (reason: Error) => void,
   ) {
     // Check if error is a fatal status code on first connection only
-    const serviceError = err as ServiceError;
-    if (!this._initialized && serviceError?.code !== undefined && this._fatalStatusCodes.has(serviceError.code)) {
-      this._logger?.error(
-        `Encountered fatal status code ${serviceError.code} (${serviceError.message}) on first connection, will not retry`,
-      );
+    if (isFatalStatusCodeError(err, this._initialized, this._fatalStatusCodes)) {
       this._isConnected = false;
-      const errorMessage = `PROVIDER_FATAL: ${serviceError.message}`;
-      disconnectCallback(errorMessage);
-      rejectConnect?.(new ProviderFatalError(errorMessage));
+      handleFatalStatusCodeError(err, this._logger, disconnectCallback, rejectConnect);
       return;
     }
 

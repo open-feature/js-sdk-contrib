@@ -1,8 +1,9 @@
 import { credentials, status } from '@grpc/grpc-js';
-import type { ClientReadableStream, ChannelCredentials, ClientOptions } from '@grpc/grpc-js';
+import type { ClientReadableStream, ChannelCredentials, ClientOptions, ServiceError } from '@grpc/grpc-js';
 import { readFileSync, existsSync } from 'node:fs';
 import type { Config } from '../../configuration';
 import type { Logger } from '@openfeature/server-sdk';
+import { ProviderFatalError } from '@openfeature/server-sdk';
 
 export const closeStreamIfDefined = (stream: ClientReadableStream<unknown> | undefined) => {
   /**
@@ -96,18 +97,6 @@ export const buildRetryPolicy = (serviceName: string, retryBackoffMs?: number, r
   });
 };
 
-function getStatusCodeMap(): Map<string, number> {
-  const map = new Map<string, number>();
-
-  for (const [key, value] of Object.entries(status)) {
-    if (typeof value === 'number') {
-      map.set(key, value);
-    }
-  }
-
-  return map;
-}
-
 /**
  * Converts an array of gRPC status code strings to a Set of numeric codes.
  * @param fatalStatusCodes Array of status code strings.
@@ -121,17 +110,56 @@ export const createFatalStatusCodesSet = (fatalStatusCodes?: string[], logger?: 
     return codes;
   }
 
-  const codeMap = getStatusCodeMap();
-
   for (const codeStr of fatalStatusCodes) {
-    const numericCode = codeMap.get(codeStr);
-
-    if (numericCode !== undefined) {
+    const numericCode = status[codeStr as keyof typeof status];
+    if (typeof numericCode === 'number') {
       codes.add(numericCode);
     } else {
-      logger?.warn(`Unknown gRPC status code: "${codeStr}". Valid codes: ${Array.from(codeMap.keys()).join(', ')}`);
+      logger?.warn(`Unknown gRPC status code: "${codeStr}"`);
     }
   }
 
   return codes;
+};
+
+/**
+ * Checks if an error is a fatal gRPC status code that should not be retried.
+ * This should only be checked on the first connection attempt.
+ *
+ * @param err The error to check
+ * @param initialized Whether the connection has been successfully initialized
+ * @param fatalStatusCodes Set of numeric status codes considered fatal
+ * @returns True if the error is fatal and should not be retried
+ */
+export const isFatalStatusCodeError = (err: Error, initialized: boolean, fatalStatusCodes: Set<number>): boolean => {
+  if (initialized) {
+    return false;
+  }
+
+  const serviceError = err as ServiceError;
+  return serviceError?.code !== undefined && fatalStatusCodes.has(serviceError.code);
+};
+
+/**
+ * Handles a fatal gRPC status code error by logging it.
+ * Should only be called when isFatalStatusCodeError returns true.
+ *
+ * @param err The error to handle
+ * @param logger Optional logger for error logging
+ * @param disconnectCallback Callback to invoke with the error message
+ * @param rejectConnect Optional callback to reject the connection promise
+ */
+export const handleFatalStatusCodeError = (
+  err: Error,
+  logger: Logger | undefined,
+  disconnectCallback: (message: string) => void,
+  rejectConnect?: (reason: Error) => void,
+): void => {
+  const serviceError = err as ServiceError;
+  logger?.error(
+    `Encountered fatal status code ${serviceError.code} (${serviceError.message}) on first connection, will not retry`,
+  );
+  const errorMessage = `PROVIDER_FATAL: ${serviceError.message}`;
+  disconnectCallback(errorMessage);
+  rejectConnect?.(new ProviderFatalError(serviceError.message));
 };
