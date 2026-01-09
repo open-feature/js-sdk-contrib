@@ -139,21 +139,11 @@ The `retryGracePeriod` controls how long (in seconds) the provider will retry re
 
 Configure which gRPC status codes should be treated as fatal errors on the first connection attempt.
 When a fatal status code is encountered during initial connection, the provider will not retry and will emit a `PROVIDER_FATAL` error.
-This is useful for fail-fast behavior when certain errors indicate configuration problems that won't be resolved by retrying.
-
-The value should be an array of gRPC status code names.
-Available status codes can be found in the [gRPC documentation](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
 
 ```ts
 OpenFeature.setProvider(new FlagdProvider({
   fatalStatusCodes: ['UNAUTHENTICATED', 'PERMISSION_DENIED']
 }))
-```
-
-Or via environment variable:
-
-```sh
-FLAGD_FATAL_STATUS_CODES=UNAUTHENTICATED,PERMISSION_DENIED
 ```
 
 ### Supported Events
