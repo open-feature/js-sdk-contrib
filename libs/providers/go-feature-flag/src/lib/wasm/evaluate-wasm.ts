@@ -11,17 +11,20 @@ import * as path from 'path';
  * it calls an external WASM module to evaluate the feature flag.
  */
 export class EvaluateWasm {
-  private wasmInstance: WebAssembly.Instance | null = null;
   private wasmMemory: WebAssembly.Memory | null = null;
   private wasmExports: WebAssembly.Exports | null = null;
-  private go: Go;
-  private logger?: Logger;
+  private readonly go: Go;
+  private readonly logger?: Logger;
+  private readonly wasmBinaryPath?: string;
 
   /**
    * Constructor of the EvaluationWasm. It initializes the WASM module and the host functions.
+   * @param logger - Logger instance
+   * @param wasmBinaryPath - Optional path to the WASM binary file
    */
-  constructor(logger?: Logger) {
+  constructor(logger?: Logger, wasmBinaryPath?: string) {
     this.logger = logger;
+    this.wasmBinaryPath = wasmBinaryPath;
     this.go = new Go();
   }
 
@@ -41,7 +44,6 @@ export class EvaluateWasm {
       this.go.run(wasm.instance);
 
       // Store the instance and exports
-      this.wasmInstance = wasm.instance;
       this.wasmExports = wasm.instance.exports;
 
       // Get the required exports
@@ -72,7 +74,6 @@ export class EvaluateWasm {
       }
       this.wasmMemory = null;
       this.wasmExports = null;
-      this.wasmInstance = null;
       if (this.go && typeof this.go.exit === 'function') {
         try {
           this.go.exit(0);
@@ -91,89 +92,13 @@ export class EvaluateWasm {
    */
   private async loadWasmBinary(): Promise<ArrayBuffer> {
     try {
-      // Try multiple resolution strategies to find the WASM file
-      let wasmPath: string | null = null;
       const attemptedPaths: string[] = [];
+      const wasmPath = this.resolveWasmPath(attemptedPaths);
 
-      // Strategy 1: Try relative to current file (works in source, test, and installed packages)
-      // Resolve symlinks to get the real path
-      const currentDir = fs.realpathSync(__dirname);
-      const relativePath = path.join(currentDir, 'wasm-module', 'gofeatureflag-evaluation.wasm');
-      attemptedPaths.push(relativePath);
-      if (fs.existsSync(relativePath)) {
-        wasmPath = relativePath;
-      }
-
-      // Strategy 2: If relative path didn't work and we're in node_modules, find package root
       if (!wasmPath) {
-        try {
-          // Check if we're inside node_modules
-          const nodeModulesPathStr = path.sep + 'node_modules' + path.sep;
-          const nodeModulesIndex = currentDir.indexOf(nodeModulesPathStr);
-          if (nodeModulesIndex !== -1) {
-            // Extract the path from node_modules onwards
-            const fromNodeModules = currentDir.substring(nodeModulesIndex + nodeModulesPathStr.length);
-            const parts = fromNodeModules.split(path.sep);
-
-            // Find the package name (scoped packages have @scope/package format)
-            let packageName = parts[0];
-            if (parts[0].startsWith('@') && parts.length > 1) {
-              packageName = `${parts[0]}/${parts[1]}`;
-            }
-
-            // Get the node_modules directory
-            const nodeModulesDir = currentDir.substring(0, nodeModulesIndex + nodeModulesPathStr.length);
-            const packageRoot = path.join(nodeModulesDir, packageName);
-
-            // Construct path relative to package root
-            const nodeModulesPath = path.join(
-              packageRoot,
-              'src',
-              'lib',
-              'wasm',
-              'wasm-module',
-              'gofeatureflag-evaluation.wasm',
-            );
-            attemptedPaths.push(nodeModulesPath);
-            if (fs.existsSync(nodeModulesPath)) {
-              wasmPath = nodeModulesPath;
-            }
-          }
-        } catch (resolveError) {
-          // Resolution failed, continue to next strategy
-        }
-      }
-
-      // Strategy 3: Try using require.resolve to find package.json (fallback for edge cases)
-      if (!wasmPath) {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const packageName = require('../../../package.json').name;
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const packageJsonPath = require.resolve(`${packageName}/package.json`);
-          const packageRoot = fs.realpathSync(path.dirname(packageJsonPath));
-          const resolvedPath = path.join(
-            packageRoot,
-            'src',
-            'lib',
-            'wasm',
-            'wasm-module',
-            'gofeatureflag-evaluation.wasm',
-          );
-          attemptedPaths.push(resolvedPath);
-          if (fs.existsSync(resolvedPath)) {
-            wasmPath = resolvedPath;
-          }
-        } catch (resolveError) {
-          // require.resolve failed, continue
-        }
-      }
-
-      if (!wasmPath || !fs.existsSync(wasmPath)) {
         throw new Error(`WASM file not found. Tried: ${attemptedPaths.join(', ')}`);
       }
 
-      // Read the file as a buffer and convert to ArrayBuffer
       const buffer = fs.readFileSync(wasmPath);
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
       return arrayBuffer as ArrayBuffer;
@@ -181,6 +106,100 @@ export class EvaluateWasm {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger?.error(`Failed to load WASM binary: ${errorMessage}`, error);
       throw new WasmNotLoadedException(`Failed to load WASM binary: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Resolves the WASM file path using multiple strategies.
+   * @param attemptedPaths - Array to collect attempted paths for error reporting
+   * @returns The resolved path or null if not found
+   */
+  private resolveWasmPath(attemptedPaths: string[]): string | null {
+    // Strategy 0: Use the custom path if provided
+    const customPath = this.tryCustomPath(attemptedPaths);
+    if (customPath) return customPath;
+
+    // Strategy 1: Try relative to current file
+    const relativePath = this.tryRelativePath(attemptedPaths);
+    if (relativePath) return relativePath;
+
+    // Strategy 2: Try node_modules resolution
+    const nodeModulesPath = this.tryNodeModulesPath(attemptedPaths);
+    if (nodeModulesPath) return nodeModulesPath;
+
+    // Strategy 3: Try require.resolve fallback
+    return this.tryRequireResolvePath(attemptedPaths);
+  }
+
+  /**
+   * Tries to resolve WASM path from custom configured path.
+   */
+  private tryCustomPath(attemptedPaths: string[]): string | null {
+    if (!this.wasmBinaryPath) return null;
+    attemptedPaths.push(this.wasmBinaryPath);
+    return fs.existsSync(this.wasmBinaryPath) ? this.wasmBinaryPath : null;
+  }
+
+  /**
+   * Tries to resolve WASM path relative to current file.
+   */
+  private tryRelativePath(attemptedPaths: string[]): string | null {
+    const currentDir = fs.realpathSync(__dirname);
+    const relativePath = path.join(currentDir, 'wasm-module', 'gofeatureflag-evaluation.wasm');
+    attemptedPaths.push(relativePath);
+    return fs.existsSync(relativePath) ? relativePath : null;
+  }
+
+  /**
+   * Tries to resolve WASM path from node_modules.
+   */
+  private tryNodeModulesPath(attemptedPaths: string[]): string | null {
+    try {
+      const currentDir = fs.realpathSync(__dirname);
+      const nodeModulesPathStr = path.sep + 'node_modules' + path.sep;
+      const nodeModulesIndex = currentDir.indexOf(nodeModulesPathStr);
+
+      if (nodeModulesIndex === -1) return null;
+
+      const packageName = this.extractPackageName(currentDir, nodeModulesIndex, nodeModulesPathStr);
+      const nodeModulesDir = currentDir.substring(0, nodeModulesIndex + nodeModulesPathStr.length);
+      const packageRoot = path.join(nodeModulesDir, packageName);
+
+      const nodeModulesPath = path.join(packageRoot, 'wasm-module', 'gofeatureflag-evaluation.wasm');
+      attemptedPaths.push(nodeModulesPath);
+      return fs.existsSync(nodeModulesPath) ? nodeModulesPath : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Extracts the package name from a node_modules path.
+   */
+  private extractPackageName(currentDir: string, nodeModulesIndex: number, nodeModulesPathStr: string): string {
+    const fromNodeModules = currentDir.substring(nodeModulesIndex + nodeModulesPathStr.length);
+    const parts = fromNodeModules.split(path.sep);
+    if (parts[0].startsWith('@') && parts.length > 1) {
+      return `${parts[0]}/${parts[1]}`;
+    }
+    return parts[0];
+  }
+
+  /**
+   * Tries to resolve WASM path using require.resolve.
+   */
+  private tryRequireResolvePath(attemptedPaths: string[]): string | null {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const packageName = require('../../../package.json').name;
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const packageJsonPath = require.resolve(`${packageName}/package.json`);
+      const packageRoot = fs.realpathSync(path.dirname(packageJsonPath));
+      const resolvedPath = path.join(packageRoot, 'wasm-module', 'gofeatureflag-evaluation.wasm');
+      attemptedPaths.push(resolvedPath);
+      return fs.existsSync(resolvedPath) ? resolvedPath : null;
+    } catch {
+      return null;
     }
   }
 
