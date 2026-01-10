@@ -100,7 +100,7 @@ export class EvaluateWasm {
         throw new Error(`WASM file not found. Tried: ${attemptedPaths.join(', ')}`);
       }
 
-      const buffer = fs.readFileSync(wasmPath);
+      const buffer = await fs.promises.readFile(wasmPath);
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
       return arrayBuffer as ArrayBuffer;
     } catch (error) {
