@@ -11,6 +11,7 @@ import * as path from 'path';
  * it calls an external WASM module to evaluate the feature flag.
  */
 export class EvaluateWasm {
+  private readonly WASM_MODULE_PATH = path.join('wasm-module', 'gofeatureflag-evaluation.wasm');
   private wasmMemory: WebAssembly.Memory | null = null;
   private wasmExports: WebAssembly.Exports | null = null;
   private readonly go: Go;
@@ -145,7 +146,7 @@ export class EvaluateWasm {
    */
   private tryRelativePath(attemptedPaths: string[]): string | null {
     const currentDir = fs.realpathSync(__dirname);
-    const relativePath = path.join(currentDir, 'wasm-module', 'gofeatureflag-evaluation.wasm');
+    const relativePath = path.join(currentDir, this.WASM_MODULE_PATH);
     attemptedPaths.push(relativePath);
     return fs.existsSync(relativePath) ? relativePath : null;
   }
@@ -165,7 +166,7 @@ export class EvaluateWasm {
       const nodeModulesDir = currentDir.substring(0, nodeModulesIndex + nodeModulesPathStr.length);
       const packageRoot = path.join(nodeModulesDir, packageName);
 
-      const nodeModulesPath = path.join(packageRoot, 'wasm-module', 'gofeatureflag-evaluation.wasm');
+      const nodeModulesPath = path.join(packageRoot, this.WASM_MODULE_PATH);
       attemptedPaths.push(nodeModulesPath);
       return fs.existsSync(nodeModulesPath) ? nodeModulesPath : null;
     } catch {
@@ -195,7 +196,7 @@ export class EvaluateWasm {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const packageJsonPath = require.resolve(`${packageName}/package.json`);
       const packageRoot = fs.realpathSync(path.dirname(packageJsonPath));
-      const resolvedPath = path.join(packageRoot, 'wasm-module', 'gofeatureflag-evaluation.wasm');
+      const resolvedPath = path.join(packageRoot, this.WASM_MODULE_PATH);
       attemptedPaths.push(resolvedPath);
       return fs.existsSync(resolvedPath) ? resolvedPath : null;
     } catch {
