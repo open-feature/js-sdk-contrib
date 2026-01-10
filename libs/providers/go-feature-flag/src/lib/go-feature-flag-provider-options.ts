@@ -58,4 +58,12 @@ export interface GoFeatureFlagProviderOptions {
    * Fetch implementation for HTTP requests.
    */
   fetchImplementation?: FetchAPI;
+
+  /**
+   * Path to the WASM binary file.
+   * If specified, the provider will load the WASM file from this location
+   * instead of using the default resolution strategies.
+   * This is useful when the WASM file is bundled in a custom location.
+   */
+  wasmBinaryPath?: string;
 }

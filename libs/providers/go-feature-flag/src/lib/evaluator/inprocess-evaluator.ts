@@ -64,7 +64,7 @@ export class InProcessEvaluator implements IEvaluator {
     this.options = options;
     this.eventChannel = eventChannel;
     this.logger = logger;
-    this.evaluationEngine = new EvaluateWasm(logger);
+    this.evaluationEngine = new EvaluateWasm(logger, options.wasmBinaryPath);
   }
 
   /**

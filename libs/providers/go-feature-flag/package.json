@@ -9,7 +9,7 @@
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.19.0",
     "@openfeature/core": "^1.9.1",
-    "@openfeature/ofrep-provider": "0.2.1"
+    "@openfeature/ofrep-provider": "0.2.2"
   },
   "dependencies": {},
   "devDependencies": {
