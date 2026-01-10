@@ -136,7 +136,10 @@ export class EvaluateWasm {
    * Tries to resolve WASM path from custom configured path.
    */
   private tryCustomPath(attemptedPaths: string[]): string | null {
-    if (!this.wasmBinaryPath) return null;
+    if (!this.wasmBinaryPath) {
+      this.logger?.debug('No custom path provided, continuing to next strategy.');
+      return null;
+    }
     attemptedPaths.push(this.wasmBinaryPath);
     return fs.existsSync(this.wasmBinaryPath) ? this.wasmBinaryPath : null;
   }
@@ -160,7 +163,10 @@ export class EvaluateWasm {
       const nodeModulesPathStr = path.sep + 'node_modules' + path.sep;
       const nodeModulesIndex = currentDir.indexOf(nodeModulesPathStr);
 
-      if (nodeModulesIndex === -1) return null;
+      if (nodeModulesIndex === -1) {
+        this.logger?.debug('Node modules path not found, continuing to next strategy.');
+        return null;
+      }
 
       const packageName = this.extractPackageName(currentDir, nodeModulesIndex, nodeModulesPathStr);
       const nodeModulesDir = currentDir.substring(0, nodeModulesIndex + nodeModulesPathStr.length);
@@ -169,7 +175,8 @@ export class EvaluateWasm {
       const nodeModulesPath = path.join(packageRoot, this.WASM_MODULE_PATH);
       attemptedPaths.push(nodeModulesPath);
       return fs.existsSync(nodeModulesPath) ? nodeModulesPath : null;
-    } catch {
+    } catch (error) {
+      this.logger?.debug('Error during node_modules path resolution, continuing to next strategy.', error);
       return null;
     }
   }
@@ -199,7 +206,8 @@ export class EvaluateWasm {
       const resolvedPath = path.join(packageRoot, this.WASM_MODULE_PATH);
       attemptedPaths.push(resolvedPath);
       return fs.existsSync(resolvedPath) ? resolvedPath : null;
-    } catch {
+    } catch (error) {
+      this.logger?.debug('Error during require.resolve path resolution, continuing to next strategy.', error);
       return null;
     }
   }
