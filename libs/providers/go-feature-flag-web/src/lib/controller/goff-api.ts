@@ -13,12 +13,22 @@ export class GoffApiController {
 
   // timeout in millisecond before we consider the request as a failure
   private readonly timeout: number;
-  private options: GoFeatureFlagWebProviderOptions;
+
+  // apiKey is the key used to identify your request in GO Feature Flag
+  private apiKey: string | undefined;
 
   constructor(options: GoFeatureFlagWebProviderOptions) {
     this.endpoint = options.endpoint;
     this.timeout = options.apiTimeout ?? 0;
-    this.options = options;
+    this.apiKey = options.apiKey;
+  }
+
+  /**
+   * setApiKey updates the API key used for authentication.
+   * @param apiKey - The new API key to use
+   */
+  setApiKey(apiKey: string | undefined): void {
+    this.apiKey = apiKey;
   }
 
   async collectData(
@@ -42,8 +52,8 @@ export class GoffApiController {
         Accept: 'application/json',
       };
 
-      if (this.options.apiKey) {
-        headers['Authorization'] = `Bearer ${this.options.apiKey}`;
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`;
       }
 
       const controller = new AbortController();

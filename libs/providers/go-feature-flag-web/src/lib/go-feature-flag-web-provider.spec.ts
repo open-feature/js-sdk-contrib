@@ -342,6 +342,88 @@ describe('GoFeatureFlagWebProvider', () => {
       }
       expect(true).toBe(false);
     });
+
+    it('should use updated apiKey after calling setApiKey', async () => {
+      const providerName = expect.getState().currentTestName || 'set-api-key-test';
+      const apiKeyProvider = new GoFeatureFlagWebProvider(
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          apiKey: 'initial-api-key',
+          disableDataCollection: true,
+        },
+        logger,
+      );
+
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, apiKeyProvider);
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      // Get the count of calls before the second fetch
+      const callCountBefore = fetchMock.calls(allFlagsEndpoint).length;
+
+      // Update API key at runtime
+      apiKeyProvider.setApiKey('new-api-key');
+
+      // Trigger a context change to force a new fetch
+      await OpenFeature.setContext({ targetingKey: 'different-user' });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Verify a new call was made with the new API key
+      const calls = fetchMock.calls(allFlagsEndpoint);
+      expect(calls.length).toBeGreaterThan(callCountBefore);
+
+      // The latest call should have the new API key
+      const lastCall = calls[calls.length - 1];
+      expect(lastCall).not.toBeUndefined();
+      if (lastCall) {
+        const headers = lastCall[1]?.headers as never;
+        expect(headers['Authorization']).toBe('Bearer new-api-key');
+      }
+    });
+
+    it('should remove apiKey header when setApiKey is called with undefined', async () => {
+      const providerName = expect.getState().currentTestName || 'remove-api-key-test';
+      const apiKeyProvider = new GoFeatureFlagWebProvider(
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          apiKey: 'initial-api-key',
+          disableDataCollection: true,
+        },
+        logger,
+      );
+
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, apiKeyProvider);
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      // Get the count of calls before the second fetch
+      const callCountBefore = fetchMock.calls(allFlagsEndpoint).length;
+
+      // Update API key to undefined
+      apiKeyProvider.setApiKey(undefined);
+
+      // Trigger a context change to force a new fetch
+      await OpenFeature.setContext({ targetingKey: 'different-user' });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Verify a new call was made without Authorization header
+      const calls = fetchMock.calls(allFlagsEndpoint);
+      expect(calls.length).toBeGreaterThan(callCountBefore);
+
+      // The latest call should not have Authorization header
+      const lastCall = calls[calls.length - 1];
+      expect(lastCall).not.toBeUndefined();
+      if (lastCall) {
+        const headers = lastCall[1]?.headers as never;
+        expect(headers['Authorization']).toBeUndefined();
+      }
+    });
   });
 
   describe('eventing', () => {
@@ -524,6 +606,40 @@ describe('GoFeatureFlagWebProvider', () => {
           'Content-Type': 'application/json',
           Accept: 'application/json',
           Authorization: 'Bearer toto',
+        });
+      });
+
+      it('should use updated apiKey in data collector after setApiKey', async () => {
+        const clientName = expect.getState().currentTestName ?? 'test-provider';
+        await OpenFeature.setContext(defaultContext);
+        const p = new GoFeatureFlagWebProvider(
+          {
+            endpoint: endpoint,
+            apiTimeout: 1000,
+            maxRetries: 1,
+            dataFlushInterval: 10000,
+            apiKey: 'initial-key',
+          },
+          logger,
+        );
+
+        await OpenFeature.setProviderAndWait(clientName, p);
+        const client = OpenFeature.getClient(clientName);
+        await websocketMockServer.connected;
+        await new Promise((resolve) => setTimeout(resolve, 5));
+
+        // Update API key at runtime
+        p.setApiKey('updated-key');
+
+        client.getBooleanDetails('bool_flag', false);
+
+        await OpenFeature.close();
+
+        expect(fetchMock.calls(dataCollectorEndpoint).length).toBe(1);
+        expect(fetchMock.lastOptions(dataCollectorEndpoint)?.headers).toEqual({
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: 'Bearer updated-key',
         });
       });
 

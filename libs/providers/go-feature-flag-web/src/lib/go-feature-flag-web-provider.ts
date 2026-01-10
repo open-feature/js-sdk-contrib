@@ -43,7 +43,7 @@ export class GoFeatureFlagWebProvider implements Provider {
   // timeout in millisecond before we consider the http request as a failure
   private readonly _apiTimeout: number;
   // apiKey is the key used to identify your request in GO Feature Flag
-  private readonly _apiKey: string | undefined;
+  private _apiKey: string | undefined;
   // initial delay in millisecond to wait before retrying to connect
   private readonly _retryInitialDelay;
   // multiplier of _retryInitialDelay after each failure
@@ -72,6 +72,26 @@ export class GoFeatureFlagWebProvider implements Provider {
 
     this._collectorManager = new CollectorManager(options, logger);
     this._dataCollectorHook = new GoFeatureFlagDataCollectorHook(this._collectorManager);
+  }
+
+  /**
+   * setApiKey updates the API key used to authenticate requests to the GO Feature Flag relay proxy.
+   * This allows for runtime API key updates without reinitializing the provider.
+   *
+   * Use cases include:
+   * - Token rotation for security best practices
+   * - Session refresh when a new API key is issued
+   * - Dynamic configuration updates from a backend service
+   *
+   * Note: The new API key will be used for all subsequent requests to the relay proxy,
+   * including the websocket connection and data collector calls.
+   *
+   * @param apiKey - The new API key to use for authentication
+   */
+  setApiKey(apiKey: string | undefined): void {
+    this._apiKey = apiKey;
+    this._collectorManager?.setApiKey(apiKey);
+    this._logger?.debug(`${GoFeatureFlagWebProvider.name}: API key has been updated`);
   }
 
   async initialize(context: EvaluationContext): Promise<void> {

@@ -32,6 +32,14 @@ export class CollectorManager {
     };
   }
 
+  /**
+   * setApiKey updates the API key used for data collection requests.
+   * @param apiKey - The new API key to use
+   */
+  setApiKey(apiKey: string | undefined): void {
+    this.goffApiController.setApiKey(apiKey);
+  }
+
   init() {
     this.bgScheduler = setInterval(async () => await this.callGoffDataCollection(), this.dataFlushInterval);
     this.dataCollectorBuffer = [];

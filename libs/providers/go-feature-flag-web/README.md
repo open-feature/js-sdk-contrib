@@ -62,6 +62,26 @@ client.addHandler(ProviderEvents.ConfigurationChanged, () => { //... });
 If the connection to the GO Feature Flag instance fails, the provider will attempt to reconnect with an exponential back-off.   
 The `websocketMaxRetries` can be specified to customize reconnect behavior.
 
+### Updating API Key at Runtime
+The provider supports updating the API key at runtime without reinitializing the provider. This is useful for scenarios such as:
+- **Token rotation**: Security best practices often require rotating API keys periodically
+- **Session refresh**: When a user's session is refreshed, a new API key might be issued
+- **Dynamic configuration**: Applications that receive configuration updates from a backend service
+
+```typescript
+const provider = new GoFeatureFlagWebProvider({
+  endpoint: 'https://relay-proxy.example.com',
+  apiKey: 'initial-api-key',
+});
+
+OpenFeature.setProvider(provider);
+
+// Later, when you need to update the API key:
+provider.setApiKey('new-api-key');
+```
+
+The new API key will be used for all subsequent requests to the relay proxy, including flag evaluations and data collection.
+
 ### Event streaming
 The `GoFeatureFlagWebProvider` receives events from GO Feature Flag with changes.
 Combined with the event API in the web SDK, this allows for subscription to flag value changes in clients.
