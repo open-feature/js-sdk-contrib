@@ -84,7 +84,7 @@ const provider = new GoFeatureFlagProvider({
 | `apiKey`                      | `string`           | `undefined`  | API key for authentication                                      |
 | `exporterMetadata`            | `ExporterMetadata` | `undefined`  | Custom metadata for events                                      |
 | `fetchImplementation`         | `FetchAPI`         | `undefined`  | Custom fetch implementation                                     |
-| `wasmBinaryPath`              | `string`           | `undefined`  | Custom path to the WASM binary file _(in-process mode only)_, to use only if you want to provide the WASM location yourself.   |
+| `wasmBinaryPath`              | `string`           | `undefined`  | Custom path to the WASM binary file _(in-process mode only)_. |
 
 ### Evaluation Types
 
