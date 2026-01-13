@@ -72,18 +72,19 @@ const provider = new GoFeatureFlagProvider({
 
 ### Provider Options
 
-| Option                        | Type               | Default      | Description                                     |
-| ----------------------------- | ------------------ | ------------ | ----------------------------------------------- |
-| `endpoint`                    | `string`           | **Required** | The endpoint of the GO Feature Flag relay-proxy |
-| `evaluationType`              | `EvaluationType`   | `InProcess`  | Evaluation mode: `InProcess` or `Remote`        |
-| `timeout`                     | `number`           | `10000`      | HTTP request timeout in milliseconds            |
-| `flagChangePollingIntervalMs` | `number`           | `120000`     | Polling interval for configuration changes      |
-| `dataFlushInterval`           | `number`           | `120000`     | Data collection flush interval                  |
-| `maxPendingEvents`            | `number`           | `10000`      | Maximum pending events before flushing          |
-| `disableDataCollection`       | `boolean`          | `false`      | Disable data collection entirely                |
-| `apiKey`                      | `string`           | `undefined`  | API key for authentication                      |
-| `exporterMetadata`            | `ExporterMetadata` | `undefined`  | Custom metadata for events                      |
-| `fetchImplementation`         | `FetchAPI`         | `undefined`  | Custom fetch implementation                     |
+| Option                        | Type               | Default      | Description                                                     |
+| ----------------------------- | ------------------ | ------------ | --------------------------------------------------------------- |
+| `endpoint`                    | `string`           | **Required** | The endpoint of the GO Feature Flag relay-proxy                 |
+| `evaluationType`              | `EvaluationType`   | `InProcess`  | Evaluation mode: `InProcess` or `Remote`                        |
+| `timeout`                     | `number`           | `10000`      | HTTP request timeout in milliseconds                            |
+| `flagChangePollingIntervalMs` | `number`           | `120000`     | Polling interval for configuration changes                      |
+| `dataFlushInterval`           | `number`           | `120000`     | Data collection flush interval                                  |
+| `maxPendingEvents`            | `number`           | `10000`      | Maximum pending events before flushing                          |
+| `disableDataCollection`       | `boolean`          | `false`      | Disable data collection entirely                                |
+| `apiKey`                      | `string`           | `undefined`  | API key for authentication                                      |
+| `exporterMetadata`            | `ExporterMetadata` | `undefined`  | Custom metadata for events                                      |
+| `fetchImplementation`         | `FetchAPI`         | `undefined`  | Custom fetch implementation                                     |
+| `wasmBinaryPath`              | `string`           | `undefined`  | Custom path to the WASM binary file _(in-process mode only)_. |
 
 ### Evaluation Types
 
@@ -134,6 +135,18 @@ const provider = new GoFeatureFlagProvider({
   disableDataCollection: false, // Enable data collection
   dataFlushInterval: 20000, // Flush every 20 seconds
   maxPendingEvents: 5000, // Max 5000 pending events
+});
+```
+
+### Custom WASM Binary Path
+
+When using in-process evaluation, you can specify a custom path for the WASM binary file. This is useful when the WASM file is bundled in a custom location:
+
+```typescript
+const provider = new GoFeatureFlagProvider({
+  endpoint: 'https://your-relay-proxy.com',
+  evaluationType: EvaluationType.InProcess,
+  wasmBinaryPath: '/path/to/custom/gofeatureflag-evaluation.wasm',
 });
 ```
 

@@ -3,6 +3,7 @@ import type { GoFeatureFlagApi } from '../service/api';
 import type { GoFeatureFlagProviderOptions } from '../go-feature-flag-provider-options';
 import { FlagNotFoundError, type Logger, OpenFeatureEventEmitter } from '@openfeature/server-sdk';
 import { EvaluationType } from '../model';
+import { EvaluateWasm } from '../wasm/evaluate-wasm';
 
 // Mock the EvaluateWasm class
 jest.mock('../wasm/evaluate-wasm', () => ({
@@ -110,6 +111,26 @@ describe('InProcessEvaluator', () => {
       await evaluator.initialize();
 
       await expect(evaluator.dispose()).resolves.not.toThrow();
+    });
+  });
+
+  describe('wasmBinaryPath', () => {
+    it('should pass wasmBinaryPath to EvaluateWasm constructor', () => {
+      const customWasmPath = '/custom/path/to/gofeatureflag-evaluation.wasm';
+      const optionsWithWasmPath: GoFeatureFlagProviderOptions = {
+        ...mockOptions,
+        wasmBinaryPath: customWasmPath,
+      };
+
+      new InProcessEvaluator(optionsWithWasmPath, mockApi, new OpenFeatureEventEmitter(), mockLogger);
+
+      expect(EvaluateWasm).toHaveBeenCalledWith(mockLogger, customWasmPath);
+    });
+
+    it('should pass undefined wasmBinaryPath when not provided', () => {
+      new InProcessEvaluator(mockOptions, mockApi, new OpenFeatureEventEmitter(), mockLogger);
+
+      expect(EvaluateWasm).toHaveBeenCalledWith(mockLogger, undefined);
     });
   });
 });
