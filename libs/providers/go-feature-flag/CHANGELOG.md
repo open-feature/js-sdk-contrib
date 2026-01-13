@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.5...go-feature-flag-provider-v1.1.0) (2026-01-13)
+
+
+### ✨ New Features
+
+* **go-feature-flag:** add wasmBinaryPath option for custom WASM location ([#1448](https://github.com/open-feature/js-sdk-contrib/issues/1448)) ([ad4a573](https://github.com/open-feature/js-sdk-contrib/commit/ad4a57365e09903026c65f7533cfdf58d235a5ce))
+
 ## [1.0.5](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.4...go-feature-flag-provider-v1.0.5) (2025-12-29)
 
 
