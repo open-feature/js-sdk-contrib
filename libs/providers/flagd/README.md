@@ -43,6 +43,8 @@ Options can be defined in the constructor or as environment variables. Construct
 | keepAliveTime                          | FLAGD_KEEP_ALIVE_TIME_MS       | number  | 0                                                              | rpc, in-process  |
 | retryBackoffMs                         | FLAGD_RETRY_BACKOFF_MS         | int     | 1000                                                           | in-process       |
 | retryBackoffMaxMs                      | FLAGD_RETRY_BACKOFF_MAX_MS     | int     | 120000                                                         | in-process       |
+| retryGracePeriod                       | FLAGD_RETRY_GRACE_PERIOD       | int     | 5                                                              |                  |
+| fatalStatusCodes                       | FLAGD_FATAL_STATUS_CODES       | string[]| -                                                              |                  |
 
 #### Resolver type-specific Defaults
 
@@ -121,6 +123,27 @@ Set to `0` to disable keepalive (default).
       resolverType: 'in-process',
       keepAliveTime: 30000, // Send keepalive ping every 30 seconds
   }))
+```
+
+### Retry Grace Period (optional)
+
+The `retryGracePeriod` controls how long (in seconds) the provider will retry reconnecting before transitioning from `STALE` to `ERROR` state:
+
+```ts
+  OpenFeature.setProvider(new FlagdProvider({
+      retryGracePeriod: 5, // Retry for 5 seconds before moving to ERROR state
+  }))
+```
+
+### Fatal Status Codes (optional)
+
+Configure which gRPC status codes should be treated as fatal errors on the first connection attempt.
+When a fatal status code is encountered during initial connection, the provider will not retry and will emit a `PROVIDER_FATAL` error.
+
+```ts
+OpenFeature.setProvider(new FlagdProvider({
+  fatalStatusCodes: ['UNAUTHENTICATED', 'PERMISSION_DENIED']
+}))
 ```
 
 ### Supported Events
