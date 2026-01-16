@@ -104,22 +104,19 @@ export const buildRetryPolicy = (serviceName: string, retryBackoffMs?: number, r
  * @returns Set of numeric status codes
  */
 export const createFatalStatusCodesSet = (fatalStatusCodes?: string[], logger?: Logger): Set<number> => {
-  const codes = new Set<number>();
-
   if (!fatalStatusCodes?.length) {
-    return codes;
+    return new Set<number>();
   }
 
-  for (const codeStr of fatalStatusCodes) {
+  return fatalStatusCodes.reduce((codes, codeStr) => {
     const numericCode = status[codeStr as keyof typeof status];
     if (typeof numericCode === 'number') {
       codes.add(numericCode);
     } else {
       logger?.warn(`Unknown gRPC status code: "${codeStr}"`);
     }
-  }
-
-  return codes;
+    return codes;
+  }, new Set<number>());
 };
 
 /**
