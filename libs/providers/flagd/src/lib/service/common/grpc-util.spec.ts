@@ -93,6 +93,14 @@ describe('isFatalStatusCodeError', () => {
     expect(result).toBe(true);
   });
 
+  it('should return false when error code is in fatal codes but already initialized', () => {
+    const error = { code: status.UNAUTHENTICATED } as ServiceError;
+    const fatalCodes = new Set([status.UNAUTHENTICATED]);
+
+    const result = isFatalStatusCodeError(error, true, fatalCodes);
+    expect(result).toBe(false);
+  });
+
   it('should return false when error code is not in fatal codes', () => {
     const error = { code: status.UNAVAILABLE } as ServiceError;
     const fatalCodes = new Set([status.UNAUTHENTICATED]);
