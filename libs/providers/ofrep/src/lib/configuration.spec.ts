@@ -101,9 +101,7 @@ describe('Configuration', () => {
 
       const config = getConfig();
 
-      expect(config.headers).toStrictEqual([
-        ['x-data', 'param1=value1&param2=value2'],
-      ]);
+      expect(config.headers).toStrictEqual([['x-data', 'param1=value1&param2=value2']]);
     });
 
     it('should skip malformed headers without equals sign and log warning', () => {
@@ -116,9 +114,7 @@ describe('Configuration', () => {
         ['validheader', 'value'],
         ['anothervalid', 'value2'],
       ]);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Skipping malformed header entry (missing equals sign): "InvalidHeader"'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Skipping malformed header entry (missing equals sign): "InvalidHeader"');
       consoleSpy.mockRestore();
     });
 
@@ -132,9 +128,7 @@ describe('Configuration', () => {
         ['validheader', 'value'],
         ['anothervalid', 'value2'],
       ]);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Skipping malformed header entry (missing key): "=valueWithoutKey"'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Skipping malformed header entry (missing key): "=valueWithoutKey"');
       consoleSpy.mockRestore();
     });
 
@@ -148,9 +142,7 @@ describe('Configuration', () => {
         ['validheader', 'value'],
         ['anothervalid', 'value2'],
       ]);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Skipping malformed header entry (missing key): "  =valueWithSpaceKey"'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Skipping malformed header entry (missing key): "  =valueWithSpaceKey"');
       consoleSpy.mockRestore();
     });
 
