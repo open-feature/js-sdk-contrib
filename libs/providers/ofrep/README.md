@@ -47,14 +47,6 @@ export OFREP_TIMEOUT_MS=5000
 export OFREP_HEADERS=Authentication=Bearer 123,Content-Type=json
 ```
 
-```typescript
-// These values will be used as defaults
-const provider = new GoFeatureFlagProvider({
-  evaluationType: EvaluationType.Remote,
-  // endpoint, timeout, and headers will be read from environment variables
-});
-```
-
 **Note**: Explicitly provided options always take precedence over environment variables.
 
 ### HTTP headers
