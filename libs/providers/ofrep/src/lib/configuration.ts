@@ -15,17 +15,25 @@ function getEnvVarConfig(): Partial<OFREPProviderBaseOptions> {
   const config: Partial<OFREPProviderBaseOptions> = {};
 
   if (process.env[ENV_VAR.OFREP_ENDPOINT]) {
-    config.baseUrl = process.env[ENV_VAR.OFREP_ENDPOINT];
+    const baseUrl = process.env[ENV_VAR.OFREP_ENDPOINT];
+    try {
+      new URL(baseUrl);
+    } catch (error) {
+      console.warn(`Invalid OFREP_ENDPOINT value: "${baseUrl}" is not a valid URL.`);
+    }
+
+    config.baseUrl = baseUrl;
   }
 
   if (process.env[ENV_VAR.OFREP_TIMEOUT_MS]) {
     const timeout = Number(process.env[ENV_VAR.OFREP_TIMEOUT_MS]);
     if (!isNaN(timeout)) {
       config.timeoutMs = timeout;
+    } else {
+      console.warn(`Invalid OFREP_TIMEOUT_MS value: "${process.env[ENV_VAR.OFREP_TIMEOUT_MS]}" is not a number.`);
     }
   }
 
-  // Store raw headers string to be processed later
   if (process.env[ENV_VAR.OFREP_HEADERS]) {
     config.headers = parseHeaders(process.env[ENV_VAR.OFREP_HEADERS]);
   }
