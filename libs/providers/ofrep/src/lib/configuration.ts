@@ -11,7 +11,7 @@ enum ENV_VAR {
  * Get configuration from environment variables.
  * @returns Partial configuration from environment variables
  */
-const getEnvVarConfig = (): Partial<OFREPProviderBaseOptions> => {
+function getEnvVarConfig(): Partial<OFREPProviderBaseOptions> {
   const config: Partial<OFREPProviderBaseOptions> = {};
 
   if (process.env[ENV_VAR.OFREP_ENDPOINT]) {
@@ -31,7 +31,7 @@ const getEnvVarConfig = (): Partial<OFREPProviderBaseOptions> => {
   }
 
   return config;
-};
+}
 
 /**
  * Parse headers from environment variable string.
