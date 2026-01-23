@@ -36,19 +36,51 @@ function getEnvVarConfig(): Partial<OFREPProviderBaseOptions> {
 /**
  * Parse headers from environment variable string.
  * Expected format: "key1=value1,key2=value2"
+ * Supports URL-encoded strings.
+ *
+ * Parsing algorithm:
+ * 1. URL-decode the entire string first
+ * 2. Split by comma to get header pairs
+ * 3. Split each pair by the first equals sign
+ * 4. Trim whitespace from keys and values
+ * 5. Log warnings for invalid entries
+ *
  * @param headerString - The header string to parse
  * @returns Array of header tuples
  */
 function parseHeaders(headerString: string): [string, string][] {
   const headers: [string, string][] = [];
-  const pairs = headerString.split(',');
+
+  let decodedString: string;
+  try {
+    decodedString = decodeURIComponent(headerString);
+  } catch (error) {
+    console.warn(`Failed to decode OFREP_HEADERS: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    decodedString = headerString;
+  }
+
+  const pairs = decodedString.split(',');
 
   for (const pair of pairs) {
-    const [key, ...valueParts] = pair.split('=');
-    if (key && valueParts.length > 0) {
-      const value = valueParts.join('=').trim(); // rejoin in case value contains '='
-      headers.push([key.trim(), value]);
+    const equalsIndex = pair.indexOf('=');
+
+    if (equalsIndex === -1) {
+      console.warn(`Skipping malformed header entry (missing equals sign): "${pair}"`);
+      continue;
     }
+
+    const key = pair.substring(0, equalsIndex);
+    const value = pair.substring(equalsIndex + 1);
+
+    const trimmedKey = key.trim();
+    const trimmedValue = value.trim();
+
+    if (!trimmedKey) {
+      console.warn(`Skipping malformed header entry (missing key): "${pair}"`);
+      continue;
+    }
+
+    headers.push([trimmedKey, trimmedValue]);
   }
 
   return headers;
