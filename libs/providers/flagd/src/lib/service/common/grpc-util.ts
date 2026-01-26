@@ -5,6 +5,11 @@ import type { Config } from '../../configuration';
 import type { Logger } from '@openfeature/server-sdk';
 import { ProviderFatalError } from '@openfeature/server-sdk';
 
+/**
+ * Get the string name of a gRPC status code.
+ */
+const statusName = (code: status): string => status[code];
+
 export const closeStreamIfDefined = (stream: ClientReadableStream<unknown> | undefined) => {
   /**
    * cancel() is necessary to prevent calls from hanging the process, so we need to we need to remove all the
@@ -90,7 +95,7 @@ export const buildRetryPolicy = (serviceName: string, retryBackoffMs?: number, r
           initialBackoff: `${Math.round(initialBackoff / 1000).toFixed(2)}s`,
           maxBackoff: `${Math.round(maxBackoff / 1000).toFixed(2)}s`,
           backoffMultiplier: 2,
-          retryableStatusCodes: [status.UNAVAILABLE, status.UNKNOWN],
+          retryableStatusCodes: [statusName(status.UNAVAILABLE), statusName(status.UNKNOWN)],
         },
       },
     ],

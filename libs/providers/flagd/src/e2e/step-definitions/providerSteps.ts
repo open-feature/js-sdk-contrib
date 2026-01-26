@@ -1,4 +1,4 @@
-import { OpenFeature, ProviderStatus } from '@openfeature/server-sdk';
+import { OpenFeature, ProviderEvents, ProviderStatus } from '@openfeature/server-sdk';
 import { FlagdComposeContainer } from '../tests/flagdComposeContainer';
 import type { State, Steps } from './state';
 import { FlagdProvider } from '../../lib/flagd-provider';
@@ -26,16 +26,19 @@ export const providerSteps: Steps =
     });
 
     afterEach(async () => {
-      await fetch('http://' + container.getLaunchpadUrl() + '/stop');
       await OpenFeature.close();
-      return Promise.resolve();
+      await fetch('http://' + container.getLaunchpadUrl() + '/stop');
     }, 50000);
 
     given(/a (.*) flagd provider/, async (providerType: string) => {
       const flagdOptions: FlagdProviderOptions = {
         resolverType: state.resolverType,
-        deadlineMs: 2000,
-        retryGracePeriod: 2,
+        retryGracePeriod: 2, // retryGracePeriod is related to test expectations; this must be 2
+        // these 3 options are optimized for test speed and stability
+        deadlineMs: 4000,
+        retryBackoffMaxMs: 1000,
+        retryBackoffMs: 1000,
+
         ...state.config,
         ...state.options,
       };
