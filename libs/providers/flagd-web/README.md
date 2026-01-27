@@ -1,3 +1,3 @@
 # flagd-web Provider for OpenFeature
 
-> **⚠️ DEPRECATED**: This package is deprecated. The flagd-web provider has been superseded. Please migrate to the OFREP provider which is supported by flagd and has comparable features. See [NPM package](https://www.npmjs.com/package/@openfeature/ofrep-web-provider) and [Github Repository](https://github.com/open-feature/js-sdk-contrib/tree/main/libs/providers/ofrep-web)
+> **⚠️ DEPRECATED**: This package is deprecated and has been superseded by the OFREP provider, which is supported by flagd and offers comparable features. Please migrate to the [NPM package](https://www.npmjs.com/package/@openfeature/ofrep-web-provider) ([source on GitHub](https://github.com/open-feature/js-sdk-contrib/tree/main/libs/providers/ofrep-web)).
