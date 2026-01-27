@@ -67,6 +67,9 @@ describe(FlagdProvider.name, () => {
 
     // mock ServiceClient to inject
     const basicServiceClientMock: ServiceClient = {
+      waitForReady: jest.fn((_deadline: number, callback: (err?: Error) => void) => {
+        callback();
+      }),
       eventStream: jest.fn(() => {
         return {
           on: jest.fn((event: string, callback: (message: unknown) => void) => {
@@ -270,6 +273,9 @@ describe(FlagdProvider.name, () => {
 
     // mock ServiceClient to inject
     const streamingServiceClientMock = {
+      waitForReady: jest.fn((_deadline: number, callback: (err?: Error) => void) => {
+        callback();
+      }),
       eventStream: jest.fn(() => {
         return streamMock;
       }),
@@ -507,7 +513,15 @@ describe(FlagdProvider.name, () => {
     });
 
     describe('connection/re-connection', () => {
-      it('should watch channel for reconnect after error', () => {
+      beforeEach(() => {
+        jest.useFakeTimers();
+      });
+
+      afterEach(() => {
+        jest.useRealTimers();
+      });
+
+      it('should attempt to reconnect after error', () => {
         const provider = new FlagdProvider(
           undefined,
           undefined,
@@ -523,8 +537,11 @@ describe(FlagdProvider.name, () => {
         // fake some errors
         registeredOnErrorCallback();
 
-        expect(streamingServiceClientMock.getChannel().getConnectivityState).toHaveBeenCalledWith(true);
-        expect(streamingServiceClientMock.getChannel().watchConnectivityState).toHaveBeenCalled();
+        // verify reconnection is scheduled via setTimeout
+        jest.runAllTimers();
+
+        // eventStream should have been called twice (initial + reconnect attempt)
+        expect(streamingServiceClientMock.eventStream).toHaveBeenCalledTimes(2);
       });
     });
   });
@@ -535,6 +552,9 @@ describe(FlagdProvider.name, () => {
 
     // mock ServiceClient to inject
     const errServiceClientMock: ServiceClient = {
+      waitForReady: jest.fn((_deadline: number, callback: (err?: Error) => void) => {
+        callback();
+      }),
       eventStream: jest.fn(() => {
         return {
           on: jest.fn((event: string, callback: (message: unknown) => void) => {
@@ -661,6 +681,9 @@ describe(FlagdProvider.name, () => {
 
     // mock ServiceClient to inject
     const errServiceClientMock: ServiceClient = {
+      waitForReady: jest.fn((_deadline: number, callback: (err?: Error) => void) => {
+        callback();
+      }),
       eventStream: jest.fn(() => {
         return {
           on: jest.fn((event: string, callback: (message: unknown) => void) => {

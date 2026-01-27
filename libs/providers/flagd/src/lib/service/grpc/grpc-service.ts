@@ -1,4 +1,4 @@
-import type { ClientReadableStream, ClientUnaryCall, ServiceError } from '@grpc/grpc-js';
+import { type ClientReadableStream, type ClientUnaryCall, type ServiceError } from '@grpc/grpc-js';
 import { status } from '@grpc/grpc-js';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 import type { EvaluationContext, FlagValue, JsonValue, Logger, ResolutionDetails } from '@openfeature/server-sdk';
@@ -27,7 +27,12 @@ import type {
 } from '../../../proto/ts/flagd/evaluation/v1/evaluation';
 import { ServiceClient } from '../../../proto/ts/flagd/evaluation/v1/evaluation';
 import type { FlagdGrpcConfig } from '../../configuration';
-import { DEFAULT_MAX_CACHE_SIZE, EVENT_CONFIGURATION_CHANGE, EVENT_PROVIDER_READY } from '../../constants';
+import {
+  DEFAULT_MAX_BACKOFF_MS,
+  DEFAULT_MAX_CACHE_SIZE,
+  EVENT_CONFIGURATION_CHANGE,
+  EVENT_PROVIDER_READY,
+} from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
 import type { Service } from '../service';
 import {
@@ -79,6 +84,8 @@ export class GRPCService implements Service {
   private readonly _fatalStatusCodes: Set<number>;
   private _initialized = false;
   private _streamDeadline: number;
+  private _maxBackoffMs: number;
+  private _errorThrottled = false;
 
   private get _cacheActive() {
     // the cache is "active" (able to be used) if the config enabled it, AND the gRPC stream is live
@@ -94,6 +101,7 @@ export class GRPCService implements Service {
     const clientOptions = buildClientOptions(config);
     const channelCredentials = createChannelCredentials(tls, certPath);
 
+    this._maxBackoffMs = config.retryBackoffMaxMs || DEFAULT_MAX_BACKOFF_MS;
     this._client = client
       ? client
       : new ServiceClient(socketPath ? `unix://${socketPath}` : `${host}:${port}`, channelCredentials, clientOptions);
@@ -175,32 +183,48 @@ export class GRPCService implements Service {
     // close the previous stream if we're reconnecting
     closeStreamIfDefined(this._eventStream);
 
-    const deadline = this._streamDeadline != 0 ? Date.now() + this._streamDeadline : undefined;
-    const stream = this._client.eventStream({ waitForReady: true }, { deadline });
-    stream.on('error', (err: Error) => {
-      // Check if error is a fatal status code on first connection only
-      if (isFatalStatusCodeError(err, this._initialized, this._fatalStatusCodes)) {
-        handleFatalStatusCodeError(err, this.logger, disconnectCallback, rejectConnect);
-        return;
-      }
-      rejectConnect?.(err);
-      this.handleError(reconnectCallback, changedCallback, disconnectCallback);
-    });
-    stream.on('data', (message) => {
-      if (message.type === EVENT_PROVIDER_READY) {
-        this.logger?.debug(`${FlagdProvider.name}: streaming connection established with flagd`);
-        this._initialized = true;
-        // if resolveConnect is undefined, this is a reconnection; we only want to fire the reconnect callback in that case
-        if (resolveConnect) {
-          resolveConnect();
-        } else {
-          reconnectCallback();
+    // wait for connection to be stable
+    this._client.waitForReady(Date.now() + this._deadline, (err) => {
+      if (err) {
+        // Check if error is a fatal status code on first connection only
+        if (isFatalStatusCodeError(err, this._initialized, this._fatalStatusCodes)) {
+          handleFatalStatusCodeError(err, this.logger, disconnectCallback, rejectConnect);
+          return;
         }
-      } else if (message.type === EVENT_CONFIGURATION_CHANGE) {
-        this.handleFlagsChanged(message, changedCallback);
+        rejectConnect?.(err);
+        this.handleError(reconnectCallback, changedCallback, disconnectCallback);
+      } else {
+        const streamDeadline = this._streamDeadline != 0 ? Date.now() + this._streamDeadline : undefined;
+        const stream = this._client.eventStream({}, { deadline: streamDeadline });
+        stream.on('error', (err: Error) => {
+          // In cases where we get an explicit error status, we add a delay.
+          // This prevents tight loops when errors are returned immediately, typically by intervening proxies like Envoy.
+          this._errorThrottled = true;
+          // Check if error is a fatal status code on first connection only
+          if (isFatalStatusCodeError(err, this._initialized, this._fatalStatusCodes)) {
+            handleFatalStatusCodeError(err, this.logger, disconnectCallback, rejectConnect);
+            return;
+          }
+          rejectConnect?.(err);
+          this.handleError(reconnectCallback, changedCallback, disconnectCallback);
+        });
+        stream.on('data', (message) => {
+          if (message.type === EVENT_PROVIDER_READY) {
+            this.logger?.debug(`${FlagdProvider.name}: streaming connection established with flagd`);
+            this._initialized = true;
+            // if resolveConnect is undefined, this is a reconnection; we only want to fire the reconnect callback in that case
+            if (resolveConnect) {
+              resolveConnect();
+            } else {
+              reconnectCallback();
+            }
+          } else if (message.type === EVENT_CONFIGURATION_CHANGE) {
+            this.handleFlagsChanged(message, changedCallback);
+          }
+        });
+        this._eventStream = stream;
       }
     });
-    this._eventStream = stream;
   }
 
   private handleFlagsChanged(message: EventStreamResponse, changedCallback: (flagsChanged: string[]) => void) {
@@ -228,10 +252,11 @@ export class GRPCService implements Service {
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: (message: string) => void,
   ) {
-    const channel = this._client.getChannel();
-    channel.watchConnectivityState(channel.getConnectivityState(true), Infinity, () => {
-      this.listen(reconnectCallback, changedCallback, disconnectCallback);
-    });
+    setTimeout(
+      () => this.listen(reconnectCallback, changedCallback, disconnectCallback),
+      this._errorThrottled ? this._maxBackoffMs : 0,
+    );
+    this._errorThrottled = false;
   }
 
   private handleError(

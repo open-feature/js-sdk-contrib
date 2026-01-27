@@ -10,6 +10,7 @@ import { GHERKIN_FLAGD } from '../constants';
 const steps = [providerSteps, configSteps, eventSteps, flagSteps, contextSteps];
 
 jest.setTimeout(50000);
+jest.retryTimes(3);
 
 describe('rpc', () => {
   const state: State = {

@@ -13,6 +13,7 @@ import {
   isFatalStatusCodeError,
 } from '../../common';
 import type { DataFetch } from '../data-fetch';
+import { DEFAULT_MAX_BACKOFF_MS } from '../../../constants';
 
 /**
  * Implements the gRPC sync contract to fetch flag data.
@@ -20,11 +21,14 @@ import type { DataFetch } from '../data-fetch';
 export class GrpcFetch implements DataFetch {
   private readonly _syncClient: FlagSyncServiceClient;
   private readonly _request: SyncFlagsRequest;
+  private readonly _deadlineMs: number;
+  private readonly _maxBackoffMs: number;
   private readonly _streamDeadlineMs: number;
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
   private readonly _setSyncContext: (syncContext: EvaluationContext) => void;
   private _logger: Logger | undefined;
   private readonly _fatalStatusCodes: Set<number>;
+  private _errorThrottled = false;
   /**
    * Initialized will be set to true once the initial connection is successful
    * and the first payload has been received. Subsequent reconnects will not
@@ -56,6 +60,8 @@ export class GrpcFetch implements DataFetch {
           clientOptions,
         );
 
+    this._deadlineMs = config.deadlineMs;
+    this._maxBackoffMs = config.retryBackoffMaxMs || DEFAULT_MAX_BACKOFF_MS;
     this._streamDeadlineMs = config.streamDeadlineMs;
     this._setSyncContext = setSyncContext;
     this._logger = logger;
@@ -92,42 +98,59 @@ export class GrpcFetch implements DataFetch {
     this._logger?.debug('Starting gRPC sync connection');
     closeStreamIfDefined(this._syncStream);
     try {
-      const deadline = this._streamDeadlineMs != 0 ? Date.now() + this._streamDeadlineMs : undefined;
-      this._syncStream = this._syncClient.syncFlags(this._request, { deadline });
-      this._syncStream.on('data', (data: SyncFlagsResponse) => {
-        this._logger?.debug(`Received sync payload`);
+      // wait for connection to be stable
+      this._syncClient.waitForReady(Date.now() + this._deadlineMs, (err) => {
+        if (err) {
+          this.handleError(
+            err as Error,
+            dataCallback,
+            reconnectCallback,
+            changedCallback,
+            disconnectCallback,
+            rejectConnect,
+          );
+        } else {
+          const streamDeadline = this._streamDeadlineMs != 0 ? Date.now() + this._streamDeadlineMs : undefined;
+          const stream = this._syncClient.syncFlags(this._request, { deadline: streamDeadline });
+          stream.on('data', (data: SyncFlagsResponse) => {
+            this._logger?.debug(`Received sync payload`);
 
-        try {
-          if (data.syncContext) {
-            this._setSyncContext(data.syncContext);
-          }
-          const changes = dataCallback(data.flagConfiguration);
-          if (this._initialized && changes.length > 0) {
-            changedCallback(changes);
-          }
-        } catch (err) {
-          this._logger?.debug('Error processing sync payload: ', (err as Error)?.message ?? 'unknown error');
+            try {
+              if (data.syncContext) {
+                this._setSyncContext(data.syncContext);
+              }
+              const changes = dataCallback(data.flagConfiguration);
+              if (this._initialized && changes.length > 0) {
+                changedCallback(changes);
+              }
+            } catch (err) {
+              this._logger?.debug('Error processing sync payload: ', (err as Error)?.message ?? 'unknown error');
+            }
+
+            if (resolveConnect) {
+              resolveConnect();
+            } else if (!this._isConnected) {
+              // Not the first connection and there's no active connection.
+              this._logger?.debug('Reconnected to gRPC sync');
+              reconnectCallback();
+            }
+            this._isConnected = true;
+          });
+          stream.on('error', (err: ServiceError | undefined) => {
+            // In cases where we get an explicit error status, we add a delay.
+            // This prevents tight loops when errors are returned immediately, typically by intervening proxies like Envoy.
+            this._errorThrottled = true;
+            this.handleError(
+              err as Error,
+              dataCallback,
+              reconnectCallback,
+              changedCallback,
+              disconnectCallback,
+              rejectConnect,
+            );
+          });
+          this._syncStream = stream;
         }
-
-        if (resolveConnect) {
-          resolveConnect();
-        } else if (!this._isConnected) {
-          // Not the first connection and there's no active connection.
-          this._logger?.debug('Reconnected to gRPC sync');
-          reconnectCallback();
-        }
-        this._isConnected = true;
-      });
-
-      this._syncStream.on('error', (err: ServiceError | undefined) => {
-        this.handleError(
-          err as Error,
-          dataCallback,
-          reconnectCallback,
-          changedCallback,
-          disconnectCallback,
-          rejectConnect,
-        );
       });
     } catch (err) {
       this.handleError(
@@ -171,9 +194,10 @@ export class GrpcFetch implements DataFetch {
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: (message: string) => void,
   ) {
-    const channel = this._syncClient.getChannel();
-    channel.watchConnectivityState(channel.getConnectivityState(true), Infinity, () => {
-      this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
-    });
+    setTimeout(
+      () => this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback),
+      this._errorThrottled ? this._maxBackoffMs : 0,
+    );
+    this._errorThrottled = false;
   }
 }

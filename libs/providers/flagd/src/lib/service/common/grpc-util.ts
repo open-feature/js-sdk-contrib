@@ -58,7 +58,7 @@ const CONFIG_TO_GRPC_OPTIONS: {
 export function buildClientOptions(config: Config): ClientOptions {
   const options: Partial<ClientOptions> = {
     'grpc.service_config': buildRetryPolicy(
-      'flagd.service.v1.FlagService',
+      ['flagd.evaluation.v1.Service', 'flagd.sync.v1.FlagSyncService'],
       config.retryBackoffMs,
       config.retryBackoffMaxMs,
     ),
@@ -76,29 +76,33 @@ export function buildClientOptions(config: Config): ClientOptions {
 
 /**
  * Builds RetryPolicy for gRPC client options.
- * @param serviceName
+ * @param serviceNames Array of service names to configure retry policy for
  * @param retryBackoffMs Initial backoff duration in milliseconds
  * @param retryBackoffMaxMs Maximum backoff duration in milliseconds
  * @returns gRPC client options with retry policy
  */
-export const buildRetryPolicy = (serviceName: string, retryBackoffMs?: number, retryBackoffMaxMs?: number): string => {
+export const buildRetryPolicy = (
+  serviceNames: string[],
+  retryBackoffMs?: number,
+  retryBackoffMaxMs?: number,
+): string => {
   const initialBackoff = retryBackoffMs ?? 1000;
   const maxBackoff = retryBackoffMaxMs ?? 120000;
 
+  const retryPolicy = {
+    maxAttempts: 3,
+    initialBackoff: `${Math.round(initialBackoff / 1000).toFixed(2)}s`,
+    maxBackoff: `${Math.round(maxBackoff / 1000).toFixed(2)}s`,
+    backoffMultiplier: 2,
+    retryableStatusCodes: [statusName(status.UNAVAILABLE), statusName(status.UNKNOWN)],
+  };
+
   return JSON.stringify({
     loadBalancingConfig: [],
-    methodConfig: [
-      {
-        name: [{ service: serviceName }],
-        retryPolicy: {
-          maxAttempts: 3,
-          initialBackoff: `${Math.round(initialBackoff / 1000).toFixed(2)}s`,
-          maxBackoff: `${Math.round(maxBackoff / 1000).toFixed(2)}s`,
-          backoffMultiplier: 2,
-          retryableStatusCodes: [statusName(status.UNAVAILABLE), statusName(status.UNKNOWN)],
-        },
-      },
-    ],
+    methodConfig: serviceNames.map((serviceName) => ({
+      name: [{ service: serviceName }],
+      retryPolicy,
+    })),
   });
 };
 

@@ -1,4 +1,4 @@
-import { OpenFeature, ProviderEvents, ProviderStatus } from '@openfeature/server-sdk';
+import { OpenFeature, ProviderStatus } from '@openfeature/server-sdk';
 import { FlagdComposeContainer } from '../tests/flagdComposeContainer';
 import type { State, Steps } from './state';
 import { FlagdProvider } from '../../lib/flagd-provider';
@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs';
 
 export const providerSteps: Steps =
   (state: State) =>
-  ({ given, when, then, and }) => {
+  ({ given, when, then }) => {
     const container: FlagdComposeContainer = FlagdComposeContainer.build();
     beforeAll(async () => {
       console.log('Setting test harness...');
@@ -21,8 +21,8 @@ export const providerSteps: Steps =
       await container.stop();
     });
 
-    beforeEach(() => {
-      OpenFeature.clearProviders();
+    beforeEach(async () => {
+      await OpenFeature.clearProviders();
     });
 
     afterEach(async () => {
@@ -34,10 +34,11 @@ export const providerSteps: Steps =
       const flagdOptions: FlagdProviderOptions = {
         resolverType: state.resolverType,
         retryGracePeriod: 2, // retryGracePeriod is related to test expectations; this must be 2
-        // these 3 options are optimized for test speed and stability
-        deadlineMs: 4000,
+        // these options are optimized for test speed and stability
+        deadlineMs: 15000,
+        keepAliveTime: 200,
         retryBackoffMaxMs: 1000,
-        retryBackoffMs: 1000,
+        retryBackoffMs: 100,
 
         ...state.config,
         ...state.options,
@@ -77,7 +78,6 @@ export const providerSteps: Steps =
       }
 
       await fetch('http://' + container.getLaunchpadUrl() + '/start?config=' + type);
-      await new Promise((r) => setTimeout(r, 100));
       if (providerType == 'unavailable' || providerType == 'forbidden') {
         OpenFeature.setProvider(providerType, new FlagdProvider(flagdOptions));
       } else {

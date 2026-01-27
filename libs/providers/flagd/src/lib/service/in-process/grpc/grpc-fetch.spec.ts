@@ -27,6 +27,9 @@ const serviceMock: FlagSyncServiceClient = {
   getChannel: jest.fn(() => {
     return mockChannel;
   }),
+  waitForReady: jest.fn((_deadline: number, callback: (err?: Error) => void) => {
+    callback();
+  }),
   syncFlags: jest.fn(() => {
     return {
       on: jest.fn((event: 'data' | 'error', callback: (data: SyncFlagsResponse | Error) => void) => {
@@ -55,8 +58,13 @@ describe('grpc fetch', () => {
     streamDeadlineMs: 600000,
   };
 
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
   });
 
   it('should handle data sync and emit callbacks', (done) => {
@@ -125,8 +133,8 @@ describe('grpc fetch', () => {
           onDataCallback({ flagConfiguration: updatedFlagConfig });
           // Stream error
           onErrorCallback(new Error('Some connection error'));
-          // Force clearing
-          watchStateCallback();
+          // Run timers to trigger reconnect via setTimeout
+          jest.runAllTimers();
           // Reconnect
           onDataCallback({ flagConfiguration: reconnectFlagConfig });
 
@@ -156,14 +164,12 @@ describe('grpc fetch', () => {
     onDataCallback({ flagConfiguration: initFlagConfig });
   });
 
-  it('should handle error and watch channel for reconnect', (done) => {
+  it('should handle error and attempt to reconnect', (done) => {
     const fetch = new GrpcFetch(cfg, jest.fn(), serviceMock);
     fetch.connect(jest.fn(), jest.fn(), jest.fn(), disconnectCallback).catch((err) => {
       try {
         expect(err).toBeInstanceOf(Error);
         expect(disconnectCallback).toHaveBeenCalledTimes(1);
-        expect(serviceMock.getChannel().getConnectivityState).toHaveBeenCalledWith(true);
-        expect(serviceMock.getChannel().watchConnectivityState).toHaveBeenCalled();
         done();
       } catch (err) {
         done(err);
