@@ -69,6 +69,24 @@ describe('buildClientOptions', () => {
   });
 });
 
+describe('buildRetryPolicy', () => {
+  it('should create a single methodConfig with multiple services sharing one retryPolicy', () => {
+    const result = JSON.parse(buildRetryPolicy(['service.A', 'service.B'], 2000, 60000));
+
+    expect(result.methodConfig).toHaveLength(1);
+    expect(result.methodConfig[0]).toEqual({
+      name: [{ service: 'service.A' }, { service: 'service.B' }],
+      retryPolicy: {
+        maxAttempts: 3,
+        initialBackoff: '2.00s',
+        maxBackoff: '60.00s',
+        backoffMultiplier: 2,
+        retryableStatusCodes: ['UNAVAILABLE', 'UNKNOWN'],
+      },
+    });
+  });
+});
+
 describe('createFatalStatusCodesSet', () => {
   it('should return empty set when no codes provided', () => {
     const result = createFatalStatusCodesSet();

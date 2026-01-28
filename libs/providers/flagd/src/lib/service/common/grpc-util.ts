@@ -99,10 +99,12 @@ export const buildRetryPolicy = (
 
   return JSON.stringify({
     loadBalancingConfig: [],
-    methodConfig: serviceNames.map((serviceName) => ({
-      name: [{ service: serviceName }],
-      retryPolicy,
-    })),
+    methodConfig: [
+      {
+        name: serviceNames.map((serviceName) => ({ service: serviceName })),
+        retryPolicy,
+      },
+    ],
   });
 };
 
