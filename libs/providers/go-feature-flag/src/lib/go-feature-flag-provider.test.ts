@@ -65,6 +65,28 @@ describe('GoFeatureFlagProvider', () => {
       expect(() => new GoFeatureFlagProvider(undefined as any)).toThrow('No options provided');
     });
 
+    it('should not throw InvalidOptionsException when EvaluationType is Remote', () => {
+      expect(
+        () =>
+          new GoFeatureFlagProvider({
+            evaluationType: EvaluationType.Remote,
+          }),
+      ).toThrow('The given OFREP URL "" is not a valid URL.');
+    });
+
+    it('should not throw exception when EvaluationType is Remote and env variable is set', () => {
+      process.env['OFREP_ENDPOINT'] = 'https://api.example.com';
+
+      expect(
+        () =>
+          new GoFeatureFlagProvider({
+            evaluationType: EvaluationType.Remote,
+          }),
+      ).not.toThrow();
+
+      delete process.env['OFREP_ENDPOINT'];
+    });
+
     it('should throw InvalidOptionsException when endpoint is null', () => {
       expect(
         () =>

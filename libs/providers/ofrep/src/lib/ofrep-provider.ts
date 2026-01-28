@@ -8,8 +8,9 @@ import {
 } from '@openfeature/ofrep-core';
 import type { EvaluationContext, JsonValue, Provider, ResolutionDetails } from '@openfeature/server-sdk';
 import { GeneralError } from '@openfeature/server-sdk';
+import { getConfig } from './configuration';
 
-export type OFREPProviderOptions = OFREPProviderBaseOptions;
+export type OFREPProviderOptions = Omit<OFREPProviderBaseOptions, 'baseUrl'> & { baseUrl?: string };
 
 export class OFREPProvider implements Provider {
   private notBefore: Date | null = null;
@@ -21,14 +22,16 @@ export class OFREPProvider implements Provider {
   };
 
   constructor(private options: OFREPProviderOptions) {
+    const config = getConfig(options);
+
     try {
       // Cannot use URL.canParse as it is only available from Node 19.x
-      new URL(this.options.baseUrl);
+      new URL(config.baseUrl);
     } catch {
-      throw new Error(`The given OFREP URL "${this.options.baseUrl}" is not a valid URL.`);
+      throw new Error(`The given OFREP URL "${config.baseUrl}" is not a valid URL.`);
     }
 
-    this.ofrepApi = new OFREPApi(options, options.fetchImplementation);
+    this.ofrepApi = new OFREPApi(config, config.fetchImplementation);
   }
 
   public async resolveBooleanEvaluation(

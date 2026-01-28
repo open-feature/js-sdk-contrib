@@ -157,17 +157,19 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
       throw new InvalidOptionsException('No options provided');
     }
 
-    if (!options.endpoint || options.endpoint.trim() === '') {
+    if ((!options.endpoint || options.endpoint.trim() === '') && options.evaluationType !== EvaluationType.Remote) {
       throw new InvalidOptionsException('endpoint is a mandatory field when initializing the provider');
     }
 
-    try {
-      const url = new URL(options.endpoint);
-      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    if (options.evaluationType !== EvaluationType.Remote && options.endpoint !== undefined) {
+      try {
+        const url = new URL(options.endpoint);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          throw new InvalidOptionsException('endpoint must be a valid URL (http or https)');
+        }
+      } catch {
         throw new InvalidOptionsException('endpoint must be a valid URL (http or https)');
       }
-    } catch {
-      throw new InvalidOptionsException('endpoint must be a valid URL (http or https)');
     }
 
     if (options.flagChangePollingIntervalMs !== undefined && options.flagChangePollingIntervalMs <= 0) {

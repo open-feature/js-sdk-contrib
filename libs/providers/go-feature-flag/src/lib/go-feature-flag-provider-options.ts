@@ -1,18 +1,7 @@
 import type { EvaluationType, ExporterMetadata } from './model';
 import type { FetchAPI } from './helper/fetch-api';
 
-export interface GoFeatureFlagProviderOptions {
-  /**
-   * The endpoint of the GO Feature Flag relay-proxy.
-   */
-  endpoint: string;
-
-  /**
-   * The type of evaluation to use.
-   * @default EvaluationType.InProcess
-   */
-  evaluationType?: EvaluationType;
-
+export interface GoFeatureFlagProviderBaseOptions {
   /**
    * The timeout for HTTP requests in milliseconds.
    * @default 10000
@@ -67,3 +56,28 @@ export interface GoFeatureFlagProviderOptions {
    */
   wasmBinaryPath?: string;
 }
+
+/**
+ * The evaluation type remote does not require an endpoint, because it can be
+ * set by the environment variable OFREP_ENDPOINT.
+ */
+export type GoFeatureFlagProviderOptions = GoFeatureFlagProviderBaseOptions &
+  (
+    | {
+        /**
+         * The endpoint of the GO Feature Flag relay-proxy.
+         */
+        endpoint: string;
+
+        /**
+         * The type of evaluation to use.
+         * @default EvaluationType.InProcess
+         */
+        evaluationType?: Omit<EvaluationType, 'Remote'>;
+      }
+    | {
+        endpoint?: string;
+
+        evaluationType: EvaluationType.Remote;
+      }
+  );
