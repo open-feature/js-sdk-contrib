@@ -1,6 +1,6 @@
 import type { Config, FlagdProviderOptions } from './configuration';
 import { getConfig } from './configuration';
-import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_RETRY_GRACE_PERIOD } from './constants';
+import { DEFAULT_MAX_BACKOFF_MS, DEFAULT_MAX_CACHE_SIZE, DEFAULT_RETRY_GRACE_PERIOD } from './constants';
 import type { EvaluationContext } from '@openfeature/server-sdk';
 import { configSteps } from '../e2e/step-definitions/configSteps';
 import type { State } from '../e2e/step-definitions/state';
@@ -23,7 +23,7 @@ describe('Configuration', () => {
       maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
       cache: 'lru',
       resolverType: 'rpc',
-      retryBackoffMaxMs: 120000,
+      retryBackoffMaxMs: DEFAULT_MAX_BACKOFF_MS,
       retryBackoffMs: 1000,
       selector: '',
       deadlineMs: 500,
@@ -124,7 +124,7 @@ describe('Configuration', () => {
       maxCacheSize: 1000,
       cache: 'lru',
       resolverType: 'rpc',
-      retryBackoffMaxMs: 120000,
+      retryBackoffMaxMs: DEFAULT_MAX_BACKOFF_MS,
       retryBackoffMs: 1000,
       selector: '',
       defaultAuthority: '',

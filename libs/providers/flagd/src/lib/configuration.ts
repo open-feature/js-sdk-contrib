@@ -1,4 +1,4 @@
-import { DEFAULT_MAX_CACHE_SIZE, DEFAULT_RETRY_GRACE_PERIOD } from './constants';
+import { DEFAULT_MAX_BACKOFF_MS, DEFAULT_MAX_CACHE_SIZE, DEFAULT_RETRY_GRACE_PERIOD } from './constants';
 import type { EvaluationContext } from '@openfeature/server-sdk';
 
 export type CacheOption = 'lru' | 'disabled';
@@ -158,7 +158,7 @@ const DEFAULT_CONFIG: Omit<FlagdConfig & FlagdGrpcConfig, 'port' | 'resolverType
   maxCacheSize: DEFAULT_MAX_CACHE_SIZE,
   contextEnricher: (syncContext: EvaluationContext | null) => syncContext ?? {},
   retryBackoffMs: 1000,
-  retryBackoffMaxMs: 120000,
+  retryBackoffMaxMs: DEFAULT_MAX_BACKOFF_MS,
   keepAliveTime: 0,
   retryGracePeriod: DEFAULT_RETRY_GRACE_PERIOD,
 };

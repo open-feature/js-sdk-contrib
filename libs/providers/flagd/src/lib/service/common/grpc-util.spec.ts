@@ -60,7 +60,29 @@ describe('buildClientOptions', () => {
     expect(buildClientOptions(config)).toEqual({
       'grpc.default_authority': 'my-authority',
       'grpc.keepalive_time_ms': 5000,
-      'grpc.service_config': buildRetryPolicy('flagd.service.v1.FlagService', 100, 200),
+      'grpc.service_config': buildRetryPolicy(
+        ['flagd.evaluation.v1.Service', 'flagd.sync.v1.FlagSyncService'],
+        100,
+        200,
+      ),
+    });
+  });
+});
+
+describe('buildRetryPolicy', () => {
+  it('should create a single methodConfig with multiple services sharing one retryPolicy', () => {
+    const result = JSON.parse(buildRetryPolicy(['service.A', 'service.B'], 2000, 60000));
+
+    expect(result.methodConfig).toHaveLength(1);
+    expect(result.methodConfig[0]).toEqual({
+      name: [{ service: 'service.A' }, { service: 'service.B' }],
+      retryPolicy: {
+        maxAttempts: 3,
+        initialBackoff: '2.00s',
+        maxBackoff: '60.00s',
+        backoffMultiplier: 2,
+        retryableStatusCodes: ['UNAVAILABLE', 'UNKNOWN'],
+      },
     });
   });
 });
