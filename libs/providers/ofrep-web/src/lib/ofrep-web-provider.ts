@@ -133,6 +133,7 @@ export class OFREPWebProvider implements Provider {
    */
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     try {
+      this._etag = null; // reset etag to force refetch
       this._context = newContext;
 
       const now = new Date();
