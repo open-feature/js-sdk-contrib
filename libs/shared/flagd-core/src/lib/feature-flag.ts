@@ -32,7 +32,13 @@ type RequiredResolutionDetails<T> = Omit<ResolutionDetails<T>, 'value'> & {
         value?: never;
       }
     | {
+        value?: T;
+        variant?: string;
+        reason: 'DEFAULT';
+      }
+    | {
         value: T;
+        reason: Exclude<ResolutionReason, 'ERROR' | 'DEFAULT'>;
         variant: string;
         errorCode?: never;
         errorMessage?: never;
@@ -147,9 +153,7 @@ export class FeatureFlag {
       (this.defaultVariant === null || this.defaultVariant === undefined)
     ) {
       return {
-        reason: StandardResolutionReasons.ERROR,
-        errorCode: ErrorCode.FLAG_NOT_FOUND,
-        errorMessage: `Flag '${this._key}' has no default variant defined, will use code default`,
+        reason: StandardResolutionReasons.DEFAULT,
         flagMetadata: this.metadata,
       };
     }
