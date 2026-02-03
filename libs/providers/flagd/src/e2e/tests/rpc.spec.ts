@@ -6,8 +6,9 @@ import { eventSteps } from '../step-definitions/eventSteps';
 import { flagSteps } from '../step-definitions/flagSteps';
 import { contextSteps } from '../step-definitions/contextSteps';
 import { GHERKIN_FLAGD } from '../constants';
+import { clientSteps } from '../step-definitions/clientSteps';
 
-const steps = [providerSteps, configSteps, eventSteps, flagSteps, contextSteps];
+const steps = [providerSteps, configSteps, eventSteps, flagSteps, contextSteps, clientSteps];
 
 jest.setTimeout(50000);
 jest.retryTimes(3);
