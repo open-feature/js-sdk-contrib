@@ -35,7 +35,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
   });
 
   when(
-    /^a string flag with key "(.*)" is evaluated with default value "(.*)"$/,
+    /^a string flag with key "(.*)" is evaluated with (default|fallback) value "(.*)"$/,
     (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = defaultValue;
@@ -224,7 +224,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
   });
 
   when(
-    /^a non-existent string flag with key "(.*)" is evaluated with details and a default value "(.*)"$/,
+    /^a non-existent string flag with key "(.*)" is evaluated with details and a (default|fallback) value "(.*)"$/,
     (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = defaultValue;
@@ -247,7 +247,7 @@ export const flagStepDefinitions: StepDefinitions = ({ given, and, when, then })
   );
 
   when(
-    /^a string flag with key "(.*)" is evaluated as an integer, with details and a default value (\d+)$/,
+    /^a string flag with key "(.*)" is evaluated as an integer, with details and a (default|fallback) value (\d+)$/,
     (key: string, defaultValue: string) => {
       flagKey = key;
       fallback = Number.parseInt(defaultValue);
