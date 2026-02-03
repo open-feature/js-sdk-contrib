@@ -197,7 +197,7 @@ function checkEnvVarResolverType() {
   );
 }
 
-const getEnvVarConfig = (): Partial<Config & FlagdGrpcConfig> => {
+function getEnvVarConfig(): Partial<Config & FlagdGrpcConfig> {
   let provider = undefined;
   if (
     process.env[ENV_VAR.FLAGD_RESOLVER] &&
@@ -269,7 +269,7 @@ const getEnvVarConfig = (): Partial<Config & FlagdGrpcConfig> => {
       retryGracePeriod: Number(process.env[ENV_VAR.FLAGD_RETRY_GRACE_PERIOD]),
     }),
   };
-};
+}
 
 export function getConfig(options: FlagdProviderOptions = {}): FlagdConfig & FlagdGrpcConfig {
   const envVarConfig = getEnvVarConfig();
