@@ -16,8 +16,8 @@ import type {
   ResolveObjectResponse,
   ResolveStringRequest,
   ResolveStringResponse,
-} from '../proto/ts/flagd/evaluation/v1/evaluation';
-import { ServiceClient } from '../proto/ts/flagd/evaluation/v1/evaluation';
+} from '../proto/ts/flagd/evaluation/v2/evaluation';
+import { ServiceClient } from '../proto/ts/flagd/evaluation/v2/evaluation';
 import { FlagdProvider } from './flagd-provider';
 import type { FlagChangeMessage } from './service/grpc/grpc-service';
 import { GRPCService } from './service/grpc/grpc-service';
