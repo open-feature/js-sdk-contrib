@@ -42,6 +42,14 @@ export class GoffApiController {
         Accept: 'application/json',
       };
 
+      if (this.options.customHeaders) {
+        for (const key in this.options.customHeaders) {
+          if (Object.prototype.hasOwnProperty.call(this.options.customHeaders, key)) {
+            headers[key] = this.options.customHeaders[key];
+          }
+        }
+      }
+
       if (this.options.apiKey) {
         headers['Authorization'] = `Bearer ${this.options.apiKey}`;
       }

@@ -15,6 +15,10 @@ describe('Collect Data API', () => {
       endpoint: 'https://gofeatureflag.org',
       apiTimeout: 1000,
       apiKey: '123456',
+      customHeaders: {
+        'User-Agent': 'goff-web/1.0.0',
+        Authorization: 'Bearer foo',
+      },
     };
     const goff = new GoffApiController(options);
     await goff.collectData(
@@ -37,6 +41,7 @@ describe('Collect Data API', () => {
       'Content-Type': 'application/json',
       Accept: 'application/json',
       Authorization: `Bearer ${options.apiKey}`,
+      'User-Agent': 'goff-web/1.0.0',
     });
     expect(fetchMock.lastOptions()?.body).toEqual(
       JSON.stringify({
@@ -62,6 +67,9 @@ describe('Collect Data API', () => {
     const options: GoFeatureFlagWebProviderOptions = {
       endpoint: 'https://gofeatureflag.org',
       apiTimeout: 1000,
+      customHeaders: {
+        'User-Agent': 'goff-web/2.0.0',
+      },
     };
     const goff = new GoffApiController(options);
     await goff.collectData(
@@ -83,6 +91,7 @@ describe('Collect Data API', () => {
     expect(fetchMock.lastOptions()?.headers).toEqual({
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      'User-Agent': 'goff-web/2.0.0',
     });
     expect(fetchMock.lastOptions()?.body).toEqual(
       JSON.stringify({

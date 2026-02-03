@@ -322,6 +322,10 @@ describe('GoFeatureFlagWebProvider', () => {
           apiTimeout: 1000,
           maxRetries: 1,
           apiKey: 'my-api-key',
+          customHeaders: {
+            'User-Agent': 'goff-web/3.0.0',
+            Authorization: 'Bearer foo',
+          },
         },
         logger,
       );
@@ -338,6 +342,7 @@ describe('GoFeatureFlagWebProvider', () => {
         const headers = lastCall[1]?.headers as never;
         expect(headers).not.toBeUndefined();
         expect(headers['Authorization']).toBe('Bearer my-api-key');
+        expect(headers['User-Agent']).toBe('goff-web/3.0.0');
         return;
       }
       expect(true).toBe(false);

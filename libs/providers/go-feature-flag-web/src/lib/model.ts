@@ -45,6 +45,9 @@ export interface GoFeatureFlagWebProviderOptions {
   // Default: null
   apiKey?: string;
 
+  // customHeaders (optional) custom headers to be sent for every HTTP request.
+  customHeaders?: Record<string, string>;
+
   // initial delay in millisecond to wait before retrying to connect to GO Feature Flag (websocket and API)
   // Default: 100 ms
   retryInitialDelay?: number;

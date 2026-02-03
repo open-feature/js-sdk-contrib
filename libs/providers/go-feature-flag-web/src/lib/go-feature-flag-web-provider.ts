@@ -44,6 +44,8 @@ export class GoFeatureFlagWebProvider implements Provider {
   private readonly _apiTimeout: number;
   // apiKey is the key used to identify your request in GO Feature Flag
   private readonly _apiKey: string | undefined;
+  // customHeaders to be sent for every HTTP request.
+  private readonly _customHeaders: Record<string, string> | undefined;
   // initial delay in millisecond to wait before retrying to connect
   private readonly _retryInitialDelay;
   // multiplier of _retryInitialDelay after each failure
@@ -68,6 +70,7 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._retryDelayMultiplier = options.retryDelayMultiplier || 2;
     this._maxRetries = options.maxRetries || 10;
     this._apiKey = options.apiKey;
+    this._customHeaders = options.customHeaders;
     this._disableDataCollection = options.disableDataCollection || false;
 
     this._collectorManager = new CollectorManager(options, logger);
@@ -321,6 +324,7 @@ export class GoFeatureFlagWebProvider implements Provider {
         'Content-Type': 'application/json',
         Accept: 'application/json',
         // we had the authorization header only if we have an API Key
+        ...(this._customHeaders || {}),
         ...(this._apiKey ? { Authorization: `Bearer ${this._apiKey}` } : {}),
       },
       body: JSON.stringify(request),
