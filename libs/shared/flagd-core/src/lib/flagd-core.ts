@@ -131,6 +131,7 @@ export class FlagdCore implements Storage {
           values.push({
             ...result,
             flagKey: key,
+            value: result.value,
           });
         } else {
           logger.debug(`Flag ${key} omitted because ${result.errorCode}: ${result.errorMessage}`);

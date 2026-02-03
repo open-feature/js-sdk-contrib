@@ -1,19 +1,22 @@
 [submodule "libs/providers/flagd/schemas"]
 	path = libs/providers/flagd/schemas
-	url = https://github.com/open-feature/flagd-schemas.git
+	url = https://github.com/marcozabel/flagd-schemas.git
+	branch = ISS-1856/allow-empty-default-variant
 [submodule "libs/providers/flagd-web/schemas"]
 	path = libs/providers/flagd-web/schemas
-	url = https://github.com/open-feature/flagd-schemas.git
+	url = https://github.com/marcozabel/flagd-schemas.git
+	branch = ISS-1856/allow-empty-default-variant
 [submodule "libs/providers/flagd/spec"]
   path = libs/providers/flagd/spec
   url = https://github.com/open-feature/spec.git
 [submodule "libs/shared/flagd-core/flagd-schemas"]
 	path = libs/shared/flagd-core/flagd-schemas
-	url = https://github.com/open-feature/flagd-schemas.git
+	url = https://github.com/marcozabel/flagd-schemas.git
+	branch = ISS-1856/allow-empty-default-variant
 [submodule "libs/shared/flagd-core/test-harness"]
 	path = libs/shared/flagd-core/test-harness
-	url = https://github.com/open-feature/flagd-testbed
-	branch = v2.10.2
+	url = https://github.com/open-feature-forking/flagd-testbed
+	branch = feat/make-default-variant-optional
 [submodule "libs/shared/flagd-core/spec"]
 	path = libs/shared/flagd-core/spec
 	url = https://github.com/open-feature/spec
