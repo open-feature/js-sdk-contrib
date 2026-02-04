@@ -43,11 +43,7 @@ export class GoffApiController {
       };
 
       if (this.options.customHeaders) {
-        for (const key in this.options.customHeaders) {
-          if (Object.prototype.hasOwnProperty.call(this.options.customHeaders, key)) {
-            headers[key] = this.options.customHeaders[key];
-          }
-        }
+        Object.assign(headers, this.options.customHeaders);
       }
 
       if (this.options.apiKey) {
