@@ -24,7 +24,7 @@ describe('in-process', () => {
     loadFeatures(GHERKIN_FLAGD, {
       // remove filters as we add support for features
       // see: https://github.com/open-feature/js-sdk-contrib/issues/1096 and child issues
-      tagFilter: '@in-process and not @targetURI and not @sync and not @metadata and not @unixsocket',
+      tagFilter: '@in-process and not @targetURI and not @sync and not @metadata and not @unixsocket and not @deprecated',
       scenarioNameTemplate: (vars) => {
         return `${vars.scenarioTitle} (${vars.scenarioTags.join(',')} ${vars.featureTags.join(',')})`;
       },

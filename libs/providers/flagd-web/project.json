@@ -21,7 +21,7 @@
       "options": {
         "commands": [
           "git submodule update --init schemas",
-          "npx buf generate buf.build/open-feature/flagd --template schemas/protobuf/buf.gen.ts-connect.yaml --output ./src/lib"
+          "npx buf generate schemas/protobuf --path schemas/protobuf/flagd --template schemas/protobuf/buf.gen.ts-connect.yaml --output ./src/lib"
         ],
         "cwd": "libs/providers/flagd-web",
         "parallel": false
