@@ -8,7 +8,7 @@ const { execSync } = require('child_process');
  * Script to copy the go-feature-flag WASM evaluation module
  * This replaces the hardcoded version approach with a configurable one
  */
-const TARGET_WASM_VERSION = '0.1.3';
+const TARGET_WASM_VERSION = '0.1.4';
 
 function copyWasmFile() {
   try {
