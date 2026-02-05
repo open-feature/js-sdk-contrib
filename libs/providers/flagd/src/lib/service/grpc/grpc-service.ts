@@ -24,8 +24,8 @@ import type {
   ResolveObjectResponse,
   ResolveStringRequest,
   ResolveStringResponse,
-} from '../../../proto/ts/flagd/evaluation/v1/evaluation';
-import { ServiceClient } from '../../../proto/ts/flagd/evaluation/v1/evaluation';
+} from '../../../proto/ts/flagd/evaluation/v2/evaluation';
+import { ServiceClient } from '../../../proto/ts/flagd/evaluation/v2/evaluation';
 import type { FlagdGrpcConfig } from '../../configuration';
 import {
   DEFAULT_MAX_BACKOFF_MS,
