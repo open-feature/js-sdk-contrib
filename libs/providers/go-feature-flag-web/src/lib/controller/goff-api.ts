@@ -42,6 +42,10 @@ export class GoffApiController {
         Accept: 'application/json',
       };
 
+      if (this.options.customHeaders) {
+        Object.assign(headers, this.options.customHeaders);
+      }
+
       if (this.options.apiKey) {
         headers['Authorization'] = `Bearer ${this.options.apiKey}`;
       }

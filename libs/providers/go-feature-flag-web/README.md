@@ -29,6 +29,9 @@ const evaluationCtx: EvaluationContext = {
 
 const goFeatureFlagWebProvider = new GoFeatureFlagWebProvider({
   endpoint: endpoint,
+  customHeadeers: {
+    'User-Agent': "my-app/1.0.0",
+  },
   // ...
 }, logger);
 
@@ -54,6 +57,7 @@ client.addHandler(ProviderEvents.ConfigurationChanged, () => { //... });
 | endpoint                      | string |                | endpoint is the URL where your GO Feature Flag server is located.                                                                                                                               |
 | apiTimeout                    | number | 0 = no timeout | (optional) timeout is the time in millisecond we wait for an answer from the server.                                                                                                            |
 | apiKey                        | string |                | (optional) If GO Feature Flag is configured to authenticate the requests, you should provide an API Key to the provider. Please ask the administrator of the relay proxy to provide an API Key. |
+| customHeaders                 | object |                | (optional) custom headers to be sent for every HTTP request.                                                                                                                                    |
 | websocketRetryInitialDelay    | number | 100            | (optional) initial delay in millisecond to wait before retrying to connect the websocket                                                                                                        |
 | websocketRetryDelayMultiplier | number | 2              | (optional) multiplier of websocketRetryInitialDelay after each failure _(example: 1st connection retry will be after 100ms, second after 200ms, third after 400ms ...)_                         |
 | websocketMaxRetries           | number | 10             | (optional) maximum number of retries before considering the websocket unreachable                                                                                                               |
