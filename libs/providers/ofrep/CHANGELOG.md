@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-provider-v0.2.2...ofrep-provider-v0.2.3) (2026-02-09)
+
+
+### ✨ New Features
+
+* Add support for environment variables for OFREP provider config… ([#1450](https://github.com/open-feature/js-sdk-contrib/issues/1450)) ([19c82bd](https://github.com/open-feature/js-sdk-contrib/commit/19c82bdbb2a4926ec7044e497bb7c4f75f210340))
+
 ## [0.2.2](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-provider-v0.2.1...ofrep-provider-v0.2.2) (2026-01-08)
 
 
