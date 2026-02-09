@@ -7,6 +7,10 @@ jobs:
   release-please:
     environment: publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
 
     # Release-please creates a PR that tracks all changes
     steps:
