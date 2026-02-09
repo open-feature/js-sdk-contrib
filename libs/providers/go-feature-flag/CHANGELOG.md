@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.1.0...go-feature-flag-provider-v1.2.0) (2026-02-06)
+
+
+### ✨ New Features
+
+* Add support for environment variables for OFREP provider config… ([#1450](https://github.com/open-feature/js-sdk-contrib/issues/1450)) ([19c82bd](https://github.com/open-feature/js-sdk-contrib/commit/19c82bdbb2a4926ec7044e497bb7c4f75f210340))
+
 ## [1.1.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.0.5...go-feature-flag-provider-v1.1.0) (2026-01-13)
 
 
