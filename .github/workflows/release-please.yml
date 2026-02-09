@@ -34,6 +34,10 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           registry-url: "https://registry.npmjs.org"
+          cache: 'npm'
+      - name: Update npm (for OIDC auth)
+        if: ${{ steps.release.outputs.releases_created }}
+        run: npm install -g npm@^11.5.1
       - name: Build Packages
         if: ${{ steps.release.outputs.releases_created }}
         run: |
@@ -46,5 +50,5 @@ jobs:
       - name: Publish to NPM
         if: ${{ steps.release.outputs.releases_created }}
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          NPM_CONFIG_PROVENANCE: true
         run: npm run publish
