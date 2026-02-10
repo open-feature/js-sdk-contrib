@@ -1,6 +1,11 @@
 {
   "name": "@openfeature/multi-provider-web",
   "version": "0.0.4",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-feature/js-sdk-contrib.git",
+    "directory": "libs/providers/multi-provider-web"
+  },
   "license": "Apache-2.0",
   "deprecated": "This package is deprecated. The Multi-Provider is now included in @openfeature/web-sdk. Please migrate to use the SDK directly.",
   "main": "./src/index.js",

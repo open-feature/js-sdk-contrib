@@ -1,6 +1,11 @@
 {
   "name": "@openfeature/growthbook-client-provider",
   "version": "0.1.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-feature/js-sdk-contrib.git",
+    "directory": "libs/providers/growthbook-client"
+  },
   "license": "Apache-2.0",
   "dependencies": {
     "lodash.isempty": "^4.4.0"

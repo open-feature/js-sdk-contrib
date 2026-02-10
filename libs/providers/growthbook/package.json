@@ -1,6 +1,11 @@
 {
   "name": "@openfeature/growthbook-provider",
   "version": "0.1.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-feature/js-sdk-contrib.git",
+    "directory": "libs/providers/growthbook"
+  },
   "license": "Apache-2.0",
   "main": "./src/index.js",
   "typings": "./src/index.d.ts",

@@ -1,6 +1,11 @@
 {
   "name": "@openfeature/flagsmith-client-provider",
   "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-feature/js-sdk-contrib.git",
+    "directory": "libs/providers/flagsmith-client"
+  },
   "license": "Apache-2.0",
   "main": "./src/index.js",
   "typings": "./src/index.d.ts",
