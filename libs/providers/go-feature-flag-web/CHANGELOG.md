@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.8](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.7...go-feature-flag-web-provider-v0.2.8) (2026-02-10)
+
+
+### ✨ New Features
+
+* Add optional custom headers (GoFeatureFlag) ([#1465](https://github.com/open-feature/js-sdk-contrib/issues/1465)) ([23a2363](https://github.com/open-feature/js-sdk-contrib/commit/23a236335a8981c54ccc934fd868f934abbbce03))
+
 ## [0.2.7](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.6...go-feature-flag-web-provider-v0.2.7) (2025-12-05)
 
 
