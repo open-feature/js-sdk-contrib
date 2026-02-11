@@ -1,9 +1,11 @@
 import type { ClientReadableStream, ServiceError } from '@grpc/grpc-js';
+import { Metadata } from '@grpc/grpc-js';
 import type { EvaluationContext, Logger } from '@openfeature/server-sdk';
 import { GeneralError } from '@openfeature/server-sdk';
 import type { SyncFlagsRequest, SyncFlagsResponse } from '../../../../proto/ts/flagd/sync/v1/sync';
 import { FlagSyncServiceClient } from '../../../../proto/ts/flagd/sync/v1/sync';
 import type { FlagdGrpcConfig } from '../../../configuration';
+import { DEFAULT_MAX_BACKOFF_MS, FLAGD_SELECTOR_HEADER } from '../../../constants';
 import {
   buildClientOptions,
   closeStreamIfDefined,
@@ -13,7 +15,6 @@ import {
   isFatalStatusCodeError,
 } from '../../common';
 import type { DataFetch } from '../data-fetch';
-import { DEFAULT_MAX_BACKOFF_MS } from '../../../constants';
 
 /**
  * Implements the gRPC sync contract to fetch flag data.
@@ -24,6 +25,7 @@ export class GrpcFetch implements DataFetch {
   private readonly _deadlineMs: number;
   private readonly _maxBackoffMs: number;
   private readonly _streamDeadlineMs: number;
+  private readonly _metadata: Metadata;
   private _syncStream: ClientReadableStream<SyncFlagsResponse> | undefined;
   private readonly _setSyncContext: (syncContext: EvaluationContext) => void;
   private _logger: Logger | undefined;
@@ -65,8 +67,17 @@ export class GrpcFetch implements DataFetch {
     this._streamDeadlineMs = config.streamDeadlineMs;
     this._setSyncContext = setSyncContext;
     this._logger = logger;
+    // For backward compatibility during the deprecation period, we send the selector in both:
+    // 1. The request field (deprecated, for older flagd versions)
+    // 2. The gRPC metadata header 'flagd-selector' (new standard)
     this._request = { providerId: '', selector: selector ? selector : '' };
     this._fatalStatusCodes = createFatalStatusCodesSet(config.fatalStatusCodes, logger);
+
+    // Create metadata with the flagd-selector header
+    this._metadata = new Metadata();
+    if (selector) {
+      this._metadata.set(FLAGD_SELECTOR_HEADER, selector);
+    }
   }
 
   async connect(
@@ -111,7 +122,7 @@ export class GrpcFetch implements DataFetch {
           );
         } else {
           const streamDeadline = this._streamDeadlineMs != 0 ? Date.now() + this._streamDeadlineMs : undefined;
-          const stream = this._syncClient.syncFlags(this._request, { deadline: streamDeadline });
+          const stream = this._syncClient.syncFlags(this._request, this._metadata, { deadline: streamDeadline });
           stream.on('data', (data: SyncFlagsResponse) => {
             this._logger?.debug(`Received sync payload`);
 

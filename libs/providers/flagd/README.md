@@ -36,7 +36,7 @@ Options can be defined in the constructor or as environment variables. Construct
 | certPath                               | FLAGD_SERVER_CERT_PATH         | string  | -                                                              |                  |
 | resolverType                           | FLAGD_RESOLVER                 | string  | rpc                                                            | rpc, in-process  |
 | offlineFlagSourcePath                  | FLAGD_OFFLINE_FLAG_SOURCE_PATH | string  | -                                                              |                  |
-| selector                               | FLAGD_SOURCE_SELECTOR          | string  | -                                                              |                  |
+| selector                               | FLAGD_SOURCE_SELECTOR          | string  | -                                                              | rpc & in-process (see [Selector](#selector))  |
 | cache                                  | FLAGD_CACHE                    | string  | lru                                                            | lru, disabled    |
 | maxCacheSize                           | FLAGD_MAX_CACHE_SIZE           | int     | 1000                                                           |                  |
 | defaultAuthority                       | FLAGD_DEFAULT_AUTHORITY        | string  | -                                                              | rpc, in-process  |
@@ -45,6 +45,9 @@ Options can be defined in the constructor or as environment variables. Construct
 | retryBackoffMaxMs                      | FLAGD_RETRY_BACKOFF_MAX_MS     | int     | 120000                                                         | in-process       |
 | retryGracePeriod                       | FLAGD_RETRY_GRACE_PERIOD       | int     | 5                                                              |                  |
 | fatalStatusCodes                       | FLAGD_FATAL_STATUS_CODES       | string[]| -                                                              |                  |
+
+> [!NOTE]
+> The `selector` option automatically uses the `flagd-selector` header (the preferred approach per [flagd#1814](https://github.com/open-feature/flagd/issues/1814)) while maintaining backward compatibility with older flagd versions. See [Selector](#selector) for details.
 
 #### Resolver type-specific Defaults
 
@@ -99,6 +102,46 @@ To enable this mode, you should provide a valid flag configuration file with the
 
 Offline mode uses `fs.watchFile` and polls every 5 seconds for changes to the file.
 This mode is useful for local development, test cases, and for offline applications.
+
+### Selector
+
+The `selector` option allows filtering flag configurations and evaluations based on flag sets or sources. This is useful when multiple flag configurations are available and you want to target a specific subset.
+
+**RPC mode:**
+```ts
+  OpenFeature.setProvider(new FlagdProvider({
+      selector: 'flagSetId=payment-flags',
+  }))
+```
+
+**In-process mode:**
+```ts
+  OpenFeature.setProvider(new FlagdProvider({
+      resolverType: 'in-process',
+      selector: 'flagSetId=app-flags',
+  }))
+```
+
+Or via environment variable:
+
+```bash
+export FLAGD_SOURCE_SELECTOR="flagSetId=app-flags"
+```
+
+> [!IMPORTANT]
+> **Selector normalization ([flagd#1814](https://github.com/open-feature/flagd/issues/1814))**
+>
+> As part of [flagd#1814](https://github.com/open-feature/flagd/issues/1814), the flagd project is normalizing selector handling across all services (sync, evaluation, and OFREP) to use the `flagd-selector` gRPC metadata header.
+>
+> **Current implementation:**
+> - The JS SDK **automatically passes the selector via the `flagd-selector` header** for both RPC and in-process modes
+> - For in-process mode backward compatibility with older flagd versions, the selector is **also sent in the request body**
+> - Both methods work with current flagd versions
+> - In a future major version of flagd, the request body selector field may be removed
+>
+> **No migration needed:**
+>
+> Users do not need to make any code changes. The SDK handles selector normalization automatically.
 
 ### Default Authority usage (optional)
 
