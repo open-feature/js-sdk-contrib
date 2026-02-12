@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.1.0...flagd-core-v1.2.0) (2026-02-12)
+
+
+### 🐛 Bug Fixes
+
+* grpc not retrying UNAVAILABLE/UNKNOWN, e2e test stability ([#1457](https://github.com/open-feature/js-sdk-contrib/issues/1457)) ([7213189](https://github.com/open-feature/js-sdk-contrib/commit/72131894982441381d745ba184fbe53ae8041dde))
+* **security:** update vulnerability-updates ([#1342](https://github.com/open-feature/js-sdk-contrib/issues/1342)) ([fca83c9](https://github.com/open-feature/js-sdk-contrib/commit/fca83c925c6a3d19bac9d647562fd534397b376b))
+* stream stability when connecting (wait4Ready) ([#1458](https://github.com/open-feature/js-sdk-contrib/issues/1458)) ([ca3c16a](https://github.com/open-feature/js-sdk-contrib/commit/ca3c16a37b4a8b1089cc2634e53f4ff04013896b))
+
+
+### ✨ New Features
+
+* Add  FLAGD_STREAM_DEADLINE_MS parameter ([#1430](https://github.com/open-feature/js-sdk-contrib/issues/1430)) ([be6f2f9](https://github.com/open-feature/js-sdk-contrib/commit/be6f2f914b0a3e529c8e92a970916d5158af3a8f))
+* Add FLAGD_SYNC_PORT support for in-process providers with backwards compatibility ([#1413](https://github.com/open-feature/js-sdk-contrib/issues/1413)) ([8feffee](https://github.com/open-feature/js-sdk-contrib/commit/8feffee5029e37b2d3c8b7f94b959587f836ddea))
+* Implement retryGracePeriod param ([#1289](https://github.com/open-feature/js-sdk-contrib/issues/1289)) ([#1445](https://github.com/open-feature/js-sdk-contrib/issues/1445)) ([d8104fa](https://github.com/open-feature/js-sdk-contrib/commit/d8104fa4fdc0d58708748a2c05cf94d90d89b1d7))
+* support no default variant  ([#1354](https://github.com/open-feature/js-sdk-contrib/issues/1354)) ([f2efa55](https://github.com/open-feature/js-sdk-contrib/commit/f2efa559410751dfab80f1e749a86dc04703189c))
+
 ## [1.1.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.0.0...flagd-core-v1.1.0) (2025-07-04)
 
 
