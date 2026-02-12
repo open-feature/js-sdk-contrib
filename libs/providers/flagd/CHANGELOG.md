@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.13.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.3...flagd-provider-v0.13.4) (2026-02-12)
+
+
+### 🐛 Bug Fixes
+
+* grpc not retrying UNAVAILABLE/UNKNOWN, e2e test stability ([#1457](https://github.com/open-feature/js-sdk-contrib/issues/1457)) ([7213189](https://github.com/open-feature/js-sdk-contrib/commit/72131894982441381d745ba184fbe53ae8041dde))
+* stream stability when connecting (wait4Ready) ([#1458](https://github.com/open-feature/js-sdk-contrib/issues/1458)) ([ca3c16a](https://github.com/open-feature/js-sdk-contrib/commit/ca3c16a37b4a8b1089cc2634e53f4ff04013896b))
+
+
+### ✨ New Features
+
+* Add  FLAGD_STREAM_DEADLINE_MS parameter ([#1430](https://github.com/open-feature/js-sdk-contrib/issues/1430)) ([be6f2f9](https://github.com/open-feature/js-sdk-contrib/commit/be6f2f914b0a3e529c8e92a970916d5158af3a8f))
+* Add custom certPath support ([#1405](https://github.com/open-feature/js-sdk-contrib/issues/1405)) ([8163190](https://github.com/open-feature/js-sdk-contrib/commit/81631908a94f107b61b298d19e1814dbd0150a13))
+* Add FLAGD_SYNC_PORT support for in-process providers with backwards compatibility ([#1413](https://github.com/open-feature/js-sdk-contrib/issues/1413)) ([8feffee](https://github.com/open-feature/js-sdk-contrib/commit/8feffee5029e37b2d3c8b7f94b959587f836ddea))
+* Add retry backoff to grpc connections ([#1437](https://github.com/open-feature/js-sdk-contrib/issues/1437)) ([4afe11a](https://github.com/open-feature/js-sdk-contrib/commit/4afe11acef569775f6317eba018a3d6e40effc19))
+* Add support for environment variables for OFREP provider config… ([#1450](https://github.com/open-feature/js-sdk-contrib/issues/1450)) ([19c82bd](https://github.com/open-feature/js-sdk-contrib/commit/19c82bdbb2a4926ec7044e497bb7c4f75f210340))
+* Add tests for config feature ([#1407](https://github.com/open-feature/js-sdk-contrib/issues/1407)) ([1bccd11](https://github.com/open-feature/js-sdk-contrib/commit/1bccd1116d733eda444c88765085c7bb5da8f352))
+* **flagd:** add flagd-selector gRPC metadata header ([#1399](https://github.com/open-feature/js-sdk-contrib/issues/1399)) ([772457a](https://github.com/open-feature/js-sdk-contrib/commit/772457a8c5ccefb932ce19e093699926085ebb4e))
+* Implement FATAL status codes option ([#1447](https://github.com/open-feature/js-sdk-contrib/issues/1447)) ([e020cce](https://github.com/open-feature/js-sdk-contrib/commit/e020cceed3382ddec17d1e4911c1b91c477c0738))
+* Implement gRPC keepAlive param ([#1288](https://github.com/open-feature/js-sdk-contrib/issues/1288)) ([#1438](https://github.com/open-feature/js-sdk-contrib/issues/1438)) ([9dc7355](https://github.com/open-feature/js-sdk-contrib/commit/9dc7355ea2c202c47404193e1853f2e418bb53fc))
+* Implement retryGracePeriod param ([#1289](https://github.com/open-feature/js-sdk-contrib/issues/1289)) ([#1445](https://github.com/open-feature/js-sdk-contrib/issues/1445)) ([d8104fa](https://github.com/open-feature/js-sdk-contrib/commit/d8104fa4fdc0d58708748a2c05cf94d90d89b1d7))
+* support no default variant  ([#1354](https://github.com/open-feature/js-sdk-contrib/issues/1354)) ([f2efa55](https://github.com/open-feature/js-sdk-contrib/commit/f2efa559410751dfab80f1e749a86dc04703189c))
+* Use SyncContext from SyncFlagsResponse instead of Metadata Request ([#1401](https://github.com/open-feature/js-sdk-contrib/issues/1401)) ([17fd726](https://github.com/open-feature/js-sdk-contrib/commit/17fd726871fca1e33855651fb465388d7d083e64))
+
 ## [0.13.3](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.2...flagd-provider-v0.13.3) (2025-02-07)
 
 
