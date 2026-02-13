@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ServiceError } from '@grpc/grpc-js';
+import type { Metadata, ServiceError } from '@grpc/grpc-js';
 import { status } from '@grpc/grpc-js';
 import type { Client, EvaluationContext, FlagMetadata } from '@openfeature/server-sdk';
 import { ErrorCode, OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/server-sdk';
@@ -86,6 +86,7 @@ describe(FlagdProvider.name, () => {
       resolveBoolean: jest.fn(
         (
           request: ResolveBooleanRequest,
+          metadata: Metadata,
           callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void,
         ) => {
           callback(null, {
@@ -99,6 +100,7 @@ describe(FlagdProvider.name, () => {
       resolveString: jest.fn(
         (
           request: ResolveStringRequest,
+          metadata: Metadata,
           callback: (error: ServiceError | null, response: ResolveStringResponse) => void,
         ) => {
           callback(null, {
@@ -112,6 +114,7 @@ describe(FlagdProvider.name, () => {
       resolveFloat: jest.fn(
         (
           request: ResolveFloatRequest,
+          metadata: Metadata,
           callback: (error: ServiceError | null, response: ResolveFloatResponse) => void,
         ) => {
           callback(null, {
@@ -128,6 +131,7 @@ describe(FlagdProvider.name, () => {
       resolveObject: jest.fn(
         (
           request: ResolveObjectRequest,
+          metadata: Metadata,
           callback: (error: ServiceError | null, response: ResolveObjectResponse) => void,
         ) => {
           callback(null, {
@@ -164,6 +168,7 @@ describe(FlagdProvider.name, () => {
             flagKey: BOOLEAN_KEY,
             context: TEST_CONTEXT,
           },
+          expect.any(Object),
           expect.any(Function),
         );
         expect(val.value).toEqual(BOOLEAN_VALUE);
@@ -181,6 +186,7 @@ describe(FlagdProvider.name, () => {
             flagKey: STRING_KEY,
             context: TEST_CONTEXT,
           },
+          expect.any(Object),
           expect.any(Function),
         );
         expect(val.value).toEqual(STRING_VALUE);
@@ -198,6 +204,7 @@ describe(FlagdProvider.name, () => {
             flagKey: NUMBER_KEY,
             context: TEST_CONTEXT,
           },
+          expect.any(Object),
           expect.any(Function),
         );
         expect(val.value).toEqual(NUMBER_VALUE);
@@ -215,6 +222,7 @@ describe(FlagdProvider.name, () => {
             flagKey: OBJECT_KEY,
             context: TEST_CONTEXT,
           },
+          expect.any(Object),
           expect.any(Function),
         );
         expect(val.value).toEqual({ [OBJECT_INNER_KEY]: OBJECT_INNER_VALUE });
@@ -234,6 +242,7 @@ describe(FlagdProvider.name, () => {
             flagKey: BOOLEAN_KEY,
             context: {},
           },
+          expect.any(Object),
           expect.any(Function),
         );
         expect(val.value).toEqual(BOOLEAN_VALUE);
@@ -286,6 +295,7 @@ describe(FlagdProvider.name, () => {
       resolveBoolean: jest.fn(
         (
           req: ResolveBooleanRequest,
+          metadata: Metadata,
           callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void,
         ) => {
           const response = {
@@ -571,6 +581,7 @@ describe(FlagdProvider.name, () => {
       resolveBoolean: jest.fn(
         (
           request: ResolveBooleanRequest,
+          metadata: Metadata,
           callback: (error: ServiceError | null, response: ResolveBooleanResponse) => void,
         ) => {
           callback({ code: status.DATA_LOSS, details } as ServiceError, {} as ResolveBooleanResponse);
@@ -579,6 +590,7 @@ describe(FlagdProvider.name, () => {
       resolveString: jest.fn(
         (
           request: ResolveStringRequest,
+          metadata: Metadata,
           callback: (error: ServiceError | null, response: ResolveStringResponse) => void,
         ) => {
           callback({ code: status.INVALID_ARGUMENT, details } as ServiceError, {} as ResolveStringResponse);
@@ -587,6 +599,7 @@ describe(FlagdProvider.name, () => {
       resolveFloat: jest.fn(
         (
           request: ResolveFloatRequest,
+          metadata: Metadata,
           callback: (error: ServiceError | null, response: ResolveFloatResponse) => void,
         ) => {
           callback({ code: status.NOT_FOUND, details } as ServiceError, {} as ResolveFloatResponse);
@@ -598,6 +611,7 @@ describe(FlagdProvider.name, () => {
       resolveObject: jest.fn(
         (
           request: ResolveObjectRequest,
+          metadata: Metadata,
           callback: (error: ServiceError | null, response: ResolveObjectResponse) => void,
         ) => {
           callback({ code: status.UNAVAILABLE, details } as ServiceError, {} as ResolveObjectResponse);

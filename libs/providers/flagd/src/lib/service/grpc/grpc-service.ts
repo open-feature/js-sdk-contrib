@@ -1,5 +1,4 @@
-import { type ClientReadableStream, type ClientUnaryCall, type ServiceError } from '@grpc/grpc-js';
-import { status } from '@grpc/grpc-js';
+import { Metadata, status, type ClientReadableStream, type ClientUnaryCall, type ServiceError } from '@grpc/grpc-js';
 import { ConnectivityState } from '@grpc/grpc-js/build/src/connectivity-state';
 import type { EvaluationContext, FlagValue, JsonValue, Logger, ResolutionDetails } from '@openfeature/server-sdk';
 import {
@@ -32,9 +31,9 @@ import {
   DEFAULT_MAX_CACHE_SIZE,
   EVENT_CONFIGURATION_CHANGE,
   EVENT_PROVIDER_READY,
+  FLAGD_SELECTOR_HEADER,
 } from '../../constants';
 import { FlagdProvider } from '../../flagd-provider';
-import type { Service } from '../service';
 import {
   buildClientOptions,
   closeStreamIfDefined,
@@ -43,6 +42,7 @@ import {
   handleFatalStatusCodeError,
   isFatalStatusCodeError,
 } from '../common';
+import type { Service } from '../service';
 
 type AnyResponse =
   | ResolveBooleanResponse
@@ -86,6 +86,7 @@ export class GRPCService implements Service {
   private _streamDeadline: number;
   private _maxBackoffMs: number;
   private _errorThrottled = false;
+  private readonly _metadata: Metadata;
 
   private get _cacheActive() {
     // the cache is "active" (able to be used) if the config enabled it, AND the gRPC stream is live
@@ -114,6 +115,12 @@ export class GRPCService implements Service {
     }
 
     this._fatalStatusCodes = createFatalStatusCodesSet(config.fatalStatusCodes, logger);
+
+    // create metadata with the flagd-selector header if selector is configured
+    this._metadata = new Metadata();
+    if (config.selector) {
+      this._metadata.set(FLAGD_SELECTOR_HEADER, config.selector);
+    }
   }
 
   clearCache(): void {
@@ -273,6 +280,7 @@ export class GRPCService implements Service {
   private async resolve<T extends FlagValue>(
     promise: (
       request: AnyRequest,
+      metadata: Metadata,
       callback: (error: ServiceError | null, response: AnyResponse) => void,
     ) => ClientUnaryCall,
     flagKey: string,
@@ -287,9 +295,9 @@ export class GRPCService implements Service {
       }
     }
 
-    // invoke the passed resolver method
+    // invoke the passed resolver method with metadata for selector support
     const response = await resolver
-      .call(this._client, { flagKey, context })
+      .call(this._client, { flagKey, context }, this._metadata)
       .then((resolved) => resolved, this.onRejected);
 
     const resolved: ResolutionDetails<T> = {
