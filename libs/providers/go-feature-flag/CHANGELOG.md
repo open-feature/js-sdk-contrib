@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.2.0...go-feature-flag-provider-v1.3.0) (2026-02-13)
+
+
+### ✨ New Features
+
+* **go-feature-flag:** Bump wasm module + ofrep dependency ([#1476](https://github.com/open-feature/js-sdk-contrib/issues/1476)) ([8304747](https://github.com/open-feature/js-sdk-contrib/commit/8304747e68fc9d43cda66ecd76661ba3bd1d8aa6))
+
 ## [1.2.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.1.0...go-feature-flag-provider-v1.2.0) (2026-02-06)
 
 
