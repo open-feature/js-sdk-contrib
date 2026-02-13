@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4](https://github.com/open-feature/js-sdk-contrib/compare/aws-ssm-provider-v0.1.3...aws-ssm-provider-v0.1.4) (2026-02-13)
+
+
+### 🐛 Bug Fixes
+
+* **deps:** update dependency @aws-sdk/client-ssm to v3.826.0 ([#1313](https://github.com/open-feature/js-sdk-contrib/issues/1313)) ([ec5309a](https://github.com/open-feature/js-sdk-contrib/commit/ec5309a0a9efd9a6556f180d57f774ad003455bd))
+* **deps:** update dependency @aws-sdk/client-ssm to v3.840.0 ([#1329](https://github.com/open-feature/js-sdk-contrib/issues/1329)) ([3751930](https://github.com/open-feature/js-sdk-contrib/commit/375193081a0ab7f584bf24dd7a77e3fa41a72e26))
+
 ## [0.1.3](https://github.com/open-feature/js-sdk-contrib/compare/aws-ssm-provider-v0.1.2...aws-ssm-provider-v0.1.3) (2025-06-04)
 
 
