@@ -51,7 +51,7 @@ export const providerSteps: Steps =
           break;
         case 'forbidden':
           flagdOptions['port'] = container.getForbiddenPort();
-          flagdOptions['fatalStatusCodes'] = ['FORBIDDEN'];
+          flagdOptions['fatalStatusCodes'] = [...(flagdOptions.fatalStatusCodes || []), 'FORBIDDEN'];
           break;
         case 'ssl': {
           flagdOptions['port'] = container.getPort(state.resolverType);
