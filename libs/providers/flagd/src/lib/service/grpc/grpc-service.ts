@@ -302,6 +302,7 @@ export class GRPCService implements Service {
       .then((resolved) => resolved, this.onRejected);
 
     let value = response.value as T;
+    // In proto3 optional will be translated to undefined
     if (response?.value === undefined) {
       value = defaultValue;
     }
