@@ -144,38 +144,38 @@ export class GRPCService implements Service {
 
   async resolveBoolean(
     flagKey: string,
-    _: boolean,
+    defaultValue: boolean,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
-    return this.resolve(this._client.resolveBoolean, flagKey, context, logger);
+    return this.resolve(this._client.resolveBoolean, flagKey, defaultValue, context, logger);
   }
 
   async resolveString(
     flagKey: string,
-    _: string,
+    defaultValue: string,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<string>> {
-    return this.resolve(this._client.resolveString, flagKey, context, logger);
+    return this.resolve(this._client.resolveString, flagKey, defaultValue, context, logger);
   }
 
   async resolveNumber(
     flagKey: string,
-    _: number,
+    defaultValue: number,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<number>> {
-    return this.resolve(this._client.resolveFloat, flagKey, context, logger);
+    return this.resolve(this._client.resolveFloat, flagKey, defaultValue, context, logger);
   }
 
   async resolveObject<T extends JsonValue>(
     flagKey: string,
-    _: T,
+    defaultValue: T,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
-    return this.resolve(this._client.resolveObject, flagKey, context, logger);
+    return this.resolve(this._client.resolveObject, flagKey, defaultValue, context, logger);
   }
 
   private listen(
@@ -284,6 +284,7 @@ export class GRPCService implements Service {
       callback: (error: ServiceError | null, response: AnyResponse) => void,
     ) => ClientUnaryCall,
     flagKey: string,
+    defaultValue: T,
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
@@ -300,8 +301,13 @@ export class GRPCService implements Service {
       .call(this._client, { flagKey, context }, this._metadata)
       .then((resolved) => resolved, this.onRejected);
 
+    let value = response.value as T;
+    if (response?.value === undefined) {
+      value = defaultValue;
+    }
+
     const resolved: ResolutionDetails<T> = {
-      value: response.value as T,
+      value,
       reason: response.reason,
       variant: response.variant,
       flagMetadata: response.metadata,
