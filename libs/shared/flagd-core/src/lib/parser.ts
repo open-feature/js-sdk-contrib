@@ -8,8 +8,6 @@ import { FeatureFlag } from './feature-flag';
 // including Cloudflare Workers, Deno Deploy, and Vercel Edge Runtime.
 import precompiledValidate from './generated/validators';
 
-type ValidateFn = ((data: unknown) => boolean) & { errors?: unknown[] };
-
 type FlagConfig = {
   flags: { [key: string]: Flag };
   metadata?: FlagMetadata;
@@ -37,10 +35,9 @@ export function parse(flagConfig: string, strictValidation: boolean, logger: Log
     const transformed = transform(flagConfig);
     const parsedFlagConfig: FlagConfig = JSON.parse(transformed);
 
-    const validate = precompiledValidate as ValidateFn;
-    const isValid = validate(parsedFlagConfig);
+    const isValid = precompiledValidate(parsedFlagConfig);
     if (!isValid) {
-      const message = `${errorMessages}: ${JSON.stringify(validate.errors, undefined, 2)}`;
+      const message = `${errorMessages}: ${JSON.stringify(precompiledValidate.errors, undefined, 2)}`;
       if (strictValidation) {
         throw new ParseError(message);
       } else {
