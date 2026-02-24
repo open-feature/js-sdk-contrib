@@ -20,6 +20,9 @@ const targetingSchema = require('../flagd-schemas/json/targeting.json');
 // in both Node.js and Jest (CJS) environments. When bundled for Workers with
 // a bundler like esbuild/rollup, the CJS export will be rewritten to ESM
 // automatically by the bundler.
+// strict: false is required — the upstream flagd schema uses 1-tuple `items`
+// without additionalItems/minItems/maxItems (e.g. varRule), which AJV strict
+// mode rejects. We don't own the schema so we cannot fix it upstream.
 const ajv = new Ajv({
   strict: false,
   code: { source: true, esm: false },
