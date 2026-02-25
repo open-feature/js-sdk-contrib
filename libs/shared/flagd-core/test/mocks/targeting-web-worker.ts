@@ -1,5 +1,5 @@
 /**
- * WebWorker-mode wrapper for Targeting. Used by the restricted Jest project
+ * Edge runtime wrapper for Targeting. Used by the restricted Jest project
  * (via moduleNameMapper) so that existing tests exercise
  * { disableDynamicCodeGeneration: true } without modification.
  */

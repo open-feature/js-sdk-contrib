@@ -21,7 +21,7 @@ export default {
     {
       // disableDynamicCodeGeneration project: re-runs the original spec files in an
       // environment that blocks eval() and new Function(), proving compatibility with
-      // V8 isolate WebWorker environments. moduleNameMapper transparently injects
+      // edge function runtimes. moduleNameMapper transparently injects
       // { disableDynamicCodeGeneration: true } into FlagdCore and Targeting constructors
       // via thin wrappers — no test changes needed.
       displayName: 'flagd-core (disableDynamicCodeGeneration)',
@@ -29,7 +29,7 @@ export default {
       testEnvironment: '<rootDir>/test/jest-environment-web-worker.js',
       testMatch: ['<rootDir>/src/lib/flagd-core.spec.ts', '<rootDir>/src/lib/targeting/targeting.spec.ts'],
       moduleNameMapper: {
-        // Redirect FlagdCore and Targeting imports to WebWorker-mode wrappers.
+        // Redirect FlagdCore and Targeting imports to disableDynamicCodeGeneration wrappers.
         // These patterns match the exact import strings used in the spec files.
         '^\\./flagd-core$': '<rootDir>/test/mocks/flagd-core-web-worker.ts',
         '^\\./targeting$': '<rootDir>/test/mocks/targeting-web-worker.ts',

@@ -35,13 +35,13 @@ export class Targeting {
     engine.addMethod(fractionalRule, fractional);
 
     if (this._useInterpreter) {
-      // Interpreter mode: store engine and logic for .run() calls
-      // This is compatible with Cloudflare Workers (no new Function())
+      // Interpreter mode: store engine and logic for .run() calls.
+      // Compatible with edge function runtimes that restrict dynamic code evaluation.
       this._engine = engine;
       this._logic = logic;
     } else {
-      // Compilation mode: compile logic into a native function
-      // This is faster but uses new Function() which is blocked in Workers
+      // Compilation mode: compile logic into a native function.
+      // Faster, but uses new Function() which is blocked in some edge runtimes.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this._compiledLogic = engine.build(logic) as any;
     }
