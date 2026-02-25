@@ -49,7 +49,7 @@ export class Targeting {
 
   evaluate<T extends JsonValue>(flagKey: string, ctx: EvaluationContext, logger: Logger = this.logger): T {
     if (Object.hasOwn(ctx, flagdPropertyKey)) {
-      this.logger.debug(`overwriting ${flagdPropertyKey} property in the context`);
+      logger.debug(`overwriting ${flagdPropertyKey} property in the context`);
     }
 
     const evaluationContext = {

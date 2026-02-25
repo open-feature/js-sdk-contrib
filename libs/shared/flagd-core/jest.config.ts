@@ -1,11 +1,10 @@
 /* eslint-disable */
 const sharedTransform = {
+  // Only transform TypeScript files. Plain .js files (generated validators, jest
+  // environment) are already valid CommonJS and are excluded by the regex scope.
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
-  // Do not attempt to transform plain .js files (generated validators, jest environment).
-  // These are already valid CommonJS and don't need ts-jest processing.
-  transformIgnorePatterns: ['\\.js$'],
   moduleFileExtensions: ['ts', 'js', 'html'],
 };
 
