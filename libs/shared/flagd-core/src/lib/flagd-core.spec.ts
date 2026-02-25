@@ -334,14 +334,9 @@ describe('flagd-core error conditions', () => {
   });
 
   it('should return a parse error code', () => {
-    // In compiled mode (default) the logic engine throws at flag-load time → PARSE_ERROR.
-    // In interpreter mode (disableDynamicCodeGeneration: true) the engine throws at
-    // evaluation time → GENERAL.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const webWorkerMode = (global as any).__webWorker__ === true;
     const resolved = core.resolveBooleanEvaluation('invalidTargetingRule', false, {});
     expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
-    expect(resolved.errorCode).toBe(webWorkerMode ? ErrorCode.GENERAL : ErrorCode.PARSE_ERROR);
+    expect(resolved.errorCode).toBe(ErrorCode.PARSE_ERROR);
     expect(resolved.errorMessage).toBeTruthy();
     expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev' });
   });

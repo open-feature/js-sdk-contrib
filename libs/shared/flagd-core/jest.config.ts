@@ -34,9 +34,6 @@ export default {
         '^\\./flagd-core$': '<rootDir>/test/mocks/flagd-core-web-worker.ts',
         '^\\./targeting$': '<rootDir>/test/mocks/targeting-web-worker.ts',
       },
-      // Sets global.__webWorker__ = true so tests can branch on the one assertion
-      // where compiled vs interpreter mode differs.
-      setupFilesAfterEnv: ['<rootDir>/test/setup-web-worker.js'],
       ...sharedTransform,
     },
   ],

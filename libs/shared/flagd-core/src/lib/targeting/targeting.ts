@@ -37,6 +37,12 @@ export class Targeting {
     if (this._useInterpreter) {
       // Interpreter mode: store engine and logic for .run() calls.
       // Compatible with edge function runtimes that restrict dynamic code evaluation.
+      //
+      // Eagerly validate that all methods referenced in the logic tree are registered.
+      // This ensures invalid rules (e.g. unknown methods) are detected at flag-load
+      // time — consistent with compiled mode — so that the caller gets PARSE_ERROR
+      // rather than a deferred GENERAL error at evaluation time.
+      Targeting.validateMethods(logic, engine);
       this._engine = engine;
       this._logic = logic;
     } else {
@@ -44,6 +50,35 @@ export class Targeting {
       // Faster, but uses new Function() which is blocked in some edge runtimes.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this._compiledLogic = engine.build(logic) as any;
+    }
+  }
+
+  /**
+   * Recursively walks the json-logic tree and throws if any referenced method
+   * is not registered on the engine. This mirrors the validation that
+   * engine.build() performs at compile time, ensuring consistent PARSE_ERROR
+   * behavior in interpreter mode.
+   */
+  private static validateMethods(logic: unknown, engine: LogicEngine): void {
+    if (logic === null || typeof logic !== 'object' || Array.isArray(logic)) {
+      return;
+    }
+    const keys = Object.keys(logic);
+    if (keys.length === 0) {
+      return;
+    }
+    const method = keys[0];
+    if (!(method in engine.methods) && !engine.isData(logic as Record<string, unknown>, method)) {
+      throw new Error(`Method '${method}' was not found in the Logic Engine.`);
+    }
+    // Recurse into the method's arguments
+    const args = (logic as Record<string, unknown>)[method];
+    if (Array.isArray(args)) {
+      for (const arg of args) {
+        Targeting.validateMethods(arg, engine);
+      }
+    } else {
+      Targeting.validateMethods(args, engine);
     }
   }
 
