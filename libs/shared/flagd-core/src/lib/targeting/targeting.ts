@@ -26,7 +26,7 @@ export class Targeting {
     private logger: Logger,
     options: FlagdCoreOptions = {},
   ) {
-    this._useInterpreter = options.workers ?? false;
+    this._useInterpreter = options.disableDynamicCodeGeneration ?? false;
 
     const engine = new LogicEngine();
     engine.addMethod(startsWithRule, startsWith);

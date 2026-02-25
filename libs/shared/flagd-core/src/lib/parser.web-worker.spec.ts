@@ -1,5 +1,5 @@
 /**
- * @jest-environment ./test/jest-environment-worker.js
+ * @jest-environment ./test/jest-environment-web-worker.js
  *
  * These tests run in a restricted environment that blocks eval() and new Function(),
  * simulating Cloudflare Workers / V8 isolate restrictions.
@@ -54,7 +54,7 @@ describe('Flag configurations (restricted environment)', () => {
       const flagWithRef =
         '{"flags":{"fibAlgo":{"variants":{"recursive":"recursive","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailSuffixFaas"},"binet",null]}}},"$evaluators":{"emailSuffixFaas":{"in":["@faas.com",{"var":["email"]}]}}}';
 
-      const { flags } = parse(flagWithRef, false, logger, { workers: true });
+      const { flags } = parse(flagWithRef, false, logger, { disableDynamicCodeGeneration: true });
       expect(flags).toBeTruthy();
 
       const fibAlgo = flags.get('fibAlgo');
