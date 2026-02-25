@@ -56,14 +56,19 @@ ${moduleCode}
 `,
 );
 
-// Also create a TypeScript declaration file
+// Also create a TypeScript declaration file.
+// The type is inlined (rather than importing ValidateFunction from ajv) so that
+// downstream consumers don't need ajv installed for type resolution.
 const dtsPath = path.join(outputDir, 'validators.d.ts');
 fs.writeFileSync(
   dtsPath,
   `// AUTO-GENERATED FILE - DO NOT EDIT
 // Type declarations for pre-compiled validators
 
-import type { ValidateFunction } from 'ajv';
+interface ValidateFunction {
+  (data: unknown): boolean;
+  errors?: null | Array<Record<string, unknown>>;
+}
 
 declare const validate: ValidateFunction;
 export = validate;
