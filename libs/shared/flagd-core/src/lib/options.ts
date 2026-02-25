@@ -5,8 +5,8 @@ export interface FlagdCoreOptions {
   /**
    * When true, uses interpreter mode for json-logic-engine instead of
    * compilation mode. This avoids dynamic code generation (new Function())
-   * and is required for Cloudflare Workers, Deno Deploy, Vercel Edge Runtime,
-   * and other V8 isolate environments that restrict runtime code evaluation.
+   * and is required for V8 isolate WebWorker environments such as
+   * Cloudflare Workers, Deno Deploy, and Vercel Edge Runtime.
    *
    * @default false
    */
