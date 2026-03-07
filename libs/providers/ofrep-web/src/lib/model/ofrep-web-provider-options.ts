@@ -1,5 +1,11 @@
 import type { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
 
+export interface OFREPWebProviderStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+
 export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   /**
    * pollInterval is the time in milliseconds to wait between we call the OFREP
@@ -9,4 +15,7 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
    * Default: 30000
    */
   pollInterval?: number; // in milliseconds
+  disableLocalCache?: boolean;
+  storageKey?: string;
+  storageAdapter?: OFREPWebProviderStorage;
 };

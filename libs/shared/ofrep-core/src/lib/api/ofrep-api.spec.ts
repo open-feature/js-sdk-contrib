@@ -9,6 +9,7 @@ import type {
 } from '../model';
 import {
   OFREPApiFetchError,
+  OFREPApiTransientHttpError,
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
   OFREPApiUnexpectedResponseError,
@@ -83,6 +84,12 @@ describe('OFREPApi', () => {
       it('throw OFREPApiTooManyRequestsError on 429 response', async () => {
         await expect(() => api.postEvaluateFlag('my-flag', { context: { errors: { 429: true } } })).rejects.toThrow(
           OFREPApiTooManyRequestsError,
+        );
+      });
+
+      it('throw OFREPApiTransientHttpError on 500 response', async () => {
+        await expect(() => api.postEvaluateFlag('my-flag', { context: { errors: { 500: true } } })).rejects.toThrow(
+          OFREPApiTransientHttpError,
         );
       });
 
@@ -248,6 +255,12 @@ describe('OFREPApi', () => {
       it('throw OFREPApiTooManyRequestsError on 429 response', async () => {
         await expect(() => api.postBulkEvaluateFlags({ context: { errors: { 429: true } } })).rejects.toThrow(
           OFREPApiTooManyRequestsError,
+        );
+      });
+
+      it('throw OFREPApiTransientHttpError on 500 response', async () => {
+        await expect(() => api.postBulkEvaluateFlags({ context: { errors: { 500: true } } })).rejects.toThrow(
+          OFREPApiTransientHttpError,
         );
       });
 

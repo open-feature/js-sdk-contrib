@@ -21,6 +21,7 @@ import type { OFREPProviderBaseOptions } from '../provider';
 import { buildHeaders } from '../provider';
 import {
   OFREPApiFetchError,
+  OFREPApiTransientHttpError,
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
   OFREPApiUnexpectedResponseError,
@@ -106,6 +107,10 @@ export class OFREPApi {
 
     if (response.status === 429) {
       throw new OFREPApiTooManyRequestsError(response);
+    }
+
+    if (response.status >= 500 && response.status < 600) {
+      throw new OFREPApiTransientHttpError(response);
     }
 
     if (response.status === 200 && !this.isJsonMime(response)) {

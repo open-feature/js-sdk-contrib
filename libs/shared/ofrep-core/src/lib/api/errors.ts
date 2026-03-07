@@ -104,3 +104,20 @@ export class OFREPApiTooManyRequestsError extends OFREPApiError {
     return date;
   }
 }
+
+export class OFREPApiTransientHttpError extends OFREPApiError {
+  constructor(
+    public override response: Response,
+    message?: string,
+    options?: ErrorOptions,
+  ) {
+    super(undefined, response, message, options);
+    Object.setPrototypeOf(this, OFREPApiTransientHttpError.prototype);
+    this.name = OFREPApiTransientHttpError.name;
+    this.message = message ?? `OFREP request failed with transient status ${response.status}`;
+  }
+
+  public get status(): number {
+    return this.response.status;
+  }
+}
