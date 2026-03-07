@@ -29,6 +29,48 @@ import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
 OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 60000 }));
 ```
 
+### Local cache
+
+The web provider persists the most recent bulk evaluation response in `localStorage` by default under the `ofrepLocalCache` key.
+
+On startup, the provider will:
+
+- load a persisted snapshot only when it matches the current `targetingKey` and `Authorization` header hash
+- send the stored `ETag` as `If-None-Match`
+- keep using the hydrated snapshot when the next bulk request returns `304 Not Modified`
+- fall back to the hydrated snapshot when startup fails because of a network error, timeout, or temporary `5xx` response
+
+Recovered values can be stale until the next successful bulk evaluation completes.
+
+You can customize or disable this behavior:
+
+```ts
+import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
+
+OpenFeature.setProvider(
+  new OFREPWebProvider({
+    baseUrl: 'https://localhost:8080',
+    storageKey: 'customOfrepCache',
+    disableLocalCache: false,
+  }),
+);
+```
+
+To disable persistence entirely:
+
+```ts
+import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
+
+OpenFeature.setProvider(
+  new OFREPWebProvider({
+    baseUrl: 'https://localhost:8080',
+    disableLocalCache: true,
+  }),
+);
+```
+
+If you need something other than `localStorage`, provide a compatible storage adapter through `storageAdapter`.
+
 ### HTTP headers
 
 The provider can use headers from either a static header map or a custom header factory.

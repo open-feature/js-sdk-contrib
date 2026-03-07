@@ -37,6 +37,10 @@ export const handlers = [
         throw HttpResponse.error();
       }
 
+      if (errors?.['500']) {
+        throw HttpResponse.text(undefined, { status: 500 });
+      }
+
       if (errors?.['generic400']) {
         throw HttpResponse.json({ metadata: TEST_FLAG_METADATA }, { status: 400 });
       }
@@ -177,6 +181,10 @@ export const handlers = [
 
       if (errors?.['network']) {
         throw HttpResponse.error();
+      }
+
+      if (errors?.['500']) {
+        throw HttpResponse.text(undefined, { status: 500 });
       }
 
       if (errors?.['generic400']) {

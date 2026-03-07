@@ -6,6 +6,7 @@ import {
   isEvaluationFailureResponse,
   OFREPApi,
   OFREPApiFetchError,
+  OFREPApiTransientHttpError,
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
   OFREPForbiddenError,
@@ -33,10 +34,17 @@ import {
 import type { EvaluateFlagsResponse } from './model/evaluate-flags-response';
 import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import type { FlagCache, MetadataCache } from './model/in-memory-cache';
-import type { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
+import type { OFREPWebProviderOptions, OFREPWebProviderStorage } from './model/ofrep-web-provider-options';
+import { resolveCacheKeyHash } from './cacheIdentity';
+import {
+  createPersistedCacheSnapshot,
+  deserializePersistedCacheSnapshot,
+  serializePersistedCacheSnapshot,
+} from './model/persistedCacheSnapshot';
 
 export class OFREPWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 30000;
+  DEFAULT_STORAGE_KEY = 'ofrepLocalCache';
 
   readonly metadata = {
     name: 'OpenFeature Remote Evaluation Protocol Web Provider',
@@ -57,6 +65,8 @@ export class OFREPWebProvider implements Provider {
   private _flagSetMetadataCache?: MetadataCache;
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
+  private currentCacheKeyHash?: string;
+  private hasCurrentState = false;
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -180,6 +190,21 @@ export class OFREPWebProvider implements Provider {
    * @throws GeneralError if the API returned a 400 with an unknown error code
    */
   private async _fetchFlags(context?: EvaluationContext | undefined): Promise<EvaluateFlagsResponse> {
+    const cacheKeyHash = await resolveCacheKeyHash(this._options, context);
+    const needsStateBootstrap = cacheKeyHash !== this.currentCacheKeyHash || !this.hasCurrentState;
+    let usedPersistedSnapshot = false;
+
+    if (needsStateBootstrap) {
+      const persistedSnapshot = this.loadPersistedSnapshot(cacheKeyHash);
+      if (persistedSnapshot) {
+        this.applyCurrentState(persistedSnapshot.data, persistedSnapshot.etag, persistedSnapshot.metadata);
+        usedPersistedSnapshot = true;
+      } else {
+        this.resetCurrentState();
+      }
+      this.currentCacheKeyHash = cacheKeyHash;
+    }
+
     try {
       const evalReq: EvaluationRequest = {
         context,
@@ -208,17 +233,103 @@ export class OFREPWebProvider implements Provider {
       }, {});
 
       const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
-      this._flagCache = newCache;
-      this._etag = response.httpResponse?.headers.get('etag');
-      this._flagSetMetadataCache = toFlagMetadata(
+      const metadataCache = toFlagMetadata(
         typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
       );
+      this.applyCurrentState(newCache, response.httpResponse?.headers.get('etag'), metadataCache);
+      this.persistCurrentState(cacheKeyHash);
       return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError && error.retryAfterDate !== null) {
         this._retryPollingAfter = error.retryAfterDate;
       }
+      if (usedPersistedSnapshot && this.isTransientError(error)) {
+        return { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [] };
+      }
+      if (needsStateBootstrap) {
+        this.resetCurrentState();
+      }
       throw error;
+    }
+  }
+
+  private isTransientError(error: unknown): error is OFREPApiFetchError | OFREPApiTransientHttpError {
+    return error instanceof OFREPApiFetchError || error instanceof OFREPApiTransientHttpError;
+  }
+
+  private applyCurrentState(flagCache: FlagCache, etag?: string | null, metadata?: MetadataCache) {
+    this._flagCache = flagCache;
+    this._etag = etag ?? null;
+    this._flagSetMetadataCache = metadata;
+    this.hasCurrentState = true;
+  }
+
+  private resetCurrentState() {
+    this._flagCache = {};
+    this._etag = null;
+    this._flagSetMetadataCache = undefined;
+    this.hasCurrentState = false;
+  }
+
+  private loadPersistedSnapshot(cacheKeyHash: string) {
+    const storageAdapter = this.getStorageAdapter();
+    if (!storageAdapter) {
+      return undefined;
+    }
+
+    try {
+      const storedValue = storageAdapter.getItem(this._options.storageKey ?? this.DEFAULT_STORAGE_KEY);
+      if (!storedValue) {
+        return undefined;
+      }
+
+      const persistedSnapshot = deserializePersistedCacheSnapshot(storedValue);
+      if (!persistedSnapshot) {
+        storageAdapter.removeItem(this._options.storageKey ?? this.DEFAULT_STORAGE_KEY);
+        return undefined;
+      }
+
+      return persistedSnapshot.cacheKeyHash === cacheKeyHash ? persistedSnapshot : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private persistCurrentState(cacheKeyHash: string) {
+    const storageAdapter = this.getStorageAdapter();
+    if (!storageAdapter) {
+      return;
+    }
+
+    try {
+      const persistedSnapshot = createPersistedCacheSnapshot(
+        cacheKeyHash,
+        this._flagCache,
+        this._flagSetMetadataCache,
+        this._etag,
+      );
+      storageAdapter.setItem(
+        this._options.storageKey ?? this.DEFAULT_STORAGE_KEY,
+        serializePersistedCacheSnapshot(persistedSnapshot),
+      );
+    } catch {
+      return;
+    }
+  }
+
+  private getStorageAdapter(): OFREPWebProviderStorage | undefined {
+    if (this._options.disableLocalCache) {
+      return undefined;
+    }
+
+    if (this._options.storageAdapter) {
+      return this._options.storageAdapter;
+    }
+
+    try {
+      return globalThis.localStorage;
+    } catch {
+      return undefined;
     }
   }
 
