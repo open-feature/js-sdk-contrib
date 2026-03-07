@@ -61,6 +61,9 @@
         },
         {
           "target": "flagd-core:pullTestHarness"
+        },
+        {
+          "target": "flagd-core:buildValidators"
         }
       ]
     },
