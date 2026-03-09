@@ -60,7 +60,12 @@
           "target": "generate"
         },
         {
-          "target": "flagd-core:pullTestHarness"
+          "projects": ["flagd-core"],
+          "target": "pullTestHarness"
+        },
+        {
+          "projects": ["flagd-core"],
+          "target": "buildValidators"
         }
       ]
     },

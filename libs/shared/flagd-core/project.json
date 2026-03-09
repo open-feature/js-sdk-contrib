@@ -20,13 +20,24 @@
         "parallel": false
       }
     },
+    "buildValidators": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["git submodule update --init flagd-schemas", "node scripts/build-validators.js"],
+        "cwd": "libs/shared/flagd-core",
+        "parallel": false
+      },
+      "dependsOn": ["pullTestHarness"]
+    },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"]
+      "outputs": ["{options.outputFile}"],
+      "dependsOn": ["buildValidators"]
     },
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "dependsOn": ["buildValidators"],
       "options": {
         "jestConfig": "libs/shared/flagd-core/jest.config.ts"
       }
@@ -34,7 +45,7 @@
     "package": {
       "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
-      "dependsOn": ["pullTestHarness"],
+      "dependsOn": ["pullTestHarness", "buildValidators"],
       "options": {
         "project": "libs/shared/flagd-core/package.json",
         "outputPath": "dist/libs/shared/flagd-core",
