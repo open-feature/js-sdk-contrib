@@ -50,6 +50,14 @@ describe('targeting', () => {
 
       expect(targeting.evaluate(flagKey, ctx)).toBeTruthy();
     });
+
+    it('should reject unknown methods nested inside arrays in interpreter mode', () => {
+      const logic = { in: [1, [{ bogus: [1] }]] };
+
+      expect(() => new Targeting(logic, logger, { disableDynamicCodeGeneration: true })).toThrow(
+        "Method 'bogus' was not found in the Logic Engine.",
+      );
+    });
   });
 
   describe('String comparison operator', () => {

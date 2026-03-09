@@ -56,9 +56,17 @@ export class Targeting {
    * behavior in interpreter mode.
    */
   private static validateMethods(logic: unknown, engine: LogicEngine): void {
-    if (logic === null || typeof logic !== 'object' || Array.isArray(logic)) {
+    if (logic === null || typeof logic !== 'object') {
       return;
     }
+
+    if (Array.isArray(logic)) {
+      for (const item of logic) {
+        Targeting.validateMethods(item, engine);
+      }
+      return;
+    }
+
     const keys = Object.keys(logic);
     if (keys.length === 0) {
       return;
