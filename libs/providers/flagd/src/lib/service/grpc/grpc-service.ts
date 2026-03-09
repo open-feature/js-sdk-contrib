@@ -302,8 +302,9 @@ export class GRPCService implements Service {
       .then((resolved) => resolved, this.onRejected);
 
     let value = response.value as T;
-    // In proto3 optional will be translated to undefined
-    if (response?.value === undefined) {
+    // When no default variant is configured, the server returns an empty/zero proto
+    // value with reason=DEFAULT. In that case, return the caller's code default value.
+    if (response.reason === StandardResolutionReasons.DEFAULT && !response.variant) {
       value = defaultValue;
     }
 
