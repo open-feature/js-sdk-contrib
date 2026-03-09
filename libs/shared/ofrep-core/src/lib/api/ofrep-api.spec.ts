@@ -46,6 +46,44 @@ describe('OFREPApi', () => {
     });
   });
 
+  describe('timer cleanup', () => {
+    it('should clear timeout after a successful request', async () => {
+      const clearTimeoutSpy = jest.spyOn(globalThis, 'clearTimeout');
+      await api.postEvaluateFlag('my-flag');
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+      clearTimeoutSpy.mockRestore();
+    });
+
+    it('should clear timeout after a failed request', async () => {
+      const clearTimeoutSpy = jest.spyOn(globalThis, 'clearTimeout');
+      try {
+        await api.postEvaluateFlag('my-flag', { context: { errors: { network: true } } });
+      } catch {
+        // expected
+      }
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+      clearTimeoutSpy.mockRestore();
+    });
+
+    it('should not leave pending timers after a request completes', async () => {
+      jest.useFakeTimers();
+      const localApi = new OFREPApi({ baseUrl: 'https://localhost:8080', timeoutMs: 500 });
+      const timersBefore = jest.getTimerCount();
+      await localApi.postEvaluateFlag('my-flag');
+      expect(jest.getTimerCount()).toBe(timersBefore);
+      jest.useRealTimers();
+    });
+  });
+
+  describe('close', () => {
+    it('should abort in-flight requests when close is called', async () => {
+      const localApi = new OFREPApi({ baseUrl: 'https://localhost:8080', timeoutMs: 5000 });
+      const evalPromise = localApi.postEvaluateFlag('my-flag', { context: { errors: { slowRequest: true } } });
+      localApi.close();
+      await expect(evalPromise).rejects.toThrow();
+    });
+  });
+
   describe('mock timers', () => {
     beforeEach(() => {
       jest.useFakeTimers();

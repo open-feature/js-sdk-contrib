@@ -38,7 +38,7 @@ function isomorphicFetch(): FetchAPI {
   } else if (window) {
     return window.fetch.bind(window);
   } else if (self) {
-    self.fetch.bind(self);
+    return self.fetch.bind(self);
   }
   return fetch;
 }
@@ -58,6 +58,7 @@ export const ErrorMessageMap: { [key in ErrorCode]: string } = {
 
 export class OFREPApi {
   private static readonly jsonRegex = new RegExp(/application\/[^+]*[+]?(json);?.*/, 'i');
+  private _shutdownController = new AbortController();
 
   constructor(
     private baseOptions: OFREPProviderBaseOptions,
@@ -77,23 +78,49 @@ export class OFREPApi {
     return (OFREPEvaluationSuccessHttpStatuses as readonly number[]).includes(status);
   }
 
+  /**
+   * Aborts any in-flight requests and releases resources.
+   * After calling this method, the OFREPApi instance should not be used.
+   */
+  public close(): void {
+    this._shutdownController.abort();
+  }
+
   private async doFetchRequest(
     req: Request,
   ): Promise<{ response: Response; body?: EvaluationSuccessResponse | EvaluationFailureResponse }> {
-    let response: Response;
-    try {
-      const timeoutMs = this.baseOptions.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-      const controller = new AbortController();
-      // Uses a setTimeout instead of AbortSignal.timeout to support older runtimes.
-      setTimeout(
-        () => controller.abort(new DOMException(`This signal is timeout in ${timeoutMs}ms`, 'TimeoutError')),
-        timeoutMs,
+    // Reject immediately if the provider has already been closed.
+    if (this._shutdownController.signal.aborted) {
+      throw new OFREPApiFetchError(
+        new DOMException('Provider is closed', 'AbortError'),
+        'The OFREP request failed because the provider has been closed.',
+        { cause: new DOMException('Provider is closed', 'AbortError') },
       );
+    }
+
+    let response: Response;
+    const timeoutMs = this.baseOptions.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const controller = new AbortController();
+
+    // Forward shutdown signal to the per-request controller.
+    const onShutdown = () => controller.abort();
+    this._shutdownController.signal.addEventListener('abort', onShutdown);
+
+    // Uses a setTimeout instead of AbortSignal.timeout to support older runtimes.
+    const timeoutId = setTimeout(
+      () => controller.abort(new DOMException(`This signal is timeout in ${timeoutMs}ms`, 'TimeoutError')),
+      timeoutMs,
+    );
+
+    try {
       response = await this.fetchImplementation(req, {
         signal: controller.signal,
       });
     } catch (err) {
       throw new OFREPApiFetchError(err, 'The OFREP request failed.', { cause: err });
+    } finally {
+      clearTimeout(timeoutId);
+      this._shutdownController.signal.removeEventListener('abort', onShutdown);
     }
 
     if (response.status === 401) {

@@ -166,6 +166,7 @@ export class OFREPWebProvider implements Provider {
    */
   onClose?(): Promise<void> {
     this.stopPolling();
+    this._ofrepAPI.close();
     return Promise.resolve();
   }
 
