@@ -91,11 +91,10 @@ export class OFREPApi {
   ): Promise<{ response: Response; body?: EvaluationSuccessResponse | EvaluationFailureResponse }> {
     // Reject immediately if the provider has already been closed.
     if (this._shutdownController.signal.aborted) {
-      throw new OFREPApiFetchError(
-        new DOMException('Provider is closed', 'AbortError'),
-        'The OFREP request failed because the provider has been closed.',
-        { cause: new DOMException('Provider is closed', 'AbortError') },
-      );
+      const abortError = new DOMException('Provider is closed', 'AbortError');
+      throw new OFREPApiFetchError(abortError, 'The OFREP request failed because the provider has been closed.', {
+        cause: abortError,
+      });
     }
 
     let response: Response;
