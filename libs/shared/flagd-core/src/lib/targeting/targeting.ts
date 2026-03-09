@@ -8,14 +8,10 @@ import type { EvaluationContext, Logger, JsonValue } from '@openfeature/core';
 import type { FlagdCoreOptions } from '../options';
 
 export class Targeting {
-  /**
-   * Compiled logic function (used when useInterpreter is false)
-   */
+  // Compiled logic function (used when useInterpreter is false)
   private readonly _compiledLogic?: { <T extends JsonValue>(ctx: EvaluationContextWithLogger): T };
 
-  /**
-   * Logic engine and raw logic (used when useInterpreter is true)
-   */
+  // Logic engine and raw logic (used when useInterpreter is true)
   private readonly _engine?: LogicEngine;
   private readonly _logic?: unknown;
 
@@ -71,7 +67,7 @@ export class Targeting {
     if (!(method in engine.methods) && !engine.isData(logic as Record<string, unknown>, method)) {
       throw new Error(`Method '${method}' was not found in the Logic Engine.`);
     }
-    // Recurse into the method's arguments
+
     const args = (logic as Record<string, unknown>)[method];
     if (Array.isArray(args)) {
       for (const arg of args) {
