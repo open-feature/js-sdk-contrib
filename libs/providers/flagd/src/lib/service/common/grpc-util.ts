@@ -58,7 +58,7 @@ const CONFIG_TO_GRPC_OPTIONS: {
 export function buildClientOptions(config: Config): ClientOptions {
   const options: Partial<ClientOptions> = {
     'grpc.service_config': buildRetryPolicy(
-      ['flagd.evaluation.v1.Service', 'flagd.sync.v1.FlagSyncService'],
+      ['flagd.evaluation.v1.Service', 'flagd.evaluation.v2.Service', 'flagd.sync.v1.FlagSyncService'],
       config.retryBackoffMs,
       config.retryBackoffMaxMs,
     ),
