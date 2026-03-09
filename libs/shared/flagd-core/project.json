@@ -23,8 +23,12 @@
     "buildValidators": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node scripts/build-validators.js",
-        "cwd": "libs/shared/flagd-core"
+        "commands": [
+          "git submodule update --init flagd-schemas",
+          "node scripts/build-validators.js"
+        ],
+        "cwd": "libs/shared/flagd-core",
+        "parallel": false
       },
       "dependsOn": ["pullTestHarness"]
     },
