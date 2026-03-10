@@ -13,6 +13,45 @@ const logger: Logger = {
 describe('flagd-core resolving', () => {
   describe('truthy variant values', () => {
     const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"},"myStringFlag":{"state":"ENABLED","variants":{"key1":"val1","key2":"val2"},"defaultVariant":"key1"},"myFloatFlag":{"state":"ENABLED","variants":{"one":1.23,"two":2.34},"defaultVariant":"one"},"myIntFlag":{"state":"ENABLED","variants":{"one":1,"two":2},"defaultVariant":"one"},"myObjectFlag":{"state":"ENABLED","variants":{"object1":{"key":"val"},"object2":{"key":true}},"defaultVariant":"object1"},"fibAlgo":{"variants":{"recursive":"recursive","memo":"memo","loop":"loop","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},"binet",null]}},"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",{"in":["Chrome",{"var":"userAgent"}]},"third",null]}}},"$evaluators":{"emailWithFaas":{"in":["@faas.com",{"var":["email"]}]}}}`;
+    const expectedResolvedFlags = [
+      { flagKey: 'myBoolFlag', flagMetadata: {}, reason: StandardResolutionReasons.STATIC, value: true, variant: 'on' },
+      {
+        flagKey: 'myStringFlag',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.STATIC,
+        value: 'val1',
+        variant: 'key1',
+      },
+      {
+        flagKey: 'myFloatFlag',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.STATIC,
+        value: 1.23,
+        variant: 'one',
+      },
+      { flagKey: 'myIntFlag', flagMetadata: {}, reason: StandardResolutionReasons.STATIC, value: 1, variant: 'one' },
+      {
+        flagKey: 'myObjectFlag',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.STATIC,
+        value: { key: 'val' },
+        variant: 'object1',
+      },
+      {
+        flagKey: 'fibAlgo',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.DEFAULT,
+        value: 'recursive',
+        variant: 'recursive',
+      },
+      {
+        flagKey: 'targetedFlag',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.DEFAULT,
+        value: 'AAA',
+        variant: 'first',
+      },
+    ];
     let core: FlagdCore;
 
     beforeAll(() => {
@@ -50,12 +89,57 @@ describe('flagd-core resolving', () => {
 
     it('should resolve all flags', () => {
       const resolved = core.resolveAll({});
-      expect(resolved).toMatchSnapshot();
+      expect(resolved).toStrictEqual(expectedResolvedFlags);
     });
   });
 
   describe('falsy variant values', () => {
     const flagCfg = `{"flags":{"myBoolFlag":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"off"},"myStringFlag":{"state":"ENABLED","variants":{"key1":"","key2":""},"defaultVariant":"key1"},"myFloatFlag":{"state":"ENABLED","variants":{"zero":0.0,"one":1.34},"defaultVariant":"zero"},"myIntFlag":{"state":"ENABLED","variants":{"zero":0,"one":1},"defaultVariant":"zero"},"myObjectFlag":{"state":"ENABLED","variants":{"object1":{},"object2":{"key":true}},"defaultVariant":"object1"},"fibAlgo":{"variants":{"recursive":"recursive","memo":"memo","loop":"loop","binet":"binet"},"defaultVariant":"recursive","state":"ENABLED","targeting":{"if":[{"$ref":"emailWithFaas"},"binet",null]}},"targetedFlag":{"variants":{"first":"AAA","second":"BBB","third":"CCC"},"defaultVariant":"first","state":"ENABLED","targeting":{"if":[{"in":["@openfeature.dev",{"var":"email"}]},"second",{"in":["Chrome",{"var":"userAgent"}]},"third",null]}}},"$evaluators":{"emailWithFaas":{"in":["@faas.com",{"var":["email"]}]}}}`;
+    const expectedResolvedFlags = [
+      {
+        flagKey: 'myBoolFlag',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.STATIC,
+        value: false,
+        variant: 'off',
+      },
+      {
+        flagKey: 'myStringFlag',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.STATIC,
+        value: '',
+        variant: 'key1',
+      },
+      {
+        flagKey: 'myFloatFlag',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.STATIC,
+        value: 0,
+        variant: 'zero',
+      },
+      { flagKey: 'myIntFlag', flagMetadata: {}, reason: StandardResolutionReasons.STATIC, value: 0, variant: 'zero' },
+      {
+        flagKey: 'myObjectFlag',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.STATIC,
+        value: {},
+        variant: 'object1',
+      },
+      {
+        flagKey: 'fibAlgo',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.DEFAULT,
+        value: 'recursive',
+        variant: 'recursive',
+      },
+      {
+        flagKey: 'targetedFlag',
+        flagMetadata: {},
+        reason: StandardResolutionReasons.DEFAULT,
+        value: 'AAA',
+        variant: 'first',
+      },
+    ];
     let core: FlagdCore;
 
     beforeAll(() => {
@@ -93,7 +177,7 @@ describe('flagd-core resolving', () => {
 
     it('should resolve all flags', () => {
       const resolved = core.resolveAll({});
-      expect(resolved).toMatchSnapshot();
+      expect(resolved).toStrictEqual(expectedResolvedFlags);
     });
   });
 });

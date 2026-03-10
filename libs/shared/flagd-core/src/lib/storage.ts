@@ -1,6 +1,7 @@
 import type { FlagMetadata, Logger } from '@openfeature/core';
 import type { FeatureFlag } from './feature-flag';
 import { parse } from './parser';
+import type { FlagdCoreOptions } from './options';
 
 /**
  * The simple contract of the storage layer.
@@ -42,7 +43,10 @@ export class MemoryStorage implements Storage {
   private _flags: Map<string, FeatureFlag>;
   private _flagSetMetadata: FlagMetadata = {};
 
-  constructor(private logger: Logger) {
+  constructor(
+    private logger: Logger,
+    private options: FlagdCoreOptions = {},
+  ) {
     this._flags = new Map<string, FeatureFlag>();
   }
 
@@ -59,7 +63,7 @@ export class MemoryStorage implements Storage {
   }
 
   setConfigurations(flagConfig: string, strictValidation = false): string[] {
-    const { flags: newFlags, metadata } = parse(flagConfig, strictValidation, this.logger);
+    const { flags: newFlags, metadata } = parse(flagConfig, strictValidation, this.logger, this.options);
     const oldFlags = this._flags;
     const added: string[] = [];
     const removed: string[] = [];

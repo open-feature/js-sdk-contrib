@@ -37,9 +37,16 @@
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-      "dependsOn": ["buildValidators"],
+      "dependsOn": ["buildValidators", "test-edge"],
       "options": {
         "jestConfig": "libs/shared/flagd-core/jest.config.ts"
+      }
+    },
+    "test-edge": {
+      "executor": "@nx/jest:jest",
+      "dependsOn": ["buildValidators"],
+      "options": {
+        "jestConfig": "libs/shared/flagd-core/jest.edge.config.ts"
       }
     },
     "package": {
