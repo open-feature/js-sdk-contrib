@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/flagd-provider",
-  "version": "0.13.4",
+  "version": "0.14.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-feature/js-sdk-contrib.git",
