@@ -2,6 +2,7 @@
   "name": "@js-sdk-contrib/workspace-plugin",
   "version": "0.0.1",
   "type": "commonjs",
+  "license": "Apache-2.0",
   "generators": "./generators.json",
   "dependencies": {
     "@nx/devkit": "20.3.1",
