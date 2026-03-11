@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.3.0...flagd-core-v2.0.0) (2026-03-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* graceful fallback to code default ([#1461](https://github.com/open-feature/js-sdk-contrib/issues/1461))
+
+### ✨ New Features
+
+* graceful fallback to code default ([#1461](https://github.com/open-feature/js-sdk-contrib/issues/1461)) ([d314df9](https://github.com/open-feature/js-sdk-contrib/commit/d314df90df26b7f7d5ae1e2a298e2cd4b844b288))
+
 ## [1.3.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.2.0...flagd-core-v1.3.0) (2026-03-10)
 
 
