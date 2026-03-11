@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.2.0...flagd-core-v1.3.0) (2026-03-10)
+
+
+### ✨ New Features
+
+* **flagd-core:** add disableDynamicCodeGeneration option for edge runtime compatibility (2/2) ([#1482](https://github.com/open-feature/js-sdk-contrib/issues/1482)) ([1a510d5](https://github.com/open-feature/js-sdk-contrib/commit/1a510d55c6e61634fe3e4acf1aef3f9607fb25b2))
+* **flagd-core:** pre-compile AJV validators for edge runtime compatibility (1/2) ([#1481](https://github.com/open-feature/js-sdk-contrib/issues/1481)) ([44dc9ab](https://github.com/open-feature/js-sdk-contrib/commit/44dc9ab771dd0adfb78d85a69b4a982dba23d28a))
+
 ## [1.2.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.1.0...flagd-core-v1.2.0) (2026-02-12)
 
 

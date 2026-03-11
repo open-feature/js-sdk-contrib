@@ -12,6 +12,7 @@ import type {
 import type { FeatureFlag } from './feature-flag';
 import type { Storage } from './storage';
 import { MemoryStorage } from './storage';
+import type { FlagdCoreOptions } from './options';
 
 type ResolutionDetailsWithFlagMetadata<T> = Required<Pick<ResolutionDetails<T>, 'flagMetadata'>> & ResolutionDetails<T>;
 
@@ -22,9 +23,9 @@ export class FlagdCore implements Storage {
   private _logger: Logger;
   private _storage: Storage;
 
-  constructor(storage?: Storage, logger?: Logger) {
+  constructor(storage?: Storage, logger?: Logger, options?: FlagdCoreOptions) {
     this._logger = logger ? new SafeLogger(logger) : new DefaultLogger();
-    this._storage = storage ? storage : new MemoryStorage(this._logger);
+    this._storage = storage ? storage : new MemoryStorage(this._logger, options);
   }
 
   setConfigurations(flagConfig: string): string[] {

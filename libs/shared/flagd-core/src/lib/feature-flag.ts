@@ -10,6 +10,7 @@ import type {
 import { StandardResolutionReasons, ErrorCode, GeneralError } from '@openfeature/core';
 import { sha1 } from 'object-hash';
 import { Targeting } from './targeting/targeting';
+import type { FlagdCoreOptions } from './options';
 
 /**
  * Flagd flag configuration structure mapping to schema definition.
@@ -62,6 +63,7 @@ export class FeatureFlag {
     key: string,
     flag: Flag,
     private readonly logger: Logger,
+    options: FlagdCoreOptions = {},
   ) {
     this._key = key;
     this._state = flag['state'];
@@ -71,7 +73,7 @@ export class FeatureFlag {
 
     if (flag.targeting && Object.keys(flag.targeting).length > 0) {
       try {
-        this._targeting = new Targeting(flag.targeting, logger);
+        this._targeting = new Targeting(flag.targeting, logger, options);
       } catch (err) {
         const message = `Invalid targeting configuration for flag '${key}'`;
         this.logger.warn(message);
