@@ -50,6 +50,16 @@ export class CollectorManager {
   }
 
   /**
+   * setApiKey updates the API Key for an existing provider instance
+   * without having to reinitialize it.
+   *
+   * @param apiKey
+   */
+  setApiKey(apiKey: string): void {
+    this.goffApiController.setApiKey(apiKey);
+  }
+
+  /**
    * callGoffDataCollection is a function called periodically to send the usage of the flag to the
    * central service in charge of collecting the data.
    */

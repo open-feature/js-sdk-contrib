@@ -14,11 +14,23 @@ export class GoffApiController {
   // timeout in millisecond before we consider the request as a failure
   private readonly timeout: number;
   private options: GoFeatureFlagWebProviderOptions;
+  private apiKey: string | undefined;
 
   constructor(options: GoFeatureFlagWebProviderOptions) {
     this.endpoint = options.endpoint;
     this.timeout = options.apiTimeout ?? 0;
+    this.apiKey = options.apiKey;
     this.options = options;
+  }
+
+  /**
+   * setApiKey updates the API Key for an existing provider instance
+   * without having to reinitialize it.
+   *
+   * @param apiKey
+   */
+  setApiKey(apiKey: string): void {
+    this.apiKey = apiKey;
   }
 
   async collectData(
@@ -46,8 +58,8 @@ export class GoffApiController {
         Object.assign(headers, this.options.customHeaders);
       }
 
-      if (this.options.apiKey) {
-        headers['Authorization'] = `Bearer ${this.options.apiKey}`;
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`;
       }
 
       const controller = new AbortController();

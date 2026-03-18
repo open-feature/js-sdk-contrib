@@ -43,7 +43,7 @@ export class GoFeatureFlagWebProvider implements Provider {
   // timeout in millisecond before we consider the http request as a failure
   private readonly _apiTimeout: number;
   // apiKey is the key used to identify your request in GO Feature Flag
-  private readonly _apiKey: string | undefined;
+  private _apiKey: string | undefined;
   // customHeaders to be sent for every HTTP request.
   private readonly _customHeaders: Record<string, string> | undefined;
   // initial delay in millisecond to wait before retrying to connect
@@ -61,6 +61,9 @@ export class GoFeatureFlagWebProvider implements Provider {
   private readonly _dataCollectorHook: GoFeatureFlagDataCollectorHook;
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
   private readonly _disableDataCollection: boolean;
+
+  // Fetch Abort Controller is used to cancel inflight requests.
+  private _fetchAbortController?: AbortController;
 
   constructor(options: GoFeatureFlagWebProviderOptions, logger?: Logger) {
     this._logger = logger;
@@ -104,6 +107,14 @@ export class GoFeatureFlagWebProvider implements Provider {
    * to react if the state of the websocket change.
    */
   async connectWebsocket(): Promise<void> {
+    // If a socket already exists, wait for it to fully close first
+    if (this._websocket && this._websocket.readyState !== WebSocket.CLOSED) {
+      await new Promise<void>((resolve) => {
+        this._websocket!.onclose = () => resolve();
+        this._websocket!.close(1000, 'Replacing existing connection');
+      });
+    }
+
     const wsURL = new URL(this._endpoint);
     wsURL.pathname = wsURL.pathname.endsWith('/')
       ? wsURL.pathname + this._websocketPath
@@ -292,6 +303,11 @@ export class GoFeatureFlagWebProvider implements Provider {
         await this.fetchAll(ctx, flagsChanged);
         return;
       } catch (err) {
+        // If the request was aborted (e.g. due to key rotation), stop retrying
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          this._logger?.debug(`${GoFeatureFlagWebProvider.name}: fetch aborted, stopping retry loop`);
+          return;
+        }
         this.handleFetchErrors(err);
         await new Promise((resolve) => setTimeout(resolve, delay));
         delay *= this._retryDelayMultiplier;
@@ -311,6 +327,7 @@ export class GoFeatureFlagWebProvider implements Provider {
    * @private
    */
   private async fetchAll(context: EvaluationContext, flagsChanged: string[] = []) {
+    this._fetchAbortController = new AbortController();
     const endpointURL = new URL(this._endpoint);
     const path = 'v1/allflags';
     endpointURL.pathname = endpointURL.pathname.endsWith('/')
@@ -390,6 +407,29 @@ export class GoFeatureFlagWebProvider implements Provider {
       this.events.emit(ProviderEvents.Error, {
         message: 'unknown error while retrieving flags',
       });
+    }
+  }
+
+  /**
+   * setApiKey updates the API Key for an existing provider instance
+   * without having to reinitialize it. It also will update the Collector
+   * Manager and will restart the WebSocket with the new API key.
+   *
+   * @param apiKey
+   */
+  async setApiKey(apiKey: string) {
+    // Cancel any in-flight fetchAll before rotating the key
+    this._fetchAbortController?.abort();
+    this._fetchAbortController = undefined;
+    // Set the new API Key
+    this._apiKey = apiKey;
+    // Update the data collector
+    this._collectorManager.setApiKey(apiKey);
+    // Reconnect WebSocket with the new key
+    if (this._websocket) {
+      this._websocket.onclose = null; // prevent the automatic reconnect handler from firing
+      this._websocket.close(1000, 'Reconnecting with updated API key');
+      await this.connectWebsocket();
     }
   }
 }

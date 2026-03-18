@@ -453,6 +453,117 @@ describe('GoFeatureFlagWebProvider', () => {
     });
   });
 
+  describe('inline api key update', () => {
+    it('should update the Authorization header after calling setApiKey', async () => {
+      const p = new GoFeatureFlagWebProvider(
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+        },
+        logger,
+      );
+
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait('test-provider', p);
+      const client = OpenFeature.getClient('test-provider');
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      // Verify no Authorization header before setting the key
+      client.getBooleanDetails('bool_flag', false);
+      const callBeforeUpdate = fetchMock.lastCall(allFlagsEndpoint);
+      expect(callBeforeUpdate).not.toBeUndefined();
+      const headersBefore = callBeforeUpdate![1]?.headers as Record<string, string>;
+      expect(headersBefore['Authorization']).toBeUndefined();
+
+      // Update the API key at runtime
+      p.setApiKey('my-new-api-key');
+
+      // Trigger a new fetch by changing the context
+      fetchMock.post(allFlagsEndpoint, defaultAllFlagResponse, { overwriteRoutes: true });
+      await p.onContextChange(defaultContext, { targetingKey: 'another-user' });
+
+      // Verify the new Authorization header is used
+      const callAfterUpdate = fetchMock.lastCall(allFlagsEndpoint);
+      expect(callAfterUpdate).not.toBeUndefined();
+      const headersAfter = callAfterUpdate![1]?.headers as Record<string, string>;
+      expect(headersAfter['Authorization']).toBe('Bearer my-new-api-key');
+    });
+
+    it('should override an existing API key when setApiKey is called', async () => {
+      const p = new GoFeatureFlagWebProvider(
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          apiKey: 'original-api-key',
+        },
+        logger,
+      );
+
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait('test-provider', p);
+      const client = OpenFeature.getClient('test-provider');
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      // Verify the original key is used
+      client.getBooleanDetails('bool_flag', false);
+      const callBefore = fetchMock.lastCall(allFlagsEndpoint);
+      const headersBefore = callBefore![1]?.headers as Record<string, string>;
+      expect(headersBefore['Authorization']).toBe('Bearer original-api-key');
+
+      // Override the API key at runtime
+      p.setApiKey('updated-api-key');
+
+      fetchMock.post(allFlagsEndpoint, defaultAllFlagResponse, { overwriteRoutes: true });
+      await p.onContextChange(defaultContext, { targetingKey: 'another-user' });
+
+      const callAfter = fetchMock.lastCall(allFlagsEndpoint);
+      const headersAfter = callAfter![1]?.headers as Record<string, string>;
+      expect(headersAfter['Authorization']).toBe('Bearer updated-api-key');
+    });
+
+    it('should not have two websockets open simultaneously during key rotation', async () => {
+      const p = new GoFeatureFlagWebProvider({ endpoint, apiTimeout: 1000, maxRetries: 1, apiKey: 'old-key' }, logger);
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait('test-provider', p);
+      await websocketMockServer.connected;
+
+      p.setApiKey('new-key');
+      await websocketMockServer.connected;
+
+      // Only one client should be connected at a time
+      expect(websocketMockServer.server.clients().length).toBe(1);
+    });
+
+    it('should abort in-flight fetchAll when setApiKey is called', async () => {
+      const p = new GoFeatureFlagWebProvider({ endpoint, apiTimeout: 1000, maxRetries: 1, apiKey: 'old-key' }, logger);
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait('test-provider', p);
+      await websocketMockServer.connected;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      // Slow down the next fetch so we can rotate the key mid-flight
+      fetchMock.post(
+        allFlagsEndpoint,
+        () => new Promise((resolve) => setTimeout(() => resolve(defaultAllFlagResponse), 200)),
+        { overwriteRoutes: true },
+      );
+
+      // Trigger a fetch then immediately rotate the key
+      await p.onContextChange(defaultContext, { targetingKey: 'another-user' });
+      await p.setApiKey('new-key');
+
+      // Trigger a fresh fetch with the new key
+      await p.onContextChange(defaultContext, { targetingKey: 'another-user' });
+      // The completed fetch should have used the new key, not the old one
+      const headers = fetchMock.lastCall(allFlagsEndpoint)![1]?.headers as Record<string, string>;
+      expect(headers['Authorization']).toBe('Bearer new-key');
+    });
+  });
+
   describe('data collector testing', () => {
     describe('tracking event', () => {
       it('should send tracking event to the data collector', async () => {
