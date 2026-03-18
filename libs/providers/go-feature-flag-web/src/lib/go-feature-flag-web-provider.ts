@@ -428,8 +428,7 @@ export class GoFeatureFlagWebProvider implements Provider {
     // Reconnect WebSocket with the new key
     if (this._websocket) {
       this._websocket.onclose = null; // prevent the automatic reconnect handler from firing
-      this._websocket.close(1000, 'Reconnecting with updated API key');
-      await this.connectWebsocket();
+      await this.connectWebsocket(); // connectWebsocket will automatically close existing connections if called multiple times.
     }
   }
 }
