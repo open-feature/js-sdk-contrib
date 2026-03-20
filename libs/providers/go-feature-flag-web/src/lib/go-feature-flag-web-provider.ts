@@ -350,7 +350,7 @@ export class GoFeatureFlagWebProvider implements Provider {
       .catch((error) => {
         if (error.name === 'AbortError') {
           this._logger?.error(`${GoFeatureFlagWebProvider.name}: fetchAll operation was aborted`);
-          return;
+          throw error;
         }
       });
 
