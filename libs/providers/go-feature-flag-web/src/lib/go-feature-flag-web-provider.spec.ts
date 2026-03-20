@@ -561,6 +561,9 @@ describe('GoFeatureFlagWebProvider', () => {
       // Rotate the key
       await p.setApiKey('new-key');
 
+      // Ensure the initial fetch was cancelled.
+      expect(logger.inMemoryLogger['error']).toContain('GoFeatureFlagWebProvider: fetchAll operation was aborted');
+
       // The completed fetch should have used the new key, not the old one
       const headers = fetchMock.lastCall(allFlagsEndpoint)![1]?.headers as Record<string, string>;
       expect(headers['Authorization']).toBe('Bearer new-key');
