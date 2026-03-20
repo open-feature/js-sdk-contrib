@@ -478,7 +478,7 @@ describe('GoFeatureFlagWebProvider', () => {
       expect(headersBefore['Authorization']).toBeUndefined();
 
       // Update the API key at runtime
-      p.setApiKey('my-new-api-key');
+      await p.setApiKey('my-new-api-key');
 
       // Trigger a new fetch by changing the context
       fetchMock.post(allFlagsEndpoint, defaultAllFlagResponse, { overwriteRoutes: true });
@@ -515,7 +515,7 @@ describe('GoFeatureFlagWebProvider', () => {
       expect(headersBefore['Authorization']).toBe('Bearer original-api-key');
 
       // Override the API key at runtime
-      p.setApiKey('updated-api-key');
+      await p.setApiKey('updated-api-key');
 
       fetchMock.post(allFlagsEndpoint, defaultAllFlagResponse, { overwriteRoutes: true });
       await p.onContextChange(defaultContext, { targetingKey: 'another-user' });
@@ -539,7 +539,7 @@ describe('GoFeatureFlagWebProvider', () => {
     });
 
     it('should abort in-flight fetchAll when setApiKey is called', async () => {
-      const p = new GoFeatureFlagWebProvider({ endpoint, apiTimeout: 1000, maxRetries: 1, apiKey: 'old-key' }, logger);
+      const p = new GoFeatureFlagWebProvider({ endpoint, apiTimeout: 1000, maxRetries: 2, apiKey: 'old-key' }, logger);
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait('test-provider', p);
       await websocketMockServer.connected;
@@ -553,11 +553,14 @@ describe('GoFeatureFlagWebProvider', () => {
       );
 
       // Trigger a fetch then immediately rotate the key
-      await p.onContextChange(defaultContext, { targetingKey: 'another-user' });
+      await Promise.race([
+        p.onContextChange(defaultContext, { targetingKey: 'another-user' }), // slow fetch (200ms)
+        new Promise((resolve) => setTimeout(resolve, 50)), // timer wins after 50ms
+      ]);
+
+      // Rotate the key
       await p.setApiKey('new-key');
 
-      // Trigger a fresh fetch with the new key
-      await p.onContextChange(defaultContext, { targetingKey: 'another-user' });
       // The completed fetch should have used the new key, not the old one
       const headers = fetchMock.lastCall(allFlagsEndpoint)![1]?.headers as Record<string, string>;
       expect(headers['Authorization']).toBe('Bearer new-key');

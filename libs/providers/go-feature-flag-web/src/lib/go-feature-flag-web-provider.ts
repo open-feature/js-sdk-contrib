@@ -303,11 +303,6 @@ export class GoFeatureFlagWebProvider implements Provider {
         await this.fetchAll(ctx, flagsChanged);
         return;
       } catch (err) {
-        // If the request was aborted (e.g. due to key rotation), stop retrying
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          this._logger?.debug(`${GoFeatureFlagWebProvider.name}: fetch aborted, stopping retry loop`);
-          return;
-        }
         this.handleFetchErrors(err);
         await new Promise((resolve) => setTimeout(resolve, delay));
         delay *= this._retryDelayMultiplier;
@@ -346,13 +341,25 @@ export class GoFeatureFlagWebProvider implements Provider {
       },
       body: JSON.stringify(request),
     };
-    const response = await fetch(endpointURL.toString(), init);
 
-    if (!response?.ok) {
+    const response = await fetch(endpointURL.toString(), {
+      ...init,
+      signal: this._fetchAbortController.signal,
+    })
+      .then((res) => res)
+      .catch((error) => {
+        if (error.name === 'AbortError') {
+          this._logger?.error(`${GoFeatureFlagWebProvider.name}: fetchAll operation was aborted`);
+          return;
+        }
+      });
+
+    if (response && !response?.ok) {
       throw new FetchError(response.status);
     }
 
-    const data = (await response.json()) as GOFeatureFlagAllFlagsResponse;
+    const data = (await (response as Response).json()) as GOFeatureFlagAllFlagsResponse;
+
     // In case we are in success
     let flags = {};
     Object.keys(data.flags).forEach((currentValue) => {
@@ -420,15 +427,23 @@ export class GoFeatureFlagWebProvider implements Provider {
   async setApiKey(apiKey: string) {
     // Cancel any in-flight fetchAll before rotating the key
     this._fetchAbortController?.abort();
+    // Just to be safe, set the fetchAbortController to undefined since it
+    // will be recreated the next time fetchAll is called.
     this._fetchAbortController = undefined;
+
     // Set the new API Key
     this._apiKey = apiKey;
+
     // Update the data collector
     this._collectorManager.setApiKey(apiKey);
+
     // Reconnect WebSocket with the new key
     if (this._websocket) {
       this._websocket.onclose = null; // prevent the automatic reconnect handler from firing
       await this.connectWebsocket(); // connectWebsocket will automatically close existing connections if called multiple times.
     }
+
+    // Finally, explicitly retryFetchAll since the API key changed.
+    await this.retryFetchAll(OpenFeature.getContext());
   }
 }
