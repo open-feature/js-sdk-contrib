@@ -103,7 +103,7 @@
     "ts-jest": "29.4.0",
     "ts-node": "10.9.2",
     "typescript": "5.8.3",
-    "undici": "^5.0.0",
+    "undici": "^6.24.0",
     "verdaccio": "^5.0.4"
   }
 }
