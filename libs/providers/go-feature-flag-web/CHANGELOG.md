@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.9](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.8...go-feature-flag-web-provider-v0.2.9) (2026-03-23)
+
+
+### ✨ New Features
+
+* Update GoFeatureFlagWebProvider to support API Key changes at runtime ([#1499](https://github.com/open-feature/js-sdk-contrib/issues/1499)) ([f246300](https://github.com/open-feature/js-sdk-contrib/commit/f2463008e69d7b308be38b39d2eea165d70cd372))
+
 ## [0.2.8](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.7...go-feature-flag-web-provider-v0.2.8) (2026-02-10)
 
 
