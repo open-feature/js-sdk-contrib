@@ -239,16 +239,33 @@ describe('targeting', () => {
       expect(targeting.evaluate('flagA', { targetingKey: 'key' })).toBe('blue');
     });
 
-    it('should not support non-string variant names', () => {
+    it('should support number variant names', () => {
       const logic = {
-        fractional: [
-          ['red', 50],
-          [100, 50],
-        ],
+        fractional: [{ cat: [{ var: '$flagd.flagKey' }, { var: 'key' }] }, ['red', 50], [100, 50]],
       };
       const targeting = new Targeting(logic, logger);
 
-      expect(targeting.evaluate('flagA', { targetingKey: 'key' })).toBe(null);
+      expect(targeting.evaluate('flagA', { key: 'bucketKeyA' })).toBe('red');
+      expect(targeting.evaluate('flagA', { key: 'bucketKey4' })).toBe(100);
+    });
+
+    it('should support boolean variant names', () => {
+      const logic = {
+        fractional: [{ cat: [{ var: '$flagd.flagKey' }, { var: 'key' }] }, [true, 50], [false, 50]],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flagA', { key: 'bucketKeyA' })).toBe(true);
+      expect(targeting.evaluate('flagA', { key: 'bucketKey4' })).toBe(false);
+    });
+
+    it('should return null when variant expression evaluates to a non-scalar (object/array)', () => {
+      const logic = {
+        fractional: [{ var: 'targetingKey' }, [{ var: 'missingKey' }, 50], ['blue', 50]],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com' })).toBe(null);
     });
 
     it('should not support invalid bucket configurations', () => {
@@ -318,6 +335,73 @@ describe('targeting', () => {
       expect(targetingControl.evaluate('flagA', {})).toBe('blue');
     });
 
+    it('should support a nested "if" expression as a variant name', () => {
+      const logic = {
+        fractional: [
+          { var: 'targetingKey' },
+          [{ if: [{ '==': [{ var: 'tier' }, 'premium'] }, 'premium', 'standard'] }, 50],
+          ['standard', 50],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com', tier: 'premium' })).toBe('premium');
+      expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com', tier: 'basic' })).toBe('standard');
+      // user1 → bv(100)=76 → bucket1 → always "standard"
+      expect(targeting.evaluate('flag', { targetingKey: 'user1', tier: 'premium' })).toBe('standard');
+    });
+
+    it('should support a nested "var" expression as a variant name', () => {
+      const logic = {
+        fractional: [{ var: 'targetingKey' }, [{ var: 'color' }, 50], ['blue', 50]],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com', color: 'red' })).toBe('red');
+      expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com', color: 'green' })).toBe('green');
+      // user1 → bv(100)=76 → bucket1 → always "blue"
+      expect(targeting.evaluate('flag', { targetingKey: 'user1', color: 'red' })).toBe('blue');
+    });
+
+    it('should return null when a nested variant expression evaluates to a non-string', () => {
+      const logic = {
+        fractional: [{ var: 'targetingKey' }, [{ var: 'color' }, 50], ['blue', 50]],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com' })).toBe(null);
+    });
+
+    it('should support a computed weight via a "var" expression', () => {
+      const logic = {
+        fractional: [
+          ['new-feature', { var: 'rolloutPercent' }],
+          ['control', { '-': [100, { var: 'rolloutPercent' }] }],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyA', rolloutPercent: 10 })).toBe('new-feature');
+      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB', rolloutPercent: 10 })).toBe('control');
+      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB', rolloutPercent: 90 })).toBe('new-feature');
+    });
+
+    it('should support weight=0 (variant effectively excluded from traffic)', () => {
+      const logic = {
+        fractional: [
+          { var: 'targetingKey' },
+          ['red', { if: [{ '==': [{ var: 'tier' }, 'premium'] }, 100, 0] }],
+          ['blue', 10],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com', tier: 'premium' })).toBe('red');
+      expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com', tier: 'basic' })).toBe('blue');
+      expect(targeting.evaluate('flag', { targetingKey: 'user1', tier: 'premium' })).toBe('red');
+      expect(targeting.evaluate('flag', { targetingKey: 'user1', tier: 'basic' })).toBe('blue');
+    });
+
     it('should log using a custom logger', () => {
       const logic = {
         fractional: [
@@ -330,6 +414,94 @@ describe('targeting', () => {
       expect(targeting.evaluate('flagA', { targetingKey: 'key' }, requestLogger)).toBe(null);
       expect(logger.debug).not.toHaveBeenCalled();
       expect(requestLogger.debug).toHaveBeenCalled();
+    });
+
+    it('should support a single-bucket list (100% traffic to one variant)', () => {
+      const logic = {
+        fractional: [['single-entry', 1]],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flagA', { targetingKey: 'anyKey' })).toBe('single-entry');
+    });
+
+    it('should support mixed variant types and a nested fractional as a variant', () => {
+      const logic = {
+        fractional: [
+          { var: 'targetingKey' },
+          ['clubs', 1],
+          [true, 1],
+          [1, 1],
+          [
+            {
+              fractional: [
+                ['clubs', 25],
+                ['diamonds', 25],
+                ['hearts', 25],
+                ['spades', 25],
+              ],
+            },
+            1,
+          ],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+      const result = targeting.evaluate<string | number | boolean>('flagA', {
+        targetingKey: 'user1',
+        targetingKey2: 'user2',
+      });
+      // user1 lands in one of the four buckets — all are valid
+      expect(['clubs', true, 1, 'diamonds', 'hearts', 'spades']).toContain(result);
+    });
+
+    it('should support a timestamp-based weight with an explicit bucket key', () => {
+      const ts = Math.floor(Date.now() / 1000);
+      const w1 = ts - 1740000000; // large positive, grows over time
+      const logic = {
+        fractional: [
+          { cat: [{ var: '$flagd.flagKey' }, { var: 'email' }] },
+          ['on', { '-': [{ var: '$flagd.timestamp' }, 1740000000] }],
+          ['off', 100],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+      const result = targeting.evaluate('flag', { email: 'user@example.com' });
+
+      // 'on' has overwhelmingly more weight than 'off' — nearly all users get 'on'
+      // We just assert a valid variant is returned; the exact result depends on the hash.
+      expect(['on', 'off']).toContain(result);
+      // Sanity-check that the computed weight is positive and within bounds
+      expect(w1).toBeGreaterThan(0);
+      expect(w1 + 100).toBeLessThan(2147483647);
+    });
+
+    it('should support two timestamp-derived weights summing to a fixed total', () => {
+      // w1 = ts - 1740000000 (ramp up),  w2 = 1800000000 - ts (ramp down)
+      // Their sum is always 60000000 regardless of current time.
+      // When ts > 1800000000 w2 goes negative and is clamped to 0 → 'off' gets no traffic.
+      const logic = {
+        fractional: [
+          ['on', { '-': [{ var: '$flagd.timestamp' }, 1740000000] }],
+          ['off', { '-': [1800000000, { var: '$flagd.timestamp' }] }],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+      const result = targeting.evaluate('flagA', { targetingKey: 'user1' });
+
+      expect(['on', 'off']).toContain(result);
+    });
+
+    it('should clamp negative computed weights to 0 without error', () => {
+      const logic = {
+        fractional: [
+          'anyUser',
+          ['on', -50], // negative: clamped to 0
+          ['off', 100],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flag', {})).toBe('off');
     });
   });
 });
