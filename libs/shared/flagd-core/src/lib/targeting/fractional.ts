@@ -5,15 +5,17 @@ import type { EvaluationContextWithLogger } from './common';
 
 export const fractionalRule = 'fractional';
 
-export function fractional(data: unknown, context: EvaluationContextWithLogger): string | null {
+type VariantValue = string | number | boolean | null;
+
+export function fractional(data: unknown, context: EvaluationContextWithLogger): VariantValue {
   const logger = getLoggerFromContext(context);
   if (!Array.isArray(data)) {
     return null;
   }
 
   const args = Array.from(data);
-  if (args.length < 2) {
-    logger.debug(`Invalid ${fractionalRule} configuration: Expected at least 2 buckets, got ${args.length}`);
+  if (args.length < 1) {
+    logger.debug(`Invalid ${fractionalRule} configuration: Expected at least 1 bucket, got ${args.length}`);
     return null;
   }
 
@@ -77,11 +79,10 @@ export function fractional(data: unknown, context: EvaluationContextWithLogger):
 }
 
 function toBucketingList(from: unknown[]): {
-  fractions: { variant: string; fraction: number }[];
+  fractions: { variant: VariantValue; fraction: number }[];
   totalWeight: number;
 } {
-  // extract bucketing options
-  const bucketingArray: { variant: string; fraction: number }[] = [];
+  const bucketingArray: { variant: VariantValue; fraction: number }[] = [];
 
   let totalWeight = 0;
   for (let i = 0; i < from.length; i++) {
@@ -94,19 +95,27 @@ function toBucketingList(from: unknown[]): {
       throw new Error('Invalid bucketing entry. Requires at least a variant');
     }
 
-    if (typeof entry[0] !== 'string') {
-      throw new Error('Bucketing require variant to be present in string format');
+    let variant: VariantValue;
+    if (typeof entry[0] === 'string' || typeof entry[0] === 'number' || typeof entry[0] === 'boolean') {
+      variant = entry[0];
+    } else if (entry[0] === null || entry[0] === undefined) {
+      variant = null;
+    } else {
+      throw new Error(
+        'Bucketing requires variant to be a string, number, or boolean (or a JSONLogic expression that evaluates to one)',
+      );
     }
 
     let weight = 1;
     if (entry.length >= 2) {
-      if (typeof entry[1] !== 'number' || !Number.isInteger(entry[1])) {
-        throw new Error('Bucketing require bucketing weight to be an integer');
+      const raw = entry[1];
+      if (typeof raw !== 'number' || !Number.isFinite(raw) || !Number.isInteger(raw)) {
+        throw new Error('Bucketing requires weight to be an integer');
       }
-      weight = entry[1];
+      weight = Math.max(0, raw);
     }
 
-    bucketingArray.push({ fraction: weight, variant: entry[0] });
+    bucketingArray.push({ fraction: weight, variant });
     totalWeight += weight;
   }
 
