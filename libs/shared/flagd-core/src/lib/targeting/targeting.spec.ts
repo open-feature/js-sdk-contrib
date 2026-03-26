@@ -173,13 +173,13 @@ describe('targeting', () => {
       expect(targeting.evaluate('flagA', { key: 'bucketKeyA' })).toBe('red');
     });
 
-    it('should evaluate to blue with key "bucketKeyB"', () => {
+    it('should evaluate to blue with key "bucketKey4"', () => {
       const logic = {
         fractional: [{ cat: [{ var: '$flagd.flagKey' }, { var: 'key' }] }, ['red', 50], ['blue', 50]],
       };
       const targeting = new Targeting(logic, logger);
 
-      expect(targeting.evaluate('flagA', { key: 'bucketKeyB' })).toBe('blue');
+      expect(targeting.evaluate('flagA', { key: 'bucketKey4' })).toBe('blue');
     });
 
     it('should evaluate valid rule with targeting key', () => {
@@ -191,7 +191,7 @@ describe('targeting', () => {
       };
       const targeting = new Targeting(logic, logger);
 
-      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB' })).toBe('blue');
+      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB' })).toBe('red');
     });
 
     it('should evaluate valid rule with targeting key although one does not have a fraction', () => {
@@ -200,7 +200,7 @@ describe('targeting', () => {
       };
       const targeting = new Targeting(logic, logger);
 
-      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB' })).toBe('blue');
+      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB' })).toBe('red');
     });
 
     it('should return null if targeting key is missing', () => {
@@ -262,6 +262,60 @@ describe('targeting', () => {
 
       expect(targeting.evaluate('flagA', { targetingKey: 'key' })).toBe(null);
       expect(logger.debug).toHaveBeenCalled();
+    });
+
+    it('should not support float (non-integer) weights', () => {
+      const logic = {
+        fractional: [
+          ['red', 0.5],
+          ['blue', 99.5],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flagA', { targetingKey: 'key' })).toBe(null);
+      expect(logger.debug).toHaveBeenCalled();
+    });
+
+    it('should return null when total weight exceeds Math.MaxInt32 (2147483647)', () => {
+      const logic = {
+        fractional: [
+          ['red', 2000000000],
+          ['blue', 200000000], // total = 2200000000 > 2147483647
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flagA', { targetingKey: 'key' })).toBe(null);
+      expect(logger.debug).toHaveBeenCalled();
+    });
+
+    it('should support total weight exactly equal to Math.MaxInt32 (2147483647)', () => {
+      const logic = {
+        fractional: [
+          ['a', 2147483646],
+          ['b', 1], // total = 2147483647 = MaxInt32, valid
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      // bucketBy = 'flagA' + 'testKey' = 'flagAtestKey' -> 'a' (nearly all weight on 'a')
+      const result = targeting.evaluate('flagA', { targetingKey: 'testKey' });
+      expect(result).toBe('a');
+    });
+
+    it('should support sub-percent granularity with large integer weights (0.1% red)', () => {
+      const logic = {
+        fractional: ['user2077', ['red', 10], ['blue', 9990]],
+      };
+      const targeting = new Targeting(logic, logger);
+      expect(targeting.evaluate('flagA', {})).toBe('red');
+
+      const logicControl = {
+        fractional: ['user0', ['red', 10], ['blue', 9990]],
+      };
+      const targetingControl = new Targeting(logicControl, logger);
+      expect(targetingControl.evaluate('flagA', {})).toBe('blue');
     });
 
     it('should log using a custom logger', () => {
