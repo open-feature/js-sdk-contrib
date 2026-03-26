@@ -50,7 +50,6 @@ export function fractional(data: unknown, context: EvaluationContextWithLogger):
     return null;
   }
 
-  // Validate total weight does not exceed Math.MaxInt32 (2,147,483,647)
   const MAX_WEIGHT = 2147483647;
   if (bucketingList.totalWeight > MAX_WEIGHT) {
     logger.debug(
@@ -59,8 +58,6 @@ export function fractional(data: unknown, context: EvaluationContextWithLogger):
     return null;
   }
 
-  // hash in unsigned 32-bit format. The MurmurHash3 result is treated as uint32.
-  // Use BigInt for the multiplication to avoid 53-bit float precision limits.
   const hashUint32 = BigInt(new MurmurHash3(bucketBy).result() >>> 0);
   const bucket = (hashUint32 * BigInt(bucketingList.totalWeight)) >> BigInt(32);
 
@@ -109,7 +106,7 @@ function toBucketingList(from: unknown[]): {
     let weight = 1;
     if (entry.length >= 2) {
       const raw = entry[1];
-      if (typeof raw !== 'number' || !Number.isFinite(raw) || !Number.isInteger(raw)) {
+      if (typeof raw !== 'number' || !Number.isInteger(raw)) {
         throw new Error('Bucketing requires weight to be an integer');
       }
       weight = Math.max(0, raw);

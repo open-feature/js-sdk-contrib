@@ -298,7 +298,7 @@ describe('targeting', () => {
       const logic = {
         fractional: [
           ['red', 2000000000],
-          ['blue', 200000000], // total = 2200000000 > 2147483647
+          ['blue', 200000000],
         ],
       };
       const targeting = new Targeting(logic, logger);
@@ -311,12 +311,11 @@ describe('targeting', () => {
       const logic = {
         fractional: [
           ['a', 2147483646],
-          ['b', 1], // total = 2147483647 = MaxInt32, valid
+          ['b', 1],
         ],
       };
       const targeting = new Targeting(logic, logger);
 
-      // bucketBy = 'flagA' + 'testKey' = 'flagAtestKey' -> 'a' (nearly all weight on 'a')
       const result = targeting.evaluate('flagA', { targetingKey: 'testKey' });
       expect(result).toBe('a');
     });
@@ -450,8 +449,8 @@ describe('targeting', () => {
         targetingKey: 'user1',
         targetingKey2: 'user2',
       });
-      // user1 lands in one of the four buckets — all are valid
-      expect(['clubs', true, 1, 'diamonds', 'hearts', 'spades']).toContain(result);
+      // user1 → outer bucket 3 (the nested fractional slot) → nested bucketBy='flagAuser1' → 'diamonds'
+      expect(result).toBe('diamonds');
     });
 
     it('should support a timestamp-based weight with an explicit bucket key', () => {
