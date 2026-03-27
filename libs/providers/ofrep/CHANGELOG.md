@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.4](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-provider-v0.2.3...ofrep-provider-v0.2.4) (2026-03-27)
+
+
+### 🐛 Bug Fixes
+
+* timer leak on shutdown (core update) ([#1505](https://github.com/open-feature/js-sdk-contrib/issues/1505)) ([835d20e](https://github.com/open-feature/js-sdk-contrib/commit/835d20e0153b91500bc6bacac6569ae08d38dbdb))
+
+
+### ✨ New Features
+
+* **ofrep:** add close to OFREP core  ([#1486](https://github.com/open-feature/js-sdk-contrib/issues/1486)) ([44ab1f7](https://github.com/open-feature/js-sdk-contrib/commit/44ab1f78296ff2930cb9012caa703f71e699d8ff))
+
 ## [0.2.3](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-provider-v0.2.2...ofrep-provider-v0.2.3) (2026-02-09)
 
 
