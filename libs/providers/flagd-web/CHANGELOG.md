@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.4...flagd-web-provider-v0.8.0) (2026-03-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* graceful fallback to code default ([#1461](https://github.com/open-feature/js-sdk-contrib/issues/1461))
+
+### ✨ New Features
+
+* **flagd-core:** pre-compile AJV validators for edge runtime compatibility (1/2) ([#1481](https://github.com/open-feature/js-sdk-contrib/issues/1481)) ([44dc9ab](https://github.com/open-feature/js-sdk-contrib/commit/44dc9ab771dd0adfb78d85a69b4a982dba23d28a))
+* graceful fallback to code default ([#1461](https://github.com/open-feature/js-sdk-contrib/issues/1461)) ([d314df9](https://github.com/open-feature/js-sdk-contrib/commit/d314df90df26b7f7d5ae1e2a298e2cd4b844b288))
+
 ## [0.7.4](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.3...flagd-web-provider-v0.7.4) (2026-02-12)
 
 
