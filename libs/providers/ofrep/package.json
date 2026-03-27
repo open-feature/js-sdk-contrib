@@ -17,6 +17,6 @@
     "@openfeature/server-sdk": "^1.6.0"
   },
   "dependencies": {
-    "@openfeature/ofrep-core": "^2.0.0"
+    "@openfeature/ofrep-core": "^2.1.0"
   }
 }
