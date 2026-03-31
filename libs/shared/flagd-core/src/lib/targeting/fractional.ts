@@ -109,6 +109,7 @@ function toBucketingList(from: unknown[]): {
       if (typeof raw !== 'number' || !Number.isInteger(raw)) {
         throw new Error('Bucketing requires weight to be an integer');
       }
+      // negative weights can be the result of rollout calculations, so we clamp to 0 rather than throwing an error
       weight = Math.max(0, raw);
     }
 

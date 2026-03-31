@@ -494,8 +494,8 @@ describe('targeting', () => {
       const logic = {
         fractional: [
           'anyUser',
-          ['on', -50], // negative: clamped to 0
-          ['off', 100],
+          ['on', -1000], // negative: clamped to 0
+          ['off', 1],
         ],
       };
       const targeting = new Targeting(logic, logger);
