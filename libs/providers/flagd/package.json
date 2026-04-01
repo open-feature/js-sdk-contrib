@@ -17,6 +17,6 @@
   },
   "dependencies": {
     "lru-cache": "^11.0.0",
-    "@openfeature/flagd-core": "^2.0.0"
+    "@openfeature/flagd-core": "^3.0.0"
   }
 }
