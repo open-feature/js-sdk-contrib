@@ -1,6 +1,10 @@
+import { ErrorCode } from '@openfeature/core';
 import { OFREPWebProvider } from './ofrep-web-provider';
 import TestLogger from '../../test/test-logger';
-import { ClientProviderEvents, ClientProviderStatus, OpenFeature } from '@openfeature/web-sdk';
+import type { FlagCache } from './model/in-memory-cache';
+import { Storage } from './store/storage';
+import { ClientProviderEvents, ClientProviderStatus, OpenFeature, StandardResolutionReasons } from '@openfeature/web-sdk';
+import { http, HttpResponse } from 'msw';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
 // eslint-disable-next-line @nx/enforce-module-boundaries
@@ -8,6 +12,9 @@ import { TEST_FLAG_METADATA, TEST_FLAG_SET_METADATA } from '../../../../shared/o
 
 describe('OFREPWebProvider', () => {
   beforeAll(() => server.listen());
+  beforeEach(() => {
+    localStorage.clear();
+  });
   afterEach(async () => {
     server.resetHandlers();
     await OpenFeature.close();
@@ -243,7 +250,10 @@ describe('OFREPWebProvider', () => {
   it('should call reconciling handler, when context changed', async () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    const provider = new OFREPWebProvider(
+      { baseUrl: endpointBaseURL, disableLocalCache: true },
+      new TestLogger(),
+    );
     await OpenFeature.setContext(defaultContext);
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -269,7 +279,10 @@ describe('OFREPWebProvider', () => {
   it('should call stale handler, when api is not responding', async () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: 50 }, new TestLogger());
+    const provider = new OFREPWebProvider(
+      { baseUrl: endpointBaseURL, pollInterval: 50, disableLocalCache: true },
+      new TestLogger(),
+    );
     await OpenFeature.setContext(defaultContext);
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -317,5 +330,162 @@ describe('OFREPWebProvider', () => {
     expect(staleHandler).toHaveBeenCalledTimes(1);
     await new Promise((resolve) => setTimeout(resolve, 400));
     expect(reconcilingHandler).toHaveBeenCalledTimes(2);
+  });
+
+  describe('persistent local cache', () => {
+    const LOCAL_STORAGE_KEY_PREFIX = 'ofrep-web-provider';
+
+    function seedPersistentCache(targetingKey: string, cache: FlagCache): void {
+      const storage = new Storage(false);
+      localStorage.setItem(
+        `${LOCAL_STORAGE_KEY_PREFIX}:${storage.getStorageKey(targetingKey)}`,
+        JSON.stringify(cache),
+      );
+    }
+
+    const boolFlagCache: FlagCache = {
+      'bool-flag': {
+        key: 'bool-flag',
+        value: true,
+        metadata: TEST_FLAG_METADATA,
+        variant: 'variantA',
+        reason: StandardResolutionReasons.STATIC,
+      },
+    };
+
+    it('emits READY from persisted cache on init (cache-first) and uses CACHED resolution reason', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: -1 },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      OpenFeature.setProvider(providerName, provider);
+      const client = OpenFeature.getClient(providerName);
+      const readyHandler = jest.fn();
+      client.addHandler(ClientProviderEvents.Ready, readyHandler);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(readyHandler).toHaveBeenCalled();
+      const details = client.getBooleanDetails('bool-flag', false);
+      expect(details.reason).toBe(StandardResolutionReasons.CACHED);
+      expect(details.value).toBe(true);
+    });
+
+    it('refreshes from the network in the background after a cache hit when polling is enabled', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: 50 },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      OpenFeature.setProvider(providerName, provider);
+      const client = OpenFeature.getClient(providerName);
+      const configChangedHandler = jest.fn();
+      client.addHandler(ClientProviderEvents.ConfigurationChanged, configChangedHandler);
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(configChangedHandler).toHaveBeenCalled();
+      const details = client.getBooleanDetails('bool-flag', false);
+      expect(details.reason).toBe(StandardResolutionReasons.STATIC);
+      expect(details.value).toBe(true);
+    });
+
+    it('does not read or write localStorage when disableLocalCache is true', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const storage = new Storage(false);
+      const seededKey = `${LOCAL_STORAGE_KEY_PREFIX}:${storage.getStorageKey(defaultContext.targetingKey)}`;
+      seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+      expect(localStorage.getItem(seededKey)).not.toBeNull();
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, disableLocalCache: true, pollInterval: -1 },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+      const client = OpenFeature.getClient(providerName);
+      const details = client.getBooleanDetails('bool-flag', false);
+      expect(details.reason).toBe(StandardResolutionReasons.STATIC);
+      expect(localStorage.getItem(seededKey)).toEqual(JSON.stringify(boolFlagCache));
+    });
+
+    it('loads persisted cache for the new targeting key on context change before calling the network', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const user1 = defaultContext.targetingKey;
+      const user2 = '22222222-2222-4222-8222-222222222222';
+      const flagKey = 'per-user-cache-flag';
+      seedPersistentCache(user1, {
+        [flagKey]: {
+          key: flagKey,
+          value: { user: 1 },
+          metadata: TEST_FLAG_METADATA,
+          reason: StandardResolutionReasons.STATIC,
+        },
+      });
+      seedPersistentCache(user2, {
+        [flagKey]: {
+          key: flagKey,
+          value: { user: 2 },
+          metadata: TEST_FLAG_METADATA,
+          reason: StandardResolutionReasons.STATIC,
+        },
+      });
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: -1 },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext({ ...defaultContext, targetingKey: user1 });
+      await OpenFeature.setProviderAndWait(providerName, provider);
+      const client = OpenFeature.getClient(providerName);
+      expect(client.getObjectDetails(flagKey, {}).value).toEqual({ user: 1 });
+      expect(client.getObjectDetails(flagKey, {}).reason).toBe(StandardResolutionReasons.CACHED);
+      await OpenFeature.setContext({ ...defaultContext, targetingKey: user2 });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(client.getObjectDetails(flagKey, {}).value).toEqual({ user: 2 });
+      expect(client.getObjectDetails(flagKey, {}).reason).toBe(StandardResolutionReasons.CACHED);
+    });
+
+    it('removes persisted cache when a background fetch returns 401', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+      const storage = new Storage(false);
+      const lsKey = `${LOCAL_STORAGE_KEY_PREFIX}:${storage.getStorageKey(defaultContext.targetingKey)}`;
+      expect(localStorage.getItem(lsKey)).not.toBeNull();
+
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () => HttpResponse.text(undefined, { status: 401 })),
+      );
+
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: 50 },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      OpenFeature.setProvider(providerName, provider);
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(localStorage.getItem(lsKey)).toBeNull();
+    });
+
+    it('removes persisted cache when a background fetch returns 400 (config error)', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+      const storage = new Storage(false);
+      const lsKey = `${LOCAL_STORAGE_KEY_PREFIX}:${storage.getStorageKey(defaultContext.targetingKey)}`;
+
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+          HttpResponse.json({ errorCode: ErrorCode.TARGETING_KEY_MISSING }, { status: 400 }),
+        ),
+      );
+
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: 50 },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      OpenFeature.setProvider(providerName, provider);
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(localStorage.getItem(lsKey)).toBeNull();
+    });
   });
 });
