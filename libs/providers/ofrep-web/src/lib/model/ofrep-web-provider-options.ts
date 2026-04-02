@@ -9,4 +9,10 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
    * Default: 30000
    */
   pollInterval?: number; // in milliseconds
+
+  /**
+   * disableLocalCache is a boolean that indicates whether to disable the local cache.
+   * @default false
+   */
+  disableLocalCache?: boolean;
 };

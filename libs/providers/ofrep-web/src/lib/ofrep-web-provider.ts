@@ -8,6 +8,7 @@ import {
   OFREPApiFetchError,
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
+  OFREPApiUnexpectedResponseError,
   OFREPForbiddenError,
   toFlagMetadata,
   toResolutionDetails,
@@ -34,6 +35,7 @@ import type { EvaluateFlagsResponse } from './model/evaluate-flags-response';
 import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import type { FlagCache, MetadataCache } from './model/in-memory-cache';
 import type { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
+import { Storage } from './store/storage';
 
 export class OFREPWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 30000;
@@ -55,8 +57,10 @@ export class OFREPWebProvider implements Provider {
   private _retryPollingAfter: Date | undefined;
   private _flagCache: FlagCache = {};
   private _flagSetMetadataCache?: MetadataCache;
+  private _isUsingCache: boolean;
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
+  private _storage: Storage;
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -64,6 +68,8 @@ export class OFREPWebProvider implements Provider {
     this._etag = null;
     this._ofrepAPI = new OFREPApi(this._options, this._options.fetchImplementation);
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
+    this._storage = new Storage(this._options.disableLocalCache ?? false, logger);
+    this._isUsingCache = false;
   }
 
   /**
@@ -80,7 +86,11 @@ export class OFREPWebProvider implements Provider {
   async initialize(context?: EvaluationContext | undefined): Promise<void> {
     try {
       this._context = context;
-      await this._fetchFlags(context);
+      const loadedFromCache = await this._tryLoadFlagsFromCache(context);
+      if (!loadedFromCache) {
+        await this._fetchFlags(context);
+      }
+ 
 
       if (this._pollingInterval > 0) {
         this.startPolling();
@@ -141,7 +151,11 @@ export class OFREPWebProvider implements Provider {
         return;
       }
 
-      await this._fetchFlags(newContext);
+      const loadedFromCache = await this._tryLoadFlagsFromCache(newContext);
+      if (!loadedFromCache) {
+        await this._fetchFlags(newContext);
+      }
+
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError) {
         this.events?.emit(ClientProviderEvents.Stale, { message: `${error.name}: ${error.message}` });
@@ -210,16 +224,38 @@ export class OFREPWebProvider implements Provider {
 
       const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
       this._flagCache = newCache;
+      this._storage.store(context?.targetingKey ?? '', newCache);
       this._etag = response.httpResponse?.headers.get('etag');
       this._flagSetMetadataCache = toFlagMetadata(
         typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
       );
+      this._isUsingCache = false;
       return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError && error.retryAfterDate !== null) {
         this._retryPollingAfter = error.retryAfterDate;
       }
+      this._clearPersistentCacheOnClientConfigError(error, context);
       throw error;
+    }
+  }
+
+  private _clearPersistentCacheOnClientConfigError(error: unknown, context?: EvaluationContext | undefined): void {
+    if (error instanceof OFREPApiTooManyRequestsError) {
+      return;
+    }
+    const key = context?.targetingKey ?? '';
+    switch (true) {
+      case error instanceof OFREPApiUnauthorizedError:
+      case error instanceof OFREPForbiddenError:
+      case error instanceof GeneralError:
+        this._storage.clear(key);
+        return;
+      case error instanceof OFREPApiUnexpectedResponseError:
+        if (error.response?.status && error.response.status >= 400 && error.response.status < 500 && error.response.status !== 429) {
+          this._storage.clear(key);
+        }
+        return;
     }
   }
 
@@ -282,8 +318,11 @@ export class OFREPWebProvider implements Provider {
     if (isEvaluationFailureResponse(response)) {
       return handleEvaluationError(response, defaultValue);
     }
-
-    return toResolutionDetails(response, defaultValue);
+    const resolution = toResolutionDetails(response, defaultValue);
+    if (this._isUsingCache) {
+      resolution.reason = StandardResolutionReasons.CACHED;
+    }
+    return resolution;
   }
 
   /**
@@ -310,6 +349,15 @@ export class OFREPWebProvider implements Provider {
     }, this._pollingInterval) as unknown as number;
   }
 
+  private async _tryLoadFlagsFromCache(context?: EvaluationContext | undefined): Promise<boolean> {
+    const cachedFlags = this._storage.retrieve(context?.targetingKey ?? '');
+    if (cachedFlags) {
+      this._isUsingCache = true;
+      this._flagCache = cachedFlags;
+      return true;
+    }
+    return false;
+  }
   /**
    * Stop polling for flag updates
    * @private
