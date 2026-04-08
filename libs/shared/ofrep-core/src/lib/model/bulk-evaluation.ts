@@ -1,5 +1,6 @@
 import type { ErrorCode } from '@openfeature/core';
 import type { EvaluationResponse, MetadataResponse } from './evaluation';
+import type { EventStream } from './event-stream';
 
 export interface BulkEvaluationFailureResponse extends MetadataResponse {
   /**
@@ -22,6 +23,10 @@ export function isBulkEvaluationFailureResponse(response: unknown): response is 
 
 export interface BulkEvaluationSuccessResponse extends MetadataResponse {
   flags?: EvaluationResponse[];
+  /**
+   * Optional array of real-time change notification connections (ADR-0008).
+   */
+  eventStreams?: EventStream[];
 }
 
 export type BulkEvaluationNotModifiedResponse = undefined;

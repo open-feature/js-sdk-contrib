@@ -34,6 +34,8 @@ import type { EvaluateFlagsResponse } from './model/evaluate-flags-response';
 import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import type { FlagCache, MetadataCache } from './model/in-memory-cache';
 import type { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
+import type { SseRefetchMetadata } from './sse-manager';
+import { SseManager } from './sse-manager';
 
 export class OFREPWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 30000;
@@ -57,6 +59,8 @@ export class OFREPWebProvider implements Provider {
   private _flagSetMetadataCache?: MetadataCache;
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
+  private _sseManager: SseManager;
+  private _sseActive = false;
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -64,6 +68,14 @@ export class OFREPWebProvider implements Provider {
     this._etag = null;
     this._ofrepAPI = new OFREPApi(this._options, this._options.fetchImplementation);
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
+    this._sseManager = new SseManager(
+      {
+        onRefetch: (metadata) => this._handleSseRefetch(metadata),
+        onError: () => this._handleSseError(),
+      },
+      this._options.inactivityDelaySec,
+      this._logger,
+    );
   }
 
   /**
@@ -80,9 +92,11 @@ export class OFREPWebProvider implements Provider {
   async initialize(context?: EvaluationContext | undefined): Promise<void> {
     try {
       this._context = context;
-      await this._fetchFlags(context);
+      const result = await this._fetchFlags(context);
 
-      if (this._pollingInterval > 0) {
+      this._connectSseIfAvailable(result);
+
+      if (!this._sseActive && this._pollingInterval > 0) {
         this.startPolling();
       }
 
@@ -137,11 +151,12 @@ export class OFREPWebProvider implements Provider {
 
       const now = new Date();
       if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
-        // we do nothing because we should not call the endpoint
         return;
       }
 
-      await this._fetchFlags(newContext);
+      // Context change: re-fetch without SSE metadata
+      const result = await this._fetchFlags(newContext);
+      this._connectSseIfAvailable(result);
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError) {
         this.events?.emit(ClientProviderEvents.Stale, { message: `${error.name}: ${error.message}` });
@@ -166,6 +181,8 @@ export class OFREPWebProvider implements Provider {
    */
   onClose?(): Promise<void> {
     this.stopPolling();
+    this._sseManager.dispose();
+    this._sseActive = false;
     return Promise.resolve();
   }
 
@@ -179,15 +196,17 @@ export class OFREPWebProvider implements Provider {
    * @throws ParseError if the API returned a 400 with the error code ParseError
    * @throws GeneralError if the API returned a 400 with an unknown error code
    */
-  private async _fetchFlags(context?: EvaluationContext | undefined): Promise<EvaluateFlagsResponse> {
+  private async _fetchFlags(
+    context?: EvaluationContext | undefined,
+    sseMetadata?: SseRefetchMetadata,
+  ): Promise<EvaluateFlagsResponse> {
     try {
       const evalReq: EvaluationRequest = {
         context,
       };
 
-      const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, this._etag);
+      const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, this._etag, sseMetadata);
       if (response.httpStatus === 304) {
-        // nothing has changed since last time, we are doing nothing
         return { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [] };
       }
 
@@ -213,7 +232,11 @@ export class OFREPWebProvider implements Provider {
       this._flagSetMetadataCache = toFlagMetadata(
         typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
       );
-      return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
+      return {
+        status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES,
+        flags: listUpdatedFlags,
+        eventStreams: bulkSuccessResp.eventStreams,
+      };
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError && error.retryAfterDate !== null) {
         this._retryPollingAfter = error.retryAfterDate;
@@ -283,6 +306,55 @@ export class OFREPWebProvider implements Provider {
     }
 
     return toResolutionDetails(response, defaultValue);
+  }
+
+  /**
+   * Connect to SSE event streams if present in the response.
+   * If SSE connects, stop polling; if no SSE, does not start polling
+   * (that is handled by the caller).
+   */
+  private _connectSseIfAvailable(result: EvaluateFlagsResponse): void {
+    if (result.eventStreams && result.eventStreams.length > 0) {
+      this.stopPolling();
+      this._sseManager.connect(result.eventStreams);
+      this._sseActive = this._sseManager.isConnected;
+    } else {
+      this._sseManager.disconnect();
+      this._sseActive = false;
+    }
+  }
+
+  /**
+   * Handle an SSE refetchEvaluation event.
+   */
+  private async _handleSseRefetch(metadata?: SseRefetchMetadata): Promise<void> {
+    try {
+      const res = await this._fetchFlags(this._context, metadata);
+      if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
+        this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
+          message: 'Flags updated',
+          flagsChanged: res.flags,
+        });
+      }
+    } catch (error) {
+      this.events?.emit(ClientProviderEvents.Stale, { message: `Error during SSE re-fetch: ${error}` });
+    }
+  }
+
+  /**
+   * Handle SSE connection errors — fall back to polling if configured.
+   */
+  private _handleSseError(): void {
+    if (!this._sseActive) {
+      return;
+    }
+    // Fall back to polling if it's enabled and not already running
+    if (this._pollingInterval > 0 && !this._pollingIntervalId) {
+      this._logger?.info('SSE error — falling back to polling');
+      this._sseActive = false;
+      this._sseManager.disconnect();
+      this.startPolling();
+    }
   }
 
   /**

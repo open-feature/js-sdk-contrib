@@ -9,4 +9,11 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
    * Default: 30000
    */
   pollInterval?: number; // in milliseconds
+
+  /**
+   * Client-side override for the SSE inactivity timeout in seconds.
+   * When set, this takes precedence over the server-provided `inactivityDelaySec`.
+   * If neither is set, defaults to 120 seconds.
+   */
+  inactivityDelaySec?: number;
 };
