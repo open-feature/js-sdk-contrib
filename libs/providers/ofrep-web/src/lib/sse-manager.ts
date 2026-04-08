@@ -28,7 +28,7 @@ function resolveUrl(stream: EventStream): string | undefined {
     return stream.url;
   }
   if (stream.endpoint) {
-    return stream.endpoint.origin + stream.endpoint.requestUri;
+    return new URL(stream.endpoint.requestUri, stream.endpoint.origin).href;
   }
   return undefined;
 }
@@ -141,7 +141,7 @@ export class SseManager {
     });
 
     es.addEventListener('error', () => {
-      this._logger?.warn(`SSE connection error for URL`);
+      this._logger?.warn('SSE connection error for URL: ' + url);
       // EventSource auto-reconnects; if all connections fail,
       // the provider-level error callback triggers polling fallback.
       this._callbacks.onError();
