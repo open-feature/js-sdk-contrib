@@ -549,6 +549,7 @@ export class OFREPWebProvider implements Provider {
   private stopPolling() {
     if (this._pollingIntervalId) {
       clearInterval(this._pollingIntervalId);
+      this._pollingIntervalId = undefined;
     }
   }
 
