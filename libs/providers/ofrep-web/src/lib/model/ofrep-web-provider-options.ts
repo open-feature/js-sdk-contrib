@@ -25,6 +25,13 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   disableVisibilityRefresh?: boolean;
 
   /**
+   * Client-side override for the SSE inactivity timeout in seconds.
+   * When set, this takes precedence over the server-provided `inactivityDelaySec`.
+   * If neither is set, defaults to 120 seconds.
+   */
+  inactivityDelaySec?: number;
+
+  /**
    * cacheMode controls whether and how the provider uses local persistent storage.
    *
    * - `'local-cache-first'` (default): load from the persisted cache immediately on startup
