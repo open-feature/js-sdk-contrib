@@ -157,6 +157,9 @@ export class OFREPWebProvider implements Provider {
       // Context change: re-fetch without SSE metadata
       const result = await this._fetchFlags(newContext);
       this._connectSseIfAvailable(result);
+      if (!this._sseActive && this._pollingInterval > 0 && !this._pollingIntervalId) {
+        this.startPolling();
+      }
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError) {
         this.events?.emit(ClientProviderEvents.Stale, { message: `${error.name}: ${error.message}` });
