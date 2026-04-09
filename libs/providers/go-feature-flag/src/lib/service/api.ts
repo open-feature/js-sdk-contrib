@@ -41,7 +41,10 @@ export class GoFeatureFlagApi {
       throw new InvalidOptionsException('Options cannot be null');
     }
 
-    this.endpoint = options.endpoint!;
+    if (!options.endpoint || options.endpoint.trim() === '') {
+      throw new InvalidOptionsException('Endpoint cannot be null');
+    }
+    this.endpoint = options.endpoint.trim();
     this.timeout = options.timeout || 10000;
     this.apiKey = options.apiKey;
     this.fetchImplementation = options.fetchImplementation || isomorphicFetch();
