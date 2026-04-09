@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### ⚠️ BREAKING CHANGES
+
+* **polling:** polling is now disabled by default (pollInterval defaults to 0). Polling can be enabled by explicitly setting `pollInterval` to a positive number (ms). This applies to OFREP providers which are still sub-v1.
+
+### ✨ New Features
+
+* **visibility-change:** automatically re-fetch flags when page/app becomes visible
+
 ## [0.3.6](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.3.5...ofrep-web-provider-v0.3.6) (2026-03-27)
 
 
