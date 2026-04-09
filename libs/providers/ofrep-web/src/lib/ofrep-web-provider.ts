@@ -90,7 +90,6 @@ export class OFREPWebProvider implements Provider {
       if (!loadedFromCache) {
         await this._fetchFlags(context);
       }
- 
 
       if (this._pollingInterval > 0) {
         this.startPolling();
@@ -143,6 +142,9 @@ export class OFREPWebProvider implements Provider {
    */
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     try {
+      if (oldContext?.targetingKey !== newContext?.targetingKey) {
+        this._etag = null;
+      }
       this._context = newContext;
 
       const now = new Date();
@@ -155,7 +157,6 @@ export class OFREPWebProvider implements Provider {
       if (!loadedFromCache) {
         await this._fetchFlags(newContext);
       }
-
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError) {
         this.events?.emit(ClientProviderEvents.Stale, { message: `${error.name}: ${error.message}` });
@@ -330,23 +331,27 @@ export class OFREPWebProvider implements Provider {
    * @private
    */
   private startPolling() {
-    this._pollingIntervalId = setInterval(async () => {
-      try {
-        const now = new Date();
-        if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
-          return;
-        }
-        const res = await this._fetchFlags(this._context);
-        if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
-          this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
-            message: 'Flags updated',
-            flagsChanged: res.flags,
-          });
-        }
-      } catch (error) {
-        this.events?.emit(ClientProviderEvents.Stale, { message: `Error while polling: ${error}` });
-      }
+    this._pollingIntervalId = setInterval(() => {
+      void this._refreshFlagsInBackground();
     }, this._pollingInterval) as unknown as number;
+  }
+
+  private async _refreshFlagsInBackground(): Promise<void> {
+    const now = new Date();
+    if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
+      return;
+    }
+    try {
+      const res = await this._fetchFlags(this._context);
+      if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
+        this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
+          message: 'Flags updated',
+          flagsChanged: res.flags,
+        });
+      }
+    } catch (error) {
+      this.events?.emit(ClientProviderEvents.Stale, { message: `Error while polling: ${error}` });
+    }
   }
 
   private async _tryLoadFlagsFromCache(context?: EvaluationContext | undefined): Promise<boolean> {
@@ -354,6 +359,7 @@ export class OFREPWebProvider implements Provider {
     if (cachedFlags) {
       this._isUsingCache = true;
       this._flagCache = cachedFlags;
+      void this._refreshFlagsInBackground();
       return true;
     }
     return false;
