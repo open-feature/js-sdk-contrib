@@ -57,6 +57,7 @@ export class OFREPWebProvider implements Provider {
   private _flagSetMetadataCache?: MetadataCache;
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
+  private _isFetching = false;
   private _visibilityChangeHandler = this._onVisibilityChange.bind(this);
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
@@ -296,26 +297,44 @@ export class OFREPWebProvider implements Provider {
   }
 
   /**
+   * Fetches flags and emits the appropriate events based on the result.
+   * Uses a concurrency guard to prevent overlapping requests.
+   * @param reason - a short description of what triggered the refresh (used in event messages)
+   * @private
+   */
+  private async _refreshFlags(reason: string): Promise<void> {
+    if (this._isFetching) {
+      return;
+    }
+
+    const now = new Date();
+    if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
+      return;
+    }
+
+    this._isFetching = true;
+    try {
+      const res = await this._fetchFlags(this._context);
+      if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
+        this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
+          message: `Flags updated (${reason})`,
+          flagsChanged: res.flags,
+        });
+      }
+    } catch (error) {
+      this.events?.emit(ClientProviderEvents.Stale, { message: `Error while refreshing flags (${reason}): ${error}` });
+    } finally {
+      this._isFetching = false;
+    }
+  }
+
+  /**
    * Start polling for flag updates, it will call the bulk update function every pollInterval
    * @private
    */
   private startPolling() {
-    this._pollingIntervalId = setInterval(async () => {
-      try {
-        const now = new Date();
-        if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
-          return;
-        }
-        const res = await this._fetchFlags(this._context);
-        if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
-          this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
-            message: 'Flags updated',
-            flagsChanged: res.flags,
-          });
-        }
-      } catch (error) {
-        this.events?.emit(ClientProviderEvents.Stale, { message: `Error while polling: ${error}` });
-      }
+    this._pollingIntervalId = setInterval(() => {
+      this._refreshFlags('polling');
     }, this._pollingInterval) as unknown as number;
   }
 
@@ -334,24 +353,9 @@ export class OFREPWebProvider implements Provider {
    * Re-fetches flags when the document becomes visible
    * @private
    */
-  private async _onVisibilityChange() {
-    // Only re-fetch when the page becomes visible, not when it's hidden
+  private _onVisibilityChange() {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-      try {
-        const now = new Date();
-        if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
-          return;
-        }
-        const res = await this._fetchFlags(this._context);
-        if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
-          this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
-            message: 'Flags updated after visibility change',
-            flagsChanged: res.flags,
-          });
-        }
-      } catch (error) {
-        this.events?.emit(ClientProviderEvents.Stale, { message: `Error while fetching after visibility change: ${error}` });
-      }
+      this._refreshFlags('visibility change');
     }
   }
 }
