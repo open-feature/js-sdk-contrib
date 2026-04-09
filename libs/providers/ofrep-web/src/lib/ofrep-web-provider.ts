@@ -39,7 +39,7 @@ import { DEFAULT_CACHE_TTL_SECONDS } from './model/ofrep-web-provider-options';
 import { Storage } from './store/storage';
 
 export class OFREPWebProvider implements Provider {
-  DEFAULT_POLL_INTERVAL = 30000;
+  DEFAULT_POLL_INTERVAL = 0;
 
   readonly metadata = {
     name: 'OpenFeature Remote Evaluation Protocol Web Provider',
@@ -63,6 +63,7 @@ export class OFREPWebProvider implements Provider {
   private _cacheMode: CacheMode;
   private _cacheTTL: number;
   private _contextRevision = 0;
+  private _visibilityChangeHandler = this._onVisibilityChange.bind(this);
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -102,6 +103,11 @@ export class OFREPWebProvider implements Provider {
 
       if (this._pollingInterval > 0) {
         this.startPolling();
+      }
+
+      // Listen for page/app visibility changes to refetch flags when becoming visible
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', this._visibilityChangeHandler);
       }
 
       this._logger?.debug(`${this.metadata.name} initialized successfully`);
@@ -201,6 +207,9 @@ export class OFREPWebProvider implements Provider {
    */
   onClose?(): Promise<void> {
     this.stopPolling();
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this._visibilityChangeHandler);
+    }
     this._ofrepAPI.close();
     return Promise.resolve();
   }
@@ -427,6 +436,32 @@ export class OFREPWebProvider implements Provider {
   private stopPolling() {
     if (this._pollingIntervalId) {
       clearInterval(this._pollingIntervalId);
+    }
+  }
+
+  /**
+   * Handler for visibility changes (page/app becoming visible)
+   * Re-fetches flags when the document becomes visible
+   * @private
+   */
+  private async _onVisibilityChange() {
+    // Only re-fetch when the page becomes visible, not when it's hidden
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      try {
+        const now = new Date();
+        if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
+          return;
+        }
+        const res = await this._fetchFlags(this._context);
+        if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
+          this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
+            message: 'Flags updated after visibility change',
+            flagsChanged: res.flags,
+          });
+        }
+      } catch (error) {
+        this.events?.emit(ClientProviderEvents.Stale, { message: `Error while fetching after visibility change: ${error}` });
+      }
     }
   }
 }
