@@ -6,7 +6,7 @@ on:
     branches: ['main']
 
 jobs:
-  lint-test-build:
+  test-build:
     # Needed for nx-set-shas when run on the main branch
     permissions:
       actions: read
@@ -30,10 +30,32 @@ jobs:
       # This line is needed for nx affected to work when CI is running on a PR
       - run: git branch --track main origin/main || true
 
-      - run: if ! npx nx format:check ; then echo "Format check failed. Please run 'npx nx format:write'."; fi
-      - run: npx nx affected --base=origin/main --target=lint --parallel=3 --exclude=js-sdk-contrib
       - run: npx nx affected --base=origin/main --target=test --parallel=3 --ci --code-coverage --exclude=js-sdk-contrib
       - run: npx nx affected --base=origin/main --target=build --parallel=3 --exclude=js-sdk-contrib
+
+  format-lint:
+    # Needed for nx-set-shas when run on the main branch
+    permissions:
+      actions: read
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - run: npm ci
+      - uses: nrwl/nx-set-shas@v3
+      # This line is needed for nx affected to work when CI is running on a PR
+      - run: git branch --track main origin/main || true
+
+      - run: if ! npx nx format:check ; then echo "Format check failed. Please run 'npx nx format:write'."; fi
+      - run: npx nx affected --base=origin/main --target=lint --parallel=3 --exclude=js-sdk-contrib
 
   e2e:
       runs-on: ubuntu-latest
