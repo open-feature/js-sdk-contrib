@@ -93,7 +93,7 @@ import { fetchPolyfill } from 'some-fetch-polyfill';
 OpenFeature.setProvider(
   new OFREPWebProvider({
     baseUrl: 'https://localhost:8080',
-    fetchImplementation: fetchPolyfill
+    fetchImplementation: fetchPolyfill,
   }),
 );
 ```

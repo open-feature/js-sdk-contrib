@@ -1,6 +1,7 @@
 # AWS SSM Provider
 
 ## What is AWS SSM?
+
 AWS Systems Manager (SSM) is a service provided by Amazon Web Services (AWS) that enables users to manage and automate operational tasks across their AWS infrastructure. One of its key components is AWS Systems Manager Parameter Store, which allows users to store, retrieve, and manage configuration data and secrets securely.
 SSM Parameter Store can be used to manage application configuration settings, database connection strings, API keys, and other sensitive information. It provides integration with AWS Identity and Access Management (IAM) to control access and encryption through AWS Key Management Service (KMS).
 The aws-ssm provider for OpenFeature allows applications to fetch feature flag configurations from AWS SSM Parameter Store, enabling centralized and dynamic configuration management.
@@ -35,36 +36,33 @@ OpenFeature.setProvider(
 
 ## AwsSsmProviderConfig
 
-| Property         | Type               | Description                                  | Default |
-|-----------------|--------------------|----------------------------------------------|---------|
-| `ssmClientConfig` | `SSMClientConfig` | AWS SSM Client configuration options.       | See [here](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/ssm/)    |
-| `enableDecryption`      | `boolean`   | Enable decryption for SecureString parameters      | false |
-| `cacheOpts`      | `LRUCacheConfig`   | Configuration for the local LRU cache.      | See below |
+| Property           | Type              | Description                                   | Default                                                                        |
+| ------------------ | ----------------- | --------------------------------------------- | ------------------------------------------------------------------------------ |
+| `ssmClientConfig`  | `SSMClientConfig` | AWS SSM Client configuration options.         | See [here](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/ssm/) |
+| `enableDecryption` | `boolean`         | Enable decryption for SecureString parameters | false                                                                          |
+| `cacheOpts`        | `LRUCacheConfig`  | Configuration for the local LRU cache.        | See below                                                                      |
 
 ## LRUCacheConfig
 
-| Property  | Type    | Description                                    | Default |
-|-----------|--------|------------------------------------------------|---------|
-| `enabled` | `boolean` | Whether caching is enabled.                 | `false`  |
+| Property  | Type      | Description                                  | Default              |
+| --------- | --------- | -------------------------------------------- | -------------------- |
+| `enabled` | `boolean` | Whether caching is enabled.                  | `false`              |
 | `ttl`     | `number`  | Time-to-live (TTL) for cached items (in ms). | `300000` (5 minutes) |
-| `size`    | `number`  | Maximum number of items in the cache.       | `1000`  |
-
-
-
+| `size`    | `number`  | Maximum number of items in the cache.        | `1000`               |
 
 ## Retrieve Feature Flag!
 
-Open your AWS Management Console and go to AWS System Manager service  
+Open your AWS Management Console and go to AWS System Manager service
 
-![SSM-Menu](../../../assets/aws-ssm/search.png)  
+![SSM-Menu](../../../assets/aws-ssm/search.png)
 
-Go to Parameter Store  
+Go to Parameter Store
 
-![Parameter-Store](../../../assets/aws-ssm/ssm-menu.png)  
+![Parameter-Store](../../../assets/aws-ssm/ssm-menu.png)
 
-Create a new SSM Param called 'my-feature-flag' in your AWS Account and then retrieve it via OpenFeature Client!  
+Create a new SSM Param called 'my-feature-flag' in your AWS Account and then retrieve it via OpenFeature Client!
 
-![Create-Param](../../../assets/aws-ssm/create-param.png)  
+![Create-Param](../../../assets/aws-ssm/create-param.png)
 
 ```
 const featureFlags = OpenFeature.getClient();

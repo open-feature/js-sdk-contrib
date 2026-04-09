@@ -24,7 +24,7 @@ $ npm install @openfeature/web-sdk @configcat/sdk
 
 The ConfigCat provider uses the [ConfigCat Browser (JavaScript) SDK](https://configcat.com/docs/sdk-reference/js/browser/).
 
-It can be created by passing the ConfigCat SDK options to ```ConfigCatWebProvider.create```.
+It can be created by passing the ConfigCat SDK options to `ConfigCatWebProvider.create`.
 The available options can be found in the [ConfigCat JavaScript SSR SDK](https://configcat.com/docs/sdk-reference/js/browser/#creating-the-configcat-client).
 
 The ConfigCat Web Provider only supports the `AutoPolling` mode because it caches all evaluation data to support synchronous evaluation of feature flags.
@@ -32,7 +32,7 @@ The ConfigCat Web Provider only supports the `AutoPolling` mode because it cache
 ### Example using the default configuration
 
 ```javascript
-import { OpenFeature } from "@openfeature/web-sdk";
+import { OpenFeature } from '@openfeature/web-sdk';
 import { ConfigCatWebProvider } from '@openfeature/config-cat-web-provider';
 
 // Create and set the provider.
@@ -52,7 +52,7 @@ await OpenFeature.clearProviders();
 ### Example using custom configuration
 
 ```javascript
-import { OpenFeature } from "@openfeature/web-sdk";
+import { OpenFeature } from '@openfeature/web-sdk';
 import { ConfigCatWebProvider } from '@openfeature/config-cat-web-provider';
 import { createConsoleLogger, LogLevel } from '@configcat/sdk';
 
@@ -75,7 +75,7 @@ and allows for additional attributes.
 The following shows how the attributes are mapped:
 
 | OpenFeature EvaluationContext Field | ConfigCat User Field | Required |
-|-------------------------------------|----------------------|----------|
+| ----------------------------------- | -------------------- | -------- |
 | targetingKey                        | identifier           | yes      |
 | email                               | email                | no       |
 | country                             | country              | no       |
@@ -84,7 +84,7 @@ The following shows how the attributes are mapped:
 The custom types are mapped the following way:
 
 | OpenFeature EvaluationContext Field Type | ConfigCat User Field Type |
-|------------------------------------------|---------------------------|
+| ---------------------------------------- | ------------------------- |
 | string                                   | string                    |
 | number                                   | number                    |
 | boolean                                  | string                    |
@@ -109,15 +109,8 @@ User:
     "prop1": "1",
     "prop2": 2
   },
-  "customStringArray": [
-    "one",
-    "two"
-  ],
-  "customArray": [
-    1,
-    "2",
-    false
-  ]
+  "customStringArray": ["one", "two"],
+  "customArray": [1, "2", false]
 }
 ```
 
@@ -134,10 +127,7 @@ User:
     "customBoolean": "true",
     "customNumber": 1,
     "customObject": "{\"prop1\":\"1\",\"prop2\":2}",
-    "customStringArray": [
-      "one",
-      "two"
-    ],
+    "customStringArray": ["one", "two"],
     "customArray": "[1,\"2\",false]"
   }
 }

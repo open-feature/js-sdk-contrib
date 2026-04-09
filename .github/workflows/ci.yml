@@ -46,8 +46,8 @@ jobs:
           submodules: recursive
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
+          node-version-file: '.nvmrc'
+          cache: 'npm'
 
       - run: npm ci
       - uses: nrwl/nx-set-shas@v3
@@ -58,20 +58,20 @@ jobs:
       - run: npx nx affected --base=origin/main --target=lint --parallel=3 --exclude=js-sdk-contrib
 
   e2e:
-      runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-      steps:
-        - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-          with:
-            fetch-depth: 0
-            submodules: recursive
-        - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-          with:
-            node-version-file: '.nvmrc'
-            cache: 'npm'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
 
-        - name: Install
-          run: npm ci
+      - name: Install
+        run: npm ci
 
-        - name: e2e
-          run: npm run e2e
+      - name: e2e
+        run: npm run e2e

@@ -33,10 +33,10 @@ OpenFeature.setProvider(new OFREPProvider({ baseUrl: 'https://localhost:8080' })
 
 The provider supports environment variables for default configuration. These are used when options are not explicitly provided:
 
-| Environment Variable | Description                                         | Example                                      |
-| -------------------- | --------------------------------------------------- | -------------------------------------------- |
-| `OFREP_ENDPOINT`     | The endpoint of the GO Feature Flag relay-proxy     | `http://localhost:2321`                      |
-| `OFREP_TIMEOUT_MS`   | HTTP request timeout in milliseconds                | `5000`                                       |
+| Environment Variable | Description                                           | Example                                       |
+| -------------------- | ----------------------------------------------------- | --------------------------------------------- |
+| `OFREP_ENDPOINT`     | The endpoint of the GO Feature Flag relay-proxy       | `http://localhost:2321`                       |
+| `OFREP_TIMEOUT_MS`   | HTTP request timeout in milliseconds                  | `5000`                                        |
 | `OFREP_HEADERS`      | Additional headers as comma-separated key=value pairs | `Authentication=Bearer 123,Content-Type=json` |
 
 #### Example using environment variables:

@@ -60,7 +60,7 @@ OpenFeature.setProvider(
     tls: true,
     maxRetries: 10,
     maxDelay: 30000,
-  })
+  }),
 );
 ```
 

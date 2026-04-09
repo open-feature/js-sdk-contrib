@@ -4,7 +4,6 @@ about: Add provider template
 title: Add {my-behavior} hook
 labels: enhancement
 assignees: ''
-
 ---
 
 # Add {my-behavior} hook
@@ -13,7 +12,7 @@ assignees: ''
 
 I want to add a hook which performs {my-behavior}.
 
-- it would be great if {my-behavior} could be included in some flag evaluations 
+- it would be great if {my-behavior} could be included in some flag evaluations
 - {my-behavior} would enable developers to be more productive!
 - other reasons!
 

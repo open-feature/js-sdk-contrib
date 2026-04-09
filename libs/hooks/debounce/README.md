@@ -21,8 +21,8 @@ This debounces all its stages, so it only logs a maximum of once a minute for ea
 
 ```ts
 const debounceHook = new DebounceHook(loggingHook, {
-  debounceTime: 60_000,             // how long to wait before the hook can fire again
-  maxCacheItems: 100,               // max amount of items to keep in the cache; if exceeded, the oldest item is dropped
+  debounceTime: 60_000, // how long to wait before the hook can fire again
+  maxCacheItems: 100, // max amount of items to keep in the cache; if exceeded, the oldest item is dropped
 });
 
 // add the hook globally
@@ -41,9 +41,9 @@ Below we see an example using this, as well as other advanced options:
 const debounceHook = new DebounceHook<string>(loggingHook, {
   cacheKeySupplier: (flagKey, context) => flagKey + context.targetingKey, // cache on a combination of user and flag key
   debounceTime: 60_000, // debounce for 60 seconds (per user due to our cacheKeySupplier above)
-  maxCacheItems: 1000,  // cache a maximum of 1000 records
-  cacheErrors: false,   // don't debounce errors; always re-run if the last run threw 
-  logger: console,      // optional logger
+  maxCacheItems: 1000, // cache a maximum of 1000 records
+  cacheErrors: false, // don't debounce errors; always re-run if the last run threw
+  logger: console, // optional logger
 });
 ```
 
