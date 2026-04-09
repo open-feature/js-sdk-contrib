@@ -32,6 +32,9 @@ const BACK_OFF_MULTIPLIER = 2;
 const INITIAL_DELAY_MS = 100;
 type AnyFlagResolutionType = typeof AnyFlag.prototype.value.case;
 
+/**
+ * @deprecated use OFREPWebProvider from '@openfeature/ofrep-web-provider'
+ */
 export class FlagdWebProvider implements Provider {
   metadata = {
     name: 'flagd',
