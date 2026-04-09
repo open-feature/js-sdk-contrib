@@ -989,7 +989,7 @@ describe('GoFeatureFlagProvider', () => {
     it('Should change evaluation details if config has changed', async () => {
       jest.useRealTimers();
       let callCount = 0;
-      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async (request) => {
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         callCount++;
         if (callCount <= 1) {
           return {
