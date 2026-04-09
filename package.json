@@ -13,6 +13,8 @@
     "e2e": "nx run-many --all --target=e2e --skip-nx-cache --output-style=stream --parallel=false --exclude=js-sdk-contrib",
     "lint": "nx run-many --all --target=lint --skip-nx-cache --exclude=js-sdk-contrib",
     "lint:fix": "nx run-many --all --target=lint --skip-nx-cache --fix --exclude=js-sdk-contrib",
+    "format": "npx nx format:check --all",
+    "format:fix": "npx nx format:write --all",
     "package": "npx nx run-many --all --target=package --exclude=js-sdk-contrib",
     "publish": "npx nx run-many --all --target=publish --exclude=js-sdk-contrib"
   },
