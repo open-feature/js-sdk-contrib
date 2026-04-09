@@ -353,7 +353,7 @@ describe('OFREPWebProvider', () => {
       },
     };
 
-    it('emits READY from persisted cache on init (cache-first) and uses CACHED resolution reason', async () => {
+    it('emits READY from persisted cache on init (cache-first), then refreshes from the network in the background', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
       const provider = new OFREPWebProvider(
@@ -363,12 +363,16 @@ describe('OFREPWebProvider', () => {
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider(providerName, provider);
       const client = OpenFeature.getClient(providerName);
-      const readyHandler = jest.fn();
+      const readyHandler = jest.fn(() => {
+        const atReady = client.getBooleanDetails('bool-flag', false);
+        expect(atReady.reason).toBe(StandardResolutionReasons.CACHED);
+        expect(atReady.value).toBe(true);
+      });
       client.addHandler(ClientProviderEvents.Ready, readyHandler);
       await new Promise((resolve) => setTimeout(resolve, 100));
       expect(readyHandler).toHaveBeenCalled();
       const details = client.getBooleanDetails('bool-flag', false);
-      expect(details.reason).toBe(StandardResolutionReasons.CACHED);
+      expect(details.reason).toBe(StandardResolutionReasons.STATIC);
       expect(details.value).toBe(true);
     });
 
@@ -409,11 +413,12 @@ describe('OFREPWebProvider', () => {
       expect(localStorage.getItem(seededKey)).toEqual(JSON.stringify(boolFlagCache));
     });
 
-    it('loads persisted cache for the new targeting key on context change before calling the network', async () => {
+    it('loads persisted cache for the new targeting key on context change, then aligns with the network', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       const user1 = defaultContext.targetingKey;
       const user2 = '22222222-2222-4222-8222-222222222222';
       const flagKey = 'per-user-cache-flag';
+      const ctx = (targetingKey: string) => ({ ...defaultContext, targetingKey, perUserCacheTest: true });
       seedPersistentCache(user1, {
         [flagKey]: {
           key: flagKey,
@@ -434,15 +439,19 @@ describe('OFREPWebProvider', () => {
         { baseUrl: endpointBaseURL, pollInterval: -1 },
         new TestLogger(),
       );
-      await OpenFeature.setContext({ ...defaultContext, targetingKey: user1 });
+      await OpenFeature.setContext(ctx(user1));
       await OpenFeature.setProviderAndWait(providerName, provider);
       const client = OpenFeature.getClient(providerName);
-      expect(client.getObjectDetails(flagKey, {}).value).toEqual({ user: 1 });
-      expect(client.getObjectDetails(flagKey, {}).reason).toBe(StandardResolutionReasons.CACHED);
-      await OpenFeature.setContext({ ...defaultContext, targetingKey: user2 });
       await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(client.getObjectDetails(flagKey, {}).value).toEqual({ user: 1 });
+      expect(client.getObjectDetails(flagKey, {}).reason).toBe(StandardResolutionReasons.STATIC);
+
+      await OpenFeature.setContext(ctx(user2));
       expect(client.getObjectDetails(flagKey, {}).value).toEqual({ user: 2 });
       expect(client.getObjectDetails(flagKey, {}).reason).toBe(StandardResolutionReasons.CACHED);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(client.getObjectDetails(flagKey, {}).value).toEqual({ user: 2 });
+      expect(client.getObjectDetails(flagKey, {}).reason).toBe(StandardResolutionReasons.STATIC);
     });
 
     it('removes persisted cache when a background fetch returns 401', async () => {
