@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v2.0.0...flagd-core-v3.0.0) (2026-04-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* fractional bucketing improvements ([#1501](https://github.com/open-feature/js-sdk-contrib/issues/1501))
+
+### ✨ New Features
+
+* fractional bucketing improvements ([#1501](https://github.com/open-feature/js-sdk-contrib/issues/1501)) ([8dd11d5](https://github.com/open-feature/js-sdk-contrib/commit/8dd11d58b488dbec229e28794e257aaef256406d))
+
 ## [2.0.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v1.3.0...flagd-core-v2.0.0) (2026-03-11)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v2.0.0...ofrep-core-v2.1.0) (2026-03-27)
+
+
+### ✨ New Features
+
+* **ofrep:** add close to OFREP core  ([#1486](https://github.com/open-feature/js-sdk-contrib/issues/1486)) ([44ab1f7](https://github.com/open-feature/js-sdk-contrib/commit/44ab1f78296ff2930cb9012caa703f71e699d8ff))
+
 ## [2.0.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v1.2.0...ofrep-core-v2.0.0) (2025-11-24)
 
 

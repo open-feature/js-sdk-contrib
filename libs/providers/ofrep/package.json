@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/ofrep-provider",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-feature/js-sdk-contrib.git",
@@ -17,6 +17,6 @@
     "@openfeature/server-sdk": "^1.6.0"
   },
   "dependencies": {
-    "@openfeature/ofrep-core": "^2.0.0"
+    "@openfeature/ofrep-core": "^2.1.0"
   }
 }

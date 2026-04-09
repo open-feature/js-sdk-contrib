@@ -195,4 +195,14 @@ describe('OFREPProvider should', () => {
       variant: 'default',
     });
   });
+
+  it('should have onClose method that can be called', async () => {
+    expect(provider.onClose).toBeDefined();
+    await expect(provider.onClose()).resolves.not.toThrow();
+  });
+
+  it('should reject evaluations after onClose is called', async () => {
+    await provider.onClose();
+    await expect(provider.resolveBooleanEvaluation('my-flag', false, {})).rejects.toThrow();
+  });
 });

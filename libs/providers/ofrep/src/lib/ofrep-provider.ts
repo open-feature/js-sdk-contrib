@@ -34,6 +34,10 @@ export class OFREPProvider implements Provider {
     this.ofrepApi = new OFREPApi(config, config.fetchImplementation);
   }
 
+  public async onClose(): Promise<void> {
+    this.ofrepApi.close();
+  }
+
   public async resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,

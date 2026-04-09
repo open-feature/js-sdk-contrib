@@ -186,6 +186,7 @@ export class OFREPWebProvider implements Provider {
     this.stopPolling();
     this._sseManager.dispose();
     this._sseActive = false;
+    this._ofrepAPI.close();
     return Promise.resolve();
   }
 
