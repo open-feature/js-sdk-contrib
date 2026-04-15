@@ -151,7 +151,7 @@ export class SseManager {
 
   private _handleError(es: EventSource): void {
     // readyState 2 (CLOSED) means the browser gave up — fatal error
-    if (es.readyState === 2) {
+    if (es.readyState === EventSource.CLOSED) {
       this._logger?.warn('SSE connection closed permanently');
       this._clearGracePeriod();
       this._stale = false;
@@ -159,7 +159,7 @@ export class SseManager {
       return;
     }
 
-    // readyState 0 (CONNECTING) — transient error, browser is auto-reconnecting.
+    // readyState EventSource.CONNECTING — transient error, browser is auto-reconnecting.
     // Enter grace period: emit STALE now, ERROR only if recovery doesn't happen.
     if (!this._stale) {
       this._stale = true;
