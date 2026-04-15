@@ -4,6 +4,9 @@ import type { EventStream } from '@openfeature/ofrep-core';
 
 // Mock EventSource
 class MockEventSource {
+  static readonly CONNECTING = 0;
+  static readonly OPEN = 1;
+  static readonly CLOSED = 2;
   static instances: MockEventSource[] = [];
 
   url: string;
