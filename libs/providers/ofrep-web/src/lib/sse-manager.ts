@@ -2,6 +2,7 @@ import type { EventStream } from '@openfeature/ofrep-core';
 import type { Logger } from '@openfeature/web-sdk';
 
 const DEFAULT_INACTIVITY_DELAY_SEC = 120;
+const DEFAULT_GRACE_PERIOD_SEC = 30;
 const DEBOUNCE_MS = 50;
 
 /**
@@ -17,6 +18,7 @@ export interface SseRefetchMetadata {
  */
 export interface SseManagerCallbacks {
   onRefetch: (metadata?: SseRefetchMetadata) => void;
+  onStale: () => void;
   onError: () => void;
 }
 
@@ -46,6 +48,8 @@ export class SseManager {
   private _pendingMetadata?: SseRefetchMetadata;
   private _disposed = false;
   private _visibilityHandler?: () => void;
+  private _gracePeriodTimerId?: ReturnType<typeof setTimeout>;
+  private _stale = false;
 
   constructor(
     private _callbacks: SseManagerCallbacks,
@@ -94,6 +98,8 @@ export class SseManager {
   disconnect(): void {
     this._clearDebounce();
     this._clearInactivityTimer();
+    this._clearGracePeriod();
+    this._stale = false;
     this._removeVisibilityHandler();
 
     for (const conn of this._connections) {
@@ -137,16 +143,43 @@ export class SseManager {
     });
 
     es.addEventListener('error', () => {
-      this._logger?.warn('SSE connection error');
-      // EventSource auto-reconnects; if all connections fail,
-      // the provider-level error callback triggers polling fallback.
-      this._callbacks.onError();
+      this._handleError(es);
     });
 
     this._connections.push(es);
   }
 
+  private _handleError(es: EventSource): void {
+    // readyState 2 (CLOSED) means the browser gave up — fatal error
+    if (es.readyState === 2) {
+      this._logger?.warn('SSE connection closed permanently');
+      this._clearGracePeriod();
+      this._stale = false;
+      this._callbacks.onError();
+      return;
+    }
+
+    // readyState 0 (CONNECTING) — transient error, browser is auto-reconnecting.
+    // Enter grace period: emit STALE now, ERROR only if recovery doesn't happen.
+    if (!this._stale) {
+      this._stale = true;
+      this._logger?.info('SSE connection interrupted — entering grace period');
+      this._callbacks.onStale();
+      this._gracePeriodTimerId = setTimeout(() => {
+        this._logger?.warn('SSE grace period expired — giving up');
+        this._stale = false;
+        this._callbacks.onError();
+      }, DEFAULT_GRACE_PERIOD_SEC * 1000);
+    }
+  }
+
   private _handleMessage(event: MessageEvent): void {
+    // Connection recovered — cancel grace period if active
+    if (this._stale) {
+      this._clearGracePeriod();
+      this._stale = false;
+    }
+
     try {
       const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
 
@@ -238,6 +271,13 @@ export class SseManager {
     if (this._debounceTimerId !== undefined) {
       clearTimeout(this._debounceTimerId);
       this._debounceTimerId = undefined;
+    }
+  }
+
+  private _clearGracePeriod(): void {
+    if (this._gracePeriodTimerId !== undefined) {
+      clearTimeout(this._gracePeriodTimerId);
+      this._gracePeriodTimerId = undefined;
     }
   }
 }

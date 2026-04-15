@@ -319,6 +319,7 @@ export class OFREPWebProvider implements Provider {
         this._sseManager = new SseManager(
           {
             onRefetch: (metadata) => this._handleSseRefetch(metadata),
+            onStale: () => this._handleSseStale(),
             onError: () => this._handleSseError(),
           },
           this._options.inactivityDelaySec,
@@ -348,6 +349,15 @@ export class OFREPWebProvider implements Provider {
     } catch (error) {
       this.events?.emit(ClientProviderEvents.Stale, { message: `Error during SSE re-fetch: ${error}` });
     }
+  }
+
+  /**
+   * Handle SSE transient errors — emit stale while EventSource auto-reconnects.
+   */
+  private _handleSseStale(): void {
+    this.events?.emit(ClientProviderEvents.Stale, {
+      message: 'SSE connection interrupted — attempting to reconnect',
+    });
   }
 
   /**
