@@ -137,7 +137,7 @@ export class SseManager {
     });
 
     es.addEventListener('error', () => {
-      this._logger?.warn('SSE connection error for URL: ' + url);
+      this._logger?.warn('SSE connection error');
       // EventSource auto-reconnects; if all connections fail,
       // the provider-level error callback triggers polling fallback.
       this._callbacks.onError();
