@@ -69,7 +69,7 @@ export class SseManager {
 
     // Determine effective inactivity delay:
     // 1. Client override > 2. Server value > 3. Default (120s)
-    const serverInactivity = sseStreams.find((s) => s.inactivityDelaySec !== undefined)?.inactivityDelaySec;
+    const serverInactivity = sseStreams.find((s) => s.inactivityDelaySec != null)?.inactivityDelaySec;
     this._inactivityDelaySec = this._clientInactivityOverride ?? serverInactivity ?? DEFAULT_INACTIVITY_DELAY_SEC;
 
     const urls = new Set<string>();
