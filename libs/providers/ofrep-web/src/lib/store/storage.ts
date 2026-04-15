@@ -7,13 +7,18 @@ export class Storage {
      * Bump this version when the storage format changes.
      */
     private readonly version = 'v1';
-    private readonly prefix = 'ofrep-web-provider';
 
     private _disabled: boolean;
     private _logger?: Logger;
-    constructor(disableLocalCache: boolean, logger?: Logger) {
+    private _prefix: string;
+    constructor(
+        disableLocalCache: boolean = false, 
+        cachePrefix: string = 'ofrep-web-provider', 
+        logger?: Logger
+    ) {
         this._logger = logger;
-        this._disabled = disableLocalCache;
+        this._disabled = disableLocalCache ?? false;
+        this._prefix = cachePrefix;
     }
 
     get disabled(): boolean {
@@ -30,7 +35,7 @@ export class Storage {
             return;
         }
         try {
-            localStorage.setItem(`${this.prefix}:${this.getStorageKey(key)}`, JSON.stringify(value));
+            localStorage.setItem(`${this._prefix}:${this.getStorageKey(key)}`, JSON.stringify(value));
         } catch (error) {
             this._logger?.error(`Error storing flag cache in local storage: ${error}`);
         }
@@ -47,7 +52,7 @@ export class Storage {
         }
         try {
             const storageKey = this.getStorageKey(key);
-            const value = localStorage.getItem(`${this.prefix}:${storageKey}`);
+            const value = localStorage.getItem(`${this._prefix}:${storageKey}`);
             if (!value) {
                 return undefined;
             }
@@ -59,7 +64,7 @@ export class Storage {
     }
 
     getStorageKey(targetingKey: string): string {
-        return `${this.prefix}:${this.version}:${MurmurHash3(targetingKey).result().toString()}`;
+        return `${this._prefix}:${this.version}:${MurmurHash3(targetingKey).result().toString()}`;
     }
 
     clear(targetingKey: string): void {
@@ -67,7 +72,7 @@ export class Storage {
             return;
         }
         try {
-            localStorage.removeItem(`${this.prefix}:${this.getStorageKey(targetingKey)}`);
+            localStorage.removeItem(`${this._prefix}:${this.getStorageKey(targetingKey)}`);
         } catch (error) {
             this._logger?.error(`Error clearing flag cache from local storage: ${error}`);
         }

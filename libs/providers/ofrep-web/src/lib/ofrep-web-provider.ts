@@ -68,7 +68,7 @@ export class OFREPWebProvider implements Provider {
     this._etag = null;
     this._ofrepAPI = new OFREPApi(this._options, this._options.fetchImplementation);
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
-    this._storage = new Storage(this._options.disableLocalCache ?? false, logger);
+    this._storage = new Storage(this._options.disableLocalCache, this._options.cachePrefix, logger);
     this._isUsingCache = false;
   }
 
