@@ -59,8 +59,7 @@ export class OFREPWebProvider implements Provider {
   private _flagSetMetadataCache?: MetadataCache;
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
-  private _sseManager: SseManager;
-  private _sseActive = false;
+  private _sseManager?: SseManager;
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -68,14 +67,6 @@ export class OFREPWebProvider implements Provider {
     this._etag = null;
     this._ofrepAPI = new OFREPApi(this._options, this._options.fetchImplementation);
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
-    this._sseManager = new SseManager(
-      {
-        onRefetch: (metadata) => this._handleSseRefetch(metadata),
-        onError: () => this._handleSseError(),
-      },
-      this._options.inactivityDelaySec,
-      this._logger,
-    );
   }
 
   /**
@@ -96,7 +87,7 @@ export class OFREPWebProvider implements Provider {
 
       this._connectSseIfAvailable(result);
 
-      if (!this._sseActive && this._pollingInterval > 0) {
+      if (!this._sseManager && this._pollingInterval > 0) {
         this.startPolling();
       }
 
@@ -157,7 +148,7 @@ export class OFREPWebProvider implements Provider {
       // Context change: re-fetch without SSE metadata
       const result = await this._fetchFlags(newContext);
       this._connectSseIfAvailable(result);
-      if (!this._sseActive && this._pollingInterval > 0 && !this._pollingIntervalId) {
+      if (!this._sseManager && this._pollingInterval > 0 && !this._pollingIntervalId) {
         this.startPolling();
       }
     } catch (error) {
@@ -184,8 +175,8 @@ export class OFREPWebProvider implements Provider {
    */
   onClose?(): Promise<void> {
     this.stopPolling();
-    this._sseManager.dispose();
-    this._sseActive = false;
+    this._sseManager?.dispose();
+    this._sseManager = undefined;
     this._ofrepAPI.close();
     return Promise.resolve();
   }
@@ -324,11 +315,20 @@ export class OFREPWebProvider implements Provider {
   private _connectSseIfAvailable(result: EvaluateFlagsResponse): void {
     if (result.eventStreams && result.eventStreams.length > 0) {
       this.stopPolling();
+      if (!this._sseManager) {
+        this._sseManager = new SseManager(
+          {
+            onRefetch: (metadata) => this._handleSseRefetch(metadata),
+            onError: () => this._handleSseError(),
+          },
+          this._options.inactivityDelaySec,
+          this._logger,
+        );
+      }
       this._sseManager.connect(result.eventStreams);
-      this._sseActive = this._sseManager.isConnected;
-    } else {
-      this._sseManager.disconnect();
-      this._sseActive = false;
+    } else if (this._sseManager) {
+      this._sseManager.dispose();
+      this._sseManager = undefined;
     }
   }
 
@@ -354,14 +354,14 @@ export class OFREPWebProvider implements Provider {
    * Handle SSE connection errors — fall back to polling if configured.
    */
   private _handleSseError(): void {
-    if (!this._sseActive) {
+    if (!this._sseManager) {
       return;
     }
     // Fall back to polling if it's enabled and not already running
     if (this._pollingInterval > 0 && !this._pollingIntervalId) {
       this._logger?.info('SSE error — falling back to polling');
-      this._sseActive = false;
-      this._sseManager.disconnect();
+      this._sseManager.dispose();
+      this._sseManager = undefined;
       this.startPolling();
     }
   }
