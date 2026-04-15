@@ -15,4 +15,9 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
    * @default false
    */
   disableLocalCache?: boolean;
+
+  /**
+   * cachePrefix is the prefix to use for the local cache. Can be used to namespace the cache for multiple clients.
+   */
+  cachePrefix?: string;
 };
