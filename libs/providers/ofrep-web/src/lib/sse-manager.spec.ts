@@ -35,7 +35,8 @@ class MockEventSource {
     }
   }
 
-  simulateError(): void {
+  simulateError(fatal = false): void {
+    this.readyState = fatal ? 2 : 0; // CLOSED or CONNECTING
     const event = new Event('error');
     for (const listener of this.listeners['error'] ?? []) {
       listener(event);
@@ -53,14 +54,16 @@ class MockEventSource {
 describe('SseManager', () => {
   let callbacks: SseManagerCallbacks;
   let onRefetchMock: jest.Mock;
+  let onStaleMock: jest.Mock;
   let onErrorMock: jest.Mock;
 
   beforeEach(() => {
     jest.useFakeTimers();
     MockEventSource.reset();
     onRefetchMock = jest.fn();
+    onStaleMock = jest.fn();
     onErrorMock = jest.fn();
-    callbacks = { onRefetch: onRefetchMock, onError: onErrorMock };
+    callbacks = { onRefetch: onRefetchMock, onStale: onStaleMock, onError: onErrorMock };
   });
 
   afterEach(() => {
@@ -221,14 +224,68 @@ describe('SseManager', () => {
     });
   });
 
-  describe('error handling', () => {
-    it('should call onError when EventSource emits an error', () => {
+  describe('error handling and grace period', () => {
+    it('should call onStale on transient error (readyState CONNECTING)', () => {
       const manager = new SseManager(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
-      MockEventSource.instances[0].simulateError();
+      MockEventSource.instances[0].simulateError(false);
+
+      expect(onStaleMock).toHaveBeenCalledTimes(1);
+      expect(onErrorMock).not.toHaveBeenCalled();
+    });
+
+    it('should call onError immediately on fatal error (readyState CLOSED)', () => {
+      const manager = new SseManager(callbacks);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      MockEventSource.instances[0].simulateError(true);
+
+      expect(onStaleMock).not.toHaveBeenCalled();
+      expect(onErrorMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onError after grace period expires without recovery', () => {
+      const manager = new SseManager(callbacks);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      MockEventSource.instances[0].simulateError(false);
+      expect(onStaleMock).toHaveBeenCalledTimes(1);
+      expect(onErrorMock).not.toHaveBeenCalled();
+
+      // Advance past 30s grace period
+      jest.advanceTimersByTime(30_000);
 
       expect(onErrorMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should cancel grace period when a message arrives (recovery)', () => {
+      const manager = new SseManager(callbacks);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      MockEventSource.instances[0].simulateError(false);
+      expect(onStaleMock).toHaveBeenCalledTimes(1);
+
+      // Connection recovers — a message arrives during grace period
+      MockEventSource.instances[0].simulateMessage({ type: 'refetchEvaluation', etag: '"v1"' });
+      jest.advanceTimersByTime(50); // debounce
+
+      // Grace period should be cancelled — no onError
+      jest.advanceTimersByTime(30_000);
+      expect(onErrorMock).not.toHaveBeenCalled();
+      expect(onRefetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not call onStale multiple times for repeated transient errors', () => {
+      const manager = new SseManager(callbacks);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      MockEventSource.instances[0].simulateError(false);
+      MockEventSource.instances[0].simulateError(false);
+      MockEventSource.instances[0].simulateError(false);
+
+      expect(onStaleMock).toHaveBeenCalledTimes(1);
+      expect(onErrorMock).not.toHaveBeenCalled();
     });
   });
 
