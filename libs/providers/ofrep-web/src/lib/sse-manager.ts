@@ -72,22 +72,18 @@ export class SseManager {
     const serverInactivity = sseStreams.find((s) => s.inactivityDelaySec != null)?.inactivityDelaySec;
     this._inactivityDelaySec = this._clientInactivityOverride ?? serverInactivity ?? DEFAULT_INACTIVITY_DELAY_SEC;
 
-    const urls = new Set<string>();
-    for (const stream of sseStreams) {
+    const urls = sseStreams.reduce<Set<string>>((acc, stream) => {
       const url = resolveUrl(stream);
-      if (url) {
-        urls.add(url);
-      }
-    }
+      if (url) acc.add(url);
+      return acc;
+    }, new Set());
 
     if (urls.size === 0) {
       return;
     }
 
     this._urls = urls;
-    for (const url of urls) {
-      this._connectToUrl(url);
-    }
+    urls.forEach((url) => this._connectToUrl(url));
 
     this._setupVisibilityHandler();
   }
