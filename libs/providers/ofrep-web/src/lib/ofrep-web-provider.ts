@@ -203,13 +203,17 @@ export class OFREPWebProvider implements Provider {
   private async _fetchFlags(
     context?: EvaluationContext | undefined,
     sseMetadata?: SseRefetchMetadata,
+    unconditional?: boolean,
   ): Promise<EvaluateFlagsResponse> {
     try {
       const evalReq: EvaluationRequest = {
         context,
       };
 
-      const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, this._etag, sseMetadata);
+      // ADR-0008 guideline #3: inactivity resume re-fetches must be fully
+      // unconditional (no If-None-Match, no flagConfigEtag/flagConfigLastModified).
+      const etag = unconditional ? null : this._etag;
+      const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, etag, sseMetadata);
       if (response.httpStatus === 304) {
         return { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [] };
       }
@@ -333,7 +337,8 @@ export class OFREPWebProvider implements Provider {
    */
   private async _handleSseRefetch(metadata?: SseRefetchMetadata): Promise<void> {
     try {
-      const res = await this._fetchFlags(this._context, metadata);
+      const isInactivityResume = metadata === undefined;
+      const res = await this._fetchFlags(this._context, metadata, isInactivityResume);
       if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
         this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
           message: 'Flags updated',
