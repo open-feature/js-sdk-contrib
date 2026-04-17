@@ -1,7 +1,7 @@
-import { LocalstorageProvider } from './localstorage-provider';
+import { LocalStorageProvider } from './localstorage-provider';
 
-describe('LocalstorageProvider', () => {
-  it('should be and instance of LocalstorageProvider', () => {
-    expect(new LocalstorageProvider()).toBeInstanceOf(LocalstorageProvider);
+describe('LocalStorageProvider', () => {
+  it('should be and instance of LocalStorageProvider', () => {
+    expect(new LocalStorageProvider()).toBeInstanceOf(LocalStorageProvider);
   });
 });
