@@ -1,0 +1,3 @@
+{
+  "*": "npx nx format:write --files"
+}

@@ -24,14 +24,14 @@ $ npm install @openfeature/server-sdk @configcat/sdk
 
 The ConfigCat provider uses the [ConfigCat Node.js SDK](https://configcat.com/docs/sdk-reference/js/node/).
 
-It can be created by passing the ConfigCat SDK options to ```ConfigCatProvider.create```.
+It can be created by passing the ConfigCat SDK options to `ConfigCatProvider.create`.
 
 The available options can be found in the [ConfigCat Node.js SDK](https://configcat.com/docs/sdk-reference/js/node/#creating-the-configcat-client).
 
 ### Example using the default configuration
 
 ```javascript
-import { OpenFeature } from "@openfeature/server-sdk";
+import { OpenFeature } from '@openfeature/server-sdk';
 import { ConfigCatProvider } from '@openfeature/config-cat-provider';
 
 // Create and set the provider.
@@ -51,7 +51,7 @@ await OpenFeature.clearProviders();
 ### Example using a different polling mode and custom configuration
 
 ```javascript
-import { OpenFeature } from "@openfeature/server-sdk";
+import { OpenFeature } from '@openfeature/server-sdk';
 import { ConfigCatProvider } from '@openfeature/config-cat-provider';
 import { createConsoleLogger, LogLevel, PollingMode } from '@configcat/sdk';
 
@@ -74,7 +74,7 @@ and allows for additional attributes.
 The following shows how the attributes are mapped:
 
 | OpenFeature EvaluationContext Field | ConfigCat User Field | Required |
-|-------------------------------------|----------------------|----------|
+| ----------------------------------- | -------------------- | -------- |
 | targetingKey                        | identifier           | yes      |
 | email                               | email                | no       |
 | country                             | country              | no       |
@@ -82,14 +82,14 @@ The following shows how the attributes are mapped:
 
 The custom types are mapped the following way:
 
-| OpenFeature EvaluationContext Field Type      | ConfigCat User Field Type |
-|-----------------------------------------------|---------------------------|
-| string                                        | string                    |
-| number                                        | number                    |
-| boolean                                       | string                    |
-| Array<string>                                 | Array<string>             |
-| Array                                         | Array                     |
-| object                                        | string                    |
+| OpenFeature EvaluationContext Field Type | ConfigCat User Field Type |
+| ---------------------------------------- | ------------------------- |
+| string                                   | string                    |
+| number                                   | number                    |
+| boolean                                  | string                    |
+| Array<string>                            | Array<string>             |
+| Array                                    | Array                     |
+| object                                   | string                    |
 
 The following example shows the conversion between an OpenFeature Evaluation Context and the corresponding ConfigCat
 User:
@@ -109,11 +109,7 @@ User:
     "prop2": 2
   },
   "customStringArray": ["one", "two"],
-  "customArray": [
-    1,
-    "2",
-    false
-  ]
+  "customArray": [1, "2", false]
 }
 ```
 
