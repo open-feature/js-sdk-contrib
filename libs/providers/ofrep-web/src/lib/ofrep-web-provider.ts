@@ -323,6 +323,7 @@ export class OFREPWebProvider implements Provider {
           },
           this._options.inactivityDelaySec,
           this._logger,
+          this._options.baseUrl,
         );
       }
       this._sseManager.connect(result.eventStreams);
