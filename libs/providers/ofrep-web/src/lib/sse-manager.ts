@@ -65,13 +65,13 @@ export class SseManager {
 
   /**
    * Connect to SSE endpoints from eventStreams entries.
-   * Closes any existing connections first.
+   * When the resolved URLs are identical to the current active connections, existing
+   * connections are reused to avoid brief dark windows where events could be missed.
    */
   connect(eventStreams: EventStream[]): void {
-    this.disconnect();
-
     const sseStreams = eventStreams.filter((s) => s.type === 'sse');
     if (sseStreams.length === 0) {
+      this.disconnect();
       return;
     }
 
@@ -87,9 +87,21 @@ export class SseManager {
     }, new Set());
 
     if (urls.size === 0) {
+      this.disconnect();
       return;
     }
 
+    // Diff URLs — skip teardown when connections are active and the set is unchanged
+    const urlsUnchanged =
+      this._connections.length > 0 &&
+      urls.size === this._urls.size &&
+      [...urls].every((u) => this._urls.has(u));
+
+    if (urlsUnchanged) {
+      return;
+    }
+
+    this.disconnect();
     this._urls = urls;
     urls.forEach((url) => this._connectToUrl(url));
 
