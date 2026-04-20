@@ -2,7 +2,9 @@ import {
   type JsonValue,
   type Provider,
   type ResolutionDetails,
+  ClientProviderEvents,
   FlagNotFoundError,
+  OpenFeatureEventEmitter,
   ParseError,
   StandardResolutionReasons,
 } from '@openfeature/web-sdk';
@@ -23,6 +25,7 @@ export class LocalStorageProvider implements Provider {
   };
 
   readonly runsOn = 'client';
+  readonly events = new OpenFeatureEventEmitter();
 
   private readonly options: Config;
 
@@ -69,6 +72,67 @@ export class LocalStorageProvider implements Provider {
       } catch (e) {
         throw new ParseError(`Unable to parse '${value}' as JSON`);
       }
+    });
+  }
+
+  /**
+   * Sets the values of flags in localStorage.
+   *
+   * Pass a value of `undefined` to remove a flag from localStorage.
+   *
+   * To store a string value to be resolved as an object, ensure the string is already JSON stringified.
+   *
+   * @param flags
+   */
+  setFlags(flags: Record<string, JsonValue | undefined>): void {
+    for (const [flagKey, value] of Object.entries(flags)) {
+      const localStorageKey = `${this.options.prefix ?? ''}${flagKey}`;
+      if (value === undefined) {
+        localStorage.removeItem(localStorageKey);
+      } else {
+        switch (typeof value) {
+          case 'object':
+            localStorage.setItem(localStorageKey, JSON.stringify(value));
+            break;
+          case 'string':
+            localStorage.setItem(localStorageKey, value);
+            break;
+          case 'number':
+          case 'boolean':
+            localStorage.setItem(localStorageKey, value.toString());
+            break;
+          default:
+            throw new ParseError(`Unsupported value type '${typeof value}' for key '${flagKey}'`);
+        }
+      }
+    }
+
+    this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
+      message: 'Flags updated',
+      flagsChanged: Object.keys(flags),
+    });
+  }
+
+  /**
+   * Removes all flags from localStorage that match the provider's prefix.
+   */
+  clearFlags(): void {
+    const flagKeys: string[] = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const localStorageKey = localStorage.key(i);
+      if (localStorageKey !== null && localStorageKey.startsWith(this.options.prefix ?? '')) {
+        flagKeys.push(localStorageKey.slice(this.options.prefix?.length));
+      }
+    }
+
+    for (const flagKey of flagKeys) {
+      localStorage.removeItem(`${this.options.prefix ?? ''}${flagKey}`);
+    }
+
+    this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
+      message: 'Flags updated',
+      flagsChanged: flagKeys,
     });
   }
 

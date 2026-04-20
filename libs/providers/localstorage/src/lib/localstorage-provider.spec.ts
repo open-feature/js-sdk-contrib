@@ -1,4 +1,4 @@
-import { FlagNotFoundError, ParseError } from '@openfeature/web-sdk';
+import { ClientProviderEvents, FlagNotFoundError, ParseError } from '@openfeature/web-sdk';
 import { LocalStorageProvider } from './localstorage-provider';
 
 describe('LocalStorage Provider', () => {
@@ -138,6 +138,78 @@ describe('LocalStorage Provider', () => {
       const localStorageProviderCustomPrefix = new LocalStorageProvider({ prefix: 'custom.' });
       localStorage.setItem('bool-value', 'true');
       expect(() => localStorageProviderCustomPrefix.resolveBooleanEvaluation('bool-value')).toThrow(FlagNotFoundError);
+    });
+  });
+
+  describe('setFlags', () => {
+    it('should set a flag in localStorage when the value is true', () => {
+      localStorageProvider.setFlags({ 'bool-value': true });
+      expect(localStorage.getItem('openfeature.bool-value')).toBe('true');
+    });
+
+    it('should set a flag in localStorage when the value is false', () => {
+      localStorageProvider.setFlags({ 'bool-value': false });
+      expect(localStorage.getItem('openfeature.bool-value')).toBe('false');
+    });
+
+    it('should set a flag in localStorage when the value is a number', () => {
+      localStorageProvider.setFlags({ 'num-value': 1.25 });
+      expect(localStorage.getItem('openfeature.num-value')).toBe('1.25');
+    });
+
+    it('should set a flag in localStorage when the value is a string', () => {
+      localStorageProvider.setFlags({ 'str-value': 'openfeature' });
+      expect(localStorage.getItem('openfeature.str-value')).toBe('openfeature');
+    });
+
+    it('should set a flag in localStorage when the value is an object', () => {
+      localStorageProvider.setFlags({ 'obj-value': { name: 'openfeature' } });
+      expect(localStorage.getItem('openfeature.obj-value')).toBe(JSON.stringify({ name: 'openfeature' }));
+    });
+
+    it('should set a flag in localStorage when the value is null', () => {
+      localStorageProvider.setFlags({ 'null-value': null });
+      expect(localStorage.getItem('openfeature.null-value')).toBe('null');
+    });
+
+    it('should remove a flag from localStorage when the value is undefined', () => {
+      localStorage.setItem('openfeature.bool-value', 'true');
+      localStorageProvider.setFlags({ 'bool-value': undefined });
+      expect(localStorage.getItem('openfeature.bool-value')).toBeNull();
+    });
+
+    it('should emit a configuration changed event with the updated flags', () => {
+      const mockListener = jest.fn();
+      localStorageProvider.events.addHandler(ClientProviderEvents.ConfigurationChanged, mockListener);
+      localStorageProvider.setFlags({ 'bool-value': true, 'str-value': undefined });
+      expect(mockListener).toHaveBeenCalledWith({
+        message: 'Flags updated',
+        flagsChanged: ['bool-value', 'str-value'],
+      });
+    });
+  });
+
+  describe('clearFlags', () => {
+    it('should remove all flags from localStorage that match the provider prefix', () => {
+      localStorage.setItem('openfeature.bool-value', 'true');
+      localStorage.setItem('openfeature.num-value', '1.25');
+      localStorage.setItem('otherprovider.str-value', 'openfeature');
+      localStorageProvider.clearFlags();
+      expect(localStorage.getItem('openfeature.bool-value')).toBeNull();
+      expect(localStorage.getItem('openfeature.num-value')).toBeNull();
+      expect(localStorage.getItem('otherprovider.str-value')).toBe('openfeature');
+    });
+
+    it('should emit a configuration changed event with the removed flags', () => {
+      const mockListener = jest.fn();
+      localStorageProvider.events.addHandler(ClientProviderEvents.ConfigurationChanged, mockListener);
+      localStorage.setItem('openfeature.bool-value', 'true');
+      localStorage.setItem('openfeature.num-value', '1.25');
+      localStorageProvider.clearFlags();
+      expect(mockListener).toHaveBeenCalledWith({
+        message: 'Flags updated',
+        flagsChanged: ['bool-value', 'num-value'],
+      });
     });
   });
 });
