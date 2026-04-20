@@ -1,4 +1,4 @@
-import type { EvaluationRequest, EvaluationResponse } from '@openfeature/ofrep-core';
+import type { BulkEvaluationRefetchMetadata, EvaluationRequest, EvaluationResponse } from '@openfeature/ofrep-core';
 import { ErrorMessageMap } from '@openfeature/ofrep-core';
 import {
   type EvaluationFlagValue,
@@ -34,7 +34,6 @@ import type { EvaluateFlagsResponse } from './model/evaluate-flags-response';
 import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import type { FlagCache, MetadataCache } from './model/in-memory-cache';
 import type { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
-import type { SseRefetchMetadata } from './sse-manager';
 import { SseManager } from './sse-manager';
 
 export class OFREPWebProvider implements Provider {
@@ -193,7 +192,7 @@ export class OFREPWebProvider implements Provider {
    */
   private async _fetchFlags(
     context?: EvaluationContext | undefined,
-    sseMetadata?: SseRefetchMetadata,
+    sseMetadata?: BulkEvaluationRefetchMetadata,
     unconditional?: boolean,
   ): Promise<EvaluateFlagsResponse> {
     try {
@@ -336,7 +335,7 @@ export class OFREPWebProvider implements Provider {
   /**
    * Handle an SSE refetchEvaluation event.
    */
-  private async _handleSseRefetch(metadata?: SseRefetchMetadata): Promise<void> {
+  private async _handleSseRefetch(metadata?: BulkEvaluationRefetchMetadata): Promise<void> {
     try {
       const isInactivityResume = metadata === undefined;
       const res = await this._fetchFlags(this._context, metadata, isInactivityResume);

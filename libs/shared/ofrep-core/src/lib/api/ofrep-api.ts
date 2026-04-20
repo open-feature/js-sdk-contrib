@@ -1,6 +1,7 @@
 import type { FlagMetadata, ResolutionDetails } from '@openfeature/core';
 import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 import type {
+  BulkEvaluationRefetchMetadata,
   EvaluationFailureResponse,
   EvaluationFlagValue,
   EvaluationRequest,
@@ -173,7 +174,7 @@ export class OFREPApi {
   public async postBulkEvaluateFlags(
     requestBody?: EvaluationRequest,
     etag: string | null = null,
-    sseMetadata?: { flagConfigEtag?: string; flagConfigLastModified?: string | number },
+    sseMetadata?: BulkEvaluationRefetchMetadata,
   ): Promise<OFREPApiBulkEvaluationResult> {
     let url = `${this.baseOptions.baseUrl}/ofrep/v1/evaluate/flags`;
     const params = new URLSearchParams(this.baseOptions.query);
