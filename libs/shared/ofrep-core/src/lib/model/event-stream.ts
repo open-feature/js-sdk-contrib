@@ -3,7 +3,11 @@
  * Providers construct the URL as `origin + requestUri`.
  */
 export interface EventStreamEndpoint {
-  origin: string;
+  /**
+   * The origin of the SSE endpoint (e.g. "https://example.com").
+   * Optional per ADR-0008; when absent, providers should fall back to the configured OFREP baseUrl origin.
+   */
+  origin?: string;
   requestUri: string;
 }
 
