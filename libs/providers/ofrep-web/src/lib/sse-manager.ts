@@ -1,4 +1,4 @@
-import type { EventStream } from '@openfeature/ofrep-core';
+import type { BulkEvaluationRefetchMetadata, EventStream } from '@openfeature/ofrep-core';
 import type { Logger } from '@openfeature/web-sdk';
 
 const DEFAULT_INACTIVITY_DELAY_SEC = 120;
@@ -7,17 +7,15 @@ const DEBOUNCE_MS = 50;
 
 /**
  * Metadata from an SSE `refetchEvaluation` event.
+ * Re-exported from ofrep-core for backwards compatibility.
  */
-export interface SseRefetchMetadata {
-  flagConfigEtag?: string;
-  flagConfigLastModified?: string | number;
-}
+export type { BulkEvaluationRefetchMetadata as SseRefetchMetadata };
 
 /**
  * Callbacks the SseManager invokes on events.
  */
 export interface SseManagerCallbacks {
-  onRefetch: (metadata?: SseRefetchMetadata) => void;
+  onRefetch: (metadata?: BulkEvaluationRefetchMetadata) => void;
   onStale: () => void;
   onError: () => void;
 }
@@ -45,7 +43,7 @@ export class SseManager {
   private _inactivityDelaySec: number;
   private _inactivityTimerId?: ReturnType<typeof setTimeout>;
   private _debounceTimerId?: ReturnType<typeof setTimeout>;
-  private _pendingMetadata?: SseRefetchMetadata;
+  private _pendingMetadata?: BulkEvaluationRefetchMetadata;
   private _disposed = false;
   private _visibilityHandler?: () => void;
   private _gracePeriodTimerId?: ReturnType<typeof setTimeout>;
@@ -188,7 +186,7 @@ export class SseManager {
         return;
       }
 
-      const metadata: SseRefetchMetadata = {};
+      const metadata: BulkEvaluationRefetchMetadata = {};
       if (data.etag) {
         metadata.flagConfigEtag = data.etag;
       }

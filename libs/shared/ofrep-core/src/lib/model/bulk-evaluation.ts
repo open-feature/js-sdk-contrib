@@ -43,3 +43,15 @@ export type BulkEvaluationResponse =
   | BulkEvaluationFailureResponse
   | BulkEvaluationNotModifiedResponse
   | BulkEvaluationSuccessResponse;
+
+/**
+ * Optional metadata from an SSE `refetchEvaluation` event, passed as query parameters
+ * to the bulk evaluation endpoint so the server can return an optimized diff response.
+ * Per ADR-0008.
+ */
+export interface BulkEvaluationRefetchMetadata {
+  /** ETag of the flag configuration that triggered the refetch event. */
+  flagConfigEtag?: string;
+  /** Last-modified timestamp of the flag configuration. */
+  flagConfigLastModified?: string | number;
+}
