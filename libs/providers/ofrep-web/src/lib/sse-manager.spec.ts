@@ -144,6 +144,17 @@ describe('SseManager', () => {
       expect(MockEventSource.instances).toHaveLength(1);
     });
 
+    it('should reuse existing connections when URLs are unchanged', () => {
+      const manager = new SseManager(callbacks);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+      const originalConnection = MockEventSource.instances[0];
+
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      expect(originalConnection.readyState).toBe(1); // OPEN — not torn down
+      expect(MockEventSource.instances).toHaveLength(1);
+    });
+
     it('should fall back to baseUrl origin when endpoint.origin is absent', () => {
       const manager = new SseManager(callbacks, undefined, undefined, 'https://ofrep.example.com/base');
       manager.connect([
