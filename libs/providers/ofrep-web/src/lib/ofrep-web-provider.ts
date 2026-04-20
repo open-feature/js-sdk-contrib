@@ -67,6 +67,8 @@ export class OFREPWebProvider implements Provider {
   private _isFetching = false;
   private _visibilityChangeHandler = this._onVisibilityChange.bind(this);
   private _sseManager?: SseManager;
+  private _sseRetryCount = 0;
+  private _sseRetryTimerId?: ReturnType<typeof setTimeout>;
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -221,6 +223,7 @@ export class OFREPWebProvider implements Provider {
    */
   onClose?(): Promise<void> {
     this.stopPolling();
+    this._clearSseRetry();
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', this._visibilityChangeHandler);
     }
@@ -449,6 +452,7 @@ export class OFREPWebProvider implements Provider {
 
     if (result.eventStreams && result.eventStreams.length > 0 && changeDetection === 'sse') {
       this.stopPolling();
+      this._clearSseRetry();
       if (!this._sseManager) {
         this._sseManager = new SseManager(
           {
@@ -462,6 +466,7 @@ export class OFREPWebProvider implements Provider {
         );
       }
       this._sseManager.connect(result.eventStreams);
+      this._sseRetryCount = 0;
     } else if (this._sseManager) {
       this._sseManager.dispose();
       this._sseManager = undefined;
@@ -496,18 +501,46 @@ export class OFREPWebProvider implements Provider {
   }
 
   /**
-   * Handle SSE connection errors — fall back to polling if configured.
+   * Handle SSE connection errors.
+   * Falls back to polling when enabled; otherwise retries SSE with exponential backoff.
    */
   private _handleSseError(): void {
     if (!this._sseManager) {
       return;
     }
+
     // Fall back to polling if it's enabled and not already running
     if (this._pollingInterval > 0 && !this._pollingIntervalId) {
       this._logger?.info('SSE error — falling back to polling');
       this._sseManager.dispose();
       this._sseManager = undefined;
       this.startPolling();
+      return;
+    }
+
+    // Polling is disabled — retry SSE with exponential backoff (1 s → 2 s → 4 s … capped at 60 s)
+    const changeDetection = this._options.changeDetection ?? 'sse';
+    if (this._pollingInterval === 0 && changeDetection !== 'none') {
+      const delayMs = Math.min(1_000 * Math.pow(2, this._sseRetryCount), 60_000);
+      this._sseRetryCount++;
+      this._logger?.info(`SSE error — polling disabled, retrying SSE in ${delayMs}ms (attempt ${this._sseRetryCount})`);
+      this._sseRetryTimerId = setTimeout(async () => {
+        this._sseRetryTimerId = undefined;
+        try {
+          const result = await this._fetchFlags(this._context);
+          this._connectSseIfAvailable(result);
+        } catch (error) {
+          this._logger?.warn(`SSE retry fetchFlags failed: ${error} — scheduling next attempt`);
+          this._handleSseError();
+        }
+      }, delayMs);
+    }
+  }
+
+  private _clearSseRetry(): void {
+    if (this._sseRetryTimerId !== undefined) {
+      clearTimeout(this._sseRetryTimerId);
+      this._sseRetryTimerId = undefined;
     }
   }
 
