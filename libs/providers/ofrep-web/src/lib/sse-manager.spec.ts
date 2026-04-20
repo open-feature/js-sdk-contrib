@@ -143,6 +143,32 @@ describe('SseManager', () => {
 
       expect(MockEventSource.instances).toHaveLength(1);
     });
+
+    it('should fall back to baseUrl origin when endpoint.origin is absent', () => {
+      const manager = new SseManager(callbacks, undefined, undefined, 'https://ofrep.example.com/base');
+      manager.connect([
+        {
+          type: 'sse',
+          endpoint: { requestUri: '/stream?channel=abc' },
+        },
+      ]);
+
+      expect(manager.isConnected).toBe(true);
+      expect(MockEventSource.instances[0].url).toBe('https://ofrep.example.com/stream?channel=abc');
+    });
+
+    it('should skip connection when endpoint has no origin and no baseUrl is provided', () => {
+      const manager = new SseManager(callbacks);
+      manager.connect([
+        {
+          type: 'sse',
+          endpoint: { requestUri: '/stream' },
+        },
+      ]);
+
+      expect(manager.isConnected).toBe(false);
+      expect(MockEventSource.instances).toHaveLength(0);
+    });
   });
 
   describe('refetchEvaluation events', () => {

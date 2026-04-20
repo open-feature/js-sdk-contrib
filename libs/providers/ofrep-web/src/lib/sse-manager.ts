@@ -22,13 +22,18 @@ export interface SseManagerCallbacks {
 
 /**
  * Resolves the connection URL from an EventStream entry.
+ * When `endpoint.origin` is absent, falls back to the origin of `baseUrl`.
  */
-function resolveUrl(stream: EventStream): string | undefined {
+function resolveUrl(stream: EventStream, baseUrl?: string): string | undefined {
   if (stream.url) {
     return stream.url;
   }
   if (stream.endpoint) {
-    return new URL(stream.endpoint.requestUri, stream.endpoint.origin).href;
+    const origin = stream.endpoint.origin ?? (baseUrl ? new URL(baseUrl).origin : undefined);
+    if (!origin) {
+      return undefined;
+    }
+    return new URL(stream.endpoint.requestUri, origin).href;
   }
   return undefined;
 }
@@ -53,6 +58,7 @@ export class SseManager {
     private _callbacks: SseManagerCallbacks,
     private _clientInactivityOverride?: number,
     private _logger?: Logger,
+    private _baseUrl?: string,
   ) {
     this._inactivityDelaySec = _clientInactivityOverride ?? DEFAULT_INACTIVITY_DELAY_SEC;
   }
@@ -75,7 +81,7 @@ export class SseManager {
     this._inactivityDelaySec = this._clientInactivityOverride ?? serverInactivity ?? DEFAULT_INACTIVITY_DELAY_SEC;
 
     const urls = sseStreams.reduce<Set<string>>((acc, stream) => {
-      const url = resolveUrl(stream);
+      const url = resolveUrl(stream, this._baseUrl);
       if (url) acc.add(url);
       return acc;
     }, new Set());
