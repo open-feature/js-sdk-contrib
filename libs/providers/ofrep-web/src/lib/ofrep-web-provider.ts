@@ -109,7 +109,8 @@ export class OFREPWebProvider implements Provider {
         this._connectSseIfAvailable(result);
       }
 
-      if (!this._sseManager && this._pollingInterval > 0) {
+      const changeDetection = this._options.changeDetection ?? 'sse';
+      if (!this._sseManager && this._pollingInterval > 0 && changeDetection !== 'none') {
         this.startPolling();
       }
 
@@ -184,7 +185,8 @@ export class OFREPWebProvider implements Provider {
         // Context change: re-fetch without SSE metadata
         const result = await this._fetchFlags(newContext);
         this._connectSseIfAvailable(result);
-        if (!this._sseManager && this._pollingInterval > 0 && !this._pollingIntervalId) {
+        const changeDetection = this._options.changeDetection ?? 'sse';
+        if (!this._sseManager && this._pollingInterval > 0 && !this._pollingIntervalId && changeDetection !== 'none') {
           this.startPolling();
         }
       }
@@ -443,7 +445,9 @@ export class OFREPWebProvider implements Provider {
    * (that is handled by the caller).
    */
   private _connectSseIfAvailable(result: EvaluateFlagsResponse): void {
-    if (result.eventStreams && result.eventStreams.length > 0) {
+    const changeDetection = this._options.changeDetection ?? 'sse';
+
+    if (result.eventStreams && result.eventStreams.length > 0 && changeDetection === 'sse') {
       this.stopPolling();
       if (!this._sseManager) {
         this._sseManager = new SseManager(

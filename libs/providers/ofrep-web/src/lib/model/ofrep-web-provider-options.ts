@@ -32,6 +32,15 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   inactivityDelaySec?: number;
 
   /**
+   * Controls the background change-detection strategy per ADR-0008.
+   *
+   * - `'sse'` (default): use SSE when the server advertises event streams, fall back to polling.
+   * - `'polling'`: always use polling, even when the server returns `eventStreams`.
+   * - `'none'`: no background refresh; flags are only re-fetched on explicit context changes.
+   */
+  changeDetection?: 'sse' | 'polling' | 'none';
+
+  /**
    * cacheMode controls whether and how the provider uses local persistent storage.
    *
    * - `'local-cache-first'` (default): load from the persisted cache immediately on startup
