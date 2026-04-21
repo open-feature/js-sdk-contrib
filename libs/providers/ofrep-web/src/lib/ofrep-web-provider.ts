@@ -478,7 +478,7 @@ export class OFREPWebProvider implements Provider {
    * @private
    */
   private _onVisibilityChange() {
-    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+    if (document?.visibilityState === 'visible') {
       this._refreshFlags('visibility change');
     }
   }
