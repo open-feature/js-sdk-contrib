@@ -2,6 +2,7 @@ import { ErrorCode } from '@openfeature/core';
 import { OFREPWebProvider } from './ofrep-web-provider';
 import TestLogger from '../../test/test-logger';
 import type { FlagCache } from './model/in-memory-cache';
+import type { PersistedEntry } from './store/storage';
 import { Storage } from './store/storage';
 import { ClientProviderEvents, ClientProviderStatus, OpenFeature, StandardResolutionReasons } from '@openfeature/web-sdk';
 import { http, HttpResponse } from 'msw';
@@ -251,7 +252,7 @@ describe('OFREPWebProvider', () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
     const provider = new OFREPWebProvider(
-      { baseUrl: endpointBaseURL, disableLocalCache: true },
+      { baseUrl: endpointBaseURL, cacheMode: 'disabled' },
       new TestLogger(),
     );
     await OpenFeature.setContext(defaultContext);
@@ -280,7 +281,7 @@ describe('OFREPWebProvider', () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
     const provider = new OFREPWebProvider(
-      { baseUrl: endpointBaseURL, pollInterval: 50, disableLocalCache: true },
+      { baseUrl: endpointBaseURL, pollInterval: 50, cacheMode: 'disabled' },
       new TestLogger(),
     );
     await OpenFeature.setContext(defaultContext);
@@ -333,14 +334,26 @@ describe('OFREPWebProvider', () => {
   });
 
   describe('persistent local cache', () => {
-    const LOCAL_STORAGE_KEY_PREFIX = 'ofrep-web-provider';
-
-    function seedPersistentCache(targetingKey: string, cache: FlagCache): void {
-      const storage = new Storage(false);
-      localStorage.setItem(
-        `${LOCAL_STORAGE_KEY_PREFIX}:${storage.getStorageKey(targetingKey)}`,
-        JSON.stringify(cache),
-      );
+    /**
+     * Writes a PersistedEntry envelope to localStorage using the same Storage key
+     * that the provider will look up, so tests can seed the cache before
+     * constructing a provider.
+     */
+    function seedPersistentCache(
+      targetingKey: string,
+      cache: FlagCache,
+      etag: string | null = null,
+      writtenAt: Date = new Date(),
+    ): void {
+      const storage = new Storage('local-cache-first');
+      const entry: PersistedEntry = {
+        version: 1,
+        cacheKeyHash: storage.getStorageKey(targetingKey), // hash is embedded in the key
+        etag,
+        writtenAt: writtenAt.toISOString(),
+        data: cache,
+      };
+      localStorage.setItem(storage.getStorageKey(targetingKey), JSON.stringify(entry));
     }
 
     const boolFlagCache: FlagCache = {
@@ -395,14 +408,14 @@ describe('OFREPWebProvider', () => {
       expect(details.value).toBe(true);
     });
 
-    it('does not read or write localStorage when disableLocalCache is true', async () => {
+    it('does not read or write localStorage when cacheMode is disabled', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      const storage = new Storage(false);
-      const seededKey = `${LOCAL_STORAGE_KEY_PREFIX}:${storage.getStorageKey(defaultContext.targetingKey)}`;
+      const storage = new Storage('local-cache-first');
+      const seededKey = storage.getStorageKey(defaultContext.targetingKey);
       seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
       expect(localStorage.getItem(seededKey)).not.toBeNull();
       const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, disableLocalCache: true, pollInterval: -1 },
+        { baseUrl: endpointBaseURL, cacheMode: 'disabled', pollInterval: -1 },
         new TestLogger(),
       );
       await OpenFeature.setContext(defaultContext);
@@ -410,7 +423,8 @@ describe('OFREPWebProvider', () => {
       const client = OpenFeature.getClient(providerName);
       const details = client.getBooleanDetails('bool-flag', false);
       expect(details.reason).toBe(StandardResolutionReasons.STATIC);
-      expect(localStorage.getItem(seededKey)).toEqual(JSON.stringify(boolFlagCache));
+      // The seeded entry must still be in storage — the disabled provider must not touch it.
+      expect(localStorage.getItem(seededKey)).not.toBeNull();
     });
 
     it('loads persisted cache for the new targeting key on context change, then aligns with the network', async () => {
@@ -454,11 +468,11 @@ describe('OFREPWebProvider', () => {
       expect(client.getObjectDetails(flagKey, {}).reason).toBe(StandardResolutionReasons.STATIC);
     });
 
-    it('removes persisted cache when a background fetch returns 401', async () => {
+    it('keeps the persisted cache when a background fetch returns 401 (ADR 0009: TTL governs expiry, not auth errors)', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
-      const storage = new Storage(false);
-      const lsKey = `${LOCAL_STORAGE_KEY_PREFIX}:${storage.getStorageKey(defaultContext.targetingKey)}`;
+      const storage = new Storage('local-cache-first');
+      const lsKey = storage.getStorageKey(defaultContext.targetingKey);
       expect(localStorage.getItem(lsKey)).not.toBeNull();
 
       server.use(
@@ -472,14 +486,15 @@ describe('OFREPWebProvider', () => {
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider(providerName, provider);
       await new Promise((resolve) => setTimeout(resolve, 150));
-      expect(localStorage.getItem(lsKey)).toBeNull();
+      // Per ADR 0009: auth errors must NOT clear the persisted cache.
+      expect(localStorage.getItem(lsKey)).not.toBeNull();
     });
 
-    it('removes persisted cache when a background fetch returns 400 (config error)', async () => {
+    it('keeps the persisted cache when a background fetch returns 400 (ADR 0009: TTL governs expiry, not config errors)', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
-      const storage = new Storage(false);
-      const lsKey = `${LOCAL_STORAGE_KEY_PREFIX}:${storage.getStorageKey(defaultContext.targetingKey)}`;
+      const storage = new Storage('local-cache-first');
+      const lsKey = storage.getStorageKey(defaultContext.targetingKey);
 
       server.use(
         http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
@@ -494,7 +509,62 @@ describe('OFREPWebProvider', () => {
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider(providerName, provider);
       await new Promise((resolve) => setTimeout(resolve, 150));
-      expect(localStorage.getItem(lsKey)).toBeNull();
+      // Per ADR 0009: config errors must NOT clear the persisted cache.
+      expect(localStorage.getItem(lsKey)).not.toBeNull();
+    });
+
+    it('treats an expired cache entry as a cache miss and removes it', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      // Seed a cache entry that is already 31 days old (past the default 30-day TTL).
+      const expiredDate = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
+      seedPersistentCache(defaultContext.targetingKey, boolFlagCache, null, expiredDate);
+
+      const storage = new Storage('local-cache-first');
+      const lsKey = storage.getStorageKey(defaultContext.targetingKey);
+      expect(localStorage.getItem(lsKey)).not.toBeNull(); // Exists before init.
+
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: -1 },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+      const client = OpenFeature.getClient(providerName);
+
+      // Provider should have fetched from the network (cache miss due to expiry).
+      const details = client.getBooleanDetails('bool-flag', false);
+      expect(details.reason).toBe(StandardResolutionReasons.STATIC);
+      // The expired entry should have been evicted on read.
+      // (A fresh entry written by the network fetch replaces it.)
+      const stored = localStorage.getItem(lsKey);
+      // A fresh entry is now in storage (written by the network fetch).
+      expect(stored).not.toBeNull();
+      const entry = JSON.parse(stored!);
+      expect(new Date(entry.writtenAt).getTime()).toBeGreaterThan(expiredDate.getTime());
+    });
+
+    it('restores the ETag from the persisted entry so background refresh uses If-None-Match', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const storedEtag = '"abc123"';
+      seedPersistentCache(defaultContext.targetingKey, boolFlagCache, storedEtag);
+
+      let capturedIfNoneMatch: string | null = null;
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', ({ request }) => {
+          capturedIfNoneMatch = request.headers.get('If-None-Match');
+          return HttpResponse.text(undefined, { status: 304 });
+        }),
+      );
+
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: -1 },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      OpenFeature.setProvider(providerName, provider);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(capturedIfNoneMatch).toBe(storedEtag);
     });
   });
 });

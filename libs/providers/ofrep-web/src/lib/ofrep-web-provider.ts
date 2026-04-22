@@ -34,7 +34,8 @@ import {
 import type { EvaluateFlagsResponse } from './model/evaluate-flags-response';
 import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import type { FlagCache, MetadataCache } from './model/in-memory-cache';
-import type { OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
+import type { CacheMode, OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
+import { DEFAULT_CACHE_TTL_MS } from './model/ofrep-web-provider-options';
 import { Storage } from './store/storage';
 
 export class OFREPWebProvider implements Provider {
@@ -47,9 +48,7 @@ export class OFREPWebProvider implements Provider {
   readonly events = new OpenFeatureEventEmitter();
   readonly hooks?: Hook[] | undefined;
 
-  // logger is the Open Feature logger to use
   private _logger?: Logger;
-  // _options is the options used to configure the provider.
   private _options: OFREPWebProviderOptions;
   private _ofrepAPI: OFREPApi;
   private _etag: string | null | undefined;
@@ -61,6 +60,8 @@ export class OFREPWebProvider implements Provider {
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
   private _storage: Storage;
+  private _cacheMode: CacheMode;
+  private _cacheTtl: number;
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -68,7 +69,9 @@ export class OFREPWebProvider implements Provider {
     this._etag = null;
     this._ofrepAPI = new OFREPApi(this._options, this._options.fetchImplementation);
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
-    this._storage = new Storage(this._options.disableLocalCache, this._options.cachePrefix, logger);
+    this._cacheMode = this._options.cacheMode ?? 'local-cache-first';
+    this._cacheTtl = this._options.cacheTtl ?? DEFAULT_CACHE_TTL_MS;
+    this._storage = new Storage(this._cacheMode, this._options.cacheKeyPrefix, logger);
     this._isUsingCache = false;
   }
 
@@ -86,9 +89,14 @@ export class OFREPWebProvider implements Provider {
   async initialize(context?: EvaluationContext | undefined): Promise<void> {
     try {
       this._context = context;
-      const loadedFromCache = await this._tryLoadFlagsFromCache(context);
-      if (!loadedFromCache) {
-        await this._fetchFlags(context);
+
+      if (this._cacheMode === 'network-first') {
+        await this._initNetworkFirst(context);
+      } else {
+        const loadedFromCache = await this._tryLoadFlagsFromCache(context);
+        if (!loadedFromCache) {
+          await this._fetchFlags(context);
+        }
       }
 
       if (this._pollingInterval > 0) {
@@ -103,6 +111,7 @@ export class OFREPWebProvider implements Provider {
       throw error;
     }
   }
+
   /* eslint-disable @typescript-eslint/no-unused-vars*/
   /* to make overrides easier we keep these unused vars */
   resolveBooleanEvaluation(
@@ -149,11 +158,12 @@ export class OFREPWebProvider implements Provider {
 
       const now = new Date();
       if (this._retryPollingAfter !== undefined && this._retryPollingAfter > now) {
-        // we do nothing because we should not call the endpoint
         return;
       }
 
-      const loadedFromCache = await this._tryLoadFlagsFromCache(newContext);
+      const loadedFromCache =
+        this._cacheMode === 'local-cache-first' ? await this._tryLoadFlagsFromCache(newContext) : false;
+
       if (!loadedFromCache) {
         await this._fetchFlags(newContext);
       }
@@ -163,13 +173,18 @@ export class OFREPWebProvider implements Provider {
         return;
       }
 
+      if (error instanceof OFREPApiUnauthorizedError || error instanceof OFREPForbiddenError) {
+        this._logger?.error(`Auth/config error during context change: ${error.name}: ${error.message}`);
+        this.events?.emit(ClientProviderEvents.Error, { message: `${error.name}: ${error.message}` });
+        return;
+      }
+
       if (
         error instanceof OpenFeatureError ||
         error instanceof OFREPApiFetchError ||
-        error instanceof OFREPApiUnauthorizedError ||
-        error instanceof OFREPForbiddenError
+        error instanceof OFREPApiUnexpectedResponseError
       ) {
-        this.events?.emit(ClientProviderEvents.Error, { message: `${error.name}: ${error.message}` });
+        this.events?.emit(ClientProviderEvents.Error, { message: `${(error as Error).name}: ${(error as Error).message}` });
         return;
       }
       this.events?.emit(ClientProviderEvents.Error, { message: `Unknown error: ${error}` });
@@ -183,6 +198,31 @@ export class OFREPWebProvider implements Provider {
     this.stopPolling();
     this._ofrepAPI.close();
     return Promise.resolve();
+  }
+
+  /**
+   * network-first initialization: block on the network request; fall back to the persisted
+   * cache only on transient / server errors. Auth and configuration errors (401, 403) are
+   * never masked by cached values.
+   */
+  private async _initNetworkFirst(context?: EvaluationContext): Promise<void> {
+    try {
+      await this._fetchFlags(context);
+    } catch (error) {
+      // Auth/config errors surface immediately — no cache fallback.
+      if (error instanceof OFREPApiUnauthorizedError || error instanceof OFREPForbiddenError) {
+        throw error;
+      }
+      // Transient / server errors — try the persisted cache as a fallback.
+      const cached = this._storage.retrieve(context?.targetingKey ?? '', this._cacheTtl);
+      if (!cached) {
+        throw error; // No usable cache — propagate the original error.
+      }
+      this._isUsingCache = true;
+      this._flagCache = cached.flags;
+      this._etag = cached.etag;
+      // Polling will retry the network on schedule.
+    }
   }
 
   /**
@@ -225,8 +265,9 @@ export class OFREPWebProvider implements Provider {
 
       const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
       this._flagCache = newCache;
-      this._storage.store(context?.targetingKey ?? '', newCache);
-      this._etag = response.httpResponse?.headers.get('etag');
+      const newEtag = response.httpResponse?.headers.get('etag') ?? null;
+      this._storage.store(context?.targetingKey ?? '', newCache, newEtag);
+      this._etag = newEtag;
       this._flagSetMetadataCache = toFlagMetadata(
         typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
       );
@@ -236,31 +277,11 @@ export class OFREPWebProvider implements Provider {
       if (error instanceof OFREPApiTooManyRequestsError && error.retryAfterDate !== null) {
         this._retryPollingAfter = error.retryAfterDate;
       }
-      this._clearPersistentCacheOnClientConfigError(error, context);
       throw error;
     }
   }
 
-  private _clearPersistentCacheOnClientConfigError(error: unknown, context?: EvaluationContext | undefined): void {
-    if (error instanceof OFREPApiTooManyRequestsError) {
-      return;
-    }
-    const key = context?.targetingKey ?? '';
-    switch (true) {
-      case error instanceof OFREPApiUnauthorizedError:
-      case error instanceof OFREPForbiddenError:
-      case error instanceof GeneralError:
-        this._storage.clear(key);
-        return;
-      case error instanceof OFREPApiUnexpectedResponseError:
-        if (error.response?.status && error.response.status >= 400 && error.response.status < 500 && error.response.status !== 429) {
-          this._storage.clear(key);
-        }
-        return;
-    }
-  }
-
-  /**
+    /**
    * _getListUpdatedFlags is a function that will compare the old cache with the new cache and
    * return the list of flags that have been updated / deleted / created.
    * @param oldCache
@@ -350,24 +371,33 @@ export class OFREPWebProvider implements Provider {
         });
       }
     } catch (error) {
+      if (error instanceof OFREPApiTooManyRequestsError) {
+        this.events?.emit(ClientProviderEvents.Stale, { message: `${error.name}: ${error.message}` });
+        return;
+      }
+
+      if (error instanceof OFREPApiUnauthorizedError || error instanceof OFREPForbiddenError) {
+        this._logger?.error(`Auth/config error during background refresh: ${error.name}: ${error.message}`);
+        this.events?.emit(ClientProviderEvents.Error, { message: `${error.name}: ${error.message}` });
+        return;
+      }
+
       this.events?.emit(ClientProviderEvents.Stale, { message: `Error while polling: ${error}` });
     }
   }
 
   private async _tryLoadFlagsFromCache(context?: EvaluationContext | undefined): Promise<boolean> {
-    const cachedFlags = this._storage.retrieve(context?.targetingKey ?? '');
-    if (cachedFlags) {
+    const cached = this._storage.retrieve(context?.targetingKey ?? '', this._cacheTtl);
+    if (cached) {
       this._isUsingCache = true;
-      this._flagCache = cachedFlags;
+      this._flagCache = cached.flags;
+      this._etag = cached.etag;
       void this._refreshFlagsInBackground();
       return true;
     }
     return false;
   }
-  /**
-   * Stop polling for flag updates
-   * @private
-   */
+
   private stopPolling() {
     if (this._pollingIntervalId) {
       clearInterval(this._pollingIntervalId);
