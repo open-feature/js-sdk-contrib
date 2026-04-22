@@ -98,7 +98,7 @@ function transform(flagCfg: string): string {
 
   for (const key in evaluators) {
     const replacer = JSON.stringify(evaluators[key]).replaceAll(bracketReplacer, '');
-    const refRegex = new RegExp('"\\$ref":(\\s)*"' + key + '"', 'g');
+    const refRegex = new RegExp('"\\$ref"(\\s)*:(\\s)*"' + key + '"', 'g');
 
     transformed = transformed.replaceAll(refRegex, replacer);
   }

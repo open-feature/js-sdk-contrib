@@ -12,21 +12,21 @@ export function endsWith(data: unknown, context: EvaluationContextWithLogger) {
   return compare(endsWithRule, data, context);
 }
 
-function compare(method: string, data: unknown, context: EvaluationContextWithLogger): boolean {
+function compare(method: string, data: unknown, context: EvaluationContextWithLogger): boolean | null {
   const logger = getLoggerFromContext(context);
   if (!Array.isArray(data)) {
     logger.debug('Invalid comparison configuration: input is not an array');
-    return false;
+    return null;
   }
 
   if (data.length != 2) {
     logger.debug(`Invalid comparison configuration: invalid array length ${data.length}`);
-    return false;
+    return null;
   }
 
   if (typeof data[0] !== 'string' || typeof data[1] !== 'string') {
     logger.debug('Invalid comparison configuration: array values are not strings');
-    return false;
+    return null;
   }
 
   switch (method) {
@@ -36,6 +36,6 @@ function compare(method: string, data: unknown, context: EvaluationContextWithLo
       return data[0].endsWith(data[1]);
     default:
       logger.debug(`Invalid comparison configuration: Invalid method '${method}'`);
-      return false;
+      return null;
   }
 }
