@@ -35,7 +35,7 @@ import type { EvaluateFlagsResponse } from './model/evaluate-flags-response';
 import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import type { FlagCache, MetadataCache } from './model/in-memory-cache';
 import type { CacheMode, OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
-import { DEFAULT_CACHE_TTL_MS } from './model/ofrep-web-provider-options';
+import { DEFAULT_CACHE_TTL_SECONDS } from './model/ofrep-web-provider-options';
 import { Storage } from './store/storage';
 
 export class OFREPWebProvider implements Provider {
@@ -61,7 +61,7 @@ export class OFREPWebProvider implements Provider {
   private _pollingIntervalId?: number;
   private _storage: Storage;
   private _cacheMode: CacheMode;
-  private _cacheTtl: number;
+  private _cacheTTL: number;
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -70,7 +70,7 @@ export class OFREPWebProvider implements Provider {
     this._ofrepAPI = new OFREPApi(this._options, this._options.fetchImplementation);
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
     this._cacheMode = this._options.cacheMode ?? 'local-cache-first';
-    this._cacheTtl = this._options.cacheTtl ?? DEFAULT_CACHE_TTL_MS;
+    this._cacheTTL = this._options.cacheTTL ?? DEFAULT_CACHE_TTL_SECONDS;
     this._storage = new Storage(this._cacheMode, this._options.cacheKeyPrefix, logger);
     this._isUsingCache = false;
   }
@@ -184,7 +184,9 @@ export class OFREPWebProvider implements Provider {
         error instanceof OFREPApiFetchError ||
         error instanceof OFREPApiUnexpectedResponseError
       ) {
-        this.events?.emit(ClientProviderEvents.Error, { message: `${(error as Error).name}: ${(error as Error).message}` });
+        this.events?.emit(ClientProviderEvents.Error, {
+          message: `${(error as Error).name}: ${(error as Error).message}`,
+        });
         return;
       }
       this.events?.emit(ClientProviderEvents.Error, { message: `Unknown error: ${error}` });
@@ -266,7 +268,7 @@ export class OFREPWebProvider implements Provider {
       const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
       this._flagCache = newCache;
       const newEtag = response.httpResponse?.headers.get('etag') ?? null;
-      this._storage.store(context?.targetingKey ?? '', newCache, newEtag);
+      await this._storage.store(context?.targetingKey ?? '', newCache, newEtag);
       this._etag = newEtag;
       this._flagSetMetadataCache = toFlagMetadata(
         typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
@@ -281,7 +283,7 @@ export class OFREPWebProvider implements Provider {
     }
   }
 
-    /**
+  /**
    * _getListUpdatedFlags is a function that will compare the old cache with the new cache and
    * return the list of flags that have been updated / deleted / created.
    * @param oldCache
@@ -387,7 +389,7 @@ export class OFREPWebProvider implements Provider {
   }
 
   private async _tryLoadFlagsFromCache(context?: EvaluationContext | undefined): Promise<boolean> {
-    const cached = this._storage.retrieve(context?.targetingKey ?? '', this._cacheTtl);
+    const cached = await this._storage.retrieve(context?.targetingKey ?? '', this._cacheTTL);
     if (cached) {
       this._isUsingCache = true;
       this._flagCache = cached.flags;
