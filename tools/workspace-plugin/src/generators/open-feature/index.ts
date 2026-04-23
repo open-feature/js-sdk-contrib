@@ -174,6 +174,13 @@ function updatePackage(tree: Tree, projectRoot: string, schema: SchemaOptions) {
     // use undefined or this defaults to "commonjs", which breaks things: https://github.com/open-feature/js-sdk-contrib/pull/596
     json.type = undefined;
 
+    // repository is required for npm OIDC trusted publishing / provenance
+    json.repository = {
+      type: 'git',
+      url: 'https://github.com/open-feature/js-sdk-contrib.git',
+      directory: projectRoot,
+    };
+
     // everything should be Apache-2.0
     json.license = 'Apache-2.0';
 
