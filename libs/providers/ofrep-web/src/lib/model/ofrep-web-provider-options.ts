@@ -17,6 +17,14 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   pollInterval?: number;
 
   /**
+   * When enabled, the provider will re-fetch flags whenever the page becomes visible
+   * (e.g. user switches back to the tab).
+   *
+   * Default: false (disabled)
+   */
+  refreshOnVisibilityChange?: boolean;
+
+  /**
    * cacheMode controls whether and how the provider uses local persistent storage.
    *
    * - `'local-cache-first'` (default): load from the persisted cache immediately on startup
