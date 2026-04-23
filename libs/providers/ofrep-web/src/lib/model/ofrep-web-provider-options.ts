@@ -2,8 +2,8 @@ import type { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
 
 export type CacheMode = 'local-cache-first' | 'network-first' | 'disabled';
 
-/** Default cache TTL: 30 days in milliseconds (matching DevCycle's configCacheTTL reference). */
-export const DEFAULT_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+/** Default cache TTL: 30 days in seconds. */
+export const DEFAULT_CACHE_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   /**
@@ -32,12 +32,12 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   cacheMode?: CacheMode;
 
   /**
-   * cacheTtl is the maximum age (in milliseconds) of a persisted cache entry before it is
+   * cacheTTL is the maximum age (in seconds) of a persisted cache entry before it is
    * treated as a cache miss. Expired entries are removed from storage on read.
    *
-   * Default: 2_592_000_000 (30 days)
+   * Default: 2_592_000 (30 days)
    */
-  cacheTtl?: number;
+  cacheTTL?: number;
 
   /**
    * cacheKeyPrefix is included in the cache key hash to prevent collisions when multiple

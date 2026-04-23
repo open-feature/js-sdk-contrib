@@ -4,7 +4,12 @@ import TestLogger from '../../test/test-logger';
 import type { FlagCache } from './model/in-memory-cache';
 import type { PersistedEntry } from './store/storage';
 import { Storage } from './store/storage';
-import { ClientProviderEvents, ClientProviderStatus, OpenFeature, StandardResolutionReasons } from '@openfeature/web-sdk';
+import {
+  ClientProviderEvents,
+  ClientProviderStatus,
+  OpenFeature,
+  StandardResolutionReasons,
+} from '@openfeature/web-sdk';
 import { http, HttpResponse } from 'msw';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { server } from '../../../../shared/ofrep-core/src/test/mock-service-worker';
@@ -251,10 +256,7 @@ describe('OFREPWebProvider', () => {
   it('should call reconciling handler, when context changed', async () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
-    const provider = new OFREPWebProvider(
-      { baseUrl: endpointBaseURL, cacheMode: 'disabled' },
-      new TestLogger(),
-    );
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, cacheMode: 'disabled' }, new TestLogger());
     await OpenFeature.setContext(defaultContext);
     await OpenFeature.setProviderAndWait(providerName, provider);
     const client = OpenFeature.getClient(providerName);
@@ -339,21 +341,22 @@ describe('OFREPWebProvider', () => {
      * that the provider will look up, so tests can seed the cache before
      * constructing a provider.
      */
-    function seedPersistentCache(
+    async function seedPersistentCache(
       targetingKey: string,
       cache: FlagCache,
       etag: string | null = null,
       writtenAt: Date = new Date(),
-    ): void {
+    ): Promise<void> {
       const storage = new Storage('local-cache-first');
+      const key = await storage.getStorageKey(targetingKey);
       const entry: PersistedEntry = {
         version: 1,
-        cacheKeyHash: storage.getStorageKey(targetingKey), // hash is embedded in the key
+        cacheKeyHash: key,
         etag,
         writtenAt: writtenAt.toISOString(),
         data: cache,
       };
-      localStorage.setItem(storage.getStorageKey(targetingKey), JSON.stringify(entry));
+      localStorage.setItem(key, JSON.stringify(entry));
     }
 
     const boolFlagCache: FlagCache = {
@@ -368,11 +371,8 @@ describe('OFREPWebProvider', () => {
 
     it('emits READY from persisted cache on init (cache-first), then refreshes from the network in the background', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, pollInterval: -1 },
-        new TestLogger(),
-      );
+      await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider(providerName, provider);
       const client = OpenFeature.getClient(providerName);
@@ -391,11 +391,8 @@ describe('OFREPWebProvider', () => {
 
     it('refreshes from the network in the background after a cache hit when polling is enabled', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, pollInterval: 50 },
-        new TestLogger(),
-      );
+      await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: 50 }, new TestLogger());
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider(providerName, provider);
       const client = OpenFeature.getClient(providerName);
@@ -411,8 +408,8 @@ describe('OFREPWebProvider', () => {
     it('does not read or write localStorage when cacheMode is disabled', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       const storage = new Storage('local-cache-first');
-      const seededKey = storage.getStorageKey(defaultContext.targetingKey);
-      seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+      const seededKey = await storage.getStorageKey(defaultContext.targetingKey);
+      await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
       expect(localStorage.getItem(seededKey)).not.toBeNull();
       const provider = new OFREPWebProvider(
         { baseUrl: endpointBaseURL, cacheMode: 'disabled', pollInterval: -1 },
@@ -433,7 +430,7 @@ describe('OFREPWebProvider', () => {
       const user2 = '22222222-2222-4222-8222-222222222222';
       const flagKey = 'per-user-cache-flag';
       const ctx = (targetingKey: string) => ({ ...defaultContext, targetingKey, perUserCacheTest: true });
-      seedPersistentCache(user1, {
+      await seedPersistentCache(user1, {
         [flagKey]: {
           key: flagKey,
           value: { user: 1 },
@@ -441,7 +438,7 @@ describe('OFREPWebProvider', () => {
           reason: StandardResolutionReasons.STATIC,
         },
       });
-      seedPersistentCache(user2, {
+      await seedPersistentCache(user2, {
         [flagKey]: {
           key: flagKey,
           value: { user: 2 },
@@ -449,10 +446,7 @@ describe('OFREPWebProvider', () => {
           reason: StandardResolutionReasons.STATIC,
         },
       });
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, pollInterval: -1 },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
       await OpenFeature.setContext(ctx(user1));
       await OpenFeature.setProviderAndWait(providerName, provider);
       const client = OpenFeature.getClient(providerName);
@@ -470,19 +464,18 @@ describe('OFREPWebProvider', () => {
 
     it('keeps the persisted cache when a background fetch returns 401 (ADR 0009: TTL governs expiry, not auth errors)', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+      await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
       const storage = new Storage('local-cache-first');
-      const lsKey = storage.getStorageKey(defaultContext.targetingKey);
+      const lsKey = await storage.getStorageKey(defaultContext.targetingKey);
       expect(localStorage.getItem(lsKey)).not.toBeNull();
 
       server.use(
-        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () => HttpResponse.text(undefined, { status: 401 })),
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+          HttpResponse.text(undefined, { status: 401 }),
+        ),
       );
 
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, pollInterval: 50 },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: 50 }, new TestLogger());
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider(providerName, provider);
       await new Promise((resolve) => setTimeout(resolve, 150));
@@ -492,9 +485,9 @@ describe('OFREPWebProvider', () => {
 
     it('keeps the persisted cache when a background fetch returns 400 (ADR 0009: TTL governs expiry, not config errors)', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+      await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
       const storage = new Storage('local-cache-first');
-      const lsKey = storage.getStorageKey(defaultContext.targetingKey);
+      const lsKey = await storage.getStorageKey(defaultContext.targetingKey);
 
       server.use(
         http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
@@ -502,10 +495,7 @@ describe('OFREPWebProvider', () => {
         ),
       );
 
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, pollInterval: 50 },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: 50 }, new TestLogger());
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider(providerName, provider);
       await new Promise((resolve) => setTimeout(resolve, 150));
@@ -517,16 +507,13 @@ describe('OFREPWebProvider', () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       // Seed a cache entry that is already 31 days old (past the default 30-day TTL).
       const expiredDate = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
-      seedPersistentCache(defaultContext.targetingKey, boolFlagCache, null, expiredDate);
+      await seedPersistentCache(defaultContext.targetingKey, boolFlagCache, null, expiredDate);
 
       const storage = new Storage('local-cache-first');
-      const lsKey = storage.getStorageKey(defaultContext.targetingKey);
+      const lsKey = await storage.getStorageKey(defaultContext.targetingKey);
       expect(localStorage.getItem(lsKey)).not.toBeNull(); // Exists before init.
 
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, pollInterval: -1 },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait(providerName, provider);
       const client = OpenFeature.getClient(providerName);
@@ -543,10 +530,140 @@ describe('OFREPWebProvider', () => {
       expect(new Date(entry.writtenAt).getTime()).toBeGreaterThan(expiredDate.getTime());
     });
 
+    describe('network-first', () => {
+      it('blocks init on the network and serves fresh flags (STATIC, not CACHED) when the request succeeds', async () => {
+        const providerName = expect.getState().currentTestName || 'test-provider';
+        await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+        const provider = new OFREPWebProvider(
+          { baseUrl: endpointBaseURL, cacheMode: 'network-first', pollInterval: -1 },
+          new TestLogger(),
+        );
+        await OpenFeature.setContext(defaultContext);
+        await OpenFeature.setProviderAndWait(providerName, provider);
+        const client = OpenFeature.getClient(providerName);
+
+        const details = client.getBooleanDetails('bool-flag', false);
+        expect(details.value).toBe(true);
+        expect(details.reason).toBe(StandardResolutionReasons.STATIC);
+      });
+
+      it('falls back to the persisted cache on a transient network error and serves flags as CACHED', async () => {
+        const providerName = expect.getState().currentTestName || 'test-provider';
+        await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+
+        server.use(http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () => HttpResponse.error()));
+
+        const provider = new OFREPWebProvider(
+          { baseUrl: endpointBaseURL, cacheMode: 'network-first', pollInterval: -1 },
+          new TestLogger(),
+        );
+        await OpenFeature.setContext(defaultContext);
+        await OpenFeature.setProviderAndWait(providerName, provider);
+        const client = OpenFeature.getClient(providerName);
+
+        const details = client.getBooleanDetails('bool-flag', false);
+        expect(details.value).toBe(true);
+        expect(details.reason).toBe(StandardResolutionReasons.CACHED);
+      });
+
+      it('falls back to the persisted cache on a 5xx server error and serves flags as CACHED', async () => {
+        const providerName = expect.getState().currentTestName || 'test-provider';
+        await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+
+        server.use(
+          http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+            HttpResponse.text(undefined, { status: 500 }),
+          ),
+        );
+
+        const provider = new OFREPWebProvider(
+          { baseUrl: endpointBaseURL, cacheMode: 'network-first', pollInterval: -1 },
+          new TestLogger(),
+        );
+        await OpenFeature.setContext(defaultContext);
+        await OpenFeature.setProviderAndWait(providerName, provider);
+        const client = OpenFeature.getClient(providerName);
+
+        const details = client.getBooleanDetails('bool-flag', false);
+        expect(details.value).toBe(true);
+        expect(details.reason).toBe(StandardResolutionReasons.CACHED);
+      });
+
+      it('surfaces the error when the network fails and no persisted cache is available', async () => {
+        const providerName = expect.getState().currentTestName || 'test-provider';
+
+        server.use(http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () => HttpResponse.error()));
+
+        const provider = new OFREPWebProvider(
+          { baseUrl: endpointBaseURL, cacheMode: 'network-first', pollInterval: -1 },
+          new TestLogger(),
+        );
+        await OpenFeature.setContext(defaultContext);
+        OpenFeature.setProvider(providerName, provider);
+        const client = OpenFeature.getClient(providerName);
+
+        const errorHandler = jest.fn();
+        client.addHandler(ClientProviderEvents.Error, errorHandler);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(errorHandler).toHaveBeenCalled();
+        expect(client.providerStatus).toBe(ClientProviderStatus.ERROR);
+      });
+
+      it('surfaces a 401 as FATAL immediately and does not fall back to the persisted cache', async () => {
+        const providerName = expect.getState().currentTestName || 'test-provider';
+        await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+
+        server.use(
+          http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+            HttpResponse.text(undefined, { status: 401 }),
+          ),
+        );
+
+        const provider = new OFREPWebProvider(
+          { baseUrl: endpointBaseURL, cacheMode: 'network-first', pollInterval: -1 },
+          new TestLogger(),
+        );
+        await OpenFeature.setContext(defaultContext);
+        OpenFeature.setProvider(providerName, provider);
+        const client = OpenFeature.getClient(providerName);
+
+        const errorHandler = jest.fn();
+        client.addHandler(ClientProviderEvents.Error, errorHandler);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(errorHandler).toHaveBeenCalled();
+        expect(client.providerStatus).toBe(ClientProviderStatus.FATAL);
+      });
+
+      it('surfaces a 403 as FATAL immediately and does not fall back to the persisted cache', async () => {
+        const providerName = expect.getState().currentTestName || 'test-provider';
+        await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+
+        server.use(
+          http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+            HttpResponse.text(undefined, { status: 403 }),
+          ),
+        );
+
+        const provider = new OFREPWebProvider(
+          { baseUrl: endpointBaseURL, cacheMode: 'network-first', pollInterval: -1 },
+          new TestLogger(),
+        );
+        await OpenFeature.setContext(defaultContext);
+        OpenFeature.setProvider(providerName, provider);
+        const client = OpenFeature.getClient(providerName);
+
+        const errorHandler = jest.fn();
+        client.addHandler(ClientProviderEvents.Error, errorHandler);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(errorHandler).toHaveBeenCalled();
+        expect(client.providerStatus).toBe(ClientProviderStatus.FATAL);
+      });
+    });
+
     it('restores the ETag from the persisted entry so background refresh uses If-None-Match', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       const storedEtag = '"abc123"';
-      seedPersistentCache(defaultContext.targetingKey, boolFlagCache, storedEtag);
+      await seedPersistentCache(defaultContext.targetingKey, boolFlagCache, storedEtag);
 
       let capturedIfNoneMatch: string | null = null;
       server.use(
@@ -556,10 +673,7 @@ describe('OFREPWebProvider', () => {
         }),
       );
 
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, pollInterval: -1 },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
       await OpenFeature.setContext(defaultContext);
       OpenFeature.setProvider(providerName, provider);
       await new Promise((resolve) => setTimeout(resolve, 100));
