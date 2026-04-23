@@ -318,4 +318,97 @@ describe('OFREPWebProvider', () => {
     await new Promise((resolve) => setTimeout(resolve, 400));
     expect(reconcilingHandler).toHaveBeenCalledTimes(2);
   });
+
+  it('should not poll when pollInterval is not set (default 0)', async () => {
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    await OpenFeature.setContext({ ...defaultContext, changeConfig: true });
+    await OpenFeature.setProviderAndWait(providerName, provider);
+    const client = OpenFeature.getClient(providerName);
+
+    const configChangedHandler = jest.fn();
+    client.addHandler(ClientProviderEvents.ConfigurationChanged, configChangedHandler);
+
+    // Wait long enough that polling would have fired if enabled
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(configChangedHandler).not.toHaveBeenCalled();
+  });
+
+  describe('refreshOnVisibilityChange', () => {
+    let mockDocument: { visibilityState: string; addEventListener: jest.Mock; removeEventListener: jest.Mock };
+
+    beforeEach(() => {
+      mockDocument = {
+        visibilityState: 'visible',
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (globalThis as any).document = mockDocument;
+    });
+
+    afterEach(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (globalThis as any).document;
+    });
+
+    it('should register visibility change listener when refreshOnVisibilityChange is enabled', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, refreshOnVisibilityChange: true },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      expect(mockDocument.addEventListener).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+    });
+
+    it('should not register visibility change listener when refreshOnVisibilityChange is not set', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      expect(mockDocument.addEventListener).not.toHaveBeenCalled();
+    });
+
+    it('should refetch flags when visibility change fires and page is visible', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, refreshOnVisibilityChange: true },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext({ ...defaultContext, changeConfig: true });
+      await OpenFeature.setProviderAndWait(providerName, provider);
+      const client = OpenFeature.getClient(providerName);
+
+      const configChangedHandler = jest.fn();
+      client.addHandler(ClientProviderEvents.ConfigurationChanged, configChangedHandler);
+
+      // Get the registered handler and invoke it
+      const handler = mockDocument.addEventListener.mock.calls[0][1];
+      mockDocument.visibilityState = 'visible';
+      handler();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(configChangedHandler).toHaveBeenCalled();
+    });
+
+    it('should remove visibility change listener on close', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, refreshOnVisibilityChange: true },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      expect(mockDocument.addEventListener).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+
+      await OpenFeature.clearProviders();
+
+      expect(mockDocument.removeEventListener).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+    });
+  });
 });
