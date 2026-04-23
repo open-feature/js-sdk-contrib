@@ -12,6 +12,8 @@ import {
 import { libraryGenerator } from '@nx/js';
 import { Linter } from '@nx/eslint';
 
+const INITIAL_VERSION = '0.1.0';
+
 /**
  * Enforced by the json schema.
  */
@@ -192,8 +194,7 @@ function updatePackage(tree: Tree, projectRoot: string, schema: SchemaOptions) {
     // use undefined or this defaults to "commonjs", which breaks things: https://github.com/open-feature/js-sdk-contrib/pull/596
     json.type = undefined;
 
-    // match the initial version in the release-please manifest
-    json.version = '0.1.0';
+    json.version = INITIAL_VERSION;
 
     // repository is required for npm OIDC trusted publishing / provenance
     json.repository = {
@@ -283,7 +284,7 @@ function updateReleasePleaseConfig(tree: Tree, projectRoot: string) {
 // this starts everything at 0.1.0
 function updateReleasePleaseManifest(tree: Tree, projectRoot: string) {
   updateJson(tree, '.release-please-manifest.json', (json) => {
-    json[projectRoot] = '0.1.0';
+    json[projectRoot] = INITIAL_VERSION;
 
     return json;
   });
