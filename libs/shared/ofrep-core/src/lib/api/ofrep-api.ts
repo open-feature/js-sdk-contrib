@@ -49,7 +49,7 @@ const DEFAULT_TIMEOUT_MS = 10_000;
  * Creates an abort reason that mimics a DOMException on runtimes that support it,
  * and falls back to a plain Error with the matching `name` on runtimes that do not
  */
-function createAbortReason(message: string, name: 'TimeoutError' | 'AbortError'): Error {
+function createAbortReason(message: string, name: 'TimeoutError' | 'AbortError') {
   if (typeof DOMException !== 'undefined') {
     return new DOMException(message, name);
   }
