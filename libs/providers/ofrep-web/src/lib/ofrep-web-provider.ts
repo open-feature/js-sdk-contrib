@@ -88,8 +88,8 @@ export class OFREPWebProvider implements Provider {
         this.startPolling();
       }
 
-      // Listen for page/app visibility changes to refetch flags when becoming visible
-      if (typeof document !== 'undefined') {
+      // Listen for page/app visibility changes to refetch flags when becoming visible (opt-in)
+      if (this._options.refreshOnVisibilityChange && typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', this._visibilityChangeHandler);
       }
 
@@ -355,6 +355,9 @@ export class OFREPWebProvider implements Provider {
    */
   private _onVisibilityChange() {
     if (document?.visibilityState === 'visible') {
+      // TODO(SSE): once SSE is implemented, skip refresh if SSE is connected,
+      // and perform an unconditional re-fetch if SSE was closed during inactivity.
+      // See ADR-0010: https://github.com/open-feature/protocol/pull/69
       this._refreshFlags('visibility change');
     }
   }

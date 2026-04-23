@@ -10,4 +10,12 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
    * Default: 0 (disabled)
    */
   pollInterval?: number; // in milliseconds
+
+  /**
+   * When enabled, the provider will re-fetch flags whenever the page becomes visible
+   * (e.g. user switches back to the tab).
+   *
+   * Default: false (disabled)
+   */
+  refreshOnVisibilityChange?: boolean;
 };
