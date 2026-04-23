@@ -36,7 +36,7 @@
     "@protobuf-ts/grpc-transport": "^2.9.0",
     "@protobuf-ts/runtime-rpc": "^2.9.0",
     "@swc/helpers": "0.5.17",
-    "ajv": "^8.12.0",
+    "ajv": "^8.18.0",
     "axios": "1.13.5",
     "copy-anything": "^3.0.5",
     "flagsmith": "^9.3.1",
