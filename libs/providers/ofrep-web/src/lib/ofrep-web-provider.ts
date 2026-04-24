@@ -62,6 +62,7 @@ export class OFREPWebProvider implements Provider {
   private _storage: Storage;
   private _cacheMode: CacheMode;
   private _cacheTTL: number;
+  private _contextRevision = 0;
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -150,6 +151,7 @@ export class OFREPWebProvider implements Provider {
    * @param newContext - the new evaluation context
    */
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
+    this._contextRevision++;
     try {
       if (oldContext?.targetingKey !== newContext?.targetingKey) {
         this._etag = null;
@@ -237,7 +239,10 @@ export class OFREPWebProvider implements Provider {
    * @throws ParseError if the API returned a 400 with the error code ParseError
    * @throws GeneralError if the API returned a 400 with an unknown error code
    */
-  private async _fetchFlags(context?: EvaluationContext | undefined): Promise<EvaluateFlagsResponse> {
+  private async _fetchFlags(
+    context?: EvaluationContext | undefined,
+    generation = this._contextRevision,
+  ): Promise<EvaluateFlagsResponse> {
     try {
       const evalReq: EvaluationRequest = {
         context,
@@ -264,6 +269,10 @@ export class OFREPWebProvider implements Provider {
         }
         return currentCache;
       }, {});
+
+      if (generation !== this._contextRevision) {
+        return { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [] };
+      }
 
       const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
       this._flagCache = newCache;
