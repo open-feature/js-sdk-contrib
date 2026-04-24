@@ -212,4 +212,21 @@ describe('LocalStorage Provider', () => {
       });
     });
   });
+
+  describe('getFlags', () => {
+    it('should return all flags from localStorage that match the provider prefix', () => {
+      localStorage.setItem('openfeature.bool-value', 'true');
+      localStorage.setItem('openfeature.num-value', '1.25');
+      localStorage.setItem('otherprovider.str-value', 'openfeature');
+      expect(localStorageProvider.getFlags()).toEqual({
+        'bool-value': 'true',
+        'num-value': '1.25',
+      });
+    });
+
+    it('should return an empty object if no flags match the provider prefix', () => {
+      localStorage.setItem('otherprovider.str-value', 'openfeature');
+      expect(localStorageProvider.getFlags()).toEqual({});
+    });
+  });
 });
