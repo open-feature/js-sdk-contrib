@@ -1,12 +1,22 @@
 import { ClientProviderEvents, FlagNotFoundError, ParseError } from '@openfeature/web-sdk';
 import { LocalStorageProvider } from './localstorage-provider';
 
+const mockNoLocalStorage = () => {
+  // @ts-expect-error we intentionally want to simulate an environment where localStorage is not defined (e.g., SSR)
+  delete global.localStorage;
+};
+
 describe('LocalStorage Provider', () => {
   const localStorageProvider = new LocalStorageProvider();
+  const originalLocalStorage = global.localStorage;
 
   beforeEach(() => {
     jest.resetModules();
     localStorage.clear();
+  });
+
+  afterEach(() => {
+    global.localStorage = originalLocalStorage;
   });
 
   afterAll(() => {
@@ -38,6 +48,11 @@ describe('LocalStorage Provider', () => {
       localStorage.setItem('openfeature.bool-value', 'invalid');
       expect(() => localStorageProvider.resolveBooleanEvaluation('bool-value')).toThrow(ParseError);
     });
+
+    it('should not find a flag if localStorage is not defined', () => {
+      mockNoLocalStorage();
+      expect(() => localStorageProvider.resolveBooleanEvaluation('bool-value')).toThrow(FlagNotFoundError);
+    });
   });
 
   describe('resolveNumberEvaluation', () => {
@@ -61,6 +76,11 @@ describe('LocalStorage Provider', () => {
       localStorage.setItem('openfeature.num-value', 'invalid');
       expect(() => localStorageProvider.resolveNumberEvaluation('num-value')).toThrow(ParseError);
     });
+
+    it('should not find a flag if localStorage is not defined', () => {
+      mockNoLocalStorage();
+      expect(() => localStorageProvider.resolveNumberEvaluation('num-value')).toThrow(FlagNotFoundError);
+    });
   });
 
   describe('resolveStringEvaluation', () => {
@@ -70,6 +90,11 @@ describe('LocalStorage Provider', () => {
         reason: 'STATIC',
         value: 'openfeature',
       });
+    });
+
+    it('should not find a flag if localStorage is not defined', () => {
+      mockNoLocalStorage();
+      expect(() => localStorageProvider.resolveStringEvaluation('str-value')).toThrow(FlagNotFoundError);
     });
   });
 
@@ -112,6 +137,11 @@ describe('LocalStorage Provider', () => {
         reason: 'STATIC',
         value: ['openfeature'],
       });
+    });
+
+    it('should not find a flag if localStorage is not defined', () => {
+      mockNoLocalStorage();
+      expect(() => localStorageProvider.resolveObjectEvaluation('obj-value')).toThrow(FlagNotFoundError);
     });
   });
 
@@ -187,6 +217,11 @@ describe('LocalStorage Provider', () => {
         flagsChanged: ['bool-value', 'str-value'],
       });
     });
+
+    it('should throw if localStorage is not defined', () => {
+      mockNoLocalStorage();
+      expect(() => localStorageProvider.setFlags({ 'bool-value': true })).toThrow(ReferenceError);
+    });
   });
 
   describe('clearFlags', () => {
@@ -211,6 +246,11 @@ describe('LocalStorage Provider', () => {
         flagsChanged: ['bool-value', 'num-value'],
       });
     });
+
+    it('should throw if localStorage is not defined', () => {
+      mockNoLocalStorage();
+      expect(() => localStorageProvider.clearFlags()).toThrow(ReferenceError);
+    });
   });
 
   describe('getFlags', () => {
@@ -226,6 +266,11 @@ describe('LocalStorage Provider', () => {
 
     it('should return an empty object if no flags match the provider prefix', () => {
       localStorage.setItem('otherprovider.str-value', 'openfeature');
+      expect(localStorageProvider.getFlags()).toEqual({});
+    });
+
+    it('should return an empty object if localStorage is not defined', () => {
+      mockNoLocalStorage();
       expect(localStorageProvider.getFlags()).toEqual({});
     });
   });
