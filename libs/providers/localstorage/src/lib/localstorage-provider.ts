@@ -117,14 +117,7 @@ export class LocalStorageProvider implements Provider {
    * Removes all flags from localStorage that match the provider's prefix.
    */
   clearFlags(): void {
-    const flagKeys: string[] = [];
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const localStorageKey = localStorage.key(i);
-      if (localStorageKey !== null && localStorageKey.startsWith(this.options.prefix ?? '')) {
-        flagKeys.push(localStorageKey.slice(this.options.prefix?.length));
-      }
-    }
+    const flagKeys = this.enumerateLocalStorage();
 
     for (const flagKey of flagKeys) {
       localStorage.removeItem(`${this.options.prefix ?? ''}${flagKey}`);
@@ -134,6 +127,40 @@ export class LocalStorageProvider implements Provider {
       message: 'Flags updated',
       flagsChanged: flagKeys,
     });
+  }
+
+  /**
+   * Lists all flags in localStorage that match the provider's prefix with their raw string values.
+   */
+  getFlags(): Record<string, string> {
+    if (typeof localStorage === 'undefined') {
+      return {};
+    }
+
+    const flagKeys = this.enumerateLocalStorage();
+    const flags: Record<string, string> = {};
+
+    for (const flagKey of flagKeys) {
+      const value = localStorage.getItem(`${this.options.prefix ?? ''}${flagKey}`);
+      if (value !== null) {
+        flags[flagKey] = value;
+      }
+    }
+
+    return flags;
+  }
+
+  private enumerateLocalStorage(): string[] {
+    const flagKeys: string[] = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const localStorageKey = localStorage.key(i);
+      if (localStorageKey !== null && localStorageKey.startsWith(this.options.prefix ?? '')) {
+        flagKeys.push(localStorageKey.slice(this.options.prefix?.length));
+      }
+    }
+
+    return flagKeys;
   }
 
   private evaluateLocalStorage<T extends JsonValue>(
