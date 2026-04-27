@@ -218,7 +218,7 @@ export class OFREPWebProvider implements Provider {
         throw error;
       }
       // Transient / server errors — try the persisted cache as a fallback.
-      const cached = this._storage.retrieve(context?.targetingKey ?? '', this._cacheTtl);
+      const cached = await this._storage.retrieve(context?.targetingKey ?? '', this._cacheTTL);
       if (!cached) {
         throw error; // No usable cache — propagate the original error.
       }
