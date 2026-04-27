@@ -45,6 +45,24 @@ export class OFREPForbiddenError extends OFREPApiError {
   }
 }
 
+export class OFRepBadRequestError extends OFREPApiError {
+  constructor(response: Response, message?: string, options?: ErrorOptions) {
+    super(undefined, response, message, options);
+    Object.setPrototypeOf(this, OFRepBadRequestError.prototype);
+    this.name = OFRepBadRequestError.name;
+    this.message = message ?? 'OFREP request failed: bad request';
+  }
+}
+
+export class OFREPApiInternalServerError extends OFREPApiError {
+  constructor(response: Response, message?: string, options?: ErrorOptions) {
+    super(undefined, response, message, options);
+    Object.setPrototypeOf(this, OFREPApiInternalServerError.prototype);
+    this.name = OFREPApiInternalServerError.name;
+    this.message = message ?? 'OFREP request failed: internal server error';
+  }
+}
+
 export class OFREPApiTooManyRequestsError extends OFREPApiError {
   public readonly requestTime: Date;
 
