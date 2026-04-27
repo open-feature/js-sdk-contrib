@@ -8,7 +8,9 @@ import type {
   EvaluationSuccessResponse,
 } from '../model';
 import {
+  OFRepBadRequestError,
   OFREPApiFetchError,
+  OFREPApiInternalServerError,
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
   OFREPApiUnexpectedResponseError,
@@ -100,10 +102,28 @@ describe('OFREPApi', () => {
         );
       });
 
-      it('throw OFREPApiUnexpectedResponseError on any error code without EvaluationFailureResponse body', async () => {
+      it('throw OFRepBadRequestError on any error code without EvaluationFailureResponse body', async () => {
         await expect(() =>
           api.postEvaluateFlag('my-flag', { context: { errors: { generic400: true } } }),
-        ).rejects.toThrow(OFREPApiUnexpectedResponseError);
+        ).rejects.toThrow(OFRepBadRequestError);
+      });
+
+      it('throw OFRepBadRequestError on 400 response', async () => {
+        await expect(() => api.postEvaluateFlag('my-flag', { context: { errors: { 400: true } } })).rejects.toThrow(
+          OFRepBadRequestError,
+        );
+      });
+
+      it('throw OFREPApiInternalServerError on 500 response', async () => {
+        await expect(() => api.postEvaluateFlag('my-flag', { context: { errors: { 500: true } } })).rejects.toThrow(
+          OFREPApiInternalServerError,
+        );
+      });
+
+      it('throw OFREPApiUnexpectedResponseError on unexpected non-2xx response', async () => {
+        await expect(() => api.postEvaluateFlag('my-flag', { context: { errors: { 503: true } } })).rejects.toThrow(
+          OFREPApiUnexpectedResponseError,
+        );
       });
 
       it('throw OFREPForbiddenError on 401 response', async () => {
@@ -265,8 +285,26 @@ describe('OFREPApi', () => {
         );
       });
 
-      it('throw OFREPApiUnexpectedResponseError on any error code without EvaluationFailureResponse body', async () => {
+      it('throw OFRepBadRequestError on any error code without EvaluationFailureResponse body', async () => {
         await expect(() => api.postBulkEvaluateFlags({ context: { errors: { generic400: true } } })).rejects.toThrow(
+          OFRepBadRequestError,
+        );
+      });
+
+      it('throw OFRepBadRequestError on 400 response', async () => {
+        await expect(() => api.postBulkEvaluateFlags({ context: { errors: { 400: true } } })).rejects.toThrow(
+          OFRepBadRequestError,
+        );
+      });
+
+      it('throw OFREPApiInternalServerError on 500 response', async () => {
+        await expect(() => api.postBulkEvaluateFlags({ context: { errors: { 500: true } } })).rejects.toThrow(
+          OFREPApiInternalServerError,
+        );
+      });
+
+      it('throw OFREPApiUnexpectedResponseError on unexpected non-2xx response', async () => {
+        await expect(() => api.postBulkEvaluateFlags({ context: { errors: { 503: true } } })).rejects.toThrow(
           OFREPApiUnexpectedResponseError,
         );
       });
@@ -345,15 +383,10 @@ describe('OFREPApi', () => {
         expect(result.httpStatus).toEqual(200);
       });
 
-      it('return EvaluationFailureResponse response as value on failed evaluation', async () => {
-        const result = await api.postBulkEvaluateFlags({ context: { errors: { targetingMissing: true } } });
-        if (result.httpStatus !== 400) {
-          throw new Error('Received unexpected HTTP status');
-        }
-
-        expect(result.value).toEqual({
-          errorCode: ErrorCode.TARGETING_KEY_MISSING,
-        } satisfies BulkEvaluationFailureResponse);
+      it('throw OFRepBadRequestError on failed evaluation with 400 status', async () => {
+        await expect(() =>
+          api.postBulkEvaluateFlags({ context: { errors: { targetingMissing: true } } }),
+        ).rejects.toThrow(OFRepBadRequestError);
       });
 
       it('determine value type based on HTTP status', async () => {

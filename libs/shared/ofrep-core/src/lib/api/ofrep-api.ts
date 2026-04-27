@@ -20,7 +20,9 @@ import {
 import type { OFREPProviderBaseOptions } from '../provider';
 import { buildHeaders } from '../provider';
 import {
+  OFRepBadRequestError,
   OFREPApiFetchError,
+  OFREPApiInternalServerError,
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
   OFREPApiUnexpectedResponseError,
@@ -122,6 +124,10 @@ export class OFREPApi {
       this._shutdownController.signal.removeEventListener('abort', onShutdown);
     }
 
+    if (response.status === 400) {
+      throw new OFRepBadRequestError(response);
+    }
+
     if (response.status === 401) {
       throw new OFREPApiUnauthorizedError(response);
     }
@@ -132,6 +138,15 @@ export class OFREPApi {
 
     if (response.status === 429) {
       throw new OFREPApiTooManyRequestsError(response);
+    }
+
+    if (response.status === 500) {
+      throw new OFREPApiInternalServerError(response);
+    }
+
+    const isKnownStatus = response.ok || response.status === 304 || OFREPApi.isOFREFErrorHttpStatus(response.status);
+    if (!isKnownStatus) {
+      throw new OFREPApiUnexpectedResponseError(response, `OFREP request failed with unexpected status: ${response.status}`);
     }
 
     if (response.status === 200 && !this.isJsonMime(response)) {

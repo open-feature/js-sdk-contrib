@@ -37,6 +37,10 @@ export const handlers = [
         throw HttpResponse.error();
       }
 
+      if (errors?.['400']) {
+        throw HttpResponse.json({ metadata: TEST_FLAG_METADATA }, { status: 400 });
+      }
+
       if (errors?.['generic400']) {
         throw HttpResponse.json({ metadata: TEST_FLAG_METADATA }, { status: 400 });
       }
@@ -47,6 +51,14 @@ export const handlers = [
 
       if (errors?.['403']) {
         throw HttpResponse.json({ metadata: TEST_FLAG_METADATA }, { status: 403 });
+      }
+
+      if (errors?.['500']) {
+        throw HttpResponse.text(undefined, { status: 500 });
+      }
+
+      if (errors?.['503']) {
+        throw HttpResponse.text(undefined, { status: 503 });
       }
 
       if (errors?.['metadata404']) {
@@ -179,6 +191,10 @@ export const handlers = [
         throw HttpResponse.error();
       }
 
+      if (errors?.['400']) {
+        throw HttpResponse.text(undefined, { status: 400 });
+      }
+
       if (errors?.['generic400']) {
         throw HttpResponse.text(undefined, { status: 400 });
       }
@@ -193,6 +209,14 @@ export const handlers = [
 
       if (errors?.['429']) {
         throw HttpResponse.text(undefined, { status: 429, headers: { 'Retry-After': '1' } });
+      }
+
+      if (errors?.['500']) {
+        throw HttpResponse.text(undefined, { status: 500 });
+      }
+
+      if (errors?.['503']) {
+        throw HttpResponse.text(undefined, { status: 503 });
       }
 
       if (errors?.['parseError']) {
