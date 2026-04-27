@@ -1,4 +1,4 @@
-import type { Logger } from '@openfeature/core';
+import type { Logger } from '@openfeature/web-sdk';
 import type { FlagCache } from '../model/in-memory-cache';
 import type { CacheMode } from '../model/ofrep-web-provider-options';
 

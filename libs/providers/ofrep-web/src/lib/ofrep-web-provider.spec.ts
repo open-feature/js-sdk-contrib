@@ -1,4 +1,4 @@
-import { ErrorCode } from '@openfeature/core';
+import { ErrorCode } from '@openfeature/web-sdk';
 import { OFREPWebProvider } from './ofrep-web-provider';
 import TestLogger from '../../test/test-logger';
 import type { FlagCache } from './model/in-memory-cache';
