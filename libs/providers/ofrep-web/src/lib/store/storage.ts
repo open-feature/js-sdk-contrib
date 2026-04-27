@@ -20,6 +20,8 @@ export interface PersistedEntry {
   writtenAt: string;
   /** The bulk evaluation payload. */
   data: FlagCache;
+  /** Persisted flag-set metadata returned by the bulk evaluation response. */
+  metadata?: Record<string, unknown>;
 }
 
 export class Storage {
@@ -65,7 +67,12 @@ export class Storage {
    * No-op when cacheMode is 'disabled'. Storage write failures are logged and swallowed
    * so the provider continues operating with the fresh in-memory values.
    */
-  async store(targetingKey: string, flags: FlagCache, etag: string | null): Promise<void> {
+  async store(
+    targetingKey: string,
+    flags: FlagCache,
+    etag: string | null,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
     if (this._disabled) return;
     const key = await this.getStorageKey(targetingKey);
     const entry: PersistedEntry = {
@@ -74,6 +81,7 @@ export class Storage {
       etag,
       writtenAt: new Date().toISOString(),
       data: flags,
+      ...(metadata !== undefined && { metadata }),
     };
     try {
       localStorage.setItem(key, JSON.stringify(entry));
@@ -93,7 +101,7 @@ export class Storage {
   async retrieve(
     targetingKey: string,
     ttlSeconds: number,
-  ): Promise<{ flags: FlagCache; etag: string | null } | undefined> {
+  ): Promise<{ flags: FlagCache; etag: string | null; metadata?: Record<string, unknown> } | undefined> {
     if (this._disabled) return undefined;
     try {
       const raw = localStorage.getItem(await this.getStorageKey(targetingKey));
@@ -111,7 +119,7 @@ export class Storage {
         return undefined;
       }
 
-      return { flags: entry.data, etag: entry.etag };
+      return { flags: entry.data, etag: entry.etag, metadata: entry.metadata };
     } catch (error) {
       this._logger?.error(`Error retrieving flag cache from local storage: ${error}`);
       return undefined;

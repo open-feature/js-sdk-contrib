@@ -346,6 +346,7 @@ describe('OFREPWebProvider', () => {
       cache: FlagCache,
       etag: string | null = null,
       writtenAt: Date = new Date(),
+      metadata?: Record<string, unknown>,
     ): Promise<void> {
       const storage = new Storage('local-cache-first');
       const key = await storage.getStorageKey(targetingKey);
@@ -355,6 +356,7 @@ describe('OFREPWebProvider', () => {
         etag,
         writtenAt: writtenAt.toISOString(),
         data: cache,
+        ...(metadata !== undefined && { metadata }),
       };
       localStorage.setItem(key, JSON.stringify(entry));
     }
@@ -528,6 +530,51 @@ describe('OFREPWebProvider', () => {
       expect(stored).not.toBeNull();
       const entry = JSON.parse(stored!);
       expect(new Date(entry.writtenAt).getTime()).toBeGreaterThan(expiredDate.getTime());
+    });
+
+    it('restores flag-set metadata from the persisted entry so FLAG_NOT_FOUND includes it on a cold cache start', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      await seedPersistentCache(defaultContext.targetingKey, boolFlagCache, null, new Date(), TEST_FLAG_SET_METADATA);
+
+      server.use(http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () => HttpResponse.error()));
+
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, cacheMode: 'local-cache-first', pollInterval: -1 },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      OpenFeature.setProvider(providerName, provider);
+      const client = OpenFeature.getClient(providerName);
+
+      const readyHandler = jest.fn();
+      client.addHandler(ClientProviderEvents.Ready, readyHandler);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(readyHandler).toHaveBeenCalled();
+
+      const details = client.getBooleanDetails('non-existent-flag', false);
+      expect(details.errorCode).toBe('FLAG_NOT_FOUND');
+      expect(details.flagMetadata).toEqual(TEST_FLAG_SET_METADATA);
+    });
+
+    it('clears the old targeting key persisted entry when the targeting key changes', async () => {
+      const user1 = defaultContext.targetingKey;
+      const user2 = '33333333-3333-4333-8333-333333333333';
+      const providerName = expect.getState().currentTestName || 'test-provider';
+
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
+      await OpenFeature.setContext({ ...defaultContext, targetingKey: user1 });
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      const storage = new Storage('local-cache-first');
+      const user1Key = await storage.getStorageKey(user1);
+      // After init, user1's entry should have been written by the network fetch.
+      expect(localStorage.getItem(user1Key)).not.toBeNull();
+
+      // Switch to user2 — provider should clear user1's entry.
+      await OpenFeature.setContext({ ...defaultContext, targetingKey: user2 });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(localStorage.getItem(user1Key)).toBeNull();
     });
 
     describe('network-first', () => {

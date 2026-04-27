@@ -155,6 +155,7 @@ export class OFREPWebProvider implements Provider {
     try {
       if (oldContext?.targetingKey !== newContext?.targetingKey) {
         this._etag = null;
+        void this._storage.clear(oldContext?.targetingKey ?? '');
       }
       this._context = newContext;
 
@@ -225,6 +226,9 @@ export class OFREPWebProvider implements Provider {
       this._isUsingCache = true;
       this._flagCache = cached.flags;
       this._etag = cached.etag;
+      if (cached.metadata) {
+        this._flagSetMetadataCache = cached.metadata as MetadataCache;
+      }
       // Polling will retry the network on schedule.
     }
   }
@@ -277,11 +281,11 @@ export class OFREPWebProvider implements Provider {
       const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
       this._flagCache = newCache;
       const newEtag = response.httpResponse?.headers.get('etag') ?? null;
-      await this._storage.store(context?.targetingKey ?? '', newCache, newEtag);
-      this._etag = newEtag;
       this._flagSetMetadataCache = toFlagMetadata(
         typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
       );
+      await this._storage.store(context?.targetingKey ?? '', newCache, newEtag, this._flagSetMetadataCache);
+      this._etag = newEtag;
       this._isUsingCache = false;
       return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
     } catch (error) {
@@ -403,6 +407,9 @@ export class OFREPWebProvider implements Provider {
       this._isUsingCache = true;
       this._flagCache = cached.flags;
       this._etag = cached.etag;
+      if (cached.metadata) {
+        this._flagSetMetadataCache = cached.metadata as MetadataCache;
+      }
       void this._refreshFlagsInBackground();
       return true;
     }
