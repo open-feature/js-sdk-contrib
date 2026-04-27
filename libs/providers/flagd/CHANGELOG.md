@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.15.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.14.0...flagd-provider-v0.15.0) (2026-04-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* fractional bucketing improvements ([#1501](https://github.com/open-feature/js-sdk-contrib/issues/1501))
+
+### ✨ New Features
+
+* fractional bucketing improvements ([#1501](https://github.com/open-feature/js-sdk-contrib/issues/1501)) ([8dd11d5](https://github.com/open-feature/js-sdk-contrib/commit/8dd11d58b488dbec229e28794e257aaef256406d))
+
 ## [0.14.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.13.4...flagd-provider-v0.14.0) (2026-03-11)
 
 

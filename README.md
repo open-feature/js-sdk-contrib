@@ -13,8 +13,8 @@ Interested in contributing? Great, we'd love your help! To get started, take a l
 
 ## Useful links
 
-* For more information on OpenFeature, visit [openfeature.dev](https://openfeature.dev)
-* For help or feedback on this project, join us on [Slack][slack] or create a [GitHub issue][github-issue].
+- For more information on OpenFeature, visit [openfeature.dev](https://openfeature.dev)
+- For help or feedback on this project, join us on [Slack][slack] or create a [GitHub issue][github-issue].
 
 ## License
 

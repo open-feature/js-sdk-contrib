@@ -66,7 +66,7 @@ experiments and guarded rollouts. To learn more, read [Sending custom events](ht
 
 ```ts
 const client = await OpenFeature.getClient();
-client.track('event-key-123abc', { customProperty: someValue })
+client.track('event-key-123abc', { customProperty: someValue });
 ```
 
 ## Building

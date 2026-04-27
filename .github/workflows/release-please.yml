@@ -5,12 +5,10 @@ on:
 name: Run Release Please
 jobs:
   release-please:
-    environment: publish
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
-      id-token: write
 
     # Release-please creates a PR that tracks all changes
     steps:
@@ -18,12 +16,23 @@ jobs:
         id: release
         with:
           command: manifest
-          token: ${{secrets.GITHUB_TOKEN}}
+          token: ${{secrets.RELEASE_PLEASE_ACTION_TOKEN}}
           default-branch: main
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
 
+  publish:
+    needs: release-please
+    if: ${{ fromJSON(needs.release-please.outputs.releases_created || false) }}
+    environment: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
       # The logic below handles the npm publication:
       - name: Checkout Repository
-        if: ${{ steps.release.outputs.releases_created }}
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
@@ -34,16 +43,13 @@ jobs:
           github_token: ${{ github.token }}
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        if: ${{ steps.release.outputs.releases_created }}
         with:
           node-version-file: '.nvmrc'
-          registry-url: "https://registry.npmjs.org"
+          registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
       - name: Update npm (for OIDC auth)
-        if: ${{ steps.release.outputs.releases_created }}
         run: npm install -g npm@^11.5.1
       - name: Build Packages
-        if: ${{ steps.release.outputs.releases_created }}
         run: |
           npm install
           npm run package
@@ -52,7 +58,6 @@ jobs:
       # need to publish all unpublished versions to NPM here
       # Our scripts only publish versions that do not already exist.
       - name: Publish to NPM
-        if: ${{ steps.release.outputs.releases_created }}
         env:
           NPM_CONFIG_PROVENANCE: true
         run: npm run publish

@@ -28,7 +28,7 @@ $ npm install @opentelemetry/sdk-logs
 > [!NOTE]
 > For the hooks to work, you must have the OpenTelemetry SDK configured in your application.
 > Please refer to the [OpenTelemetry documentation](https://opentelemetry.io/docs/instrumentation/js/) for more information on setting up OpenTelemetry in your application.
-> You need to set up the [tracing SDK][otel-tracing-js] for `SpanHook` and `SpanEventHook`, the [metrics SDK][[otel-metrics-js]] for `MetricsHook`, and the [logs SDK][[otel-logs-js]] for `EventHook`.
+> You need to set up the [tracing SDK][otel-tracing-js] for `SpanHook` and `SpanEventHook`, the [metrics SDK][otel-metrics-js]] for `MetricsHook`, and the [logs SDK][otel-logs-js]] for `EventHook`.
 
 ## Hooks
 
@@ -132,7 +132,7 @@ import { EventHook } from '@openfeature/open-telemetry-hooks';
 import { TelemetryAttribute } from '@openfeature/core';
 
 const eventHook = new EventHook({
-  excludeAttributes: [TelemetryAttribute.VALUE, 'sensitive_value']
+  excludeAttributes: [TelemetryAttribute.VALUE, 'sensitive_value'],
 });
 ```
 
@@ -157,8 +157,8 @@ const eventMutator = (event) => ({
   ...event,
   attributes: {
     ...event.attributes,
-    environment: 'production'
-  }
+    environment: 'production',
+  },
 });
 
 const eventHook = new EventHook({ eventMutator });
@@ -175,21 +175,12 @@ Run `nx package hooks-open-telemetry` to build the library.
 Run `nx test hooks-open-telemetry` to execute the unit tests via [Jest](https://jestjs.io).
 
 [otel-span]: https://opentelemetry.io/docs/concepts/signals/traces/#spans
-
 [otel-span-attributes]: https://opentelemetry.io/docs/concepts/signals/traces/#attributes
-
 [otel-span-events]: https://opentelemetry.io/docs/concepts/signals/traces/#span-events
-
 [otel-logs]: https://opentelemetry.io/docs/concepts/signals/logs
-
 [otel-semconv]: https://opentelemetry.io/docs/specs/semconv/feature-flags/feature-flags-logs/
-
 [hook-concept]: https://openfeature.dev/docs/reference/concepts/hooks
-
 [span-event-deprecation-otep]: https://github.com/open-telemetry/opentelemetry-specification/blob/fbcd7a3126a545debd9e6e5c69b7b67d4ef1c156/oteps/4430-span-event-api-deprecation-plan.md
-
 [otel-tracing-js]: https://opentelemetry.io/docs/languages/js/instrumentation/#initialize-tracing
-
 [otel-metrics-js]: https://opentelemetry.io/docs/languages/js/instrumentation/#initialize-metrics
-
 [otel-logs-js]: https://opentelemetry.io/docs/languages/js/instrumentation/#logsl

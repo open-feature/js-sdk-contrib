@@ -8,9 +8,7 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default",
-      "extra-files": [
-        "src/lib/traces/tracing-hooks.ts"
-      ]
+      "extra-files": ["src/lib/traces/tracing-hooks.ts"]
     },
     "libs/providers/go-feature-flag": {
       "release-type": "node",
@@ -175,6 +173,13 @@
       "versioning": "default"
     },
     "libs/hooks/debounce": {
+      "release-type": "node",
+      "prerelease": false,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "versioning": "default"
+    },
+    "libs/providers/localstorage": {
       "release-type": "node",
       "prerelease": false,
       "bump-minor-pre-major": true,

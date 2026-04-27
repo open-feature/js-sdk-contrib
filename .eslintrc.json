@@ -2,7 +2,7 @@
   "root": true,
   "ignorePatterns": ["**/*"],
   "plugins": ["@nx"],
-  "extends": ["eslint:recommended", "plugin:prettier/recommended"],
+  "extends": ["eslint:recommended", "prettier"],
   "overrides": [
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
@@ -64,7 +64,17 @@
             "checkObsoleteDependencies": true,
             "checkVersionMismatches": true,
             "ignoredDependencies": ["jest-cucumber", "jest"],
-            "ignoredFiles": ["**/test/**", "**/tests/**", "**/e2e/**", "**/spec/**", "**/*.spec.ts", "**/*.spec.js", "**/*.test.ts", "**/*.test.js", "**/jest.*"]
+            "ignoredFiles": [
+              "**/test/**",
+              "**/tests/**",
+              "**/e2e/**",
+              "**/spec/**",
+              "**/*.spec.ts",
+              "**/*.spec.js",
+              "**/*.test.ts",
+              "**/*.test.js",
+              "**/jest.*"
+            ]
           }
         ]
       }
