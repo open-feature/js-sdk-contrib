@@ -1,0 +1,299 @@
+import type { BulkEvaluationRefetchMetadata, EventStream } from '@openfeature/ofrep-core';
+import type { Logger } from '@openfeature/web-sdk';
+
+const DEFAULT_INACTIVITY_DELAY_SEC = 120;
+const DEFAULT_GRACE_PERIOD_SEC = 30;
+const DEBOUNCE_MS = 50;
+
+/**
+ * Metadata from an SSE `refetchEvaluation` event.
+ * Re-exported from ofrep-core for backwards compatibility.
+ */
+export type { BulkEvaluationRefetchMetadata as SseRefetchMetadata };
+
+/**
+ * Callbacks the SseManager invokes on events.
+ */
+export interface SseManagerCallbacks {
+  onRefetch: (metadata?: BulkEvaluationRefetchMetadata) => void;
+  onStale: () => void;
+  onError: () => void;
+}
+
+/**
+ * Resolves the connection URL from an EventStream entry.
+ * When `endpoint.origin` is absent, falls back to the origin of `baseUrl`.
+ */
+function resolveUrl(stream: EventStream, baseUrl?: string): string | undefined {
+  if (stream.url) {
+    return stream.url;
+  }
+  if (stream.endpoint) {
+    const origin = stream.endpoint.origin ?? (baseUrl ? new URL(baseUrl).origin : undefined);
+    if (!origin) {
+      return undefined;
+    }
+    return new URL(stream.endpoint.requestUri, origin).href;
+  }
+  return undefined;
+}
+
+/**
+ * Manages EventSource connections for real-time flag change notifications.
+ * Handles connection lifecycle, event coalescing, and inactivity timeouts.
+ */
+export class SseManager {
+  private _connections: EventSource[] = [];
+  private _urls: Set<string> = new Set();
+  private _inactivityDelaySec: number;
+  private _inactivityTimerId?: ReturnType<typeof setTimeout>;
+  private _debounceTimerId?: ReturnType<typeof setTimeout>;
+  private _pendingMetadata?: BulkEvaluationRefetchMetadata;
+  private _disposed = false;
+  private _visibilityHandler?: () => void;
+  private _gracePeriodTimerId?: ReturnType<typeof setTimeout>;
+  private _stale = false;
+
+  constructor(
+    private _callbacks: SseManagerCallbacks,
+    private _clientInactivityOverride?: number,
+    private _logger?: Logger,
+    private _baseUrl?: string,
+  ) {
+    this._inactivityDelaySec = _clientInactivityOverride ?? DEFAULT_INACTIVITY_DELAY_SEC;
+  }
+
+  /**
+   * Connect to SSE endpoints from eventStreams entries.
+   * When the resolved URLs are identical to the current active connections, existing
+   * connections are reused to avoid brief dark windows where events could be missed.
+   */
+  connect(eventStreams: EventStream[]): void {
+    const sseStreams = eventStreams.filter((s) => s.type === 'sse');
+    if (sseStreams.length === 0) {
+      this.disconnect();
+      return;
+    }
+
+    // Determine effective inactivity delay:
+    // 1. Client override > 2. Server value > 3. Default (120s)
+    const serverInactivity = sseStreams.find((s) => s.inactivityDelaySec != null)?.inactivityDelaySec;
+    this._inactivityDelaySec = this._clientInactivityOverride ?? serverInactivity ?? DEFAULT_INACTIVITY_DELAY_SEC;
+
+    const urls = sseStreams.reduce<Set<string>>((acc, stream) => {
+      const url = resolveUrl(stream, this._baseUrl);
+      if (url) acc.add(url);
+      return acc;
+    }, new Set());
+
+    if (urls.size === 0) {
+      this.disconnect();
+      return;
+    }
+
+    // Diff URLs — skip teardown when connections are active and the set is unchanged
+    const urlsUnchanged =
+      this._connections.length > 0 &&
+      urls.size === this._urls.size &&
+      [...urls].every((u) => this._urls.has(u));
+
+    if (urlsUnchanged) {
+      return;
+    }
+
+    this.disconnect();
+    this._urls = urls;
+    urls.forEach((url) => this._connectToUrl(url));
+
+    this._setupVisibilityHandler();
+  }
+
+  /**
+   * Close all EventSource connections and clean up timers.
+   */
+  disconnect(): void {
+    this._clearDebounce();
+    this._clearInactivityTimer();
+    this._clearGracePeriod();
+    this._stale = false;
+    this._removeVisibilityHandler();
+
+    for (const conn of this._connections) {
+      conn.close();
+    }
+    this._connections = [];
+    this._urls = new Set();
+  }
+
+  /**
+   * Full cleanup — disconnect and mark as disposed.
+   */
+  dispose(): void {
+    this._disposed = true;
+    this.disconnect();
+  }
+
+  /**
+   * Whether the manager has active connections.
+   */
+  get isConnected(): boolean {
+    return this._connections.length > 0;
+  }
+
+  /**
+   * The set of currently connected URLs.
+   */
+  get connectedUrls(): ReadonlySet<string> {
+    return this._urls;
+  }
+
+  private _connectToUrl(url: string): void {
+    if (this._disposed) {
+      return;
+    }
+
+    const es = new EventSource(url);
+
+    es.addEventListener('message', (event: MessageEvent) => {
+      this._handleMessage(event);
+    });
+
+    es.addEventListener('error', () => {
+      this._handleError(es);
+    });
+
+    this._connections.push(es);
+  }
+
+  private _handleError(es: EventSource): void {
+    // readyState 2 (CLOSED) means the browser gave up — fatal error
+    if (es.readyState === EventSource.CLOSED) {
+      this._logger?.warn('SSE connection closed permanently');
+      this._clearGracePeriod();
+      this._stale = false;
+      this._callbacks.onError();
+      return;
+    }
+
+    // readyState EventSource.CONNECTING — transient error, browser is auto-reconnecting.
+    // Enter grace period: emit STALE now, ERROR only if recovery doesn't happen.
+    if (!this._stale) {
+      this._stale = true;
+      this._logger?.info('SSE connection interrupted — entering grace period');
+      this._callbacks.onStale();
+      this._gracePeriodTimerId = setTimeout(() => {
+        this._logger?.warn('SSE grace period expired — giving up');
+        this._stale = false;
+        this._callbacks.onError();
+      }, DEFAULT_GRACE_PERIOD_SEC * 1000);
+    }
+  }
+
+  private _handleMessage(event: MessageEvent): void {
+    // Connection recovered — cancel grace period if active
+    if (this._stale) {
+      this._clearGracePeriod();
+      this._stale = false;
+    }
+
+    try {
+      const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+
+      if (data.type !== 'refetchEvaluation') {
+        // Ignore unknown event types for forward compatibility
+        return;
+      }
+
+      const metadata: BulkEvaluationRefetchMetadata = {};
+      if (data.etag) {
+        metadata.flagConfigEtag = data.etag;
+      }
+      if (data.lastModified !== undefined) {
+        metadata.flagConfigLastModified = data.lastModified;
+      }
+
+      // Coalesce rapid events via debounce
+      this._pendingMetadata = metadata;
+      this._clearDebounce();
+      this._debounceTimerId = setTimeout(() => {
+        const meta = this._pendingMetadata;
+        this._pendingMetadata = undefined;
+        this._callbacks.onRefetch(meta);
+      }, DEBOUNCE_MS);
+    } catch {
+      this._logger?.warn('Failed to parse SSE event data');
+    }
+  }
+
+  private _setupVisibilityHandler(): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    this._visibilityHandler = () => {
+      if (document.visibilityState === 'hidden') {
+        this._startInactivityTimer();
+      } else {
+        this._cancelInactivityTimer();
+      }
+    };
+
+    document.addEventListener('visibilitychange', this._visibilityHandler);
+  }
+
+  private _removeVisibilityHandler(): void {
+    if (this._visibilityHandler && typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this._visibilityHandler);
+      this._visibilityHandler = undefined;
+    }
+  }
+
+  private _startInactivityTimer(): void {
+    this._clearInactivityTimer();
+    this._inactivityTimerId = setTimeout(() => {
+      this._logger?.info('SSE inactivity timeout — closing connections');
+      for (const conn of this._connections) {
+        conn.close();
+      }
+      this._connections = [];
+    }, this._inactivityDelaySec * 1000);
+  }
+
+  private _cancelInactivityTimer(): void {
+    if (this._inactivityTimerId !== undefined) {
+      clearTimeout(this._inactivityTimerId);
+      this._inactivityTimerId = undefined;
+
+      // If connections were closed by the inactivity timeout, reconnect
+      if (this._connections.length === 0 && this._urls.size > 0) {
+        this._logger?.info('SSE resuming — reconnecting and requesting full re-fetch');
+        for (const url of this._urls) {
+          this._connectToUrl(url);
+        }
+        // Unconditional re-fetch (no etag/lastModified)
+        this._callbacks.onRefetch(undefined);
+      }
+    }
+  }
+
+  private _clearInactivityTimer(): void {
+    if (this._inactivityTimerId !== undefined) {
+      clearTimeout(this._inactivityTimerId);
+      this._inactivityTimerId = undefined;
+    }
+  }
+
+  private _clearDebounce(): void {
+    if (this._debounceTimerId !== undefined) {
+      clearTimeout(this._debounceTimerId);
+      this._debounceTimerId = undefined;
+    }
+  }
+
+  private _clearGracePeriod(): void {
+    if (this._gracePeriodTimerId !== undefined) {
+      clearTimeout(this._gracePeriodTimerId);
+      this._gracePeriodTimerId = undefined;
+    }
+  }
+}

@@ -294,6 +294,58 @@ describe('OFREPWebProvider', () => {
     // expect(got2.reason).toBe('CACHED');
   });
 
+  it('should send unconditional re-fetch on SSE inactivity resume (no If-None-Match)', async () => {
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    await OpenFeature.setContext(defaultContext);
+    await OpenFeature.setProviderAndWait(providerName, provider);
+
+    // After init, provider should have an etag from the server response
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((provider as any)._etag).toBe('123');
+
+    // Spy on the OFREP API to verify the etag argument
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const spy = jest.spyOn((provider as any)._ofrepAPI, 'postBulkEvaluateFlags');
+
+    // Simulate inactivity resume: onRefetch(undefined) → unconditional re-fetch
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (provider as any)._handleSseRefetch(undefined);
+
+    // ADR-0008 guideline #3: inactivity resume must be fully unconditional
+    // (no If-None-Match, no flagConfigEtag, no flagConfigLastModified)
+    expect(spy).toHaveBeenCalledWith(
+      expect.anything(),
+      null, // etag must be null (no If-None-Match)
+      undefined, // no SSE metadata
+    );
+
+    spy.mockRestore();
+  });
+
+  it('should send etag on SSE-triggered re-fetch with metadata', async () => {
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    await OpenFeature.setContext(defaultContext);
+    await OpenFeature.setProviderAndWait(providerName, provider);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const spy = jest.spyOn((provider as any)._ofrepAPI, 'postBulkEvaluateFlags');
+
+    // Simulate SSE event with metadata (not an inactivity resume)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (provider as any)._handleSseRefetch({ flagConfigEtag: '"v2"' });
+
+    // SSE-triggered re-fetch should still include the etag
+    expect(spy).toHaveBeenCalledWith(
+      expect.anything(),
+      '123', // etag from previous response (If-None-Match)
+      { flagConfigEtag: '"v2"' }, // SSE metadata
+    );
+
+    spy.mockRestore();
+  });
+
   it('should not try to call the API before retry-after header', async () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';

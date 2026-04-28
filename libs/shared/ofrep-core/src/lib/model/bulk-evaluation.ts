@@ -1,5 +1,6 @@
 import type { ErrorCode } from '@openfeature/core';
 import type { EvaluationResponse, MetadataResponse } from './evaluation';
+import type { EventStream } from './event-stream';
 
 export interface BulkEvaluationFailureResponse extends MetadataResponse {
   /**
@@ -22,6 +23,10 @@ export function isBulkEvaluationFailureResponse(response: unknown): response is 
 
 export interface BulkEvaluationSuccessResponse extends MetadataResponse {
   flags?: EvaluationResponse[];
+  /**
+   * Optional array of real-time change notification connections (ADR-0008).
+   */
+  eventStreams?: EventStream[];
 }
 
 export type BulkEvaluationNotModifiedResponse = undefined;
@@ -38,3 +43,15 @@ export type BulkEvaluationResponse =
   | BulkEvaluationFailureResponse
   | BulkEvaluationNotModifiedResponse
   | BulkEvaluationSuccessResponse;
+
+/**
+ * Optional metadata from an SSE `refetchEvaluation` event, passed as query parameters
+ * to the bulk evaluation endpoint so the server can return an optimized diff response.
+ * Per ADR-0008.
+ */
+export interface BulkEvaluationRefetchMetadata {
+  /** ETag of the flag configuration that triggered the refetch event. */
+  flagConfigEtag?: string;
+  /** Last-modified timestamp of the flag configuration. */
+  flagConfigLastModified?: string | number;
+}
