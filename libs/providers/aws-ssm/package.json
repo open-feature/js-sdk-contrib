@@ -24,8 +24,5 @@
   "devDependencies": {
     "@smithy/types": "^4.1.0",
     "aws-sdk-client-mock": "^4.1.0"
-  },
-  "overrides": {
-    "@smithy/config-resolver": "^4.4.0"
   }
 }
