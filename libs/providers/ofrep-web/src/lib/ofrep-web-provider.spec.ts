@@ -613,7 +613,7 @@ describe('OFREPWebProvider', () => {
         expect(details.reason).toBe(StandardResolutionReasons.CACHED);
       });
 
-      it('falls back to the persisted cache on a 5xx server error and serves flags as CACHED', async () => {
+      it('falls back to the persisted cache on a 500 server error and serves flags as CACHED', async () => {
         const providerName = expect.getState().currentTestName || 'test-provider';
         await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
 
@@ -634,6 +634,42 @@ describe('OFREPWebProvider', () => {
         const details = client.getBooleanDetails('bool-flag', false);
         expect(details.value).toBe(true);
         expect(details.reason).toBe(StandardResolutionReasons.CACHED);
+      });
+
+      it('surfaces the error immediately on a 400 with a valid error body without falling back to cache', async () => {
+        const providerName = expect.getState().currentTestName || 'test-provider';
+        await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+
+        server.use(
+          http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+            HttpResponse.json({ errorCode: ErrorCode.INVALID_CONTEXT }, { status: 400 }),
+          ),
+        );
+
+        const provider = new OFREPWebProvider(
+          { baseUrl: endpointBaseURL, cacheMode: 'network-first', pollInterval: -1 },
+          new TestLogger(),
+        );
+        await OpenFeature.setContext(defaultContext);
+        await expect(OpenFeature.setProviderAndWait(providerName, provider)).rejects.toThrow();
+      });
+
+      it('surfaces the error immediately on a 400 with no valid error body without falling back to cache', async () => {
+        const providerName = expect.getState().currentTestName || 'test-provider';
+        await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
+
+        server.use(
+          http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+            HttpResponse.text(undefined, { status: 400 }),
+          ),
+        );
+
+        const provider = new OFREPWebProvider(
+          { baseUrl: endpointBaseURL, cacheMode: 'network-first', pollInterval: -1 },
+          new TestLogger(),
+        );
+        await OpenFeature.setContext(defaultContext);
+        await expect(OpenFeature.setProviderAndWait(providerName, provider)).rejects.toThrow();
       });
 
       it('surfaces the error when the network fails and no persisted cache is available', async () => {

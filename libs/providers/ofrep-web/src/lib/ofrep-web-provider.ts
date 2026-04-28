@@ -1,5 +1,5 @@
 import type { EvaluationRequest, EvaluationResponse } from '@openfeature/ofrep-core';
-import { ErrorMessageMap } from '@openfeature/ofrep-core';
+import { ErrorMessageMap, OFREPApiError, OFREPEvaluationErrorHttpStatuses } from '@openfeature/ofrep-core';
 import {
   type EvaluationFlagValue,
   handleEvaluationError,
@@ -207,18 +207,26 @@ export class OFREPWebProvider implements Provider {
 
   /**
    * network-first initialization: block on the network request; fall back to the persisted
-   * cache only on transient / server errors. Auth and configuration errors (401, 403) are
-   * never masked by cached values.
+   * cache only on transient or server errors (5xx, network unavailable, timeout).
+   * Auth and configuration errors (401, 403, 400, 404) are never masked by cached values.
    */
   private async _initNetworkFirst(context?: EvaluationContext): Promise<void> {
     try {
       await this._fetchFlags(context);
     } catch (error) {
-      // Auth/config errors surface immediately — no cache fallback.
-      if (error instanceof OFREPApiUnauthorizedError || error instanceof OFREPForbiddenError) {
+      // Auth and configuration errors surface immediately — no cache fallback.
+      // 5xx and other transient errors fall through to the persisted cache.
+      const status = error instanceof OFREPApiError ? error.response?.status : undefined;
+      if (
+        error instanceof OFREPApiUnauthorizedError ||
+        error instanceof OFREPForbiddenError ||
+        error instanceof OpenFeatureError ||
+        status === 400 ||
+        status === 404
+      ) {
         throw error;
       }
-      // Transient / server errors — try the persisted cache as a fallback.
+      // Transient / server errors (5xx, network failures, timeouts) — try the persisted cache as a fallback.
       const cached = await this._storage.retrieve(context?.targetingKey ?? '', this._cacheTTL);
       if (!cached) {
         throw error; // No usable cache — propagate the original error.
