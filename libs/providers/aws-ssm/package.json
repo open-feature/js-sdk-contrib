@@ -7,7 +7,7 @@
     "directory": "libs/providers/aws-ssm"
   },
   "dependencies": {
-    "@aws-sdk/client-ssm": "^3.759.0",
+    "@aws-sdk/client-ssm": "^3.894.0",
     "lru-cache": "^11.0.2",
     "tslib": "^2.3.0"
   },
