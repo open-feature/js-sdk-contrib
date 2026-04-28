@@ -17,5 +17,9 @@
   },
   "dependencies": {
     "@openfeature/config-cat-core": "~0.2.2"
+  },
+  "overrides": {
+    "axios": "^1.15.0",
+    "follow-redirects": "^1.16.0"
   }
 }
