@@ -82,6 +82,33 @@ OpenFeature.setProvider(
 );
 ```
 
+### Caching
+
+The provider supports persistent local caching via `localStorage` to reduce latency on startup and improve resilience to transient network failures. Caching is controlled with three options.
+
+**`cacheMode`** — controls the startup strategy:
+
+- `'local-cache-first'` _(default)_ — `initialize()` resolves immediately from the persisted cache if one exists, then refreshes from the network in the background. Evaluations served before the refresh completes will have reason `CACHED`.
+- `'network-first'` — `initialize()` blocks on the network request. The persisted cache is used as a fallback only on transient failures (network unavailable, timeout, 5xx). Auth and configuration errors (400, 401, 403, 404) are always surfaced immediately and never masked by cached values.
+- `'disabled'` — no persistence. `initialize()` always blocks on the network and the other cache options have no effect.
+
+**`cacheTTL`** — maximum age in seconds of a persisted cache entry before it is treated as a miss and removed. Defaults to `2_592_000` (30 days).
+
+**`cacheKeyPrefix`** — a string included in the cache key to avoid collisions when multiple provider instances share the same browser origin. A good value is the OFREP base URL or a project key.
+
+```ts
+import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
+
+OpenFeature.setProvider(
+  new OFREPWebProvider({
+    baseUrl: 'https://localhost:8080',
+    cacheMode: 'local-cache-first',
+    cacheTTL: 3600, // 1 hour
+    cacheKeyPrefix: 'my-app',
+  }),
+);
+```
+
 ### Fetch implementation
 
 If needed, a custom fetch implementation can be injected, if e.g. the platform does not have fetch built in.
