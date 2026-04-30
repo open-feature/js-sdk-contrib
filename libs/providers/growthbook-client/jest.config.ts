@@ -1,5 +1,5 @@
 /* eslint-disable */
-export default {
+module.exports = {
   displayName: 'providers-growthbook-client',
   preset: '../../../jest.preset.js',
   transform: {

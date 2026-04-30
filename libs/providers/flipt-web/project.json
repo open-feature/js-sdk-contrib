@@ -3,6 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/providers/flipt-web/src",
   "projectType": "library",
+  "tags": [],
   "targets": {
     "publish": {
       "executor": "nx:run-commands",
@@ -60,6 +61,5 @@
         ]
       }
     }
-  },
-  "tags": []
+  }
 }
