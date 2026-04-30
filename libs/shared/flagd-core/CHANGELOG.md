@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v3.0.0...flagd-core-v3.0.1) (2026-04-30)
+
+
+### 🐛 Bug Fixes
+
+* various custom operator conformance fixes ([#1519](https://github.com/open-feature/js-sdk-contrib/issues/1519)) ([12cdd7f](https://github.com/open-feature/js-sdk-contrib/commit/12cdd7fc3bd175ea7d0c58169994c13cbacf6c65))
+
 ## [3.0.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v2.0.0...flagd-core-v3.0.0) (2026-04-01)
 
 
