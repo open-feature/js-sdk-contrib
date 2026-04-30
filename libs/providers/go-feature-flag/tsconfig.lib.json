@@ -4,8 +4,7 @@
     "outDir": "../../../dist/out-tsc",
     "declaration": true,
     "types": ["node"],
-    "paths": {},
-    "noPropertyAccessFromIndexSignature": false
+    "paths": {}
   },
   "include": ["src/**/*.ts"],
   "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
