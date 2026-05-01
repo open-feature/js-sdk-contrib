@@ -45,6 +45,19 @@ function isomorphicFetch(): FetchAPI {
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 
+/**
+ * Creates an abort reason that mimics a DOMException on runtimes that support it,
+ * and falls back to a plain Error with the matching `name` on runtimes that do not
+ */
+function createAbortReason(message: string, name: 'TimeoutError' | 'AbortError') {
+  if (typeof DOMException !== 'undefined') {
+    return new DOMException(message, name);
+  }
+  const err = new Error(message);
+  err.name = name;
+  return err;
+}
+
 export const ErrorMessageMap: { [key in ErrorCode]: string } = {
   [ErrorCode.FLAG_NOT_FOUND]: 'Flag was not found',
   [ErrorCode.GENERAL]: 'General error',
@@ -91,7 +104,7 @@ export class OFREPApi {
   ): Promise<{ response: Response; body?: EvaluationSuccessResponse | EvaluationFailureResponse }> {
     // Reject immediately if the provider has already been closed.
     if (this._shutdownController.signal.aborted) {
-      const abortError = new DOMException('Provider is closed', 'AbortError');
+      const abortError = createAbortReason('Provider is closed', 'AbortError');
       throw new OFREPApiFetchError(abortError, 'The OFREP request failed because the provider has been closed.', {
         cause: abortError,
       });
@@ -107,7 +120,7 @@ export class OFREPApi {
 
     // Uses a setTimeout instead of AbortSignal.timeout to support older runtimes.
     const timeoutId = setTimeout(
-      () => controller.abort(new DOMException(`This signal is timeout in ${timeoutMs}ms`, 'TimeoutError')),
+      () => controller.abort(createAbortReason(`This signal is timeout in ${timeoutMs}ms`, 'TimeoutError')),
       timeoutMs,
     );
 
