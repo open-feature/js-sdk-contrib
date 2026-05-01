@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.7](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.3.6...ofrep-web-provider-v0.3.7) (2026-05-01)
+
+
+### ✨ New Features
+
+* added local persistence to ofrep-web provider ([#1508](https://github.com/open-feature/js-sdk-contrib/issues/1508)) ([3103f2c](https://github.com/open-feature/js-sdk-contrib/commit/3103f2cb92037886ee32a2076542a717b4fcc52f))
+
 ## [0.3.6](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.3.5...ofrep-web-provider-v0.3.6) (2026-03-27)
 
 
