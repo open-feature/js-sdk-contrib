@@ -3,6 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/hooks/open-telemetry/src",
   "projectType": "library",
+  "tags": [],
   "targets": {
     "package": {
       "executor": "@nx/rollup:rollup",
@@ -71,6 +72,5 @@
         "coverageDirectory": "coverage/libs/hooks/open-telemetry"
       }
     }
-  },
-  "tags": []
+  }
 }

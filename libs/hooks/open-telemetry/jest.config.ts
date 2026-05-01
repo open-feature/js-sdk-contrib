@@ -1,5 +1,5 @@
 /* eslint-disable */
-export default {
+module.exports = {
   displayName: 'hooks-open-telemetry',
   preset: '../../../jest.preset.js',
   transform: {

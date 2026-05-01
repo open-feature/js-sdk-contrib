@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   displayName: 'localstorage',
   preset: '../../../jest.preset.js',
   transform: {

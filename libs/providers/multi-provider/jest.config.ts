@@ -1,5 +1,5 @@
 /* eslint-disable */
-export default {
+module.exports = {
   displayName: 'providers-multi-provider',
   preset: '../../../jest.preset.js',
   transform: {
