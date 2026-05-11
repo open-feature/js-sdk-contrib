@@ -362,6 +362,99 @@ describe('OFREPWebProvider', () => {
     spy.mockRestore();
   });
 
+  describe('changeDetection', () => {
+    it('should not start polling or SSE when changeDetection is none', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, changeDetection: 'none' },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext({ ...defaultContext, changeConfig: true });
+      await OpenFeature.setProviderAndWait(providerName, provider);
+      const client = OpenFeature.getClient(providerName);
+
+      const configChangedHandler = jest.fn();
+      client.addHandler(ClientProviderEvents.ConfigurationChanged, configChangedHandler);
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(configChangedHandler).not.toHaveBeenCalled();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._pollingIntervalId).toBeUndefined();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).toBeUndefined();
+    });
+
+    it('should not start polling after context change when changeDetection is none', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: 50, changeDetection: 'none' },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      await OpenFeature.setContext({ ...defaultContext, contextChanged: true });
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._pollingIntervalId).toBeUndefined();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).toBeUndefined();
+    });
+
+    it('should use polling and ignore eventStreams when changeDetection is polling', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: 50, changeDetection: 'polling' },
+        new TestLogger(),
+      );
+
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+          HttpResponse.json({
+            flags: [],
+            metadata: {},
+            eventStreams: [{ type: 'sse', url: 'https://sse.example.com/stream' }],
+          }),
+        ),
+      );
+
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).toBeUndefined();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._pollingIntervalId).toBeDefined();
+    });
+
+    it('should ignore eventStreams on context change when changeDetection is polling', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: 50, changeDetection: 'polling' },
+        new TestLogger(),
+      );
+
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+          HttpResponse.json({
+            flags: [],
+            metadata: {},
+            eventStreams: [{ type: 'sse', url: 'https://sse.example.com/stream' }],
+          }),
+        ),
+      );
+
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+      await OpenFeature.setContext({ ...defaultContext, contextChanged: true });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).toBeUndefined();
+    });
+  });
+
   it('should not try to call the API before retry-after header', async () => {
     const flagKey = 'object-flag';
     const providerName = expect.getState().currentTestName || 'test-provider';
