@@ -106,8 +106,7 @@ export class OFREPWebProvider implements Provider {
         this.startPolling();
       }
 
-      // Listen for page/app visibility changes to refetch flags when becoming visible (opt-in)
-      if (this._options.refreshOnVisibilityChange && typeof document !== 'undefined') {
+      if (!this._options.disableVisibilityRefresh && typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', this._visibilityChangeHandler);
       }
 
@@ -386,7 +385,7 @@ export class OFREPWebProvider implements Provider {
    * @param reason - a short description of what triggered the refresh (used in event messages)
    * @private
    */
-  private async _refreshFlags(reason: string): Promise<void> {
+  private async _refreshFlags(reason: string, emitStaleOnError = true): Promise<void> {
     if (this._isFetching) {
       return;
     }
@@ -406,7 +405,11 @@ export class OFREPWebProvider implements Provider {
         });
       }
     } catch (error) {
-      this.events?.emit(ClientProviderEvents.Stale, { message: `Error while refreshing flags (${reason}): ${error}` });
+      if (emitStaleOnError) {
+        this.events?.emit(ClientProviderEvents.Stale, { message: `Error while refreshing flags (${reason}): ${error}` });
+      } else {
+        this._logger?.warn(`Error while refreshing flags (${reason}): ${error}`);
+      }
     } finally {
       this._isFetching = false;
     }
@@ -479,10 +482,8 @@ export class OFREPWebProvider implements Provider {
    */
   private _onVisibilityChange() {
     if (document?.visibilityState === 'visible') {
-      // TODO(SSE): once SSE is implemented, skip refresh if SSE is connected,
-      // and perform an unconditional re-fetch if SSE was closed during inactivity.
-      // See ADR-0010: https://github.com/open-feature/protocol/pull/69
-      this._refreshFlags('visibility change');
+      // Suppress STALE on failure: a single missed refresh doesn't mean the cache is stale.
+      this._refreshFlags('visibility change', false);
     }
   }
 }

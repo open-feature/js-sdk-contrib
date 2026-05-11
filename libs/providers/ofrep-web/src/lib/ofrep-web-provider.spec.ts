@@ -350,7 +350,7 @@ describe('OFREPWebProvider', () => {
     expect(configChangedHandler).not.toHaveBeenCalled();
   });
 
-  describe('refreshOnVisibilityChange', () => {
+  describe('visibility refresh', () => {
     let mockDocument: { visibilityState: string; addEventListener: jest.Mock; removeEventListener: jest.Mock };
 
     beforeEach(() => {
@@ -368,21 +368,21 @@ describe('OFREPWebProvider', () => {
       delete (globalThis as any).document;
     });
 
-    it('should register visibility change listener when refreshOnVisibilityChange is enabled', async () => {
+    it('should register visibility change listener by default', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, refreshOnVisibilityChange: true },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait(providerName, provider);
 
       expect(mockDocument.addEventListener).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
     });
 
-    it('should not register visibility change listener when refreshOnVisibilityChange is not set', async () => {
+    it('should not register visibility change listener when disableVisibilityRefresh is true', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, disableVisibilityRefresh: true },
+        new TestLogger(),
+      );
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait(providerName, provider);
 
@@ -391,10 +391,7 @@ describe('OFREPWebProvider', () => {
 
     it('should refetch flags when visibility change fires and page is visible', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, refreshOnVisibilityChange: true },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
       await OpenFeature.setContext({ ...defaultContext, changeConfig: true });
       await OpenFeature.setProviderAndWait(providerName, provider);
       const client = OpenFeature.getClient(providerName);
@@ -402,7 +399,6 @@ describe('OFREPWebProvider', () => {
       const configChangedHandler = jest.fn();
       client.addHandler(ClientProviderEvents.ConfigurationChanged, configChangedHandler);
 
-      // Get the registered handler and invoke it
       const handler = mockDocument.addEventListener.mock.calls[0][1];
       mockDocument.visibilityState = 'visible';
       handler();
@@ -411,12 +407,33 @@ describe('OFREPWebProvider', () => {
       expect(configChangedHandler).toHaveBeenCalled();
     });
 
+    it('should not emit STALE when a visibility-change refresh fails', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+      const client = OpenFeature.getClient(providerName);
+
+      const staleHandler = jest.fn();
+      client.addHandler(ClientProviderEvents.Stale, staleHandler);
+
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+          HttpResponse.json({}, { status: 401 }),
+        ),
+      );
+
+      const handler = mockDocument.addEventListener.mock.calls[0][1];
+      mockDocument.visibilityState = 'visible';
+      handler();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(staleHandler).not.toHaveBeenCalled();
+    });
+
     it('should remove visibility change listener on close', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, refreshOnVisibilityChange: true },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait(providerName, provider);
 
