@@ -17,6 +17,7 @@ export class EvaluateWasm {
   private readonly go: Go;
   private readonly logger?: Logger;
   private readonly wasmBinaryPath?: string;
+  private readonly encoder: TextEncoder;
 
   /**
    * Constructor of the EvaluationWasm. It initializes the WASM module and the host functions.
@@ -27,6 +28,7 @@ export class EvaluateWasm {
     this.logger = logger;
     this.wasmBinaryPath = wasmBinaryPath;
     this.go = new Go();
+    this.encoder = new TextEncoder();
   }
 
   /**
@@ -226,7 +228,7 @@ export class EvaluateWasm {
       }
 
       // Serialize the input to JSON
-      const wasmInputSerialized = new TextEncoder().encode(JSON.stringify(wasmInput));
+      const wasmInputSerialized = this.encoder.encode(JSON.stringify(wasmInput));
 
       // Copy input to WASM memory
       const inputPtr = this.copyToMemory(wasmInputSerialized);
@@ -322,6 +324,8 @@ export class EvaluateWasm {
     const ptr = mallocFunction(inputBytes.length + 1);
     if (typeof ptr !== 'number') {
       throw new WasmInvalidResultException('Malloc should return a number value.');
+    } else if (ptr === 0) {
+      throw new WasmInvalidResultException('Failed to allocate memory in WASM module.');
     }
 
     // Write the string to WASM memory
