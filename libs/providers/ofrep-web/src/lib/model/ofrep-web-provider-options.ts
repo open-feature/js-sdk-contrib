@@ -17,12 +17,12 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   pollInterval?: number;
 
   /**
-   * When enabled, the provider will re-fetch flags whenever the page becomes visible
-   * (e.g. user switches back to the tab).
+   * When set to true, disables the automatic flag re-fetch that occurs whenever the
+   * page becomes visible (e.g. user switches back to the tab).
    *
-   * Default: false (disabled)
+   * Default: false (visibility refresh is enabled by default, per ADR-0010)
    */
-  refreshOnVisibilityChange?: boolean;
+  disableVisibilityRefresh?: boolean;
 
   /**
    * cacheMode controls whether and how the provider uses local persistent storage.

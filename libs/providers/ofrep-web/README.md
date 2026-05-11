@@ -34,14 +34,14 @@ OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080'
 By default, polling is disabled (`pollInterval` defaults to `0`). To enable periodic flag re-evaluation, set `pollInterval` to a positive number of milliseconds:
 
 ```ts
-OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 60000 }));
+OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 60_000 }));
 ```
 
-To automatically re-fetch flags when the page becomes visible (e.g. user switches back to the tab), enable the `refreshOnVisibilityChange` option:
+Flags are automatically re-fetched when the page becomes visible (e.g. the user switches back to the tab). This follows [ADR-0010](https://github.com/open-feature/protocol/pull/69) and is **enabled by default**. To opt out:
 
 ```ts
 OpenFeature.setProvider(
-  new OFREPWebProvider({ baseUrl: 'https://localhost:8080', refreshOnVisibilityChange: true }),
+  new OFREPWebProvider({ baseUrl: 'https://localhost:8080', disableVisibilityRefresh: true }),
 );
 ```
 
