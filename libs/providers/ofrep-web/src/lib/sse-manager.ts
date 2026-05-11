@@ -4,6 +4,8 @@ import type { Logger } from '@openfeature/web-sdk';
 const DEFAULT_INACTIVITY_DELAY_SEC = 120;
 const DEFAULT_GRACE_PERIOD_SEC = 30;
 const DEBOUNCE_MS = 50;
+// EventSource.CLOSED per the spec (avoids referencing the global in non-browser environments)
+const ES_CLOSED = 2;
 
 /**
  * Metadata from an SSE `refetchEvaluation` event.
@@ -59,6 +61,8 @@ export class SseManager {
     private _clientInactivityOverride?: number,
     private _logger?: Logger,
     private _baseUrl?: string,
+    // Allows tests to inject a mock instead of the global EventSource
+    private _EventSourceImpl: new (url: string) => EventSource = EventSource,
   ) {
     this._inactivityDelaySec = _clientInactivityOverride ?? DEFAULT_INACTIVITY_DELAY_SEC;
   }
@@ -152,7 +156,7 @@ export class SseManager {
       return;
     }
 
-    const es = new EventSource(url);
+    const es = new this._EventSourceImpl(url);
 
     es.addEventListener('message', (event: MessageEvent) => {
       this._handleMessage(event);
@@ -167,10 +171,14 @@ export class SseManager {
 
   private _handleError(es: EventSource): void {
     // readyState 2 (CLOSED) means the browser gave up — fatal error
-    if (es.readyState === EventSource.CLOSED) {
+    if (es.readyState === ES_CLOSED) {
       this._logger?.warn('SSE connection closed permanently');
       this._clearGracePeriod();
       this._stale = false;
+      // Clear connection state before invoking onError so that the backoff
+      // retry's connect() call is not short-circuited by urlsUnchanged check.
+      this._connections = [];
+      this._urls = new Set();
       this._callbacks.onError();
       return;
     }

@@ -51,8 +51,9 @@ class MockEventSource {
   }
 }
 
-// Install mock EventSource globally
-(globalThis as Record<string, unknown>)['EventSource'] = MockEventSource;
+// Factory that injects MockEventSource so tests don't need a globalThis override
+const makeMgr = (callbacks: SseManagerCallbacks, inactivity?: number, baseUrl?: string) =>
+  new SseManager(callbacks, inactivity, undefined, baseUrl, MockEventSource as unknown as typeof EventSource);
 
 describe('SseManager', () => {
   let callbacks: SseManagerCallbacks;
@@ -81,7 +82,7 @@ describe('SseManager', () => {
 
   describe('connect', () => {
     it('should connect to SSE URLs from eventStreams', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       expect(manager.isConnected).toBe(true);
@@ -90,7 +91,7 @@ describe('SseManager', () => {
     });
 
     it('should resolve URL from endpoint.origin + endpoint.requestUri', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([
         {
           type: 'sse',
@@ -103,7 +104,7 @@ describe('SseManager', () => {
     });
 
     it('should ignore entries with unknown types', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([{ type: 'websocket', url: 'wss://example.com' }, sseStream('https://sse.example.com/stream')]);
 
       expect(MockEventSource.instances).toHaveLength(1);
@@ -111,7 +112,7 @@ describe('SseManager', () => {
     });
 
     it('should not connect when there are no SSE entries', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([{ type: 'websocket', url: 'wss://example.com' }]);
 
       expect(manager.isConnected).toBe(false);
@@ -119,14 +120,14 @@ describe('SseManager', () => {
     });
 
     it('should connect to multiple SSE URLs', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/global'), sseStream('https://sse.example.com/user')]);
 
       expect(MockEventSource.instances).toHaveLength(2);
     });
 
     it('should close existing connections before opening new ones', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/old')]);
       const oldConnection = MockEventSource.instances[0];
 
@@ -138,14 +139,14 @@ describe('SseManager', () => {
     });
 
     it('should deduplicate identical URLs', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream'), sseStream('https://sse.example.com/stream')]);
 
       expect(MockEventSource.instances).toHaveLength(1);
     });
 
     it('should reuse existing connections when URLs are unchanged', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
       const originalConnection = MockEventSource.instances[0];
 
@@ -156,7 +157,7 @@ describe('SseManager', () => {
     });
 
     it('should fall back to baseUrl origin when endpoint.origin is absent', () => {
-      const manager = new SseManager(callbacks, undefined, undefined, 'https://ofrep.example.com/base');
+      const manager = makeMgr(callbacks, undefined, 'https://ofrep.example.com/base');
       manager.connect([
         {
           type: 'sse',
@@ -169,7 +170,7 @@ describe('SseManager', () => {
     });
 
     it('should skip connection when endpoint has no origin and no baseUrl is provided', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([
         {
           type: 'sse',
@@ -184,7 +185,7 @@ describe('SseManager', () => {
 
   describe('refetchEvaluation events', () => {
     it('should trigger onRefetch with metadata on refetchEvaluation event', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       MockEventSource.instances[0].simulateMessage({
@@ -203,7 +204,7 @@ describe('SseManager', () => {
     });
 
     it('should trigger onRefetch without metadata when fields are absent', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       MockEventSource.instances[0].simulateMessage({ type: 'refetchEvaluation' });
@@ -213,7 +214,7 @@ describe('SseManager', () => {
     });
 
     it('should ignore unknown event types', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       MockEventSource.instances[0].simulateMessage({ type: 'unknownFutureEvent' });
@@ -223,7 +224,7 @@ describe('SseManager', () => {
     });
 
     it('should coalesce rapid events into a single refetch', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       MockEventSource.instances[0].simulateMessage({
@@ -247,7 +248,7 @@ describe('SseManager', () => {
     });
 
     it('should handle malformed SSE event data gracefully', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       // Simulate a message with unparseable data
@@ -266,7 +267,7 @@ describe('SseManager', () => {
 
   describe('error handling and grace period', () => {
     it('should call onStale on transient error (readyState CONNECTING)', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       MockEventSource.instances[0].simulateError(false);
@@ -276,7 +277,7 @@ describe('SseManager', () => {
     });
 
     it('should call onError immediately on fatal error (readyState CLOSED)', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       MockEventSource.instances[0].simulateError(true);
@@ -286,7 +287,7 @@ describe('SseManager', () => {
     });
 
     it('should call onError after grace period expires without recovery', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       MockEventSource.instances[0].simulateError(false);
@@ -300,7 +301,7 @@ describe('SseManager', () => {
     });
 
     it('should cancel grace period when a message arrives (recovery)', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       MockEventSource.instances[0].simulateError(false);
@@ -317,7 +318,7 @@ describe('SseManager', () => {
     });
 
     it('should not call onStale multiple times for repeated transient errors', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       MockEventSource.instances[0].simulateError(false);
@@ -326,6 +327,24 @@ describe('SseManager', () => {
 
       expect(onStaleMock).toHaveBeenCalledTimes(1);
       expect(onErrorMock).not.toHaveBeenCalled();
+    });
+
+    it('should clear connection state on fatal error so a subsequent connect() creates a new EventSource', () => {
+      const manager = makeMgr(callbacks);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+      expect(MockEventSource.instances).toHaveLength(1);
+
+      MockEventSource.instances[0].simulateError(true);
+
+      expect(onErrorMock).toHaveBeenCalledTimes(1);
+      expect(manager.isConnected).toBe(false);
+
+      // Simulate what the backoff retry does: call connect() with the same URL
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      // Must create a new EventSource, not short-circuit via urlsUnchanged
+      expect(MockEventSource.instances).toHaveLength(2);
+      expect(manager.isConnected).toBe(true);
     });
   });
 
@@ -357,7 +376,7 @@ describe('SseManager', () => {
     });
 
     it('should use server-provided inactivityDelaySec', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream', 60)]);
 
       expect(MockEventSource.instances).toHaveLength(1);
@@ -374,7 +393,7 @@ describe('SseManager', () => {
     });
 
     it('should prefer client-side inactivityDelaySec override', () => {
-      const manager = new SseManager(callbacks, 30);
+      const manager = makeMgr(callbacks, 30);
       manager.connect([sseStream('https://sse.example.com/stream', 120)]);
 
       mockDocument.visibilityState = 'hidden';
@@ -390,7 +409,7 @@ describe('SseManager', () => {
     });
 
     it('should default to 120 seconds when no inactivityDelaySec is set', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       mockDocument.visibilityState = 'hidden';
@@ -404,7 +423,7 @@ describe('SseManager', () => {
     });
 
     it('should cancel timer when tab becomes visible before timeout', () => {
-      const manager = new SseManager(callbacks, 60);
+      const manager = makeMgr(callbacks, 60);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       mockDocument.visibilityState = 'hidden';
@@ -424,7 +443,7 @@ describe('SseManager', () => {
     });
 
     it('should reconnect and do unconditional refetch when resuming after timeout', () => {
-      const manager = new SseManager(callbacks, 10);
+      const manager = makeMgr(callbacks, 10);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
       const originalConnection = MockEventSource.instances[0];
@@ -450,7 +469,7 @@ describe('SseManager', () => {
 
   describe('disconnect and dispose', () => {
     it('should close all connections on disconnect', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.connect([sseStream('https://sse.example.com/a'), sseStream('https://sse.example.com/b')]);
 
       manager.disconnect();
@@ -462,7 +481,7 @@ describe('SseManager', () => {
     });
 
     it('should not reconnect after dispose', () => {
-      const manager = new SseManager(callbacks);
+      const manager = makeMgr(callbacks);
       manager.dispose();
 
       manager.connect([sseStream('https://sse.example.com/stream')]);
