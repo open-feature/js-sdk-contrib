@@ -103,4 +103,39 @@ describe('Storage (persistent flag cache)', () => {
     expect(await storageA.getStorageKey(tk)).not.toBe(await storageB.getStorageKey(tk));
     expect(await storageA.getStorageKey(tk)).not.toBe(await storageNoPrefix.getStorageKey(tk));
   });
+
+  describe('when crypto.subtle is unavailable (non-secure context)', () => {
+    let subtleSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      subtleSpy = jest.spyOn(crypto, 'subtle', 'get').mockReturnValue(undefined as never);
+    });
+
+    afterEach(() => {
+      subtleSpy.mockRestore();
+    });
+
+    it('produces a valid versioned storage key without the raw targeting key', async () => {
+      const storage = new Storage('local-cache-first');
+      const tk = 'user-pii-21640825-95e7-4335-b149-bd6881cf7875';
+      const key = await storage.getStorageKey(tk);
+      expect(key.startsWith('ofrep-web-provider:v1:')).toBe(true);
+      expect(key).not.toContain(tk);
+      expect(key.split(':')[2]).toMatch(/^[0-9a-f]{16}$/);
+    });
+
+    it('maps different targeting keys to different storage keys', async () => {
+      const storage = new Storage('local-cache-first');
+      expect(await storage.getStorageKey('a')).not.toBe(await storage.getStorageKey('b'));
+    });
+
+    it('stores and retrieves flags without throwing', async () => {
+      const storage = new Storage('local-cache-first');
+      await storage.store('user-1', boolFlagCache, '"etag"');
+      const result = await storage.retrieve('user-1', DEFAULT_CACHE_TTL_SECONDS);
+      expect(result).not.toBeUndefined();
+      expect(result!.flags).toEqual(boolFlagCache);
+      expect(result!.etag).toBe('"etag"');
+    });
+  });
 });
