@@ -12,6 +12,8 @@ import {
 import { libraryGenerator } from '@nx/js';
 import { Linter } from '@nx/eslint';
 
+const INITIAL_VERSION = '0.1.0';
+
 /**
  * Enforced by the json schema.
  */
@@ -63,12 +65,13 @@ export default async function (tree: Tree, schema: SchemaOptions) {
     });
   });
 
-  updateProject(tree, projectRoot, name);
+  updateProject(tree, projectRoot, nxProjectName, name);
   updateTsConfig(tree, projectRoot);
   updateEslintrc(tree, projectRoot);
   updateJestConfig(tree, projectRoot);
-  updateProjectJson(tree, projectRoot);
   updatePackage(tree, projectRoot, schema);
+  updateNxJson(tree);
+  updateTsConfigBase(tree, importPath, projectRoot);
   updateReleasePleaseConfig(tree, projectRoot);
   updateReleasePleaseManifest(tree, projectRoot);
   await formatFiles(tree);
@@ -106,8 +109,17 @@ function normalizeOptions(tree: Tree, schema: SchemaOptions) {
   };
 }
 
-function updateProject(tree: Tree, projectRoot: string, umdName: string) {
+function updateProject(tree: Tree, projectRoot: string, nxProjectName: string, umdName: string) {
   updateJson(tree, joinPathFragments(projectRoot, 'project.json'), (json) => {
+    // update name and paths that libraryGenerator sets incorrectly after moveFilesToNewDirectory
+    json.name = nxProjectName;
+    json['$schema'] = '../../../node_modules/nx/schemas/project-schema.json';
+    json.sourceRoot = `${projectRoot}/src`;
+
+    // remove stale nx release config added by libraryGenerator
+    delete json.release;
+    delete json.targets['nx-release-publish'];
+
     json.targets['package'] = {
       executor: '@nx/rollup:rollup',
       outputs: ['{options.outputPath}'],
@@ -152,12 +164,20 @@ function updateProject(tree: Tree, projectRoot: string, umdName: string) {
       },
       dependsOn: [
         {
-          projects: 'self',
           target: 'package',
         },
       ],
     };
     delete json.targets.build;
+
+    // update lint outputs
+    json.targets.lint = {
+      executor: '@nx/eslint:lint',
+      outputs: ['{options.outputFile}'],
+    };
+
+    // update jestConfig path
+    json.targets.test.options.jestConfig = `${projectRoot}/jest.config.ts`;
 
     return json;
   });
@@ -173,6 +193,15 @@ function updatePackage(tree: Tree, projectRoot: string, schema: SchemaOptions) {
 
     // use undefined or this defaults to "commonjs", which breaks things: https://github.com/open-feature/js-sdk-contrib/pull/596
     json.type = undefined;
+
+    json.version = INITIAL_VERSION;
+
+    // repository is required for npm OIDC trusted publishing / provenance
+    json.repository = {
+      type: 'git',
+      url: 'https://github.com/open-feature/js-sdk-contrib.git',
+      directory: projectRoot,
+    };
 
     // everything should be Apache-2.0
     json.license = 'Apache-2.0';
@@ -222,10 +251,18 @@ function updateJestConfig(tree: Tree, projectRoot: string) {
   tree.write(configPath, replaceCoveragePath);
 }
 
-function updateProjectJson(tree: Tree, projectRoot: string) {
-  // Update jest.config.ts location
-  updateJson(tree, joinPathFragments(projectRoot, 'project.json'), (json) => {
-    json.targets.test.options.jestConfig = '{projectRoot}/jest.config.ts';
+// remove stale release config that libraryGenerator adds to nx.json
+function updateNxJson(tree: Tree) {
+  updateJson(tree, 'nx.json', (json) => {
+    delete json.release;
+    return json;
+  });
+}
+
+// update tsconfig paths that libraryGenerator registers incorrectly after moveFilesToNewDirectory
+function updateTsConfigBase(tree: Tree, importPath: string, projectRoot: string) {
+  updateJson(tree, 'tsconfig.base.json', (json) => {
+    json.compilerOptions.paths[importPath] = [`${projectRoot}/src/index.ts`];
     return json;
   });
 }
@@ -247,7 +284,7 @@ function updateReleasePleaseConfig(tree: Tree, projectRoot: string) {
 // this starts everything at 0.1.0
 function updateReleasePleaseManifest(tree: Tree, projectRoot: string) {
   updateJson(tree, '.release-please-manifest.json', (json) => {
-    json[projectRoot] = '0.1.0';
+    json[projectRoot] = INITIAL_VERSION;
 
     return json;
   });
