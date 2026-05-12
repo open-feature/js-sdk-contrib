@@ -44,6 +44,21 @@ describe('OFREPApi', () => {
         expect((err as { cause: DOMException })?.cause?.name).toEqual('TimeoutError');
       }
     });
+
+    it('falls back to Error with TimeoutError name when DOMException is not defined', async () => {
+      const originalDOMException = (globalThis as { DOMException?: unknown }).DOMException;
+      // Simulate a runtime without DOMException
+      delete (globalThis as { DOMException?: unknown }).DOMException;
+      try {
+        await api.postEvaluateFlag('my-flag', { context: { errors: { slowRequest: true } } });
+        throw new Error('Expected request to throw');
+      } catch (err) {
+        const cause = (err as { cause?: { name?: string } })?.cause;
+        expect(cause?.name).toEqual('TimeoutError');
+      } finally {
+        (globalThis as { DOMException?: unknown }).DOMException = originalDOMException;
+      }
+    });
   });
 
   describe('timer cleanup', () => {
