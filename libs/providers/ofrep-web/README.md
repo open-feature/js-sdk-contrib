@@ -26,7 +26,23 @@ The provider needs the base url of the OFREP server for instantiation.
 ```ts
 import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
 
-OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 60000 }));
+OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080' }));
+```
+
+### Polling and refresh
+
+By default, polling is disabled (`pollInterval` defaults to `0`). To enable periodic flag re-evaluation, set `pollInterval` to a positive number of milliseconds:
+
+```ts
+OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 60_000 }));
+```
+
+Flags are automatically re-fetched when the page becomes visible (e.g. the user switches back to the tab). This follows [ADR-0010](https://github.com/open-feature/protocol/pull/69) and is **enabled by default**. To opt out:
+
+```ts
+OpenFeature.setProvider(
+  new OFREPWebProvider({ baseUrl: 'https://localhost:8080', disableVisibilityRefresh: true }),
+);
 ```
 
 ### HTTP headers
