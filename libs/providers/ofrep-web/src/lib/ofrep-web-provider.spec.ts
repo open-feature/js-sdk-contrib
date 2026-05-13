@@ -1,4 +1,5 @@
 import { ErrorCode } from '@openfeature/web-sdk';
+import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import { OFREPWebProvider } from './ofrep-web-provider';
 import TestLogger from '../../test/test-logger';
 import type { FlagCache } from './model/in-memory-cache';
@@ -452,6 +453,128 @@ describe('OFREPWebProvider', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((provider as any)._sseManager).toBeUndefined();
+    });
+  });
+
+  describe('SSE retry backoff', () => {
+    it('schedules exponential backoff retry after SSE fatal error when polling is disabled', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      jest.useFakeTimers();
+      try {
+        const mockConnect = jest.fn();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._sseManager = { connect: mockConnect, disconnect: jest.fn(), dispose: jest.fn() };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fetchSpy = jest.spyOn(provider as any, '_fetchFlags').mockResolvedValue({
+          status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES,
+          flags: [],
+          eventStreams: [{ type: 'sse', url: 'https://sse.example.com/stream' }],
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._handleSseError();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryCount).toBe(1);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryTimerId).toBeDefined();
+
+        await jest.advanceTimersByTimeAsync(1_000);
+
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(mockConnect).toHaveBeenCalledWith(
+          expect.arrayContaining([expect.objectContaining({ type: 'sse', url: 'https://sse.example.com/stream' })]),
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryCount).toBe(0); // reset by _connectSseIfAvailable on success
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('reschedules backoff when _fetchFlags throws inside the retry timer', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      jest.useFakeTimers();
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._sseManager = { connect: jest.fn(), disconnect: jest.fn(), dispose: jest.fn() };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        jest.spyOn(provider as any, '_fetchFlags').mockRejectedValue(new Error('503 Service Unavailable'));
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._handleSseError();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryCount).toBe(1);
+
+        // Fire the first retry — _fetchFlags throws → catch calls _handleSseError() again
+        await jest.advanceTimersByTimeAsync(1_000);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryCount).toBe(2);
+        // Next backoff timer must be scheduled
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryTimerId).toBeDefined();
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('clears SSE retry timer on provider close', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      jest.useFakeTimers();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (provider as any)._sseManager = { connect: jest.fn(), disconnect: jest.fn(), dispose: jest.fn() };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (provider as any)._handleSseError();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseRetryTimerId).toBeDefined();
+
+      jest.useRealTimers();
+      await provider.onClose?.();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseRetryTimerId).toBeUndefined();
+    });
+
+    it('does not schedule backoff when changeDetection is none', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, changeDetection: 'none' },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      jest.useFakeTimers();
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._sseManager = { connect: jest.fn(), disconnect: jest.fn(), dispose: jest.fn() };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._handleSseError();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryTimerId).toBeUndefined();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryCount).toBe(0);
+      } finally {
+        jest.useRealTimers();
+      }
     });
   });
 

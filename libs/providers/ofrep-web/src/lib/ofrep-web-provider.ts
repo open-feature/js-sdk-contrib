@@ -479,7 +479,7 @@ export class OFREPWebProvider implements Provider {
   private async _handleSseRefetch(metadata?: BulkEvaluationRefetchMetadata): Promise<void> {
     try {
       const isInactivityResume = metadata === undefined;
-      const res = await this._fetchFlags(this._context, metadata, isInactivityResume);
+      const res = await this._fetchFlags(this._context, undefined, metadata, isInactivityResume);
       if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
         this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
           message: 'Flags updated',
