@@ -1,5 +1,5 @@
-import type { EvaluationRequest, EvaluationResponse } from '@openfeature/ofrep-core';
-import { ErrorMessageMap, OFREPApiError, OFREPEvaluationErrorHttpStatuses } from '@openfeature/ofrep-core';
+import type { BulkEvaluationRefetchMetadata, EvaluationRequest, EvaluationResponse } from '@openfeature/ofrep-core';
+import { ErrorMessageMap, OFREPApiError } from '@openfeature/ofrep-core';
 import {
   type EvaluationFlagValue,
   handleEvaluationError,
@@ -37,6 +37,7 @@ import type { FlagCache, MetadataCache } from './model/in-memory-cache';
 import type { CacheMode, OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
 import { DEFAULT_CACHE_TTL_SECONDS } from './model/ofrep-web-provider-options';
 import { Storage } from './store/storage';
+import { SseManager } from './sse-manager';
 
 export class OFREPWebProvider implements Provider {
   DEFAULT_POLL_INTERVAL = 0;
@@ -65,6 +66,9 @@ export class OFREPWebProvider implements Provider {
   private _contextRevision = 0;
   private _isFetching = false;
   private _visibilityChangeHandler = this._onVisibilityChange.bind(this);
+  private _sseManager?: SseManager;
+  private _sseRetryCount = 0;
+  private _sseRetryTimerId?: ReturnType<typeof setTimeout>;
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -93,16 +97,22 @@ export class OFREPWebProvider implements Provider {
     try {
       this._context = context;
 
+      let result: EvaluateFlagsResponse | undefined;
       if (this._cacheMode === 'network-first') {
         await this._initNetworkFirst(context);
       } else {
         const loadedFromCache = await this._tryLoadFlagsFromCache(context);
         if (!loadedFromCache) {
-          await this._fetchFlags(context);
+          result = await this._fetchFlags(context);
         }
       }
 
-      if (this._pollingInterval > 0) {
+      if (result) {
+        this._connectSseIfAvailable(result);
+      }
+
+      const changeDetection = this._options.changeDetection ?? 'sse';
+      if (!this._sseManager && this._pollingInterval > 0 && changeDetection !== 'none') {
         this.startPolling();
       }
 
@@ -174,7 +184,13 @@ export class OFREPWebProvider implements Provider {
         this._cacheMode === 'local-cache-first' ? await this._tryLoadFlagsFromCache(newContext) : false;
 
       if (!loadedFromCache) {
-        await this._fetchFlags(newContext);
+        // Context change: re-fetch without SSE metadata
+        const result = await this._fetchFlags(newContext);
+        this._connectSseIfAvailable(result);
+        const changeDetection = this._options.changeDetection ?? 'sse';
+        if (!this._sseManager && this._pollingInterval > 0 && !this._pollingIntervalId && changeDetection !== 'none') {
+          this.startPolling();
+        }
       }
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError) {
@@ -207,9 +223,12 @@ export class OFREPWebProvider implements Provider {
    */
   onClose?(): Promise<void> {
     this.stopPolling();
+    this._clearSseRetry();
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', this._visibilityChangeHandler);
     }
+    this._sseManager?.dispose();
+    this._sseManager = undefined;
     this._ofrepAPI.close();
     return Promise.resolve();
   }
@@ -263,15 +282,19 @@ export class OFREPWebProvider implements Provider {
   private async _fetchFlags(
     context?: EvaluationContext | undefined,
     generation = this._contextRevision,
+    sseMetadata?: BulkEvaluationRefetchMetadata,
+    unconditional?: boolean,
   ): Promise<EvaluateFlagsResponse> {
     try {
       const evalReq: EvaluationRequest = {
         context,
       };
 
-      const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, this._etag);
+      // ADR-0008 guideline #3: inactivity resume re-fetches must be fully
+      // unconditional (no If-None-Match, no flagConfigEtag/flagConfigLastModified).
+      const etag = unconditional ? null : this._etag;
+      const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, etag, sseMetadata);
       if (response.httpStatus === 304) {
-        // nothing has changed since last time, we are doing nothing
         return { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [] };
       }
 
@@ -304,7 +327,11 @@ export class OFREPWebProvider implements Provider {
       await this._storage.store(context?.targetingKey ?? '', newCache, newEtag, this._flagSetMetadataCache);
       this._etag = newEtag;
       this._isUsingCache = false;
-      return { status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES, flags: listUpdatedFlags };
+      return {
+        status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES,
+        flags: listUpdatedFlags,
+        eventStreams: bulkSuccessResp.eventStreams,
+      };
     } catch (error) {
       if (error instanceof OFREPApiTooManyRequestsError && error.retryAfterDate !== null) {
         this._retryPollingAfter = error.retryAfterDate;
@@ -416,6 +443,108 @@ export class OFREPWebProvider implements Provider {
   }
 
   /**
+   * Connect to SSE event streams if present in the response.
+   * If SSE connects, stop polling; if no SSE, does not start polling
+   * (that is handled by the caller).
+   */
+  private _connectSseIfAvailable(result: EvaluateFlagsResponse): void {
+    const changeDetection = this._options.changeDetection ?? 'sse';
+
+    if (result.eventStreams && result.eventStreams.length > 0 && changeDetection === 'sse') {
+      this.stopPolling();
+      this._clearSseRetry();
+      if (!this._sseManager) {
+        this._sseManager = new SseManager(
+          {
+            onRefetch: (metadata) => this._handleSseRefetch(metadata),
+            onStale: () => this._handleSseStale(),
+            onError: () => this._handleSseError(),
+          },
+          this._options.inactivityDelaySec,
+          this._logger,
+          this._options.baseUrl,
+        );
+      }
+      this._sseManager.connect(result.eventStreams);
+      this._sseRetryCount = 0;
+    } else if (this._sseManager) {
+      this._sseManager.dispose();
+      this._sseManager = undefined;
+    }
+  }
+
+  /**
+   * Handle an SSE refetchEvaluation event.
+   */
+  private async _handleSseRefetch(metadata?: BulkEvaluationRefetchMetadata): Promise<void> {
+    try {
+      const isInactivityResume = metadata === undefined;
+      const res = await this._fetchFlags(this._context, undefined, metadata, isInactivityResume);
+      if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
+        this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
+          message: 'Flags updated',
+          flagsChanged: res.flags,
+        });
+      }
+    } catch (error) {
+      this.events?.emit(ClientProviderEvents.Stale, { message: `Error during SSE re-fetch: ${error}` });
+    }
+  }
+
+  /**
+   * Handle SSE transient errors — emit stale while EventSource auto-reconnects.
+   */
+  private _handleSseStale(): void {
+    this.events?.emit(ClientProviderEvents.Stale, {
+      message: 'SSE connection interrupted — attempting to reconnect',
+    });
+  }
+
+  /**
+   * Handle SSE connection errors.
+   * Falls back to polling when enabled; otherwise retries SSE with exponential backoff.
+   */
+  private _handleSseError(): void {
+    if (!this._sseManager) {
+      return;
+    }
+
+    // Fall back to polling if it's enabled and not already running
+    if (this._pollingInterval > 0 && !this._pollingIntervalId) {
+      this._logger?.info('SSE error — falling back to polling');
+      this._sseManager.dispose();
+      this._sseManager = undefined;
+      this.startPolling();
+      return;
+    }
+
+    // Polling is disabled — retry SSE with exponential backoff (1 s → 2 s → 4 s … capped at 60 s)
+    const changeDetection = this._options.changeDetection ?? 'sse';
+    if (this._pollingInterval === 0 && changeDetection !== 'none') {
+      const delayMs = Math.min(1_000 * Math.pow(2, this._sseRetryCount), 60_000);
+      this._sseRetryCount++;
+      this._logger?.info(`SSE error — polling disabled, retrying SSE in ${delayMs}ms (attempt ${this._sseRetryCount})`);
+      this._sseRetryTimerId = setTimeout(async () => {
+        this._sseRetryTimerId = undefined;
+        try {
+          const result = await this._fetchFlags(this._context);
+          this._connectSseIfAvailable(result);
+        } catch (error) {
+          this._logger?.warn(`SSE retry fetchFlags failed: ${error} — scheduling next attempt`);
+          this._handleSseError();
+        }
+      }, delayMs);
+    }
+  }
+
+  private _clearSseRetry(): void {
+    if (this._sseRetryTimerId !== undefined) {
+      clearTimeout(this._sseRetryTimerId);
+      this._sseRetryTimerId = undefined;
+    }
+  }
+
+  /**
    * Start polling for flag updates, it will call the bulk update function every pollInterval
    * @private
    */
@@ -472,6 +601,7 @@ export class OFREPWebProvider implements Provider {
   private stopPolling() {
     if (this._pollingIntervalId) {
       clearInterval(this._pollingIntervalId);
+      this._pollingIntervalId = undefined;
     }
   }
 

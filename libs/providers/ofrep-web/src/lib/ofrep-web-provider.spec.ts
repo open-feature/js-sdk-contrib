@@ -1,4 +1,5 @@
 import { ErrorCode } from '@openfeature/web-sdk';
+import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import { OFREPWebProvider } from './ofrep-web-provider';
 import TestLogger from '../../test/test-logger';
 import type { FlagCache } from './model/in-memory-cache';
@@ -308,6 +309,273 @@ describe('OFREPWebProvider', () => {
     // const got2 = client.getObjectDetails(flagKey, {});
     // expect(got1).not.toEqual(got2);
     // expect(got2.reason).toBe('CACHED');
+  });
+
+  it('should send unconditional re-fetch on SSE inactivity resume (no If-None-Match)', async () => {
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    await OpenFeature.setContext(defaultContext);
+    await OpenFeature.setProviderAndWait(providerName, provider);
+
+    // After init, provider should have an etag from the server response
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((provider as any)._etag).toBe('123');
+
+    // Spy on the OFREP API to verify the etag argument
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const spy = jest.spyOn((provider as any)._ofrepAPI, 'postBulkEvaluateFlags');
+
+    // Simulate inactivity resume: onRefetch(undefined) → unconditional re-fetch
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (provider as any)._handleSseRefetch(undefined);
+
+    // ADR-0008 guideline #3: inactivity resume must be fully unconditional
+    // (no If-None-Match, no flagConfigEtag, no flagConfigLastModified)
+    expect(spy).toHaveBeenCalledWith(
+      expect.anything(),
+      null, // etag must be null (no If-None-Match)
+      undefined, // no SSE metadata
+    );
+
+    spy.mockRestore();
+  });
+
+  it('should send etag on SSE-triggered re-fetch with metadata', async () => {
+    const providerName = expect.getState().currentTestName || 'test-provider';
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+    await OpenFeature.setContext(defaultContext);
+    await OpenFeature.setProviderAndWait(providerName, provider);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const spy = jest.spyOn((provider as any)._ofrepAPI, 'postBulkEvaluateFlags');
+
+    // Simulate SSE event with metadata (not an inactivity resume)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (provider as any)._handleSseRefetch({ flagConfigEtag: '"v2"' });
+
+    // SSE-triggered re-fetch should still include the etag
+    expect(spy).toHaveBeenCalledWith(
+      expect.anything(),
+      '123', // etag from previous response (If-None-Match)
+      { flagConfigEtag: '"v2"' }, // SSE metadata
+    );
+
+    spy.mockRestore();
+  });
+
+  describe('changeDetection', () => {
+    it('should not start polling or SSE when changeDetection is none', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, changeDetection: 'none' },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext({ ...defaultContext, changeConfig: true });
+      await OpenFeature.setProviderAndWait(providerName, provider);
+      const client = OpenFeature.getClient(providerName);
+
+      const configChangedHandler = jest.fn();
+      client.addHandler(ClientProviderEvents.ConfigurationChanged, configChangedHandler);
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(configChangedHandler).not.toHaveBeenCalled();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._pollingIntervalId).toBeUndefined();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).toBeUndefined();
+    });
+
+    it('should not start polling after context change when changeDetection is none', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: 50, changeDetection: 'none' },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      await OpenFeature.setContext({ ...defaultContext, contextChanged: true });
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._pollingIntervalId).toBeUndefined();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).toBeUndefined();
+    });
+
+    it('should use polling and ignore eventStreams when changeDetection is polling', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: 50, changeDetection: 'polling' },
+        new TestLogger(),
+      );
+
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+          HttpResponse.json({
+            flags: [],
+            metadata: {},
+            eventStreams: [{ type: 'sse', url: 'https://sse.example.com/stream' }],
+          }),
+        ),
+      );
+
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).toBeUndefined();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._pollingIntervalId).toBeDefined();
+    });
+
+    it('should ignore eventStreams on context change when changeDetection is polling', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, pollInterval: 50, changeDetection: 'polling' },
+        new TestLogger(),
+      );
+
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+          HttpResponse.json({
+            flags: [],
+            metadata: {},
+            eventStreams: [{ type: 'sse', url: 'https://sse.example.com/stream' }],
+          }),
+        ),
+      );
+
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+      await OpenFeature.setContext({ ...defaultContext, contextChanged: true });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).toBeUndefined();
+    });
+  });
+
+  describe('SSE retry backoff', () => {
+    it('schedules exponential backoff retry after SSE fatal error when polling is disabled', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      jest.useFakeTimers();
+      try {
+        const mockConnect = jest.fn();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._sseManager = { connect: mockConnect, disconnect: jest.fn(), dispose: jest.fn() };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fetchSpy = jest.spyOn(provider as any, '_fetchFlags').mockResolvedValue({
+          status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES,
+          flags: [],
+          eventStreams: [{ type: 'sse', url: 'https://sse.example.com/stream' }],
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._handleSseError();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryCount).toBe(1);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryTimerId).toBeDefined();
+
+        await jest.advanceTimersByTimeAsync(1_000);
+
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(mockConnect).toHaveBeenCalledWith(
+          expect.arrayContaining([expect.objectContaining({ type: 'sse', url: 'https://sse.example.com/stream' })]),
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryCount).toBe(0); // reset by _connectSseIfAvailable on success
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('reschedules backoff when _fetchFlags throws inside the retry timer', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      jest.useFakeTimers();
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._sseManager = { connect: jest.fn(), disconnect: jest.fn(), dispose: jest.fn() };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        jest.spyOn(provider as any, '_fetchFlags').mockRejectedValue(new Error('503 Service Unavailable'));
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._handleSseError();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryCount).toBe(1);
+
+        // Fire the first retry — _fetchFlags throws → catch calls _handleSseError() again
+        await jest.advanceTimersByTimeAsync(1_000);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryCount).toBe(2);
+        // Next backoff timer must be scheduled
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryTimerId).toBeDefined();
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('clears SSE retry timer on provider close', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      jest.useFakeTimers();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (provider as any)._sseManager = { connect: jest.fn(), disconnect: jest.fn(), dispose: jest.fn() };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (provider as any)._handleSseError();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseRetryTimerId).toBeDefined();
+
+      jest.useRealTimers();
+      await provider.onClose?.();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseRetryTimerId).toBeUndefined();
+    });
+
+    it('does not schedule backoff when changeDetection is none', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, changeDetection: 'none' },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      jest.useFakeTimers();
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._sseManager = { connect: jest.fn(), disconnect: jest.fn(), dispose: jest.fn() };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._handleSseError();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryTimerId).toBeUndefined();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryCount).toBe(0);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 
   it('should not try to call the API before retry-after header', async () => {
