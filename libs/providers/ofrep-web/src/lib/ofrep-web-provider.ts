@@ -616,4 +616,16 @@ export class OFREPWebProvider implements Provider {
       this._refreshFlags('visibility change', false);
     }
   }
+
+  /**
+   * Handler for visibility changes (page/app becoming visible)
+   * Re-fetches flags when the document becomes visible
+   * @private
+   */
+  private _onVisibilityChange() {
+    if (document?.visibilityState === 'visible') {
+      // Suppress STALE on failure: a single missed refresh doesn't mean the cache is stale.
+      this._refreshFlags('visibility change', false);
+    }
+  }
 }

@@ -12,7 +12,7 @@ const STORAGE_NS = 'ofrep-web-provider';
 export interface PersistedEntry {
   /** Schema version — used to discard entries written by older provider versions. */
   version: number;
-  /** SHA-256 hex digest (truncated to 16 chars) of `targetingKey` (or `cacheKeyPrefix + ":" + targetingKey` when configured). */
+  /** Hex digest (16 chars) of `targetingKey` (or `cacheKeyPrefix + ":" + targetingKey` when configured). SHA-256 when crypto.subtle is available, FNV-1a fallback otherwise. */
   cacheKeyHash: string;
   /** ETag returned by the server for this evaluation, used for efficient revalidation. */
   etag: string | null;
@@ -40,18 +40,40 @@ export class Storage {
   }
 
   /**
-   * Computes a SHA-256 hash (truncated to 16 hex chars) of the targeting key,
-   * including the cacheKeyPrefix when set.
+   * Hashes the targeting key (with optional prefix) to a 16-char hex string.
+   * Uses SHA-256 via crypto.subtle when available (secure contexts).
+   * Falls back to a double-pass FNV-1a-32 in non-secure contexts where crypto.subtle is absent.
    */
   private async _hashInput(targetingKey: string): Promise<string> {
     const input = this._cacheKeyPrefix ? `${this._cacheKeyPrefix}:${targetingKey}` : targetingKey;
-    const encoded = new TextEncoder().encode(input);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-      .slice(0, 16);
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const encoded = new TextEncoder().encode(input);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('')
+        .slice(0, 16);
+    }
+    return this._fnvHash(input);
+  }
+
+  /**
+   * Double-pass FNV-1a-32 producing a 16-char hex string.
+   * Used as a fallback when crypto.subtle is unavailable (non-secure contexts).
+   */
+  private _fnvHash(input: string): string {
+    const fnv1a32 = (str: string, offset: number): number => {
+      let h = offset >>> 0;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+      }
+      return h;
+    };
+    const lo = fnv1a32(input, 0x811c9dc5);
+    const hi = fnv1a32(input, 0x27d4eb2f);
+    return lo.toString(16).padStart(8, '0') + hi.toString(16).padStart(8, '0');
   }
 
   /**
