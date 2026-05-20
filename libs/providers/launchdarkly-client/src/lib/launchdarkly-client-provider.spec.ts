@@ -5,16 +5,16 @@ import { ErrorCode, OpenFeature } from '@openfeature/web-sdk';
 import TestLogger from './test-logger';
 import translateContext from './translate-context';
 
-jest.mock('launchdarkly-js-client-sdk', () => {
-  const actualModule = jest.requireActual('launchdarkly-js-client-sdk');
+jest.mock('@launchdarkly/js-client-sdk', () => {
+  const actualModule = jest.requireActual('@launchdarkly/js-client-sdk');
   return {
     __esModule: true,
     ...actualModule,
-    initialize: jest.fn(),
+    createClient: jest.fn(),
   };
 });
 
-import { initialize, type LDClient } from 'launchdarkly-js-client-sdk';
+import { createClient, type LDClient } from '@launchdarkly/js-client-sdk';
 
 const logger: TestLogger = new TestLogger();
 const testFlagKey = 'a-key';
@@ -24,8 +24,13 @@ describe('LaunchDarklyClientProvider', () => {
   let ofClient: Client;
   const ldClientMock: jest.Mocked<LDClient> = {
     variationDetail: jest.fn(),
+    boolVariationDetail: jest.fn(),
+    numberVariationDetail: jest.fn(),
+    stringVariationDetail: jest.fn(),
+    jsonVariationDetail: jest.fn(),
     identify: jest.fn(),
     waitForInitialization: jest.fn(),
+    start: jest.fn(),
     on: jest.fn(),
     close: jest.fn(),
     track: jest.fn(),
@@ -78,15 +83,15 @@ describe('LaunchDarklyClientProvider', () => {
   });
 
   describe('initialize', () => {
-    (initialize as jest.Mock).mockReturnValue(ldClientMock);
+    (createClient as jest.Mock).mockReturnValue(ldClientMock);
     const envKey = 'your-env-key';
     const provider = new LaunchDarklyClientProvider(envKey, { logger });
 
     it('should call Ld initialize function with correct arguments', async () => {
       await provider.initialize();
-      expect(initialize).toHaveBeenCalledTimes(1);
+      expect(createClient).toHaveBeenCalledTimes(1);
       /* when not set in open feauture LD sdk initialize should be called with the anonymous context*/
-      expect(initialize).toHaveBeenCalledWith(
+      expect(createClient).toHaveBeenCalledWith(
         envKey,
         { anonymous: true },
         {
@@ -95,15 +100,15 @@ describe('LaunchDarklyClientProvider', () => {
           wrapperVersion: expect.any(String),
         },
       );
-      expect(ldClientMock.waitForInitialization).toHaveBeenCalledWith(undefined);
+      expect(ldClientMock.start).toHaveBeenCalledWith({});
     });
 
     it('should call Ld waitForInitialization with correct arguments', async () => {
       const provider = new LaunchDarklyClientProvider(envKey, { logger, initializationTimeout: 5 });
       await provider.initialize();
-      expect(initialize).toHaveBeenCalledTimes(1);
+      expect(createClient).toHaveBeenCalledTimes(1);
       /* when not set in open feauture LD sdk initialize should be called with the anonymous context*/
-      expect(initialize).toHaveBeenCalledWith(
+      expect(createClient).toHaveBeenCalledWith(
         envKey,
         { anonymous: true },
         {
@@ -112,19 +117,33 @@ describe('LaunchDarklyClientProvider', () => {
           wrapperVersion: expect.any(String),
         },
       );
-      expect(ldClientMock.waitForInitialization).toHaveBeenCalledTimes(1);
-      expect(ldClientMock.waitForInitialization).toHaveBeenCalledWith(5);
+      expect(ldClientMock.start).toHaveBeenCalledTimes(1);
+      expect(ldClientMock.start).toHaveBeenCalledWith({
+        timeout: 5,
+      });
     });
 
     it('should set the status to READY if initialization succeeds', async () => {
-      ldClientMock.waitForInitialization.mockResolvedValue();
+      ldClientMock.start.mockResolvedValue({ status: 'complete' });
       await provider.initialize();
-      expect(ldClientMock.waitForInitialization).toHaveBeenCalledTimes(1);
+      expect(ldClientMock.start).toHaveBeenCalledTimes(1);
       expect(provider.status).toBe('READY');
     });
 
+    it('should set the status to ERROR if initialization returns error status', async () => {
+      ldClientMock.start.mockResolvedValue({ status: 'failed', error: new Error('mock error in provider') });
+      await provider.initialize();
+      expect(provider.status).toBe('ERROR');
+    });
+
+    it('should set the status to ERROR if initialization times out', async () => {
+      ldClientMock.start.mockResolvedValue({ status: 'timeout' });
+      await provider.initialize();
+      expect(provider.status).toBe('ERROR');
+    });
+
     it('should set the status to ERROR if initialization fails', async () => {
-      ldClientMock.waitForInitialization.mockRejectedValueOnce(new Error('mock error in provider'));
+      ldClientMock.start.mockRejectedValueOnce(new Error('mock error in provider'));
       await provider.initialize();
       expect(provider.status).toBe('ERROR');
     });
@@ -132,21 +151,21 @@ describe('LaunchDarklyClientProvider', () => {
 
   describe('resolveBooleanEvaluation', () => {
     it('calls the client correctly for boolean variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.boolVariationDetail = jest.fn().mockReturnValue({
         value: true,
         reason: {
           kind: 'OFF',
         },
       });
       ofClient.getBooleanDetails(testFlagKey, false);
-      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, false);
+      expect(ldClientMock.boolVariationDetail).toHaveBeenCalledWith(testFlagKey, false);
       jest.clearAllMocks();
       ofClient.getBooleanValue(testFlagKey, false);
-      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, false);
+      expect(ldClientMock.boolVariationDetail).toHaveBeenCalledWith(testFlagKey, false);
     });
 
     it('handles correct return types for boolean variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.boolVariationDetail = jest.fn().mockReturnValue({
         value: true,
         variationIndex: 0,
         reason: {
@@ -165,7 +184,7 @@ describe('LaunchDarklyClientProvider', () => {
     });
 
     it('handles incorrect return types for boolean variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.boolVariationDetail = jest.fn().mockReturnValue({
         value: 'badness',
         reason: {
           kind: 'OFF',
@@ -187,7 +206,7 @@ describe('LaunchDarklyClientProvider', () => {
 
   describe('resolveNumberEvaluation', () => {
     it('calls the client correctly for numeric variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.numberVariationDetail = jest.fn().mockReturnValue({
         value: 8,
         reason: {
           kind: 'OFF',
@@ -195,14 +214,14 @@ describe('LaunchDarklyClientProvider', () => {
       });
 
       ofClient.getNumberDetails(testFlagKey, 0);
-      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, 0);
+      expect(ldClientMock.numberVariationDetail).toHaveBeenCalledWith(testFlagKey, 0);
       jest.clearAllMocks();
       ofClient.getNumberValue(testFlagKey, 0);
-      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, 0);
+      expect(ldClientMock.numberVariationDetail).toHaveBeenCalledWith(testFlagKey, 0);
     });
 
     it('handles correct return types for numeric variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.numberVariationDetail = jest.fn().mockReturnValue({
         value: 17,
         variationIndex: 0,
         reason: {
@@ -221,7 +240,7 @@ describe('LaunchDarklyClientProvider', () => {
     });
 
     it('handles incorrect return types for numeric variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.numberVariationDetail = jest.fn().mockReturnValue({
         value: true,
         reason: {
           kind: 'OFF',
@@ -243,7 +262,7 @@ describe('LaunchDarklyClientProvider', () => {
 
   describe('resolveObjectEvaluation', () => {
     it('calls the client correctly for object variations', async () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.jsonVariationDetail = jest.fn().mockReturnValue({
         value: { yes: 'no' },
         reason: {
           kind: 'OFF',
@@ -251,14 +270,14 @@ describe('LaunchDarklyClientProvider', () => {
       });
 
       ofClient.getObjectDetails(testFlagKey, {});
-      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, {});
+      expect(ldClientMock.jsonVariationDetail).toHaveBeenCalledWith(testFlagKey, {});
       jest.clearAllMocks();
       ofClient.getObjectValue(testFlagKey, {});
-      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, {});
+      expect(ldClientMock.jsonVariationDetail).toHaveBeenCalledWith(testFlagKey, {});
     });
 
     it('handles correct return types for object variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.jsonVariationDetail = jest.fn().mockReturnValue({
         value: { some: 'value' },
         variationIndex: 0,
         reason: {
@@ -277,7 +296,7 @@ describe('LaunchDarklyClientProvider', () => {
     });
 
     it('handles incorrect return types for object variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.jsonVariationDetail = jest.fn().mockReturnValue({
         value: 22,
         reason: {
           kind: 'OFF',
@@ -299,7 +318,7 @@ describe('LaunchDarklyClientProvider', () => {
 
   describe('resolveStringEvaluation', () => {
     it('calls the client correctly for string variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.stringVariationDetail = jest.fn().mockReturnValue({
         value: 'test',
         reason: {
           kind: 'OFF',
@@ -307,14 +326,14 @@ describe('LaunchDarklyClientProvider', () => {
       });
 
       ofClient.getStringDetails(testFlagKey, 'default');
-      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, 'default');
+      expect(ldClientMock.stringVariationDetail).toHaveBeenCalledWith(testFlagKey, 'default');
       jest.clearAllMocks();
       ofClient.getStringValue(testFlagKey, 'default');
-      expect(ldClientMock.variationDetail).toHaveBeenCalledWith(testFlagKey, 'default');
+      expect(ldClientMock.stringVariationDetail).toHaveBeenCalledWith(testFlagKey, 'default');
     });
 
     it('handles correct return types for string variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.stringVariationDetail = jest.fn().mockReturnValue({
         value: 'good',
         variationIndex: 0,
         reason: {
@@ -333,7 +352,7 @@ describe('LaunchDarklyClientProvider', () => {
     });
 
     it('handles incorrect return types for string variations', () => {
-      ldClientMock.variationDetail = jest.fn().mockReturnValue({
+      ldClientMock.stringVariationDetail = jest.fn().mockReturnValue({
         value: true,
         reason: {
           kind: 'OFF',
@@ -361,7 +380,7 @@ describe('LaunchDarklyClientProvider', () => {
     ['UNSPECIFIED', ErrorCode.GENERAL],
     [undefined, ErrorCode.GENERAL],
   ])('handles errors from the client', async (ldError, ofError) => {
-    ldClientMock.variationDetail = jest.fn().mockReturnValue({
+    ldClientMock.jsonVariationDetail = jest.fn().mockReturnValue({
       value: { yes: 'no' },
       reason: {
         kind: 'ERROR',
@@ -381,7 +400,7 @@ describe('LaunchDarklyClientProvider', () => {
   });
 
   it('includes the variant', async () => {
-    ldClientMock.variationDetail = jest.fn().mockReturnValue({
+    ldClientMock.jsonVariationDetail = jest.fn().mockReturnValue({
       value: { yes: 'no' },
       variationIndex: 22,
       reason: {
