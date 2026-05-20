@@ -18,7 +18,7 @@ import {
 
 import isEmpty from 'lodash.isempty';
 
-import type { LDClient, LDOptions, LDStartOptions, LDFlagSet, LDContext } from '@launchdarkly/js-client-sdk';
+import type { LDClient, LDOptions, LDStartOptions, LDContext } from '@launchdarkly/js-client-sdk';
 import { basicLogger, createClient } from '@launchdarkly/js-client-sdk';
 
 import type { LaunchDarklyProviderOptions } from './launchdarkly-provider-options';
@@ -50,7 +50,6 @@ export class LaunchDarklyClientProvider implements Provider {
   private readonly ldOptions: LDOptions | undefined;
   private readonly ldStartOptions: LDStartOptions;
   private readonly logger: Logger;
-  private readonly initializationTimeout?: number;
   private _client?: LDClient;
 
   public events = new OpenFeatureEventEmitter();
@@ -71,29 +70,27 @@ export class LaunchDarklyClientProvider implements Provider {
 
   constructor(
     private readonly envKey: string,
-    {
-      logger,
-      initializationTimeout,
-      bootstrap,
-      identifyOptions,
-      timeout,
-      ...ldOptions
-    }: LaunchDarklyProviderOptions & LDStartOptions,
+    { logger, initializationTimeout, bootstrap, identifyOptions, timeout, ...ldOptions }: LaunchDarklyProviderOptions,
   ) {
     if (logger) {
       this.logger = logger;
     } else {
       this.logger = basicLogger({ level: 'info' });
     }
-    this.initializationTimeout = initializationTimeout;
+
+    if (initializationTimeout !== undefined && timeout === undefined) {
+      this.logger.warn?.('The "initializationTimeout" option is deprecated. Please use the "timeout" option instead.');
+    }
+
     this.ldOptions = {
       ...ldOptions,
       logger: this.logger,
       wrapperName: WRAPPER_NAME,
       wrapperVersion: WRAPPER_VERSION,
     };
+
     this.ldStartOptions = {
-      timeout: timeout ?? this.initializationTimeout,
+      timeout: timeout ?? initializationTimeout,
       bootstrap,
       identifyOptions,
     };
