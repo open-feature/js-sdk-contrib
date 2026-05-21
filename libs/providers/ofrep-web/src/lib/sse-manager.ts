@@ -192,6 +192,14 @@ export class SseManager {
       this._gracePeriodTimerId = setTimeout(() => {
         this._logger?.warn('SSE grace period expired — giving up');
         this._stale = false;
+        // Mirror the fatal-error path: close and clear connection state so the
+        // backoff retry's connect() call is not short-circuited by the urlsUnchanged
+        // check (which gates on _connections.length > 0).
+        for (const conn of this._connections) {
+          conn.close();
+        }
+        this._connections = [];
+        this._urls = new Set();
         this._callbacks.onError();
       }, DEFAULT_GRACE_PERIOD_SEC * 1000);
     }

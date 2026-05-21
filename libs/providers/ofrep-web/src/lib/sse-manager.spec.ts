@@ -346,6 +346,30 @@ describe('SseManager', () => {
       expect(MockEventSource.instances).toHaveLength(2);
       expect(manager.isConnected).toBe(true);
     });
+
+    it('should clear connection state on grace period expiry so a subsequent connect() creates a new EventSource', () => {
+      const manager = makeMgr(callbacks);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+      expect(MockEventSource.instances).toHaveLength(1);
+
+      // Transient error → grace period starts
+      MockEventSource.instances[0].simulateError(false);
+      expect(onStaleMock).toHaveBeenCalledTimes(1);
+      expect(manager.isConnected).toBe(true); // still "connected" during grace period
+
+      // Grace period expires — must close and clear connections before calling onError
+      jest.advanceTimersByTime(30_000);
+
+      expect(onErrorMock).toHaveBeenCalledTimes(1);
+      expect(manager.isConnected).toBe(false);
+
+      // Simulate backoff retry: connect() with the same URL must create a new EventSource,
+      // not be short-circuited by the urlsUnchanged check.
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      expect(MockEventSource.instances).toHaveLength(2);
+      expect(manager.isConnected).toBe(true);
+    });
   });
 
   describe('inactivity timeout', () => {
