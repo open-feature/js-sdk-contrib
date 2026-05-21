@@ -99,7 +99,7 @@ export class OFREPWebProvider implements Provider {
 
       let result: EvaluateFlagsResponse | undefined;
       if (this._cacheMode === 'network-first') {
-        await this._initNetworkFirst(context);
+        result = await this._initNetworkFirst(context);
       } else {
         const loadedFromCache = await this._tryLoadFlagsFromCache(context);
         if (!loadedFromCache) {
@@ -238,9 +238,9 @@ export class OFREPWebProvider implements Provider {
    * cache only on transient or server errors (5xx, network unavailable, timeout).
    * Auth and configuration errors (401, 403, 400, 404) are never masked by cached values.
    */
-  private async _initNetworkFirst(context?: EvaluationContext): Promise<void> {
+  private async _initNetworkFirst(context?: EvaluationContext): Promise<EvaluateFlagsResponse | undefined> {
     try {
-      await this._fetchFlags(context);
+      return await this._fetchFlags(context);
     } catch (error) {
       // Auth and configuration errors surface immediately — no cache fallback.
       // 5xx and other transient errors fall through to the persisted cache.
@@ -265,7 +265,8 @@ export class OFREPWebProvider implements Provider {
       if (cached.metadata) {
         this._flagSetMetadataCache = cached.metadata as MetadataCache;
       }
-      // Polling will retry the network on schedule.
+      // Serving from cache; SSE/polling will re-establish on the next successful network request.
+      return undefined;
     }
   }
 
@@ -562,6 +563,10 @@ export class OFREPWebProvider implements Provider {
     try {
       const res = await this._fetchFlags(this._context);
       if (res.status === BulkEvaluationStatus.SUCCESS_WITH_CHANGES) {
+        // A fresh 200 response may carry eventStreams — establish SSE if available.
+        // Only on SUCCESS_WITH_CHANGES (not 304/stale) to avoid racing with a
+        // concurrent context-change that may have already set up a newer SSE manager.
+        this._connectSseIfAvailable(res);
         this.events?.emit(ClientProviderEvents.ConfigurationChanged, {
           message: 'Flags updated',
           flagsChanged: res.flags,
