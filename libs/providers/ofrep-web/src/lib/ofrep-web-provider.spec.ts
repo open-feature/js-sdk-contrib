@@ -363,6 +363,86 @@ describe('OFREPWebProvider', () => {
     spy.mockRestore();
   });
 
+  describe('SSE connection on init', () => {
+    let mockEventSourceInstances: { addEventListener: jest.Mock; close: jest.Mock; readyState: number }[];
+    let MockES: jest.Mock;
+
+    beforeEach(() => {
+      mockEventSourceInstances = [];
+      MockES = jest.fn((url: string) => {
+        const inst = { url, addEventListener: jest.fn(), close: jest.fn(), readyState: 1 };
+        mockEventSourceInstances.push(inst);
+        return inst;
+      });
+      (globalThis as Record<string, unknown>)['EventSource'] = MockES;
+    });
+
+    afterEach(() => {
+      delete (globalThis as Record<string, unknown>)['EventSource'];
+    });
+
+    it('connects SSE in network-first mode when server returns eventStreams', async () => {
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+          HttpResponse.json({
+            flags: [],
+            metadata: {},
+            eventStreams: [{ type: 'sse', url: 'https://sse.example.com/stream' }],
+          }),
+        ),
+      );
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider(
+        { baseUrl: endpointBaseURL, cacheMode: 'network-first' },
+        new TestLogger(),
+      );
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).not.toBeUndefined();
+      expect(MockES).toHaveBeenCalledWith('https://sse.example.com/stream');
+    });
+
+    it('connects SSE after the background refresh following a local-cache-first cache hit', async () => {
+      // Seed the cache so initialize() hits the cache-first path.
+      const storage = new Storage('local-cache-first');
+      const key = await storage.getStorageKey(defaultContext.targetingKey);
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          version: 1,
+          cacheKeyHash: key,
+          etag: null,
+          writtenAt: new Date().toISOString(),
+          data: {},
+        }),
+      );
+
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
+          HttpResponse.json({
+            flags: [],
+            metadata: {},
+            eventStreams: [{ type: 'sse', url: 'https://sse.example.com/stream' }],
+          }),
+        ),
+      );
+
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      OpenFeature.setProvider(providerName, provider);
+
+      // Wait for both the ready event and the background refresh to complete.
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).not.toBeUndefined();
+      expect(MockES).toHaveBeenCalledWith('https://sse.example.com/stream');
+    });
+  });
+
   describe('changeDetection', () => {
     it('should not start polling or SSE when changeDetection is none', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
