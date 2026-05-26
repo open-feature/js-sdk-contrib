@@ -1,6 +1,9 @@
-import { SseManager } from './sse-manager';
+import { SseManager, DEFAULT_GRACE_PERIOD_SEC } from './sse-manager';
 import type { SseManagerCallbacks } from './sse-manager';
 import type { EventStream } from '@openfeature/ofrep-core';
+
+// Advance past the grace period to ensure the timer would have fired if not cancelled
+const PAST_GRACE_PERIOD_MS = DEFAULT_GRACE_PERIOD_SEC * 1000 + 5_000;
 
 // Mock EventSource
 class MockEventSource {
@@ -42,6 +45,14 @@ class MockEventSource {
     this.readyState = fatal ? 2 : 0; // CLOSED or CONNECTING
     const event = new Event('error');
     for (const listener of this.listeners['error'] ?? []) {
+      listener(event);
+    }
+  }
+
+  simulateOpen(): void {
+    this.readyState = 1; // OPEN
+    const event = new Event('open');
+    for (const listener of this.listeners['open'] ?? []) {
       listener(event);
     }
   }
@@ -294,8 +305,8 @@ describe('SseManager', () => {
       expect(onStaleMock).toHaveBeenCalledTimes(1);
       expect(onErrorMock).not.toHaveBeenCalled();
 
-      // Advance past 30s grace period
-      jest.advanceTimersByTime(30_000);
+      // Advance past the grace period
+      jest.advanceTimersByTime(PAST_GRACE_PERIOD_MS);
 
       expect(onErrorMock).toHaveBeenCalledTimes(1);
     });
@@ -312,9 +323,26 @@ describe('SseManager', () => {
       jest.advanceTimersByTime(50); // debounce
 
       // Grace period should be cancelled — no onError
-      jest.advanceTimersByTime(30_000);
+      jest.advanceTimersByTime(PAST_GRACE_PERIOD_MS);
       expect(onErrorMock).not.toHaveBeenCalled();
       expect(onRefetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should cancel grace period when the connection re-opens without any message', () => {
+      const manager = makeMgr(callbacks);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      MockEventSource.instances[0].simulateError(false);
+      expect(onStaleMock).toHaveBeenCalledTimes(1);
+      expect(onErrorMock).not.toHaveBeenCalled();
+
+      // Connection recovers — browser fires 'open' but no message arrives
+      MockEventSource.instances[0].simulateOpen();
+
+      // Grace period must be cancelled — onError must not fire after the window expires
+      jest.advanceTimersByTime(PAST_GRACE_PERIOD_MS);
+      expect(onErrorMock).not.toHaveBeenCalled();
+      expect(onRefetchMock).not.toHaveBeenCalled();
     });
 
     it('should not call onStale multiple times for repeated transient errors', () => {
@@ -358,7 +386,7 @@ describe('SseManager', () => {
       expect(manager.isConnected).toBe(true); // still "connected" during grace period
 
       // Grace period expires — must close and clear connections before calling onError
-      jest.advanceTimersByTime(30_000);
+      jest.advanceTimersByTime(PAST_GRACE_PERIOD_MS);
 
       expect(onErrorMock).toHaveBeenCalledTimes(1);
       expect(manager.isConnected).toBe(false);

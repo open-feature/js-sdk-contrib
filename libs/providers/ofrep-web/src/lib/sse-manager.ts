@@ -2,7 +2,7 @@ import type { BulkEvaluationRefetchMetadata, EventStream } from '@openfeature/of
 import type { Logger } from '@openfeature/web-sdk';
 
 const DEFAULT_INACTIVITY_DELAY_SEC = 120;
-const DEFAULT_GRACE_PERIOD_SEC = 30;
+export const DEFAULT_GRACE_PERIOD_SEC = 30;
 const DEBOUNCE_MS = 50;
 // EventSource.CLOSED per the spec (avoids referencing the global in non-browser environments)
 const ES_CLOSED = 2;
@@ -97,9 +97,7 @@ export class SseManager {
 
     // Diff URLs — skip teardown when connections are active and the set is unchanged
     const urlsUnchanged =
-      this._connections.length > 0 &&
-      urls.size === this._urls.size &&
-      [...urls].every((u) => this._urls.has(u));
+      this._connections.length > 0 && urls.size === this._urls.size && [...urls].every((u) => this._urls.has(u));
 
     if (urlsUnchanged) {
       return;
@@ -157,6 +155,14 @@ export class SseManager {
     }
 
     const es = new this._EventSourceImpl(url);
+
+    es.addEventListener('open', () => {
+      // Connection (re)established — cancel grace period if active so we don't erroneously error
+      if (this._stale) {
+        this._clearGracePeriod();
+        this._stale = false;
+      }
+    });
 
     es.addEventListener('message', (event: MessageEvent) => {
       this._handleMessage(event);
