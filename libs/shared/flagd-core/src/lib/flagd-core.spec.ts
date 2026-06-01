@@ -248,12 +248,12 @@ describe('flagd-core validations', () => {
     expect(evaluation.variant).toBeUndefined();
   });
 
-  it('should return reason "error" because the flag is disabled', () => {
+  it('should return reason "disabled" with caller default value when the flag is disabled', () => {
     const flagKey = 'disabledFlag';
     const evaluation = core.resolveBooleanEvaluation(flagKey, false, {});
-    expect(evaluation.reason).toBe(StandardResolutionReasons.ERROR);
-    expect(evaluation.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
-    expect(evaluation.errorMessage).toBe(`flag '${flagKey}' is disabled`);
+    expect(evaluation.reason).toBe(StandardResolutionReasons.DISABLED);
+    expect(evaluation.errorCode).toBeUndefined();
+    expect(evaluation.errorMessage).toBeUndefined();
     expect(evaluation.value).toBe(false);
     expect(evaluation.variant).toBeUndefined();
   });
@@ -409,11 +409,12 @@ describe('flagd-core error conditions', () => {
     expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev' });
   });
 
-  it('should treat disabled flags as not found', () => {
+  it('should resolve disabled flags with reason DISABLED and caller default', () => {
     const resolved = core.resolveBooleanEvaluation('disabledFlag', false, {});
-    expect(resolved.reason).toBe(StandardResolutionReasons.ERROR);
-    expect(resolved.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
-    expect(resolved.errorMessage).toBeTruthy();
+    expect(resolved.reason).toBe(StandardResolutionReasons.DISABLED);
+    expect(resolved.errorCode).toBeUndefined();
+    expect(resolved.errorMessage).toBeUndefined();
+    expect(resolved.value).toBe(false);
     expect(resolved.flagMetadata).toEqual({ version: '1', flagSetId: 'dev' });
   });
 

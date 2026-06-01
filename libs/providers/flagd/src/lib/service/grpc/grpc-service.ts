@@ -302,9 +302,13 @@ export class GRPCService implements Service {
       .then((resolved) => resolved, this.onRejected);
 
     let value = response.value as T;
-    // When no default variant is configured, the server returns an empty/zero proto
-    // value with reason=DEFAULT. In that case, return the caller's code default value.
-    if (response.reason === StandardResolutionReasons.DEFAULT && !response.variant) {
+    // When no variant is configured, the server returns an empty/zero proto value.
+    // This happens for reason=DEFAULT (no defaultVariant) and reason=DISABLED.
+    // In either case, return the caller's code default value.
+    if (
+      !response.variant &&
+      (response.reason === StandardResolutionReasons.DEFAULT || response.reason === StandardResolutionReasons.DISABLED)
+    ) {
       value = defaultValue;
     }
 
