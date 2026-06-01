@@ -20,7 +20,6 @@ type FlagSet = {
 };
 
 const evaluatorKey = '$evaluators';
-const bracketReplacer = new RegExp('^[^{]*\\{|}[^}]*$', 'g');
 
 const errorMessages = 'invalid flagd flag configuration';
 
@@ -94,13 +93,14 @@ function transform(flagCfg: string): string {
     return flagCfg;
   }
 
-  let transformed = flagCfg;
+  // round-trip to normalize whitespace so we can use plain string matching
+  let transformed = JSON.stringify(JSON.parse(flagCfg));
 
   for (const key in evaluators) {
-    const replacer = JSON.stringify(evaluators[key]).replaceAll(bracketReplacer, '');
-    const refRegex = new RegExp('"\\$ref":(\\s)*"' + key + '"', 'g');
+    const replacer = JSON.stringify(evaluators[key]);
+    const refPattern = '{"$ref":"' + key + '"}';
 
-    transformed = transformed.replaceAll(refRegex, replacer);
+    transformed = transformed.replaceAll(refPattern, replacer);
   }
 
   return transformed;

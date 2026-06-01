@@ -15,6 +15,7 @@ import {
   OFREPForbiddenError,
 } from './errors';
 import { OFREPApi } from './ofrep-api';
+import type { FetchAPI } from './ofrep-api';
 
 describe('OFREPApi', () => {
   let api: OFREPApi;
@@ -390,6 +391,55 @@ describe('OFREPApi', () => {
             },
           ],
         });
+      });
+
+      it('should append flagConfigEtag as a URL query param when provided in sseMetadata', async () => {
+        const capturedUrls: string[] = [];
+        const mockFetch = jest.fn(async (input: RequestInfo | URL) => {
+          capturedUrls.push((input as Request).url);
+          return new Response(JSON.stringify({ flags: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }) as unknown as FetchAPI;
+        const localApi = new OFREPApi({ baseUrl: 'https://localhost:8080' }, mockFetch);
+        await localApi.postBulkEvaluateFlags(undefined, null, { flagConfigEtag: '"abc123"' });
+        const url = new URL(capturedUrls[0]);
+        expect(url.searchParams.get('flagConfigEtag')).toBe('"abc123"');
+      });
+
+      it('should append flagConfigLastModified as a URL query param when provided in sseMetadata', async () => {
+        const capturedUrls: string[] = [];
+        const mockFetch = jest.fn(async (input: RequestInfo | URL) => {
+          capturedUrls.push((input as Request).url);
+          return new Response(JSON.stringify({ flags: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }) as unknown as FetchAPI;
+        const localApi = new OFREPApi({ baseUrl: 'https://localhost:8080' }, mockFetch);
+        await localApi.postBulkEvaluateFlags(undefined, null, { flagConfigLastModified: 1771622898 });
+        const url = new URL(capturedUrls[0]);
+        expect(url.searchParams.get('flagConfigLastModified')).toBe('1771622898');
+      });
+
+      it('should preserve baseOptions.query params alongside sseMetadata params in the URL', async () => {
+        const capturedUrls: string[] = [];
+        const mockFetch = jest.fn(async (input: RequestInfo | URL) => {
+          capturedUrls.push((input as Request).url);
+          return new Response(JSON.stringify({ flags: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }) as unknown as FetchAPI;
+        const localApi = new OFREPApi(
+          { baseUrl: 'https://localhost:8080', query: new URLSearchParams({ scope: 'abc' }) },
+          mockFetch,
+        );
+        await localApi.postBulkEvaluateFlags(undefined, null, { flagConfigEtag: '"v1"' });
+        const url = new URL(capturedUrls[0]);
+        expect(url.searchParams.get('scope')).toBe('abc');
+        expect(url.searchParams.get('flagConfigEtag')).toBe('"v1"');
       });
 
       it('return BulkEvaluationSuccessResponse response as value on successful evaluation', async () => {

@@ -26,7 +26,23 @@ The provider needs the base url of the OFREP server for instantiation.
 ```ts
 import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
 
-OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 60000 }));
+OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080' }));
+```
+
+### Polling and refresh
+
+By default, polling is disabled (`pollInterval` defaults to `0`). To enable periodic flag re-evaluation, set `pollInterval` to a positive number of milliseconds:
+
+```ts
+OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', pollInterval: 60_000 }));
+```
+
+Flags are automatically re-fetched when the page becomes visible (e.g. the user switches back to the tab). This follows [ADR-0010](https://github.com/open-feature/protocol/pull/69) and is **enabled by default**. To opt out:
+
+```ts
+OpenFeature.setProvider(
+  new OFREPWebProvider({ baseUrl: 'https://localhost:8080', disableVisibilityRefresh: true }),
+);
 ```
 
 ### HTTP headers
@@ -78,6 +94,33 @@ OpenFeature.setProvider(
       const token: string = loadDynamicToken();
       return [['Authorization', `Bearer ${token}`]];
     },
+  }),
+);
+```
+
+### Caching
+
+The provider supports persistent local caching via `localStorage` to reduce latency on startup and improve resilience to transient network failures. Caching is controlled with three options.
+
+**`cacheMode`** — controls the startup strategy:
+
+- `'local-cache-first'` _(default)_ — `initialize()` resolves immediately from the persisted cache if one exists, then refreshes from the network in the background. Evaluations served before the refresh completes will have reason `CACHED`.
+- `'network-first'` — `initialize()` blocks on the network request. The persisted cache is used as a fallback only on transient failures (network unavailable, timeout, 5xx). Auth and configuration errors (400, 401, 403, 404) are always surfaced immediately and never masked by cached values.
+- `'disabled'` — no persistence. `initialize()` always blocks on the network and the other cache options have no effect.
+
+**`cacheTTL`** — maximum age in seconds of a persisted cache entry before it is treated as a miss and removed. Defaults to `2_592_000` (30 days).
+
+**`cacheKeyPrefix`** — a string included in the cache key to avoid collisions when multiple provider instances share the same browser origin. A good value is the OFREP base URL or a project key.
+
+```ts
+import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
+
+OpenFeature.setProvider(
+  new OFREPWebProvider({
+    baseUrl: 'https://localhost:8080',
+    cacheMode: 'local-cache-first',
+    cacheTTL: 3600, // 1 hour
+    cacheKeyPrefix: 'my-app',
   }),
 );
 ```

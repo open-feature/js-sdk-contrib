@@ -16,15 +16,16 @@ export class RemoteEvaluator implements IEvaluator {
 
   constructor(options: GoFeatureFlagProviderOptions, logger?: Logger) {
     this.logger = logger;
+    const headers: [string, string][] = [['Content-Type', 'application/json']];
+    if (options.apiKey) {
+      headers.push(['Authorization', `Bearer ${options.apiKey}`]);
+    }
     const ofrepOptions: OFREPProviderOptions = {
       baseUrl: options.endpoint,
       timeoutMs: options.timeout,
       fetchImplementation: options.fetchImplementation ?? isomorphicFetch(),
+      headers,
     };
-    ofrepOptions.headers = [['Content-Type', 'application/json']];
-    if (options.apiKey) {
-      ofrepOptions.headers.push(['Authorization', `Bearer ${options.apiKey}`]);
-    }
     this.ofrepProvider = new OFREPProvider(ofrepOptions);
   }
 

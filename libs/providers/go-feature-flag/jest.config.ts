@@ -1,5 +1,5 @@
 /* eslint-disable */
-export default {
+module.exports = {
   displayName: 'provider-go-feature-flag',
   preset: '../../../jest.preset.js',
   transform: {

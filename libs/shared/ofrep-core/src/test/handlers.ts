@@ -348,37 +348,59 @@ export const handlers = [
 
       const scopeValue = new URL(info.request.url).searchParams.get('scope');
 
+      const baseFlags = scopeValue
+        ? [
+            {
+              key: 'other-flag',
+              value: true,
+            },
+          ]
+        : [
+            {
+              key: 'bool-flag',
+              value: true,
+              metadata: TEST_FLAG_METADATA,
+              variant: 'variantA',
+              reason: StandardResolutionReasons.STATIC,
+            },
+            {
+              key: 'object-flag',
+              value: { complex: true, nested: { also: true } },
+              metadata: TEST_FLAG_METADATA,
+            },
+            {
+              key: 'flag-without-value',
+              value: undefined,
+              metadata: TEST_FLAG_METADATA,
+              variant: 'emptyVariant',
+              reason: StandardResolutionReasons.DISABLED,
+            },
+          ];
+
+      const flags: EvaluationResponse[] = [...baseFlags];
+      if (requestBody.context?.['perUserCacheTest']) {
+        const tk = requestBody.context?.targetingKey as string | undefined;
+        if (tk === '21640825-95e7-4335-b149-bd6881cf7875') {
+          flags.push({
+            key: 'per-user-cache-flag',
+            value: { user: 1 },
+            metadata: TEST_FLAG_METADATA,
+            reason: StandardResolutionReasons.STATIC,
+          });
+        } else if (tk === '22222222-2222-4222-8222-222222222222') {
+          flags.push({
+            key: 'per-user-cache-flag',
+            value: { user: 2 },
+            metadata: TEST_FLAG_METADATA,
+            reason: StandardResolutionReasons.STATIC,
+          });
+        }
+      }
+
       return HttpResponse.json<BulkEvaluationResponse>(
         {
           metadata: TEST_FLAG_SET_METADATA,
-          flags: scopeValue
-            ? [
-                {
-                  key: 'other-flag',
-                  value: true,
-                },
-              ]
-            : [
-                {
-                  key: 'bool-flag',
-                  value: true,
-                  metadata: TEST_FLAG_METADATA,
-                  variant: 'variantA',
-                  reason: StandardResolutionReasons.STATIC,
-                },
-                {
-                  key: 'object-flag',
-                  value: { complex: true, nested: { also: true } },
-                  metadata: TEST_FLAG_METADATA,
-                },
-                {
-                  key: 'flag-without-value',
-                  value: undefined,
-                  metadata: TEST_FLAG_METADATA,
-                  variant: 'emptyVariant',
-                  reason: StandardResolutionReasons.DISABLED,
-                },
-              ],
+          flags,
         },
         { headers: { etag: '123' } },
       );

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.15.0...flagd-provider-v0.15.1) (2026-05-01)
+
+
+### 🐛 Bug Fixes
+
+* various custom operator conformance fixes ([#1519](https://github.com/open-feature/js-sdk-contrib/issues/1519)) ([12cdd7f](https://github.com/open-feature/js-sdk-contrib/commit/12cdd7fc3bd175ea7d0c58169994c13cbacf6c65))
+
 ## [0.15.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.14.0...flagd-provider-v0.15.0) (2026-04-01)
 
 

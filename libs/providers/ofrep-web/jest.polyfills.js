@@ -30,3 +30,25 @@ Object.defineProperties(globalThis, {
   Request: { value: Request },
   Response: { value: Response },
 });
+
+const localStorageData = new Map();
+// eslint-disable-next-line no-undef
+Object.defineProperty(globalThis, 'localStorage', {
+  value: {
+    getItem: (key) => (localStorageData.has(key) ? localStorageData.get(key) : null),
+    setItem: (key, value) => {
+      localStorageData.set(String(key), String(value));
+    },
+    removeItem: (key) => {
+      localStorageData.delete(String(key));
+    },
+    clear: () => {
+      localStorageData.clear();
+    },
+    key: (index) => Array.from(localStorageData.keys())[index] ?? null,
+    get length() {
+      return localStorageData.size;
+    },
+  },
+  writable: true,
+});

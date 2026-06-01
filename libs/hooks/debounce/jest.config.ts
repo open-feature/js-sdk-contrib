@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   displayName: 'debounce',
   preset: '../../../jest.preset.js',
   transform: {
