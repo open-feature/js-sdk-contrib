@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v2.1.0...ofrep-core-v2.2.0) (2026-05-29)
+
+
+### ✨ New Features
+
+* added local persistence to ofrep-web provider ([#1508](https://github.com/open-feature/js-sdk-contrib/issues/1508)) ([3103f2c](https://github.com/open-feature/js-sdk-contrib/commit/3103f2cb92037886ee32a2076542a717b4fcc52f))
+* **ofrep-web:** add SSE event stream support ([#1497](https://github.com/open-feature/js-sdk-contrib/issues/1497)) ([#1509](https://github.com/open-feature/js-sdk-contrib/issues/1509)) ([7b79536](https://github.com/open-feature/js-sdk-contrib/commit/7b7953650b6437d46c9aa06b18377a2f49505261))
+
 ## [2.1.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v2.0.0...ofrep-core-v2.1.0) (2026-03-27)
 
 
