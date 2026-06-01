@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.4.1](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.0...ofrep-web-provider-v0.4.1) (2026-06-01)
+
+
+### 🐛 Bug Fixes
+
+* require ofrep-core ^2.2.0 ([#1555](https://github.com/open-feature/js-sdk-contrib/issues/1555)) ([3ce58e9](https://github.com/open-feature/js-sdk-contrib/commit/3ce58e99ad06906e435c38010de9f45b75b8b3fd))
+
+## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.3.6...ofrep-web-provider-v0.4.0) (2026-05-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ofrep:** Disable polling by default ([#1510](https://github.com/open-feature/js-sdk-contrib/issues/1510))
+
+### 🐛 Bug Fixes
+
+* **ofrep-web:** fall back to FNV-1a hash when crypto.subtle is unavailable ([#1549](https://github.com/open-feature/js-sdk-contrib/issues/1549)) ([00b2457](https://github.com/open-feature/js-sdk-contrib/commit/00b2457f9a8aa593200cef0d486044a20ebeb8c6))
+
+
+### ✨ New Features
+
+* added local persistence to ofrep-web provider ([#1508](https://github.com/open-feature/js-sdk-contrib/issues/1508)) ([3103f2c](https://github.com/open-feature/js-sdk-contrib/commit/3103f2cb92037886ee32a2076542a717b4fcc52f))
+* **ofrep-web:** add SSE event stream support ([#1497](https://github.com/open-feature/js-sdk-contrib/issues/1497)) ([#1509](https://github.com/open-feature/js-sdk-contrib/issues/1509)) ([7b79536](https://github.com/open-feature/js-sdk-contrib/commit/7b7953650b6437d46c9aa06b18377a2f49505261))
+* **ofrep:** Disable polling by default ([#1510](https://github.com/open-feature/js-sdk-contrib/issues/1510)) ([d860849](https://github.com/open-feature/js-sdk-contrib/commit/d860849ee0b3a5b0c29819d8202a7620dc0a6a6d))
+
 ## [Unreleased]
 
 ### ⚠️ BREAKING CHANGES
