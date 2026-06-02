@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v3.0.1...flagd-core-v4.0.0) (2026-06-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* DISABLED is a successful evaluation (still defaults) ([#1558](https://github.com/open-feature/js-sdk-contrib/issues/1558))
+
+### ✨ New Features
+
+* DISABLED is a successful evaluation (still defaults) ([#1558](https://github.com/open-feature/js-sdk-contrib/issues/1558)) ([198c928](https://github.com/open-feature/js-sdk-contrib/commit/198c92840e5bbf80b300f3f585250897ea1b24e3))
+
 ## [3.0.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v3.0.0...flagd-core-v3.0.1) (2026-05-01)
 
 
