@@ -1,10 +1,16 @@
-import type { BulkEvaluationRefetchMetadata, EvaluationRequest, EvaluationResponse } from '@openfeature/ofrep-core';
-import { ErrorMessageMap, OFREPApiError } from '@openfeature/ofrep-core';
+import type {
+  BulkEvaluationRefetchMetadata,
+  EvaluationRequest,
+  EvaluationResponse,
+  EventStream,
+} from '@openfeature/ofrep-core';
 import {
+  ErrorMessageMap,
   type EvaluationFlagValue,
   handleEvaluationError,
   isEvaluationFailureResponse,
   OFREPApi,
+  OFREPApiError,
   OFREPApiFetchError,
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
@@ -69,6 +75,7 @@ export class OFREPWebProvider implements Provider {
   private _sseManager?: SseManager;
   private _sseRetryCount = 0;
   private _sseRetryTimerId?: ReturnType<typeof setTimeout>;
+  private _eventStreams?: EventStream[];
 
   constructor(options: OFREPWebProviderOptions, logger?: Logger) {
     this._options = options;
@@ -265,8 +272,14 @@ export class OFREPWebProvider implements Provider {
       if (cached.metadata) {
         this._flagSetMetadataCache = cached.metadata as MetadataCache;
       }
-      // Serving from cache; SSE/polling will re-establish on the next successful network request.
-      return undefined;
+      this._eventStreams = cached.eventStreams;
+
+      // Serving from cache after a transient network failure. Surface the persisted
+      // event streams so the caller can establish SSE without waiting for a 200 — a
+      // subsequent successful request may be a 304 that carries no eventStreams.
+      return this._eventStreams?.length
+        ? { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [], eventStreams: this._eventStreams }
+        : undefined;
     }
   }
 
@@ -296,7 +309,9 @@ export class OFREPWebProvider implements Provider {
       const etag = unconditional ? null : this._etag;
       const response = await this._ofrepAPI.postBulkEvaluateFlags(evalReq, etag, sseMetadata);
       if (response.httpStatus === 304) {
-        return { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [] };
+        // A 304 has no body, so the server does not (re)send eventStreams. Surface the
+        // last-known streams so SSE can still be (re)connected when flags are unchanged.
+        return { status: BulkEvaluationStatus.SUCCESS_NO_CHANGES, flags: [], eventStreams: this._eventStreams };
       }
 
       if (response.httpStatus !== 200) {
@@ -321,11 +336,18 @@ export class OFREPWebProvider implements Provider {
 
       const listUpdatedFlags = this._getListUpdatedFlags(this._flagCache, newCache);
       this._flagCache = newCache;
+      this._eventStreams = bulkSuccessResp.eventStreams;
       const newEtag = response.httpResponse?.headers.get('etag') ?? null;
       this._flagSetMetadataCache = toFlagMetadata(
         typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
       );
-      await this._storage.store(context?.targetingKey ?? '', newCache, newEtag, this._flagSetMetadataCache);
+      await this._storage.store(
+        context?.targetingKey ?? '',
+        newCache,
+        newEtag,
+        this._flagSetMetadataCache,
+        this._eventStreams,
+      );
       this._etag = newEtag;
       this._isUsingCache = false;
       return {
@@ -434,7 +456,9 @@ export class OFREPWebProvider implements Provider {
       }
     } catch (error) {
       if (emitStaleOnError) {
-        this.events?.emit(ClientProviderEvents.Stale, { message: `Error while refreshing flags (${reason}): ${error}` });
+        this.events?.emit(ClientProviderEvents.Stale, {
+          message: `Error while refreshing flags (${reason}): ${error}`,
+        });
       } else {
         this._logger?.warn(`Error while refreshing flags (${reason}): ${error}`);
       }
@@ -452,6 +476,10 @@ export class OFREPWebProvider implements Provider {
     const changeDetection = this._options.changeDetection ?? 'sse';
 
     if (result.eventStreams && result.eventStreams.length > 0 && changeDetection === 'sse') {
+      if (!this._sseManager && typeof EventSource === 'undefined') {
+        this._logger?.debug('EventSource is unavailable; skipping SSE connection');
+        return;
+      }
       this.stopPolling();
       this._clearSseRetry();
       if (!this._sseManager) {
@@ -596,6 +624,18 @@ export class OFREPWebProvider implements Provider {
       this._etag = cached.etag;
       if (cached.metadata) {
         this._flagSetMetadataCache = cached.metadata as MetadataCache;
+      }
+      this._eventStreams = cached.eventStreams;
+
+      // Connect SSE from the persisted streams: the background refresh below sends
+      // If-None-Match and will receive a 304 (no body, no eventStreams) when flags are
+      // unchanged, so we must rely on the cached configuration to establish SSE here.
+      if (this._eventStreams?.length) {
+        this._connectSseIfAvailable({
+          status: BulkEvaluationStatus.SUCCESS_NO_CHANGES,
+          flags: [],
+          eventStreams: this._eventStreams,
+        });
       }
       void this._refreshFlagsInBackground();
       return true;

@@ -1,3 +1,4 @@
+import type { EventStream } from '@openfeature/ofrep-core';
 import type { Logger } from '@openfeature/web-sdk';
 import type { FlagCache } from '../model/in-memory-cache';
 import type { CacheMode } from '../model/ofrep-web-provider-options';
@@ -22,6 +23,8 @@ export interface PersistedEntry {
   data: FlagCache;
   /** Persisted flag-set metadata returned by the bulk evaluation response. */
   metadata?: Record<string, unknown>;
+  /** SSE event streams returned by the bulk evaluation response (ADR-0008). Only sent on a 200, so persisting them lets SSE reconnect after a cache load or 304. */
+  eventStreams?: EventStream[];
 }
 
 export class Storage {
@@ -94,6 +97,7 @@ export class Storage {
     flags: FlagCache,
     etag: string | null,
     metadata?: Record<string, unknown>,
+    eventStreams?: EventStream[],
   ): Promise<void> {
     if (this._disabled) return;
     const key = await this.getStorageKey(targetingKey);
@@ -104,6 +108,7 @@ export class Storage {
       writtenAt: new Date().toISOString(),
       data: flags,
       ...(metadata !== undefined && { metadata }),
+      ...(eventStreams !== undefined && { eventStreams }),
     };
     try {
       localStorage.setItem(key, JSON.stringify(entry));
@@ -123,7 +128,10 @@ export class Storage {
   async retrieve(
     targetingKey: string,
     ttlSeconds: number,
-  ): Promise<{ flags: FlagCache; etag: string | null; metadata?: Record<string, unknown> } | undefined> {
+  ): Promise<
+    | { flags: FlagCache; etag: string | null; metadata?: Record<string, unknown>; eventStreams?: EventStream[] }
+    | undefined
+  > {
     if (this._disabled) return undefined;
     try {
       const raw = localStorage.getItem(await this.getStorageKey(targetingKey));
@@ -141,7 +149,7 @@ export class Storage {
         return undefined;
       }
 
-      return { flags: entry.data, etag: entry.etag, metadata: entry.metadata };
+      return { flags: entry.data, etag: entry.etag, metadata: entry.metadata, eventStreams: entry.eventStreams };
     } catch (error) {
       this._logger?.error(`Error retrieving flag cache from local storage: ${error}`);
       return undefined;

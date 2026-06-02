@@ -392,10 +392,7 @@ describe('OFREPWebProvider', () => {
         ),
       );
       const providerName = expect.getState().currentTestName || 'test-provider';
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, cacheMode: 'network-first' },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, cacheMode: 'network-first' }, new TestLogger());
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait(providerName, provider);
 
@@ -441,15 +438,48 @@ describe('OFREPWebProvider', () => {
       expect((provider as any)._sseManager).not.toBeUndefined();
       expect(MockES).toHaveBeenCalledWith('https://sse.example.com/stream');
     });
+
+    it('connects SSE from the persisted streams when the cache-first refresh returns 304', async () => {
+      // Seed the cache with an etag and the persisted event streams. This mirrors a warm
+      // start where the flags are unchanged: the background refresh sends If-None-Match
+      // and the server responds 304 (no body, no eventStreams), so SSE must be established
+      // from the persisted configuration rather than from a 200 response.
+      const storage = new Storage('local-cache-first');
+      const key = await storage.getStorageKey(defaultContext.targetingKey);
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          version: 1,
+          cacheKeyHash: key,
+          etag: '"cached-etag"',
+          writtenAt: new Date().toISOString(),
+          data: {},
+          eventStreams: [{ type: 'sse', url: 'https://sse.example.com/stream' }],
+        }),
+      );
+
+      server.use(
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () => new HttpResponse(null, { status: 304 })),
+      );
+
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      OpenFeature.setProvider(providerName, provider);
+
+      // Wait for both the ready event and the background refresh (304) to complete.
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((provider as any)._sseManager).not.toBeUndefined();
+      expect(MockES).toHaveBeenCalledWith('https://sse.example.com/stream');
+    });
   });
 
   describe('changeDetection', () => {
     it('should not start polling or SSE when changeDetection is none', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, changeDetection: 'none' },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, changeDetection: 'none' }, new TestLogger());
       await OpenFeature.setContext({ ...defaultContext, changeConfig: true });
       await OpenFeature.setProviderAndWait(providerName, provider);
       const client = OpenFeature.getClient(providerName);
@@ -633,10 +663,7 @@ describe('OFREPWebProvider', () => {
 
     it('does not schedule backoff when changeDetection is none', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
-      const provider = new OFREPWebProvider(
-        { baseUrl: endpointBaseURL, changeDetection: 'none' },
-        new TestLogger(),
-      );
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, changeDetection: 'none' }, new TestLogger());
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait(providerName, provider);
 
@@ -766,9 +793,7 @@ describe('OFREPWebProvider', () => {
       client.addHandler(ClientProviderEvents.Stale, staleHandler);
 
       server.use(
-        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
-          HttpResponse.json({}, { status: 401 }),
-        ),
+        http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () => HttpResponse.json({}, { status: 401 })),
       );
 
       const handler = mockDocument.addEventListener.mock.calls[0][1];
