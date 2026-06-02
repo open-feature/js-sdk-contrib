@@ -59,6 +59,21 @@ describe('Storage (persistent flag cache)', () => {
     expect(result!.etag).toBe(etag);
   });
 
+  it('stores and retrieves the SSE event streams in the persisted envelope', async () => {
+    const storage = new Storage('local-cache-first');
+    const eventStreams = [{ type: 'sse' as const, url: 'https://sse.example.com/stream' }];
+    await storage.store('user-1', boolFlagCache, '"etag"', undefined, eventStreams);
+    const result = await storage.retrieve('user-1', DEFAULT_CACHE_TTL_SECONDS);
+    expect(result!.eventStreams).toEqual(eventStreams);
+  });
+
+  it('omits event streams from the envelope when none are provided', async () => {
+    const storage = new Storage('local-cache-first');
+    await storage.store('user-1', boolFlagCache, '"etag"');
+    const result = await storage.retrieve('user-1', DEFAULT_CACHE_TTL_SECONDS);
+    expect(result!.eventStreams).toBeUndefined();
+  });
+
   it('stores null ETag when none is provided', async () => {
     const storage = new Storage('local-cache-first');
     await storage.store('user-1', boolFlagCache, null);
