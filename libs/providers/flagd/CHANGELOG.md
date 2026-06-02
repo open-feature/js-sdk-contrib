@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.16.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.15.1...flagd-provider-v0.16.0) (2026-06-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* DISABLED is a successful evaluation (still defaults) ([#1558](https://github.com/open-feature/js-sdk-contrib/issues/1558))
+
+### ✨ New Features
+
+* DISABLED is a successful evaluation (still defaults) ([#1558](https://github.com/open-feature/js-sdk-contrib/issues/1558)) ([198c928](https://github.com/open-feature/js-sdk-contrib/commit/198c92840e5bbf80b300f3f585250897ea1b24e3))
+
 ## [0.15.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.15.0...flagd-provider-v0.15.1) (2026-05-01)
 
 
