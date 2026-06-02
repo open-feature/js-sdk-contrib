@@ -4,12 +4,13 @@ import type {
   EvaluationResponse,
   EventStream,
 } from '@openfeature/ofrep-core';
-import { ErrorMessageMap, OFREPApiError } from '@openfeature/ofrep-core';
 import {
+  ErrorMessageMap,
   type EvaluationFlagValue,
   handleEvaluationError,
   isEvaluationFailureResponse,
   OFREPApi,
+  OFREPApiError,
   OFREPApiFetchError,
   OFREPApiTooManyRequestsError,
   OFREPApiUnauthorizedError,
@@ -271,9 +272,8 @@ export class OFREPWebProvider implements Provider {
       if (cached.metadata) {
         this._flagSetMetadataCache = cached.metadata as MetadataCache;
       }
-      if (cached.eventStreams) {
-        this._eventStreams = cached.eventStreams;
-      }
+      this._eventStreams = cached.eventStreams;
+
       // Serving from cache after a transient network failure. Surface the persisted
       // event streams so the caller can establish SSE without waiting for a 200 — a
       // subsequent successful request may be a 304 that carries no eventStreams.
@@ -625,9 +625,8 @@ export class OFREPWebProvider implements Provider {
       if (cached.metadata) {
         this._flagSetMetadataCache = cached.metadata as MetadataCache;
       }
-      if (cached.eventStreams) {
-        this._eventStreams = cached.eventStreams;
-      }
+      this._eventStreams = cached.eventStreams;
+
       // Connect SSE from the persisted streams: the background refresh below sends
       // If-None-Match and will receive a 304 (no body, no eventStreams) when flags are
       // unchanged, so we must rely on the cached configuration to establish SSE here.
