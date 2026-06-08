@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.1...ofrep-web-provider-v0.4.2) (2026-06-08)
+
+
+### 🐛 Bug Fixes
+
+* SSE eventstream urls are not stored in cache ([#1559](https://github.com/open-feature/js-sdk-contrib/issues/1559)) ([8ca6024](https://github.com/open-feature/js-sdk-contrib/commit/8ca602442da500ea3a2b1d6c25ad7a735fe4c164))
+
 ## [0.4.1](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.0...ofrep-web-provider-v0.4.1) (2026-06-01)
 
 
