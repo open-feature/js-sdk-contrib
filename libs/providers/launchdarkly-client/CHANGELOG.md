@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.3.3...launchdarkly-client-provider-v0.4.0) (2026-06-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **launchdarkly:** upgrade to 4.x ([#1551](https://github.com/open-feature/js-sdk-contrib/issues/1551))
+
+### chore
+
+* **launchdarkly:** upgrade to 4.x ([#1551](https://github.com/open-feature/js-sdk-contrib/issues/1551)) ([cca7e7d](https://github.com/open-feature/js-sdk-contrib/commit/cca7e7df5b06071779029b3790b955c7163e0ea9))
+
 ## [0.3.3](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.3.2...launchdarkly-client-provider-v0.3.3) (2025-09-14)
 
 
