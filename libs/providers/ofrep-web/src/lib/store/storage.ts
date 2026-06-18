@@ -31,11 +31,18 @@ export interface PersistedEntry {
 export class Storage {
   private readonly _disabled: boolean;
   private readonly _cacheKeyPrefix?: string;
+  private readonly _cacheKeyTransformer: (context: EvaluationContext | undefined) => EvaluationContext | undefined;
   private readonly _logger?: Logger;
 
-  constructor(cacheMode: CacheMode = 'local-cache-first', cacheKeyPrefix?: string, logger?: Logger) {
+  constructor(
+    cacheMode: CacheMode = 'local-cache-first',
+    cacheKeyPrefix?: string,
+    cacheKeyTransformer?: (context: EvaluationContext | undefined) => EvaluationContext | undefined,
+    logger?: Logger,
+  ) {
     this._disabled = cacheMode === 'disabled';
     this._cacheKeyPrefix = cacheKeyPrefix;
+    this._cacheKeyTransformer = cacheKeyTransformer ?? ((context) => context);
     this._logger = logger;
   }
 
@@ -49,7 +56,11 @@ export class Storage {
    * Falls back to a double-pass FNV-1a-32 in non-secure contexts where crypto.subtle is absent.
    */
   private async _hashInput(baseUrl: string, context: EvaluationContext | undefined): Promise<string> {
-    const input = [this._cacheKeyPrefix ?? '', baseUrl, context ? JSON.stringify(context) : ''].join(':');
+    const input = [
+      this._cacheKeyPrefix ?? '',
+      baseUrl,
+      context ? JSON.stringify(this._cacheKeyTransformer(context)) : '',
+    ].join(':');
     if (typeof crypto !== 'undefined' && crypto.subtle) {
       const encoded = new TextEncoder().encode(input);
       const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);

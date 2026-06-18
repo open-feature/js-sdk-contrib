@@ -85,7 +85,12 @@ export class OFREPWebProvider implements Provider {
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
     this._cacheMode = this._options.cacheMode ?? 'local-cache-first';
     this._cacheTTL = this._options.cacheTTL ?? DEFAULT_CACHE_TTL_SECONDS;
-    this._storage = new Storage(this._cacheMode, this._options.cacheKeyPrefix, logger);
+    this._storage = new Storage(
+      this._cacheMode,
+      this._options.cacheKeyPrefix,
+      this._options.cacheKeyTransformer,
+      this._logger,
+    );
     this._isUsingCache = false;
   }
 

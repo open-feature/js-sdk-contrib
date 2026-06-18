@@ -142,6 +142,20 @@ describe('Storage (persistent flag cache)', () => {
     );
   });
 
+  it('produces the same cache key for contexts that differ only in a field omitted by cacheKeyTransformer', async () => {
+    // The transformer strips the volatile `session` field so two contexts that share
+    // the same `targetingKey` but differ only in `session` are treated as equivalent.
+    const transformer = (ctx: EvaluationContext | undefined): EvaluationContext | undefined => {
+      if (!ctx) return ctx;
+      const { session: _omit, ...rest } = ctx as EvaluationContext & { session?: unknown };
+      return rest;
+    };
+    const storage = new Storage('local-cache-first', undefined, transformer);
+    const contextA: EvaluationContext = { targetingKey: 'user-1', session: 'sess-aaa' };
+    const contextB: EvaluationContext = { targetingKey: 'user-1', session: 'sess-bbb' };
+    expect(await storage.getStorageKey(baseUrl, contextA)).toBe(await storage.getStorageKey(baseUrl, contextB));
+  });
+
   describe('when crypto.subtle is unavailable (non-secure context)', () => {
     let subtleSpy: jest.SpyInstance;
 
