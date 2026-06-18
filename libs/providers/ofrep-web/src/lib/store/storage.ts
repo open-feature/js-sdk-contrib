@@ -13,7 +13,8 @@ const STORAGE_NS = 'ofrep-web-provider';
 export interface PersistedEntry {
   /** Schema version — used to discard entries written by older provider versions. */
   version: number;
-  /** Hex digest (16 chars) of `targetingKey` (or `cacheKeyPrefix + ":" + targetingKey` when configured). SHA-256 when crypto.subtle is available, FNV-1a fallback otherwise. */
+  /** Hex digest (16 chars) of `baseUrl + ":" + context` (or `cacheKeyPrefix + ":" + baseUrl + ":" + context` when configured).
+   *  SHA-256 when crypto.subtle is available, FNV-1a fallback otherwise. */
   cacheKeyHash: string;
   /** ETag returned by the server for this evaluation, used for efficient revalidation. */
   etag: string | null;
@@ -43,12 +44,12 @@ export class Storage {
   }
 
   /**
-   * Hashes the URL + evaluation context (with optional prefix) to a 16-char hex string.
+   * Hashes the base URL + evaluation context (with optional prefix) to a 16-char hex string.
    * Uses SHA-256 via crypto.subtle when available (secure contexts).
    * Falls back to a double-pass FNV-1a-32 in non-secure contexts where crypto.subtle is absent.
    */
-  private async _hashInput(url: string, context: EvaluationContext | undefined): Promise<string> {
-    const input = [this._cacheKeyPrefix ?? '', url, context ? JSON.stringify(context) : ''].join(':');
+  private async _hashInput(baseUrl: string, context: EvaluationContext | undefined): Promise<string> {
+    const input = [this._cacheKeyPrefix ?? '', baseUrl, context ? JSON.stringify(context) : ''].join(':');
     if (typeof crypto !== 'undefined' && crypto.subtle) {
       const encoded = new TextEncoder().encode(input);
       const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
@@ -80,11 +81,11 @@ export class Storage {
   }
 
   /**
-   * Returns the localStorage key for the given URL + evaluation context.
+   * Returns the localStorage key for the given base URL + evaluation context.
    * Format: `ofrep-web-provider:v{version}:{hash}`
    */
-  async getStorageKey(url: string, context: EvaluationContext | undefined): Promise<string> {
-    return `${STORAGE_NS}:v${SCHEMA_VERSION}:${await this._hashInput(url, context)}`;
+  async getStorageKey(baseUrl: string, context: EvaluationContext | undefined): Promise<string> {
+    return `${STORAGE_NS}:v${SCHEMA_VERSION}:${await this._hashInput(baseUrl, context)}`;
   }
 
   /**
@@ -93,7 +94,7 @@ export class Storage {
    * so the provider continues operating with the fresh in-memory values.
    */
   async store(
-    url: string,
+    baseUrl: string,
     context: EvaluationContext | undefined,
     flags: FlagCache,
     etag: string | null,
@@ -101,10 +102,10 @@ export class Storage {
     eventStreams?: EventStream[],
   ): Promise<void> {
     if (this._disabled) return;
-    const key = await this.getStorageKey(url, context);
+    const key = await this.getStorageKey(baseUrl, context);
     const entry: PersistedEntry = {
       version: SCHEMA_VERSION,
-      cacheKeyHash: await this._hashInput(url, context),
+      cacheKeyHash: await this._hashInput(baseUrl, context),
       etag,
       writtenAt: new Date().toISOString(),
       data: flags,
@@ -122,12 +123,12 @@ export class Storage {
    * Loads a previously persisted entry.
    * Returns `undefined` when:
    *  - cacheMode is 'disabled'
-   *  - no entry exists for this targeting key
+   *  - no entry exists for this base URL + evaluation context
    *  - the schema version does not match
    *  - the entry is older than `ttlSeconds` (expired entries are removed from storage)
    */
   async retrieve(
-    url: string,
+    baseUrl: string,
     context: EvaluationContext | undefined,
     ttlSeconds: number,
   ): Promise<
@@ -136,7 +137,7 @@ export class Storage {
   > {
     if (this._disabled) return undefined;
     try {
-      const raw = localStorage.getItem(await this.getStorageKey(url, context));
+      const raw = localStorage.getItem(await this.getStorageKey(baseUrl, context));
       if (!raw) return undefined;
 
       const entry = JSON.parse(raw) as PersistedEntry;
@@ -147,7 +148,7 @@ export class Storage {
       // Enforce TTL — treat expired entries as a cache miss and evict them.
       const writtenAt = new Date(entry.writtenAt).getTime();
       if (Number.isNaN(writtenAt) || Date.now() - writtenAt > ttlSeconds * 1000) {
-        await this.clear(url, context);
+        await this.clear(baseUrl, context);
         return undefined;
       }
 
@@ -159,13 +160,13 @@ export class Storage {
   }
 
   /**
-   * Removes the persisted entry for the given URL + evaluation context.
+   * Removes the persisted entry for the given base URL + evaluation context.
    * No-op when cacheMode is 'disabled'.
    */
-  async clear(url: string, context: EvaluationContext | undefined): Promise<void> {
+  async clear(baseUrl: string, context: EvaluationContext | undefined): Promise<void> {
     if (this._disabled) return;
     try {
-      localStorage.removeItem(await this.getStorageKey(url, context));
+      localStorage.removeItem(await this.getStorageKey(baseUrl, context));
     } catch (error) {
       this._logger?.error(`Error clearing flag cache from local storage: ${error}`);
     }
