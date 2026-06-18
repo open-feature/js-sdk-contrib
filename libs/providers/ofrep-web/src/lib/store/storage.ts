@@ -1,5 +1,5 @@
 import type { EventStream } from '@openfeature/ofrep-core';
-import type { Logger } from '@openfeature/web-sdk';
+import type { EvaluationContext, Logger } from '@openfeature/web-sdk';
 import type { FlagCache } from '../model/in-memory-cache';
 import type { CacheMode } from '../model/ofrep-web-provider-options';
 
@@ -43,12 +43,12 @@ export class Storage {
   }
 
   /**
-   * Hashes the targeting key (with optional prefix) to a 16-char hex string.
+   * Hashes the URL + evaluation context (with optional prefix) to a 16-char hex string.
    * Uses SHA-256 via crypto.subtle when available (secure contexts).
    * Falls back to a double-pass FNV-1a-32 in non-secure contexts where crypto.subtle is absent.
    */
-  private async _hashInput(targetingKey: string): Promise<string> {
-    const input = this._cacheKeyPrefix ? `${this._cacheKeyPrefix}:${targetingKey}` : targetingKey;
+  private async _hashInput(url: string, context: EvaluationContext | undefined): Promise<string> {
+    const input = [this._cacheKeyPrefix ?? '', url, context ? JSON.stringify(context) : ''].join(':');
     if (typeof crypto !== 'undefined' && crypto.subtle) {
       const encoded = new TextEncoder().encode(input);
       const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
@@ -80,11 +80,11 @@ export class Storage {
   }
 
   /**
-   * Returns the localStorage key for the given targeting key.
+   * Returns the localStorage key for the given URL + evaluation context.
    * Format: `ofrep-web-provider:v{version}:{hash}`
    */
-  async getStorageKey(targetingKey: string): Promise<string> {
-    return `${STORAGE_NS}:v${SCHEMA_VERSION}:${await this._hashInput(targetingKey)}`;
+  async getStorageKey(url: string, context: EvaluationContext | undefined): Promise<string> {
+    return `${STORAGE_NS}:v${SCHEMA_VERSION}:${await this._hashInput(url, context)}`;
   }
 
   /**
@@ -93,17 +93,18 @@ export class Storage {
    * so the provider continues operating with the fresh in-memory values.
    */
   async store(
-    targetingKey: string,
+    url: string,
+    context: EvaluationContext | undefined,
     flags: FlagCache,
     etag: string | null,
     metadata?: Record<string, unknown>,
     eventStreams?: EventStream[],
   ): Promise<void> {
     if (this._disabled) return;
-    const key = await this.getStorageKey(targetingKey);
+    const key = await this.getStorageKey(url, context);
     const entry: PersistedEntry = {
       version: SCHEMA_VERSION,
-      cacheKeyHash: await this._hashInput(targetingKey),
+      cacheKeyHash: await this._hashInput(url, context),
       etag,
       writtenAt: new Date().toISOString(),
       data: flags,
@@ -126,7 +127,8 @@ export class Storage {
    *  - the entry is older than `ttlSeconds` (expired entries are removed from storage)
    */
   async retrieve(
-    targetingKey: string,
+    url: string,
+    context: EvaluationContext | undefined,
     ttlSeconds: number,
   ): Promise<
     | { flags: FlagCache; etag: string | null; metadata?: Record<string, unknown>; eventStreams?: EventStream[] }
@@ -134,7 +136,7 @@ export class Storage {
   > {
     if (this._disabled) return undefined;
     try {
-      const raw = localStorage.getItem(await this.getStorageKey(targetingKey));
+      const raw = localStorage.getItem(await this.getStorageKey(url, context));
       if (!raw) return undefined;
 
       const entry = JSON.parse(raw) as PersistedEntry;
@@ -145,7 +147,7 @@ export class Storage {
       // Enforce TTL — treat expired entries as a cache miss and evict them.
       const writtenAt = new Date(entry.writtenAt).getTime();
       if (Number.isNaN(writtenAt) || Date.now() - writtenAt > ttlSeconds * 1000) {
-        await this.clear(targetingKey);
+        await this.clear(url, context);
         return undefined;
       }
 
@@ -157,13 +159,13 @@ export class Storage {
   }
 
   /**
-   * Removes the persisted entry for the given targeting key.
+   * Removes the persisted entry for the given URL + evaluation context.
    * No-op when cacheMode is 'disabled'.
    */
-  async clear(targetingKey: string): Promise<void> {
+  async clear(url: string, context: EvaluationContext | undefined): Promise<void> {
     if (this._disabled) return;
     try {
-      localStorage.removeItem(await this.getStorageKey(targetingKey));
+      localStorage.removeItem(await this.getStorageKey(url, context));
     } catch (error) {
       this._logger?.error(`Error clearing flag cache from local storage: ${error}`);
     }
