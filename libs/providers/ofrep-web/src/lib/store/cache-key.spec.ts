@@ -43,7 +43,7 @@ describe('cache key encoding', () => {
         ['X-My-Header', 'ignored'],
       ],
     });
-    expect(auth).toBe(JSON.stringify([['Authorization', 'Bearer token']]));
+    expect(auth).toBe(JSON.stringify([['authorization', 'Bearer token']]));
   });
 
   it('serializes known auth headers from headersFactory', async () => {
@@ -51,7 +51,7 @@ describe('cache key encoding', () => {
       baseUrl: 'https://example.com',
       headersFactory: () => Promise.resolve([['X-Api-Key', 'secret']]),
     });
-    expect(auth).toBe(JSON.stringify([['X-Api-Key', 'secret']]));
+    expect(auth).toBe(JSON.stringify([['x-api-key', 'secret']]));
   });
 
   it('returns an empty array when no auth headers are configured', async () => {
