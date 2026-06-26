@@ -2,8 +2,9 @@ import type { EventStream } from '@openfeature/ofrep-core';
 import type { Logger } from '@openfeature/web-sdk';
 import type { FlagCache } from '../model/in-memory-cache';
 import type { CacheMode } from '../model/ofrep-web-provider-options';
+import { encodeCacheKeyInput } from './cache-key';
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const STORAGE_NS = 'ofrep-web-provider';
 
 /**
@@ -13,7 +14,7 @@ const STORAGE_NS = 'ofrep-web-provider';
 export interface PersistedEntry {
   /** Schema version — used to discard entries written by older provider versions. */
   version: number;
-  /** Hex digest (16 chars) of `targetingKey` (or `cacheKeyPrefix + ":" + targetingKey` when configured). SHA-256 when crypto.subtle is available, FNV-1a fallback otherwise. */
+  /** Hex digest (16 chars) of the ADR-0009 cache key input. SHA-256 when crypto.subtle is available, FNV-1a fallback otherwise. */
   cacheKeyHash: string;
   /** ETag returned by the server for this evaluation, used for efficient revalidation. */
   etag: string | null;
@@ -29,11 +30,22 @@ export interface PersistedEntry {
 
 export class Storage {
   private readonly _disabled: boolean;
+  private readonly _baseUrl: string;
+  private readonly _getAuthCredential: () => Promise<string>;
   private readonly _cacheKeyPrefix?: string;
   private readonly _logger?: Logger;
+  private _domain = '';
 
-  constructor(cacheMode: CacheMode = 'local-cache-first', cacheKeyPrefix?: string, logger?: Logger) {
+  constructor(
+    cacheMode: CacheMode = 'local-cache-first',
+    baseUrl: string,
+    getAuthCredential: () => Promise<string>,
+    cacheKeyPrefix?: string,
+    logger?: Logger,
+  ) {
     this._disabled = cacheMode === 'disabled';
+    this._baseUrl = baseUrl;
+    this._getAuthCredential = getAuthCredential;
     this._cacheKeyPrefix = cacheKeyPrefix;
     this._logger = logger;
   }
@@ -43,12 +55,26 @@ export class Storage {
   }
 
   /**
-   * Hashes the targeting key (with optional prefix) to a 16-char hex string.
+   * Sets the bound OpenFeature domain for cache key derivation.
+   * Called once from provider initialization.
+   */
+  setDomain(domain?: string): void {
+    this._domain = domain ?? '';
+  }
+
+  /**
+   * Hashes the ADR-0009 cache key input to a 16-char hex string.
    * Uses SHA-256 via crypto.subtle when available (secure contexts).
    * Falls back to a double-pass FNV-1a-32 in non-secure contexts where crypto.subtle is absent.
    */
   private async _hashInput(targetingKey: string): Promise<string> {
-    const input = this._cacheKeyPrefix ? `${this._cacheKeyPrefix}:${targetingKey}` : targetingKey;
+    const input = encodeCacheKeyInput({
+      cacheKeyPrefix: this._cacheKeyPrefix,
+      baseUrl: this._baseUrl,
+      auth: await this._getAuthCredential(),
+      domain: this._domain,
+      targetingKey,
+    });
     if (typeof crypto !== 'undefined' && crypto.subtle) {
       const encoded = new TextEncoder().encode(input);
       const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);

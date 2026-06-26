@@ -14,33 +14,74 @@ const boolFlagCache: FlagCache = {
   },
 };
 
+const defaultBaseUrl = 'https://example.com';
+
+function createStorage(
+  cacheMode: 'local-cache-first' | 'network-first' | 'disabled' = 'local-cache-first',
+  options: { baseUrl?: string; auth?: string; cacheKeyPrefix?: string; domain?: string } = {},
+): Storage {
+  const storage = new Storage(
+    cacheMode,
+    options.baseUrl ?? defaultBaseUrl,
+    () => Promise.resolve(options.auth ?? '[]'),
+    options.cacheKeyPrefix,
+  );
+  storage.setDomain(options.domain);
+  return storage;
+}
+
 describe('Storage (persistent flag cache)', () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
   it('uses a versioned storage key and does not embed the raw targeting key', async () => {
-    const storage = new Storage('local-cache-first');
+    const storage = createStorage();
     const targetingKey = 'user-pii-21640825-95e7-4335-b149-bd6881cf7875';
     const key = await storage.getStorageKey(targetingKey);
-    expect(key.startsWith('ofrep-web-provider:v1:')).toBe(true);
+    expect(key.startsWith('ofrep-web-provider:v2:')).toBe(true);
     expect(key).not.toContain(targetingKey);
   });
 
   it('maps different targeting keys to different storage keys', async () => {
-    const storage = new Storage('local-cache-first');
+    const storage = createStorage();
     expect(await storage.getStorageKey('a')).not.toBe(await storage.getStorageKey('b'));
   });
 
+  it('maps different base URLs to different storage keys', async () => {
+    const storageA = createStorage('local-cache-first', { baseUrl: 'https://a.example.com' });
+    const storageB = createStorage('local-cache-first', { baseUrl: 'https://b.example.com' });
+    const tk = 'same-user';
+    expect(await storageA.getStorageKey(tk)).not.toBe(await storageB.getStorageKey(tk));
+  });
+
+  it('maps different domains to different storage keys', async () => {
+    const storageA = createStorage('local-cache-first', { domain: 'billing' });
+    const storageB = createStorage('local-cache-first', { domain: 'checkout' });
+    const tk = 'same-user';
+    expect(await storageA.getStorageKey(tk)).not.toBe(await storageB.getStorageKey(tk));
+  });
+
+  it('maps different auth credentials to different storage keys', async () => {
+    const storageA = createStorage('local-cache-first', {
+      auth: JSON.stringify([['Authorization', 'Bearer a']]),
+    });
+    const storageB = createStorage('local-cache-first', {
+      auth: JSON.stringify([['Authorization', 'Bearer b']]),
+    });
+    const tk = 'same-user';
+    expect(await storageA.getStorageKey(tk)).not.toBe(await storageB.getStorageKey(tk));
+  });
+
   it('does not read or write when cacheMode is disabled', async () => {
-    const storage = new Storage('disabled');
+    const storage = createStorage('disabled');
     await storage.store('any-key', boolFlagCache, null);
     expect(localStorage.length).toBe(0);
     expect(await storage.retrieve('any-key', DEFAULT_CACHE_TTL_SECONDS)).toBeUndefined();
   });
 
   it('clears the hashed entry for the given targeting key', async () => {
-    const storage = new Storage('local-cache-first');
+    const storage = createStorage();
     const tk = 'clear-me';
     await storage.store(tk, boolFlagCache, null);
     const key = await storage.getStorageKey(tk);
@@ -50,7 +91,7 @@ describe('Storage (persistent flag cache)', () => {
   });
 
   it('stores and retrieves the flag cache and ETag in the persisted envelope', async () => {
-    const storage = new Storage('local-cache-first');
+    const storage = createStorage();
     const etag = '"abc123"';
     await storage.store('user-1', boolFlagCache, etag);
     const result = await storage.retrieve('user-1', DEFAULT_CACHE_TTL_SECONDS);
@@ -60,7 +101,7 @@ describe('Storage (persistent flag cache)', () => {
   });
 
   it('stores and retrieves the SSE event streams in the persisted envelope', async () => {
-    const storage = new Storage('local-cache-first');
+    const storage = createStorage();
     const eventStreams = [{ type: 'sse' as const, url: 'https://sse.example.com/stream' }];
     await storage.store('user-1', boolFlagCache, '"etag"', undefined, eventStreams);
     const result = await storage.retrieve('user-1', DEFAULT_CACHE_TTL_SECONDS);
@@ -68,21 +109,21 @@ describe('Storage (persistent flag cache)', () => {
   });
 
   it('omits event streams from the envelope when none are provided', async () => {
-    const storage = new Storage('local-cache-first');
+    const storage = createStorage();
     await storage.store('user-1', boolFlagCache, '"etag"');
     const result = await storage.retrieve('user-1', DEFAULT_CACHE_TTL_SECONDS);
     expect(result!.eventStreams).toBeUndefined();
   });
 
   it('stores null ETag when none is provided', async () => {
-    const storage = new Storage('local-cache-first');
+    const storage = createStorage();
     await storage.store('user-1', boolFlagCache, null);
     const result = await storage.retrieve('user-1', DEFAULT_CACHE_TTL_SECONDS);
     expect(result!.etag).toBeNull();
   });
 
   it('returns undefined for an expired entry and removes it from storage', async () => {
-    const storage = new Storage('local-cache-first');
+    const storage = createStorage();
     const tk = 'user-expired';
     await storage.store(tk, boolFlagCache, null);
 
@@ -99,7 +140,7 @@ describe('Storage (persistent flag cache)', () => {
   });
 
   it('returns undefined for an entry with an unknown schema version', async () => {
-    const storage = new Storage('local-cache-first');
+    const storage = createStorage();
     const tk = 'user-v99';
     await storage.store(tk, boolFlagCache, null);
     const key = await storage.getStorageKey(tk);
@@ -110,11 +151,10 @@ describe('Storage (persistent flag cache)', () => {
   });
 
   it('uses a different hash when cacheKeyPrefix is set, preventing key collisions', async () => {
-    const storageA = new Storage('local-cache-first', 'provider-a');
-    const storageB = new Storage('local-cache-first', 'provider-b');
-    const storageNoPrefix = new Storage('local-cache-first');
+    const storageA = createStorage('local-cache-first', { cacheKeyPrefix: 'provider-a' });
+    const storageB = createStorage('local-cache-first', { cacheKeyPrefix: 'provider-b' });
+    const storageNoPrefix = createStorage('local-cache-first');
     const tk = 'same-user';
-    // All three should produce different storage keys for the same targeting key.
     expect(await storageA.getStorageKey(tk)).not.toBe(await storageB.getStorageKey(tk));
     expect(await storageA.getStorageKey(tk)).not.toBe(await storageNoPrefix.getStorageKey(tk));
   });
@@ -131,21 +171,21 @@ describe('Storage (persistent flag cache)', () => {
     });
 
     it('produces a valid versioned storage key without the raw targeting key', async () => {
-      const storage = new Storage('local-cache-first');
+      const storage = createStorage();
       const tk = 'user-pii-21640825-95e7-4335-b149-bd6881cf7875';
       const key = await storage.getStorageKey(tk);
-      expect(key.startsWith('ofrep-web-provider:v1:')).toBe(true);
+      expect(key.startsWith('ofrep-web-provider:v2:')).toBe(true);
       expect(key).not.toContain(tk);
       expect(key.split(':')[2]).toMatch(/^[0-9a-f]{16}$/);
     });
 
     it('maps different targeting keys to different storage keys', async () => {
-      const storage = new Storage('local-cache-first');
+      const storage = createStorage();
       expect(await storage.getStorageKey('a')).not.toBe(await storage.getStorageKey('b'));
     });
 
     it('stores and retrieves flags without throwing', async () => {
-      const storage = new Storage('local-cache-first');
+      const storage = createStorage();
       await storage.store('user-1', boolFlagCache, '"etag"');
       const result = await storage.retrieve('user-1', DEFAULT_CACHE_TTL_SECONDS);
       expect(result).not.toBeUndefined();
