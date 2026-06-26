@@ -32,34 +32,28 @@ export class Storage {
   private readonly _disabled: boolean;
   private readonly _baseUrl: string;
   private readonly _getAuthCredential: () => Promise<string>;
+  private readonly _domain: string;
   private readonly _cacheKeyPrefix?: string;
   private readonly _logger?: Logger;
-  private _domain = '';
 
   constructor(
     cacheMode: CacheMode = 'local-cache-first',
     baseUrl: string,
     getAuthCredential: () => Promise<string>,
+    domain: string,
     cacheKeyPrefix?: string,
     logger?: Logger,
   ) {
     this._disabled = cacheMode === 'disabled';
     this._baseUrl = baseUrl;
     this._getAuthCredential = getAuthCredential;
+    this._domain = domain;
     this._cacheKeyPrefix = cacheKeyPrefix;
     this._logger = logger;
   }
 
   get disabled(): boolean {
     return this._disabled;
-  }
-
-  /**
-   * Sets the bound OpenFeature domain for cache key derivation.
-   * Called once from provider initialization.
-   */
-  setDomain(domain?: string): void {
-    this._domain = domain ?? '';
   }
 
   /**
