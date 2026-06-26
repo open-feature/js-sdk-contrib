@@ -34,22 +34,39 @@ describe('cache key encoding', () => {
     expect(withPrefix).not.toBe(withoutPrefix);
   });
 
-  it('derives auth from static headers excluding content-type', async () => {
+  it('serializes Authorization from static headers', async () => {
     const auth = await deriveAuthCredential({
       baseUrl: 'https://example.com',
       headers: [
         ['Content-Type', 'application/json'],
         ['Authorization', 'Bearer token'],
+        ['X-My-Header', 'ignored'],
       ],
     });
     expect(auth).toBe(JSON.stringify([['Authorization', 'Bearer token']]));
   });
 
-  it('derives auth from headersFactory', async () => {
+  it('serializes known auth headers from headersFactory', async () => {
     const auth = await deriveAuthCredential({
       baseUrl: 'https://example.com',
       headersFactory: () => Promise.resolve([['X-Api-Key', 'secret']]),
     });
     expect(auth).toBe(JSON.stringify([['X-Api-Key', 'secret']]));
+  });
+
+  it('returns an empty array when no auth headers are configured', async () => {
+    const auth = await deriveAuthCredential({
+      baseUrl: 'https://example.com',
+      headers: [['X-Custom', 'value']],
+    });
+    expect(auth).toBe('[]');
+  });
+
+  it('matches auth header names case-insensitively', async () => {
+    const auth = await deriveAuthCredential({
+      baseUrl: 'https://example.com',
+      headers: [['x-api-key', 'secret']],
+    });
+    expect(auth).toBe(JSON.stringify([['x-api-key', 'secret']]));
   });
 });
