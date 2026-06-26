@@ -42,6 +42,7 @@ import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import type { FlagCache, MetadataCache } from './model/in-memory-cache';
 import type { CacheMode, OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
 import { DEFAULT_CACHE_TTL_SECONDS } from './model/ofrep-web-provider-options';
+import { deriveAuthCredential } from './store/cache-key';
 import { Storage } from './store/storage';
 import { SseManager } from './sse-manager';
 
@@ -52,6 +53,7 @@ export class OFREPWebProvider implements Provider {
     name: 'OpenFeature Remote Evaluation Protocol Web Provider',
   };
   readonly runsOn = 'client';
+  readonly domainScoped = true;
   readonly events = new OpenFeatureEventEmitter();
   readonly hooks?: Hook[] | undefined;
 
@@ -85,7 +87,13 @@ export class OFREPWebProvider implements Provider {
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
     this._cacheMode = this._options.cacheMode ?? 'local-cache-first';
     this._cacheTTL = this._options.cacheTTL ?? DEFAULT_CACHE_TTL_SECONDS;
-    this._storage = new Storage(this._cacheMode, this._options.cacheKeyPrefix, logger);
+    this._storage = new Storage(
+      this._cacheMode,
+      this._options.baseUrl,
+      () => deriveAuthCredential(this._options),
+      this._options.cacheKeyPrefix,
+      logger,
+    );
     this._isUsingCache = false;
   }
 
@@ -99,9 +107,11 @@ export class OFREPWebProvider implements Provider {
   /**
    * Initialize the provider, it will evaluate the flags and start the polling if it is not disabled.
    * @param context - the context to use for the evaluation
+   * @param domain - the bound OpenFeature domain, if any
    */
-  async initialize(context?: EvaluationContext | undefined): Promise<void> {
+  async initialize(context?: EvaluationContext | undefined, domain?: string): Promise<void> {
     try {
+      this._storage.setDomain(domain);
       this._context = context;
 
       let result: EvaluateFlagsResponse | undefined;

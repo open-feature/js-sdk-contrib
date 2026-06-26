@@ -110,7 +110,9 @@ The provider supports persistent local caching via `localStorage` to reduce late
 
 **`cacheTTL`** — maximum age in seconds of a persisted cache entry before it is treated as a miss and removed. Defaults to `2_592_000` (30 days).
 
-**`cacheKeyPrefix`** — a string included in the cache key to avoid collisions when multiple provider instances share the same browser origin. A good value is the OFREP base URL or a project key.
+**`cacheKeyPrefix`** — an optional extra namespace prepended to the ADR-0009 cache key input (`baseUrl`, auth credential, bound OpenFeature `domain`, and `targetingKey`). Use it when you need additional separation across storage partitions you control directly.
+
+The provider declares itself `domain-scoped`, so each instance is bound to at most one OpenFeature domain. The bound domain is supplied by the SDK at `initialize()` and included in the cache key.
 
 ```ts
 import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';

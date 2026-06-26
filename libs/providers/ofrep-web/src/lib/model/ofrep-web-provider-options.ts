@@ -65,12 +65,11 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   cacheTTL?: number;
 
   /**
-   * cacheKeyPrefix is included in the cache key hash to prevent collisions when multiple
-   * OFREP provider instances share the same storage partition (e.g. the same browser origin).
-   * When set, the cache key becomes `hash(cacheKeyPrefix + ":" + targetingKey)`.
+   * cacheKeyPrefix is prepended to the ADR-0009 cache key input
+   * (`baseUrl`, auth credential, bound `domain`, and `targetingKey`) for additional namespacing
+   * across storage partitions an application controls directly.
    *
-   * A sensible value is the OFREP base URL, a project key, or any other string that
-   * uniquely identifies this provider instance.
+   * A sensible value is a project key or any other string that uniquely identifies this provider instance.
    */
   cacheKeyPrefix?: string;
 };
