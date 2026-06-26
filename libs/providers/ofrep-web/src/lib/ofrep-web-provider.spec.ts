@@ -463,7 +463,7 @@ describe('OFREPWebProvider', () => {
         key,
         JSON.stringify({
           version: 2,
-          cacheKeyHash: key,
+          cacheKeyHash: key.split(':')[2],
           etag: null,
           writtenAt: new Date().toISOString(),
           data: {},
@@ -504,7 +504,7 @@ describe('OFREPWebProvider', () => {
         key,
         JSON.stringify({
           version: 2,
-          cacheKeyHash: key,
+          cacheKeyHash: key.split(':')[2],
           etag: '"cached-etag"',
           writtenAt: new Date().toISOString(),
           data: {},

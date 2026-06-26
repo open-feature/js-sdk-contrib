@@ -27,7 +27,10 @@ function isAuthHeader(name: string): boolean {
  */
 export async function deriveAuthCredential(options: OFREPProviderBaseOptions): Promise<string> {
   const entries = [...(options.headers ?? []), ...((await options.headersFactory?.()) ?? [])];
-  const authHeaders = entries.filter(([name]) => isAuthHeader(name)).sort(([a], [b]) => a.localeCompare(b));
+  const authHeaders = entries
+    .filter(([name]) => isAuthHeader(name))
+    .map(([name, value]) => [name.toLowerCase(), value] as [string, string])
+    .sort(([a], [b]) => a.localeCompare(b));
   return JSON.stringify(authHeaders);
 }
 
