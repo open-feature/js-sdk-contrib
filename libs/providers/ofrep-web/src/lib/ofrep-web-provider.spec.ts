@@ -38,16 +38,32 @@ describe('OFREPWebProvider', () => {
   };
 
   function createTestStorage(domain = ''): Storage {
-    const storage = new Storage('local-cache-first', endpointBaseURL, () =>
+    return new Storage('local-cache-first', endpointBaseURL, () =>
       deriveAuthCredential({ baseUrl: endpointBaseURL }),
+      domain,
     );
-    storage.setDomain(domain);
-    return storage;
   }
 
   it('declares itself domain-scoped', () => {
     const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL });
     expect(provider.domainScoped).toBe(true);
+  });
+
+  it('does not read or write persisted storage before initialize', async () => {
+    const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
+    const storeSpy = jest.spyOn(Storage.prototype, 'store');
+    const retrieveSpy = jest.spyOn(Storage.prototype, 'retrieve');
+
+    await provider.onContextChange?.(defaultContext, {
+      ...defaultContext,
+      targetingKey: 'other-user',
+    });
+
+    expect(storeSpy).not.toHaveBeenCalled();
+    expect(retrieveSpy).not.toHaveBeenCalled();
+
+    storeSpy.mockRestore();
+    retrieveSpy.mockRestore();
   });
 
   it('uses the bound domain from initialize for persisted cache lookup', async () => {

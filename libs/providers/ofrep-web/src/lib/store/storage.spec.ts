@@ -20,14 +20,13 @@ function createStorage(
   cacheMode: 'local-cache-first' | 'network-first' | 'disabled' = 'local-cache-first',
   options: { baseUrl?: string; auth?: string; cacheKeyPrefix?: string; domain?: string } = {},
 ): Storage {
-  const storage = new Storage(
+  return new Storage(
     cacheMode,
     options.baseUrl ?? defaultBaseUrl,
     () => Promise.resolve(options.auth ?? '[]'),
+    options.domain ?? '',
     options.cacheKeyPrefix,
   );
-  storage.setDomain(options.domain);
-  return storage;
 }
 
 describe('Storage (persistent flag cache)', () => {

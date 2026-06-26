@@ -68,7 +68,7 @@ export class OFREPWebProvider implements Provider {
   private _isUsingCache: boolean;
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
-  private _storage: Storage;
+  private _storage?: Storage;
   private _cacheMode: CacheMode;
   private _cacheTTL: number;
   private _contextRevision = 0;
@@ -87,13 +87,6 @@ export class OFREPWebProvider implements Provider {
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
     this._cacheMode = this._options.cacheMode ?? 'local-cache-first';
     this._cacheTTL = this._options.cacheTTL ?? DEFAULT_CACHE_TTL_SECONDS;
-    this._storage = new Storage(
-      this._cacheMode,
-      this._options.baseUrl,
-      () => deriveAuthCredential(this._options),
-      this._options.cacheKeyPrefix,
-      logger,
-    );
     this._isUsingCache = false;
   }
 
@@ -111,7 +104,14 @@ export class OFREPWebProvider implements Provider {
    */
   async initialize(context?: EvaluationContext | undefined, domain?: string): Promise<void> {
     try {
-      this._storage.setDomain(domain);
+      this._storage = new Storage(
+        this._cacheMode,
+        this._options.baseUrl,
+        () => deriveAuthCredential(this._options),
+        domain ?? '',
+        this._options.cacheKeyPrefix,
+        this._logger,
+      );
       this._context = context;
 
       let result: EvaluateFlagsResponse | undefined;
@@ -188,7 +188,7 @@ export class OFREPWebProvider implements Provider {
     try {
       if (oldContext?.targetingKey !== newContext?.targetingKey) {
         this._etag = null;
-        void this._storage.clear(oldContext?.targetingKey ?? '');
+        void this._storage?.clear(oldContext?.targetingKey ?? '');
       }
       this._context = newContext;
 
@@ -246,6 +246,7 @@ export class OFREPWebProvider implements Provider {
     }
     this._sseManager?.dispose();
     this._sseManager = undefined;
+    this._storage = undefined;
     this._ofrepAPI.close();
     return Promise.resolve();
   }
@@ -272,7 +273,7 @@ export class OFREPWebProvider implements Provider {
         throw error;
       }
       // Transient / server errors (5xx, network failures, timeouts) — try the persisted cache as a fallback.
-      const cached = await this._storage.retrieve(context?.targetingKey ?? '', this._cacheTTL);
+      const cached = await this._storage?.retrieve(context?.targetingKey ?? '', this._cacheTTL);
       if (!cached) {
         throw error; // No usable cache — propagate the original error.
       }
@@ -351,7 +352,7 @@ export class OFREPWebProvider implements Provider {
       this._flagSetMetadataCache = toFlagMetadata(
         typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
       );
-      await this._storage.store(
+      await this._storage?.store(
         context?.targetingKey ?? '',
         newCache,
         newEtag,
@@ -627,7 +628,7 @@ export class OFREPWebProvider implements Provider {
   }
 
   private async _tryLoadFlagsFromCache(context?: EvaluationContext | undefined): Promise<boolean> {
-    const cached = await this._storage.retrieve(context?.targetingKey ?? '', this._cacheTTL);
+    const cached = await this._storage?.retrieve(context?.targetingKey ?? '', this._cacheTTL);
     if (cached) {
       this._isUsingCache = true;
       this._flagCache = cached.flags;
