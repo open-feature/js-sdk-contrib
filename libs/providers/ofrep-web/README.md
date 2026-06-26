@@ -100,29 +100,56 @@ OpenFeature.setProvider(
 
 ### Caching
 
-The provider supports persistent local caching via `localStorage` to reduce latency on startup and improve resilience to transient network failures. Caching is controlled with three options.
+The provider supports persistent local caching via `localStorage` per [ADR-0009](https://github.com/open-feature/protocol/blob/main/service/adrs/0009-local-storage-for-static-context-providers.md). Caching reduces latency on startup and improves resilience to transient network failures.
 
-**`cacheMode`** — controls the startup strategy:
+#### Cache modes
+
+**`cacheMode`** controls the startup strategy:
 
 - `'local-cache-first'` _(default)_ — `initialize()` resolves immediately from the persisted cache if one exists, then refreshes from the network in the background. Evaluations served before the refresh completes will have reason `CACHED`.
 - `'network-first'` — `initialize()` blocks on the network request. The persisted cache is used as a fallback only on transient failures (network unavailable, timeout, 5xx). Auth and configuration errors (400, 401, 403, 404) are always surfaced immediately and never masked by cached values.
 - `'disabled'` — no persistence. `initialize()` always blocks on the network and the other cache options have no effect.
 
-**`cacheTTL`** — maximum age in seconds of a persisted cache entry before it is treated as a miss and removed. Defaults to `2_592_000` (30 days).
+**`cacheTTL`** — maximum age in seconds of a persisted cache entry before it is treated as a miss and removed. Defaults to `2_592_000` (30 days). Auth and configuration errors do not clear persisted entries; TTL governs expiry.
 
-**`cacheKeyPrefix`** — an optional extra namespace prepended to the ADR-0009 cache key input (`baseUrl`, auth credential, bound OpenFeature `domain`, and `targetingKey`). Use it when you need additional separation across storage partitions you control directly.
+#### Cache key
 
-The provider declares itself `domain-scoped`, so each instance is bound to at most one OpenFeature domain. The bound domain is supplied by the SDK at `initialize()` and included in the cache key.
+Persisted entries are keyed by a hash of the OFREP resource and evaluation identity, not the full evaluation context. The key input is a JSON-encoded array of:
+
+1. **`cacheKeyPrefix`** (optional) — extra namespace when you control the storage partition directly
+2. **`baseUrl`** — the configured OFREP base URL
+3. **Auth credential** — serialized from known auth headers (`Authorization`, `Api-Key`, `X-Api-Key`, `X-Auth-Token`, `X-Access-Token`), taken from `headers` and `headersFactory` at read/write time
+4. **`domain`** — the OpenFeature domain the provider is bound to via `OpenFeature.setProvider('domain', provider)` (passed to `initialize()` by the SDK; empty when registered as the default provider)
+5. **`targetingKey`** — the evaluation context's targeting key
+
+The localStorage key is `ofrep-web-provider:v2:{hash}` where `{hash}` is the first 16 hex characters of SHA-256 (or an FNV-1a fallback in non-secure contexts where `crypto.subtle` is unavailable).
+
+#### Domain scoping
+
+The provider declares itself `domain-scoped`, so each instance is bound to at most one OpenFeature domain via `OpenFeature.setProvider('domain', provider)`. The SDK forwards that domain to `initialize(context, domain?)`; persistence is not initialized until then, so nothing is read from or written to `localStorage` before initialization.
+
+Bind a separate provider instance per domain in micro-frontend or multi-tenant setups:
+
+```ts
+OpenFeature.setProvider('billing', new OFREPWebProvider({ baseUrl: 'https://flags.example.com' }));
+OpenFeature.setProvider('checkout', new OFREPWebProvider({ baseUrl: 'https://flags.example.com' }));
+```
+
+#### Auth headers and rotating tokens
+
+Only the auth header names listed above participate in the cache key. Other custom headers (for example `X-My-Header`) are sent on requests but do not affect persistence.
 
 ```ts
 import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
 
 OpenFeature.setProvider(
+  'my-app',
   new OFREPWebProvider({
     baseUrl: 'https://localhost:8080',
     cacheMode: 'local-cache-first',
     cacheTTL: 3600, // 1 hour
     cacheKeyPrefix: 'my-app',
+    headers: [['Authorization', 'my-api-key']],
   }),
 );
 ```
