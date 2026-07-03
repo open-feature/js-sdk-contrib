@@ -114,15 +114,16 @@ The provider supports persistent local caching via `localStorage` per [ADR-0009]
 
 #### Cache key
 
-Persisted entries are keyed by a hash of the OFREP resource and evaluation identity, not the full evaluation context. The key input is a JSON-encoded array of:
+Persisted entries are keyed by a hash of key material returned by a cache-key generator, not the full evaluation context. The default generator uses:
 
-1. **`cacheKeyPrefix`** (optional) — extra namespace when you control the storage partition directly
-2. **`baseUrl`** — the configured OFREP base URL
-3. **Auth credential** — serialized from known auth headers (`Authorization`, `Api-Key`, `X-Api-Key`, `X-Auth-Token`, `X-Access-Token`), taken from `headers` and `headersFactory` at read/write time
-4. **`domain`** — the OpenFeature domain the provider is bound to via `OpenFeature.setProvider('domain', provider)` (passed to `initialize()` by the SDK; empty when registered as the default provider)
-5. **`targetingKey`** — the evaluation context's targeting key
+1. **`baseUrl`** — the configured OFREP base URL
+2. **Auth credential** — serialized from known auth headers (`Authorization`, `Api-Key`, `X-Api-Key`, `X-Auth-Token`, `X-Access-Token`), taken from `headers` and `headersFactory` at read/write time
+3. **`domain`** — the OpenFeature domain the provider is bound to via `OpenFeature.setProvider('domain', provider)` (passed to `initialize()` by the SDK; empty when registered as the default provider)
+4. **`targetingKey`** — the evaluation context's targeting key
 
-The localStorage key is `ofrep-web-provider:v2:{hash}` where `{hash}` is the first 16 hex characters of SHA-256 (or an FNV-1a fallback in non-secure contexts where `crypto.subtle` is unavailable).
+Use **`cacheKeyGenerator`** to customize the key material (namespace instances, drop auth for rotating tokens, or include stable context fields). The provider always hashes whatever the generator returns.
+
+The localStorage key is `ofrep-web-provider:v3:{hash}` where `{hash}` is the first 16 hex characters of SHA-256 (or an FNV-1a fallback in non-secure contexts where `crypto.subtle` is unavailable).
 
 #### Domain scoping
 
@@ -148,7 +149,7 @@ OpenFeature.setProvider(
     baseUrl: 'https://localhost:8080',
     cacheMode: 'local-cache-first',
     cacheTTL: 3600, // 1 hour
-    cacheKeyPrefix: 'my-app',
+    cacheKeyGenerator: (input) => `my-app:${JSON.stringify([input.url, input.auth, input.domain, input.targetingKey])}`,
     headers: [['Authorization', 'my-api-key']],
   }),
 );

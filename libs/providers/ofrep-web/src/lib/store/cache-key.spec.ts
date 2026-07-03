@@ -1,37 +1,34 @@
-import { deriveAuthCredential, encodeCacheKeyInput } from './cache-key';
+import { defaultCacheKeyGenerator, deriveAuthCredential } from './cache-key';
 
 describe('cache key encoding', () => {
   it('uses JSON encoding so delimiter-like values do not collide', () => {
-    const keyA = encodeCacheKeyInput({
-      baseUrl: 'https://a:b',
+    const keyA = defaultCacheKeyGenerator({
+      url: 'https://a:b',
       auth: 'c',
       domain: 'd',
       targetingKey: 'e',
+      context: { targetingKey: 'e' },
     });
-    const keyB = encodeCacheKeyInput({
-      baseUrl: 'https://a',
+    const keyB = defaultCacheKeyGenerator({
+      url: 'https://a',
       auth: 'b:c',
       domain: 'd:e',
       targetingKey: '',
+      context: {},
     });
     expect(keyA).not.toBe(keyB);
   });
 
-  it('includes cacheKeyPrefix as the first component when set', () => {
-    const withPrefix = encodeCacheKeyInput({
-      cacheKeyPrefix: 'my-app',
-      baseUrl: 'https://example.com',
+  it('allows custom generators to namespace key material', () => {
+    const input = {
+      url: 'https://example.com',
       auth: '[]',
       domain: 'billing',
       targetingKey: 'user-1',
-    });
-    const withoutPrefix = encodeCacheKeyInput({
-      baseUrl: 'https://example.com',
-      auth: '[]',
-      domain: 'billing',
-      targetingKey: 'user-1',
-    });
-    expect(withPrefix).not.toBe(withoutPrefix);
+      context: { targetingKey: 'user-1' },
+    };
+    const namespaced = (prefix: string) => `${prefix}:${defaultCacheKeyGenerator(input)}`;
+    expect(namespaced('provider-a')).not.toBe(namespaced('provider-b'));
   });
 
   it('serializes Authorization from static headers', async () => {
