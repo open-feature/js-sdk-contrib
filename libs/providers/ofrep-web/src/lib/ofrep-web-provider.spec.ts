@@ -462,7 +462,7 @@ describe('OFREPWebProvider', () => {
       localStorage.setItem(
         key,
         JSON.stringify({
-          version: 3,
+          version: 2,
           cacheKeyHash: key.split(':')[2],
           etag: null,
           writtenAt: new Date().toISOString(),
@@ -503,7 +503,7 @@ describe('OFREPWebProvider', () => {
       localStorage.setItem(
         key,
         JSON.stringify({
-          version: 3,
+          version: 2,
           cacheKeyHash: key.split(':')[2],
           etag: '"cached-etag"',
           writtenAt: new Date().toISOString(),
@@ -881,7 +881,7 @@ describe('OFREPWebProvider', () => {
       const storage = createTestStorage(domain);
       const key = await storage.getStorageKey({ targetingKey });
       const entry: PersistedEntry = {
-        version: 3,
+        version: 2,
         cacheKeyHash: key.split(':')[2],
         etag,
         writtenAt: writtenAt.toISOString(),

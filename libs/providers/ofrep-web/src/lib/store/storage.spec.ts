@@ -47,7 +47,7 @@ describe('Storage (persistent flag cache)', () => {
     const storage = createStorage();
     const context = ctx('user-pii-21640825-95e7-4335-b149-bd6881cf7875');
     const key = await storage.getStorageKey(context);
-    expect(key.startsWith('ofrep-web-provider:v3:')).toBe(true);
+    expect(key.startsWith('ofrep-web-provider:v2:')).toBe(true);
     expect(key).not.toContain(context.targetingKey!);
   });
 
@@ -190,7 +190,7 @@ describe('Storage (persistent flag cache)', () => {
       const storage = createStorage();
       const context = ctx('user-pii-21640825-95e7-4335-b149-bd6881cf7875');
       const key = await storage.getStorageKey(context);
-      expect(key.startsWith('ofrep-web-provider:v3:')).toBe(true);
+      expect(key.startsWith('ofrep-web-provider:v2:')).toBe(true);
       expect(key).not.toContain(context.targetingKey!);
       expect(key.split(':')[2]).toMatch(/^[0-9a-f]{16}$/);
     });

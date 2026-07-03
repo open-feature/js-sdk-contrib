@@ -123,7 +123,7 @@ Persisted entries are keyed by a hash of key material returned by a cache-key ge
 
 Use **`cacheKeyGenerator`** to customize the key material (namespace instances, drop auth for rotating tokens, or include stable context fields). The provider always hashes whatever the generator returns.
 
-The localStorage key is `ofrep-web-provider:v3:{hash}` where `{hash}` is the first 16 hex characters of SHA-256 (or an FNV-1a fallback in non-secure contexts where `crypto.subtle` is unavailable).
+The localStorage key is `ofrep-web-provider:v2:{hash}` where `{hash}` is the first 16 hex characters of SHA-256 (or an FNV-1a fallback in non-secure contexts where `crypto.subtle` is unavailable).
 
 #### Domain scoping
 
