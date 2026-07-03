@@ -76,7 +76,7 @@ describe('OFREPWebProvider', () => {
       },
     };
     const storage = createTestStorage('billing');
-    await storage.store(defaultContext.targetingKey, boolFlagCache, null);
+    await storage.store(defaultContext, boolFlagCache, null);
 
     const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
     await provider.initialize(defaultContext, 'billing');
@@ -457,11 +457,11 @@ describe('OFREPWebProvider', () => {
     it('connects SSE after the background refresh following a local-cache-first cache hit', async () => {
       // Seed the cache so initialize() hits the cache-first path.
       const storage = createTestStorage();
-      const key = await storage.getStorageKey(defaultContext.targetingKey);
+      const key = await storage.getStorageKey(defaultContext);
       localStorage.setItem(
         key,
         JSON.stringify({
-          version: 2,
+          version: 3,
           cacheKeyHash: key.split(':')[2],
           etag: null,
           writtenAt: new Date().toISOString(),
@@ -498,11 +498,11 @@ describe('OFREPWebProvider', () => {
       // and the server responds 304 (no body, no eventStreams), so SSE must be established
       // from the persisted configuration rather than from a 200 response.
       const storage = createTestStorage();
-      const key = await storage.getStorageKey(defaultContext.targetingKey);
+      const key = await storage.getStorageKey(defaultContext);
       localStorage.setItem(
         key,
         JSON.stringify({
-          version: 2,
+          version: 3,
           cacheKeyHash: key.split(':')[2],
           etag: '"cached-etag"',
           writtenAt: new Date().toISOString(),
@@ -886,9 +886,9 @@ describe('OFREPWebProvider', () => {
       domain = '',
     ): Promise<void> {
       const storage = createTestStorage(domain);
-      const key = await storage.getStorageKey(targetingKey);
+      const key = await storage.getStorageKey({ targetingKey });
       const entry: PersistedEntry = {
-        version: 2,
+        version: 3,
         cacheKeyHash: key.split(':')[2],
         etag,
         writtenAt: writtenAt.toISOString(),
@@ -947,7 +947,7 @@ describe('OFREPWebProvider', () => {
     it('does not read or write localStorage when cacheMode is disabled', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       const storage = createTestStorage();
-      const seededKey = await storage.getStorageKey(defaultContext.targetingKey);
+      const seededKey = await storage.getStorageKey(defaultContext);
       await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
       expect(localStorage.getItem(seededKey)).not.toBeNull();
       const provider = new OFREPWebProvider(
@@ -1005,7 +1005,7 @@ describe('OFREPWebProvider', () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
       const storage = createTestStorage();
-      const lsKey = await storage.getStorageKey(defaultContext.targetingKey);
+      const lsKey = await storage.getStorageKey(defaultContext);
       expect(localStorage.getItem(lsKey)).not.toBeNull();
 
       server.use(
@@ -1026,7 +1026,7 @@ describe('OFREPWebProvider', () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       await seedPersistentCache(defaultContext.targetingKey, boolFlagCache);
       const storage = createTestStorage();
-      const lsKey = await storage.getStorageKey(defaultContext.targetingKey);
+      const lsKey = await storage.getStorageKey(defaultContext);
 
       server.use(
         http.post('https://localhost:8080/ofrep/v1/evaluate/flags', () =>
@@ -1049,7 +1049,7 @@ describe('OFREPWebProvider', () => {
       await seedPersistentCache(defaultContext.targetingKey, boolFlagCache, null, expiredDate);
 
       const storage = createTestStorage();
-      const lsKey = await storage.getStorageKey(defaultContext.targetingKey);
+      const lsKey = await storage.getStorageKey(defaultContext);
       expect(localStorage.getItem(lsKey)).not.toBeNull(); // Exists before init.
 
       const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
@@ -1103,7 +1103,7 @@ describe('OFREPWebProvider', () => {
       await OpenFeature.setProviderAndWait(providerName, provider);
 
       const storage = createTestStorage();
-      const user1Key = await storage.getStorageKey(user1);
+      const user1Key = await storage.getStorageKey({ targetingKey: user1 });
       // After init, user1's entry should have been written by the network fetch.
       expect(localStorage.getItem(user1Key)).not.toBeNull();
 

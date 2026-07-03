@@ -1,4 +1,5 @@
 import type { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
+import type { CacheKeyGenerator } from '../store/cache-key';
 
 export type CacheMode = 'local-cache-first' | 'network-first' | 'disabled';
 
@@ -65,11 +66,9 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   cacheTTL?: number;
 
   /**
-   * cacheKeyPrefix is prepended to the ADR-0009 cache key input
-   * (`baseUrl`, auth credential, bound `domain`, and `targetingKey`) for additional namespacing
-   * across storage partitions an application controls directly.
-   *
-   * A sensible value is a project key or any other string that uniquely identifies this provider instance.
+   * cacheKeyGenerator returns the key material the provider hashes into `cacheKeyHash`.
+   * The default generator uses the OFREP base URL, auth credential, bound `domain`, and `targetingKey`.
+   * Customize to namespace instances, drop auth for rotating tokens, or include stable context fields.
    */
-  cacheKeyPrefix?: string;
+  cacheKeyGenerator?: CacheKeyGenerator;
 };

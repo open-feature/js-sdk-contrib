@@ -1,4 +1,5 @@
 import type { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
+import type { EvaluationContext } from '@openfeature/web-sdk';
 
 /** Header names treated as auth credentials for cache key derivation (matched case-insensitively). */
 const AUTH_HEADER_NAMES = new Set([
@@ -9,13 +10,15 @@ const AUTH_HEADER_NAMES = new Set([
   'x-access-token',
 ]);
 
-export type CacheKeyParts = {
-  cacheKeyPrefix?: string;
-  baseUrl: string;
-  auth: string;
-  domain: string;
-  targetingKey: string;
+export type CacheKeyGeneratorInput = {
+  url: string;
+  auth?: string;
+  domain?: string;
+  targetingKey?: string;
+  context: EvaluationContext;
 };
+
+export type CacheKeyGenerator = (input: CacheKeyGeneratorInput) => string;
 
 function isAuthHeader(name: string): boolean {
   return AUTH_HEADER_NAMES.has(name.toLowerCase());
@@ -35,15 +38,9 @@ export async function deriveAuthCredential(options: OFREPProviderBaseOptions): P
 }
 
 /**
- * Encodes cache key components without ambiguous delimiter collisions.
- * Order matches ADR-0009: optional prefix, base URL, auth, domain, targeting key.
+ * Default ADR-0009 cache-key generator: OFREP base URL, auth credential, bound domain, and targeting key.
+ * The provider hashes the returned key material into `cacheKeyHash`.
  */
-export function encodeCacheKeyInput(parts: CacheKeyParts): string {
-  return JSON.stringify([
-    parts.cacheKeyPrefix ?? '',
-    parts.baseUrl,
-    parts.auth,
-    parts.domain,
-    parts.targetingKey,
-  ]);
+export function defaultCacheKeyGenerator(input: CacheKeyGeneratorInput): string {
+  return JSON.stringify([input.url, input.auth ?? '', input.domain ?? '', input.targetingKey ?? '']);
 }
