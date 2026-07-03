@@ -4,7 +4,7 @@ import type { FlagCache } from '../model/in-memory-cache';
 import type { CacheMode } from '../model/ofrep-web-provider-options';
 import { type CacheKeyGenerator, defaultCacheKeyGenerator } from './cache-key';
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 2;
 const STORAGE_NS = 'ofrep-web-provider';
 
 /**
