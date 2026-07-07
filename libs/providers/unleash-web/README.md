@@ -157,6 +157,8 @@ function Page() {
 
 See the [OpenFeature React SDK documentation](https://openfeature.dev/docs/reference/technologies/client/web/react) for hooks, suspense, and re-render behavior.
 
+To try the provider end-to-end without building an app from scratch, drop it into OpenFeature's [react-test-app](https://github.com/open-feature/react-test-app) — steps 1 and 2 above are all you need to change.
+
 ### Angular framework
 
 #### 1. Install the Angular SDK and this provider
@@ -220,6 +222,8 @@ export const appConfig: ApplicationConfig = {
 ```
 
 See the [OpenFeature Angular SDK documentation](https://openfeature.dev/docs/reference/technologies/client/web/angular/) for the full set of directives and their `initializing`/`reconciling` templates.
+
+Likewise, OpenFeature's [angular-test-app](https://github.com/open-feature/angular-test-app) is a ready-made way to try the provider locally — apply steps 1 and 2 above.
 
 ### Notes
 
