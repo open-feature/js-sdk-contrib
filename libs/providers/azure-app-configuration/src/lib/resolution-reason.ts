@@ -1,8 +1,5 @@
-import type { ITargetingContext } from '@microsoft/feature-management';
-import { VariantAssignmentReason } from '@microsoft/feature-management';
 import type { ResolutionReason } from '@openfeature/server-sdk';
 import { StandardResolutionReasons } from '@openfeature/server-sdk';
-import { createHash } from 'node:crypto';
 
 const TARGETING_FILTER = 'Microsoft.Targeting';
 
@@ -15,14 +12,14 @@ export interface FeatureFlagDefinition {
   allocation?: {
     default_when_disabled?: string;
     default_when_enabled?: string;
-    user?: { variant: string; users: string[] }[];
-    group?: { variant: string; groups: string[] }[];
-    percentile?: { variant: string; from: number; to: number }[];
-    seed?: string;
   };
   variants?: { name: string }[];
 }
 
+// OpenFeature resolution reasons are optional telemetry, so these helpers derive a
+// best-effort reason from the flag definition and the variant the underlying
+// library actually assigned. We deliberately avoid re-deriving
+// @microsoft/feature-management's targeting/bucketing logic to prevent drift.
 export function resolveBooleanResolutionReason(featureFlag: FeatureFlagDefinition): ResolutionReason {
   if (featureFlag.enabled !== true) {
     return StandardResolutionReasons.STATIC;
@@ -37,109 +34,32 @@ export function resolveBooleanResolutionReason(featureFlag: FeatureFlagDefinitio
   return appliesTargeting ? StandardResolutionReasons.TARGETING_MATCH : StandardResolutionReasons.STATIC;
 }
 
-export async function resolveVariantResolutionReason(
+export function resolveVariantResolutionReason(
   featureFlag: FeatureFlagDefinition,
-  targetingContext: ITargetingContext,
+  assignedVariantName: string,
   enabled: boolean,
-): Promise<ResolutionReason> {
-  if (!featureFlag.variants?.length) {
-    return StandardResolutionReasons.STATIC;
-  }
-
-  let assignmentReason = VariantAssignmentReason.None;
+): ResolutionReason {
+  const allocation = featureFlag.allocation;
 
   if (!enabled) {
-    assignmentReason = VariantAssignmentReason.DefaultWhenDisabled;
-  } else if (featureFlag.allocation) {
-    const targetedReason = await resolveTargetingAllocationReason(featureFlag, targetingContext);
-    assignmentReason =
-      targetedReason !== VariantAssignmentReason.None ? targetedReason : VariantAssignmentReason.DefaultWhenEnabled;
-  } else {
-    assignmentReason = VariantAssignmentReason.DefaultWhenEnabled;
-  }
-
-  return mapVariantAssignmentReason(assignmentReason);
-}
-
-function mapVariantAssignmentReason(reason: VariantAssignmentReason): ResolutionReason {
-  switch (reason) {
-    case VariantAssignmentReason.User:
-    case VariantAssignmentReason.Group:
-    case VariantAssignmentReason.Percentile:
-      return StandardResolutionReasons.TARGETING_MATCH;
-    case VariantAssignmentReason.DefaultWhenDisabled:
-    case VariantAssignmentReason.DefaultWhenEnabled:
+    // Kill-switch: flag disabled in configuration resolves via default_when_disabled.
+    if (featureFlag.enabled !== true) {
       return StandardResolutionReasons.DEFAULT;
-    default:
+    }
+
+    // Flag remains enabled in config; isEnabled=false comes from status_override on the assigned variant.
+    if (allocation?.default_when_enabled !== undefined && assignedVariantName === allocation.default_when_enabled) {
       return StandardResolutionReasons.DEFAULT;
-  }
-}
-
-async function resolveTargetingAllocationReason(
-  featureFlag: FeatureFlagDefinition,
-  targetingContext: ITargetingContext,
-): Promise<VariantAssignmentReason> {
-  const allocation = featureFlag.allocation;
-  if (!allocation) {
-    return VariantAssignmentReason.None;
-  }
-
-  if (allocation.user) {
-    for (const userAllocation of allocation.user) {
-      if (isTargetedUser(targetingContext.userId, userAllocation.users)) {
-        return VariantAssignmentReason.User;
-      }
     }
+
+    return StandardResolutionReasons.TARGETING_MATCH;
   }
 
-  if (allocation.group) {
-    for (const groupAllocation of allocation.group) {
-      if (isTargetedGroup(targetingContext.groups, groupAllocation.groups)) {
-        return VariantAssignmentReason.Group;
-      }
-    }
+  // Enabled and the assigned variant is the configured default => DEFAULT.
+  if (allocation?.default_when_enabled !== undefined && assignedVariantName === allocation.default_when_enabled) {
+    return StandardResolutionReasons.DEFAULT;
   }
 
-  if (allocation.percentile) {
-    for (const percentileAllocation of allocation.percentile) {
-      const hint = allocation.seed ?? `allocation\n${featureFlag.id}`;
-      if (isTargetedPercentile(targetingContext.userId, hint, percentileAllocation.from, percentileAllocation.to)) {
-        return VariantAssignmentReason.Percentile;
-      }
-    }
-  }
-
-  return VariantAssignmentReason.None;
-}
-
-function isTargetedUser(userId: string | undefined, users: string[]): boolean {
-  if (userId === undefined) {
-    return false;
-  }
-
-  return users.includes(userId);
-}
-
-function isTargetedGroup(sourceGroups: string[] | undefined, targetedGroups: string[]): boolean {
-  if (sourceGroups === undefined) {
-    return false;
-  }
-
-  return sourceGroups.some((group) => targetedGroups.includes(group));
-}
-
-function isTargetedPercentile(userId: string | undefined, hint: string, from: number, to: number): boolean {
-  if (from < 0 || from > 100 || to < 0 || to > 100 || from > to) {
-    return false;
-  }
-
-  const audienceContextId = `${userId ?? ''}\n${hint}`;
-  const contextMarker = createHash('sha256').update(audienceContextId).digest().readUInt32LE(0);
-  const contextPercentage = (contextMarker / 0xffffffff) * 100;
-
-  if (to === 100) {
-    return contextPercentage >= from;
-  }
-
-  return contextPercentage >= from && contextPercentage < to;
+  // Otherwise the library assigned the variant through a user/group/percentile allocation.
+  return StandardResolutionReasons.TARGETING_MATCH;
 }

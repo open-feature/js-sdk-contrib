@@ -33,8 +33,8 @@ describe('resolution-reason', () => {
   });
 
   describe('resolveVariantResolutionReason', () => {
-    it('returns DEFAULT for the default variant when the flag is enabled', async () => {
-      await expect(
+    it('returns DEFAULT for the default variant when the flag is enabled', () => {
+      expect(
         resolveVariantResolutionReason(
           {
             id: 'flag',
@@ -42,14 +42,14 @@ describe('resolution-reason', () => {
             variants: [{ name: 'Large' }],
             allocation: { default_when_enabled: 'Large' },
           },
-          { userId: 'user-1' },
+          'Large',
           true,
         ),
-      ).resolves.toBe(StandardResolutionReasons.DEFAULT);
+      ).toBe(StandardResolutionReasons.DEFAULT);
     });
 
-    it('returns DEFAULT for the default variant when the flag is disabled', async () => {
-      await expect(
+    it('returns DEFAULT for the default variant when the flag is disabled', () => {
+      expect(
         resolveVariantResolutionReason(
           {
             id: 'flag',
@@ -57,40 +57,69 @@ describe('resolution-reason', () => {
             variants: [{ name: 'Small' }],
             allocation: { default_when_disabled: 'Small' },
           },
-          { userId: 'user-1' },
+          'Small',
           false,
         ),
-      ).resolves.toBe(StandardResolutionReasons.DEFAULT);
+      ).toBe(StandardResolutionReasons.DEFAULT);
     });
 
-    it('returns TARGETING_MATCH when user allocation matches', async () => {
-      await expect(
+    it('returns DEFAULT when status_override disables the default_when_enabled variant', () => {
+      expect(
+        resolveVariantResolutionReason(
+          {
+            id: 'flag',
+            enabled: true,
+            variants: [{ name: 'Off' }],
+            allocation: { default_when_enabled: 'Off' },
+          },
+          'Off',
+          false,
+        ),
+      ).toBe(StandardResolutionReasons.DEFAULT);
+    });
+
+    it('returns TARGETING_MATCH when status_override disables a targeted variant', () => {
+      expect(
+        resolveVariantResolutionReason(
+          {
+            id: 'flag',
+            enabled: true,
+            variants: [{ name: 'On' }],
+            allocation: { default_when_enabled: 'Off' },
+          },
+          'On',
+          false,
+        ),
+      ).toBe(StandardResolutionReasons.TARGETING_MATCH);
+    });
+
+    it('returns TARGETING_MATCH when an enabled flag assigns a non-default variant', () => {
+      expect(
         resolveVariantResolutionReason(
           {
             id: 'flag',
             enabled: true,
             variants: [{ name: 'Large' }],
-            allocation: { user: [{ variant: 'Large', users: ['user-1'] }] },
+            allocation: { default_when_enabled: 'Small' },
           },
-          { userId: 'user-1' },
+          'Large',
           true,
         ),
-      ).resolves.toBe(StandardResolutionReasons.TARGETING_MATCH);
+      ).toBe(StandardResolutionReasons.TARGETING_MATCH);
     });
 
-    it('returns TARGETING_MATCH when group allocation matches', async () => {
-      await expect(
+    it('returns TARGETING_MATCH when an enabled flag assigns a variant without a configured default', () => {
+      expect(
         resolveVariantResolutionReason(
           {
             id: 'flag',
             enabled: true,
             variants: [{ name: 'Large' }],
-            allocation: { group: [{ variant: 'Large', groups: ['beta'] }] },
           },
-          { userId: 'user-1', groups: ['beta'] },
+          'Large',
           true,
         ),
-      ).resolves.toBe(StandardResolutionReasons.TARGETING_MATCH);
+      ).toBe(StandardResolutionReasons.TARGETING_MATCH);
     });
   });
 });

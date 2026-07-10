@@ -196,7 +196,7 @@ export class AzureAppConfigurationProvider implements Provider {
     return {
       value: value as T,
       variant: variant.name,
-      reason: await resolveVariantResolutionReason(featureFlag, targetingContext, enabled),
+      reason: resolveVariantResolutionReason(featureFlag, variant.name, enabled),
     };
   }
 
