@@ -150,7 +150,7 @@ export class OFREPApi {
     flagKey: string,
     evaluationRequest?: EvaluationRequest,
   ): Promise<OFREPApiEvaluationResult> {
-    let url = `${this.baseOptions.baseUrl}/ofrep/v1/evaluate/flags/${flagKey}`;
+    let url = `${this.baseOptions.baseUrl}/ofrep/v1/evaluate/flags/${encodeURIComponent(flagKey)}`;
     if (this.baseOptions.query) {
       url = url + `?${this.baseOptions.query.toString()}`;
     }
