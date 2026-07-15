@@ -25,5 +25,5 @@
   "libs/providers/flagsmith": "0.1.2",
   "libs/hooks/debounce": "0.1.1",
   "libs/providers/localstorage": "0.1.2",
-  "libs/providers/azure-app-configuration": "0.1.0"
+  "libs/providers/azure-app-configuration": "0.1.1"
 }
