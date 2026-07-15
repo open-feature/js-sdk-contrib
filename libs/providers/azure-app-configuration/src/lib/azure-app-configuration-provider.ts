@@ -167,15 +167,15 @@ export class AzureAppConfigurationProvider implements Provider {
       };
     }
 
-    const enabled = await featureManager.isEnabled(flagKey, targetingContext);
-    const variant = await featureManager.getVariant(flagKey, targetingContext);
+    const [enabled, variant] = await Promise.all([
+      featureManager.isEnabled(flagKey, targetingContext),
+      featureManager.getVariant(flagKey, targetingContext),
+    ]);
 
     if (!variant || variant.configuration === undefined || variant.configuration === null) {
       return {
         value: defaultValue,
-        reason: StandardResolutionReasons.ERROR,
-        errorCode: ErrorCode.FLAG_NOT_FOUND,
-        errorMessage: `Flag '${flagKey}' was not found.`,
+        reason: StandardResolutionReasons.DEFAULT,
       };
     }
 

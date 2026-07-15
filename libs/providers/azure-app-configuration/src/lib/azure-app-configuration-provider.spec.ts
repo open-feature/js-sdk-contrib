@@ -282,7 +282,7 @@ describe('AzureAppConfigurationProvider', () => {
       expect(result).toEqual({ value: config, variant: 'Theme', reason: StandardResolutionReasons.DEFAULT });
     });
 
-    it('returns FLAG_NOT_FOUND when no variant is assigned', async () => {
+    it('returns the caller default with reason DEFAULT when no variant is assigned', async () => {
       const provider = await createProvider();
       getVariant.mockResolvedValue(undefined);
 
@@ -290,13 +290,11 @@ describe('AzureAppConfigurationProvider', () => {
 
       expect(result).toEqual({
         value: 'fallback',
-        reason: StandardResolutionReasons.ERROR,
-        errorCode: ErrorCode.FLAG_NOT_FOUND,
-        errorMessage: "Flag 'Greeting' was not found.",
+        reason: StandardResolutionReasons.DEFAULT,
       });
     });
 
-    it('returns FLAG_NOT_FOUND when the variant has no configuration', async () => {
+    it('returns the caller default with reason DEFAULT when the variant has no configuration', async () => {
       const provider = await createProvider();
       getVariant.mockResolvedValue(variant('Empty', undefined));
 
@@ -304,9 +302,7 @@ describe('AzureAppConfigurationProvider', () => {
 
       expect(result).toEqual({
         value: 7,
-        reason: StandardResolutionReasons.ERROR,
-        errorCode: ErrorCode.FLAG_NOT_FOUND,
-        errorMessage: "Flag 'Price' was not found.",
+        reason: StandardResolutionReasons.DEFAULT,
       });
     });
 
