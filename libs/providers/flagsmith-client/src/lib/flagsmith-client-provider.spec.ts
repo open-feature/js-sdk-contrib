@@ -287,11 +287,25 @@ describe('FlagsmithProvider', () => {
       expect(details.value).toEqual(0);
       expect(details.reason).toEqual('ERROR');
     });
-    it('should use defaults for flags that do not exist', async () => {
+    it('should return FLAG_NOT_FOUND with defaults for flags that do not exist', async () => {
       await OpenFeature.setProviderAndWait(provider);
       const details = client.getNumberDetails('dont exist', 0);
       expect(details.value).toEqual(0);
-      expect(details.reason).toEqual('DEFAULT');
+      expect(details.reason).toEqual('ERROR');
+      expect(details.errorCode).toEqual('FLAG_NOT_FOUND');
+    });
+    it('should return FLAG_NOT_FOUND for boolean flags that do not exist', async () => {
+      await OpenFeature.setProviderAndWait(provider);
+      const details = client.getBooleanDetails('dont exist', true);
+      expect(details.value).toEqual(true);
+      expect(details.reason).toEqual('ERROR');
+      expect(details.errorCode).toEqual('FLAG_NOT_FOUND');
+    });
+    it('should not return FLAG_NOT_FOUND for existing flags with differently-cased keys', async () => {
+      await OpenFeature.setProviderAndWait(provider);
+      const details = client.getStringDetails(exampleStringFlagName.toUpperCase().replace(/_/g, ' '), '');
+      expect(details.value).toEqual('Hello World');
+      expect(details.errorCode).toBeUndefined();
     });
   });
   describe('events', () => {
