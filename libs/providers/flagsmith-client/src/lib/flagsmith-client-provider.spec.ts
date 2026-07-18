@@ -301,6 +301,16 @@ describe('FlagsmithProvider', () => {
       expect(details.reason).toEqual('ERROR');
       expect(details.errorCode).toEqual('FLAG_NOT_FOUND');
     });
+    it.each(['constructor', '__proto__', 'hasOwnProperty'])(
+      'should return FLAG_NOT_FOUND for missing flags named after prototype members (%s)',
+      async (flagKey) => {
+        await OpenFeature.setProviderAndWait(provider);
+        const details = client.getStringDetails(flagKey, 'fallback');
+        expect(details.value).toEqual('fallback');
+        expect(details.reason).toEqual('ERROR');
+        expect(details.errorCode).toEqual('FLAG_NOT_FOUND');
+      },
+    );
     it('should not return FLAG_NOT_FOUND for existing flags with differently-cased keys', async () => {
       await OpenFeature.setProviderAndWait(provider);
       const details = client.getStringDetails(exampleStringFlagName.toUpperCase().replace(/_/g, ' '), '');

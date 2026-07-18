@@ -161,7 +161,7 @@ export class FlagsmithClientProvider implements Provider {
     // The Flagsmith SDK normalizes flag names before lookup; mirror it for the existence check
     const normalizedKey = flagKey.toLowerCase().replace(/ /g, '_');
     const flags = this._client.getState()?.flags;
-    if (!flags || !(normalizedKey in flags)) {
+    if (!flags || !Object.prototype.hasOwnProperty.call(flags, normalizedKey)) {
       throw new FlagNotFoundError(`flag key ${flagKey} was not found`);
     }
 
