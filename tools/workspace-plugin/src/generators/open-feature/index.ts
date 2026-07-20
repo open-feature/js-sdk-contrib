@@ -66,8 +66,8 @@ export default async function (tree: Tree, schema: SchemaOptions) {
   updateProject(tree, projectRoot, name);
   updateTsConfig(tree, projectRoot);
   updateEslintrc(tree, projectRoot);
-  updateJestConfig(tree, projectRoot);
-  updateProjectJson(tree, projectRoot);
+  const jestConfigFileName = updateJestConfig(tree, projectRoot);
+  updateProjectJson(tree, projectRoot, jestConfigFileName);
   updatePackage(tree, projectRoot, schema);
   updateReleasePleaseConfig(tree, projectRoot);
   updateReleasePleaseManifest(tree, projectRoot);
@@ -208,8 +208,17 @@ function updateEslintrc(tree: Tree, projectRoot: string) {
   });
 }
 
-function updateJestConfig(tree: Tree, projectRoot: string) {
-  const configPath = joinPathFragments(projectRoot, 'jest.config.ts');
+function updateJestConfig(tree: Tree, projectRoot: string): string {
+  // Nx + Jest 30 generates jest.config.cts (CommonJS TS); older setups use jest.config.ts
+  const jestConfigFileName = ['jest.config.cts', 'jest.config.ts'].find((fileName) =>
+    tree.exists(joinPathFragments(projectRoot, fileName)),
+  );
+
+  if (!jestConfigFileName) {
+    throw new Error(`Could not find a jest config in ${projectRoot}`);
+  }
+
+  const configPath = joinPathFragments(projectRoot, jestConfigFileName);
 
   // Update jest.preset.js path
   let contents = tree.read(configPath)!.toString();
@@ -220,12 +229,14 @@ function updateJestConfig(tree: Tree, projectRoot: string) {
   contents = tree.read(configPath)!.toString();
   const replaceCoveragePath = contents.replace('../coverage/providers', `../../../coverage/${projectRoot}`);
   tree.write(configPath, replaceCoveragePath);
+
+  return jestConfigFileName;
 }
 
-function updateProjectJson(tree: Tree, projectRoot: string) {
-  // Update jest.config.ts location
+function updateProjectJson(tree: Tree, projectRoot: string, jestConfigFileName: string) {
+  // Update jest config location
   updateJson(tree, joinPathFragments(projectRoot, 'project.json'), (json) => {
-    json.targets.test.options.jestConfig = '{projectRoot}/jest.config.ts';
+    json.targets.test.options.jestConfig = `{projectRoot}/${jestConfigFileName}`;
     return json;
   });
 }

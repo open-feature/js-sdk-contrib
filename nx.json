@@ -45,5 +45,10 @@
   "useInferencePlugins": false,
   "defaultBase": "main",
   "neverConnectToCloud": true,
-  "analytics": false
+  "analytics": false,
+  "release": {
+    "version": {
+      "preVersionCommand": "npx nx run-many -t build"
+    }
+  }
 }
