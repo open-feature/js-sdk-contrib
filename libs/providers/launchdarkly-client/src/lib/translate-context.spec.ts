@@ -107,6 +107,42 @@ describe('translateContext', () => {
     expect(logger.logs.length).toEqual(0);
   });
 
+  it('accepts null custom attributes', () => {
+    const logger = new TestLogger();
+    expect(
+      translateContext(logger, {
+        targetingKey: 'the-key',
+        nullAttr: null,
+        nested: { nullAttr: null, other: 'value' },
+      }),
+    ).toEqual({
+      key: 'the-key',
+      kind: 'user',
+      nullAttr: null,
+      nested: { nullAttr: null, other: 'value' },
+    });
+    expect(logger.logs.length).toEqual(0);
+  });
+
+  it('logs an error for a null top-level attribute in a multi-kind context', () => {
+    const logger = new TestLogger();
+    expect(
+      translateContext(logger, {
+        kind: 'multi',
+        organization: null,
+        user: {
+          targetingKey: 'my-user-key',
+        },
+      }),
+    ).toEqual({
+      kind: 'multi',
+      user: {
+        key: 'my-user-key',
+      },
+    });
+    expect(logger.logs[0]).toEqual('Top level attributes in a multi-kind context should be Structure types.');
+  });
+
   it('converts date to ISO strings', () => {
     const date = new Date();
     const logger = new TestLogger();
