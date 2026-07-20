@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v2.2.0...ofrep-core-v2.2.1) (2026-07-20)
+
+
+### 🐛 Bug Fixes
+
+* **ofrep-core:** encode flagKey in the evaluate request path ([#1577](https://github.com/open-feature/js-sdk-contrib/issues/1577)) ([276f056](https://github.com/open-feature/js-sdk-contrib/commit/276f056c2b2a6d39b24d7e78c135ec3796ee0806))
+
 ## [2.2.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v2.1.0...ofrep-core-v2.2.0) (2026-05-29)
 
 
