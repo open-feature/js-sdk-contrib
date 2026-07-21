@@ -1,3 +1,4 @@
+import type { EvaluationContext } from '@openfeature/web-sdk';
 import type { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
 
 export type CacheMode = 'local-cache-first' | 'network-first' | 'disabled';
@@ -67,10 +68,17 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   /**
    * cacheKeyPrefix is included in the cache key hash to prevent collisions when multiple
    * OFREP provider instances share the same storage partition (e.g. the same browser origin).
-   * When set, the cache key becomes `hash(cacheKeyPrefix + ":" + targetingKey)`.
+   * When set, the cache key is `hash(cacheKeyPrefix + ":" + baseUrl + ":" + context)`.
    *
-   * A sensible value is the OFREP base URL, a project key, or any other string that
-   * uniquely identifies this provider instance.
+   * A sensible value is a project key or any other string that uniquely identifies this provider.
    */
   cacheKeyPrefix?: string;
+
+  /**
+   * cacheKeyTransformer is used in the cache key hash to allow for controlling which parts of the
+   * evaluation context are included in the cache key. By default, the whole context is used.
+   *
+   * This can be used to omit known volatile context fields from the cache key.
+   */
+  cacheKeyTransformer?: (context: EvaluationContext | undefined) => EvaluationContext | undefined;
 };

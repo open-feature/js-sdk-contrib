@@ -85,7 +85,12 @@ export class OFREPWebProvider implements Provider {
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
     this._cacheMode = this._options.cacheMode ?? 'local-cache-first';
     this._cacheTTL = this._options.cacheTTL ?? DEFAULT_CACHE_TTL_SECONDS;
-    this._storage = new Storage(this._cacheMode, this._options.cacheKeyPrefix, logger);
+    this._storage = new Storage(
+      this._cacheMode,
+      this._options.cacheKeyPrefix,
+      this._options.cacheKeyTransformer,
+      this._logger,
+    );
     this._isUsingCache = false;
   }
 
@@ -176,9 +181,11 @@ export class OFREPWebProvider implements Provider {
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     this._contextRevision++;
     try {
-      if (oldContext?.targetingKey !== newContext?.targetingKey) {
+      const oldStorageKey = await this._storage.getStorageKey(this._options.baseUrl, oldContext);
+      const newStorageKey = await this._storage.getStorageKey(this._options.baseUrl, newContext);
+      if (oldStorageKey !== newStorageKey) {
         this._etag = null;
-        void this._storage.clear(oldContext?.targetingKey ?? '');
+        await this._storage.clear(this._options.baseUrl, oldContext);
       }
       this._context = newContext;
 
@@ -262,7 +269,7 @@ export class OFREPWebProvider implements Provider {
         throw error;
       }
       // Transient / server errors (5xx, network failures, timeouts) — try the persisted cache as a fallback.
-      const cached = await this._storage.retrieve(context?.targetingKey ?? '', this._cacheTTL);
+      const cached = await this._storage.retrieve(this._options.baseUrl, context, this._cacheTTL);
       if (!cached) {
         throw error; // No usable cache — propagate the original error.
       }
@@ -342,7 +349,8 @@ export class OFREPWebProvider implements Provider {
         typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
       );
       await this._storage.store(
-        context?.targetingKey ?? '',
+        this._options.baseUrl,
+        context,
         newCache,
         newEtag,
         this._flagSetMetadataCache,
@@ -617,7 +625,7 @@ export class OFREPWebProvider implements Provider {
   }
 
   private async _tryLoadFlagsFromCache(context?: EvaluationContext | undefined): Promise<boolean> {
-    const cached = await this._storage.retrieve(context?.targetingKey ?? '', this._cacheTTL);
+    const cached = await this._storage.retrieve(this._options.baseUrl, context, this._cacheTTL);
     if (cached) {
       this._isUsingCache = true;
       this._flagCache = cached.flags;
