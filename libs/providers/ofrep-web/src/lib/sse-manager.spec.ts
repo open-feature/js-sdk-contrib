@@ -293,29 +293,51 @@ describe('SseManager', () => {
   });
 
   describe('custom SSE event parser', () => {
-    it('should use the provided parser to deserialize a custom (non-default) wire format', () => {
-      // An Ably-style envelope that wraps the OFREP payload under `data`, which
-      // the default JSON parser would not understand.
-      const customParser: SseEventParser = jest.fn((event: MessageEvent) => {
-        const envelope = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        return envelope.data;
-      });
+    // An Ably-style envelope that wraps the OFREP payload under `data`, which the
+    // default JSON parser would not understand. Handles both the already-deserialized
+    // object form and the raw-string form an EventSource might deliver.
+    const wrappedEnvelopeParser: SseEventParser = (event: MessageEvent) => {
+      const envelope = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      return envelope.data;
+    };
 
+    it('should use the provided parser to deserialize a custom object payload', () => {
+      const customParser = jest.fn(wrappedEnvelopeParser);
       const manager = makeMgr(callbacks, undefined, undefined, customParser);
       manager.connect([sseStream('https://sse.example.com/stream')]);
 
+      // EventSource delivered an already-deserialized object.
       MockEventSource.instances[0].simulateRawMessage({
-        data: { type: 'refetchEvaluation', etag: '"wrapped"', lastModified: 1771622898 },
+        data: { type: 'refetchEvaluation', etag: '"wrapped-object"', lastModified: 1771622898 },
       });
 
       jest.advanceTimersByTime(50); // debounce
 
       expect(customParser).toHaveBeenCalledTimes(1);
+      expect(typeof customParser.mock.calls[0][0].data).toBe('object');
       expect(onRefetchMock).toHaveBeenCalledTimes(1);
       expect(onRefetchMock).toHaveBeenCalledWith({
-        flagConfigEtag: '"wrapped"',
+        flagConfigEtag: '"wrapped-object"',
         flagConfigLastModified: 1771622898,
       });
+    });
+
+    it('should use the provided parser to deserialize a custom string payload', () => {
+      const customParser = jest.fn(wrappedEnvelopeParser);
+      const manager = makeMgr(callbacks, undefined, undefined, customParser);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      // EventSource delivered the same envelope as a raw JSON string.
+      MockEventSource.instances[0].simulateRawMessage(
+        JSON.stringify({ data: { type: 'refetchEvaluation', etag: '"wrapped-string"' } }),
+      );
+
+      jest.advanceTimersByTime(50); // debounce
+
+      expect(customParser).toHaveBeenCalledTimes(1);
+      expect(typeof customParser.mock.calls[0][0].data).toBe('string');
+      expect(onRefetchMock).toHaveBeenCalledTimes(1);
+      expect(onRefetchMock).toHaveBeenCalledWith({ flagConfigEtag: '"wrapped-string"' });
     });
 
     it('should parse a non-JSON payload the default parser could not handle', () => {
