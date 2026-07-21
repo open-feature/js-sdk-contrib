@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.3.3...launchdarkly-client-provider-v0.4.0) (2026-07-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **launchdarkly:** upgrade to 4.x ([#1551](https://github.com/open-feature/js-sdk-contrib/issues/1551))
+
+### chore
+
+* **launchdarkly:** upgrade to 4.x ([#1551](https://github.com/open-feature/js-sdk-contrib/issues/1551)) ([cca7e7d](https://github.com/open-feature/js-sdk-contrib/commit/cca7e7df5b06071779029b3790b955c7163e0ea9))
+
+
+### 🐛 Bug Fixes
+
+* **launchdarkly:** handle null attributes in evaluation context ([#1574](https://github.com/open-feature/js-sdk-contrib/issues/1574)) ([ae7ca8d](https://github.com/open-feature/js-sdk-contrib/commit/ae7ca8d919e73e85716f4463187a70a7455a2b81))
+
 ## [0.3.3](https://github.com/open-feature/js-sdk-contrib/compare/launchdarkly-client-provider-v0.3.2...launchdarkly-client-provider-v0.3.3) (2025-09-14)
 
 
