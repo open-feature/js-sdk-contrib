@@ -1,9 +1,10 @@
 import type { EventStream } from '@openfeature/ofrep-core';
-import type { Logger } from '@openfeature/web-sdk';
+import type { EvaluationContext, Logger } from '@openfeature/web-sdk';
 import type { FlagCache } from '../model/in-memory-cache';
 import type { CacheMode } from '../model/ofrep-web-provider-options';
+import { type CacheKeyGenerator, defaultCacheKeyGenerator } from './cache-key';
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const STORAGE_NS = 'ofrep-web-provider';
 
 /**
@@ -13,7 +14,7 @@ const STORAGE_NS = 'ofrep-web-provider';
 export interface PersistedEntry {
   /** Schema version — used to discard entries written by older provider versions. */
   version: number;
-  /** Hex digest (16 chars) of `targetingKey` (or `cacheKeyPrefix + ":" + targetingKey` when configured). SHA-256 when crypto.subtle is available, FNV-1a fallback otherwise. */
+  /** Hex digest (16 chars) of the ADR-0009 cache key input. SHA-256 when crypto.subtle is available, FNV-1a fallback otherwise. */
   cacheKeyHash: string;
   /** ETag returned by the server for this evaluation, used for efficient revalidation. */
   etag: string | null;
@@ -29,12 +30,25 @@ export interface PersistedEntry {
 
 export class Storage {
   private readonly _disabled: boolean;
-  private readonly _cacheKeyPrefix?: string;
+  private readonly _baseUrl: string;
+  private readonly _getAuthCredential: () => Promise<string>;
+  private readonly _domain: string;
+  private readonly _cacheKeyGenerator: CacheKeyGenerator;
   private readonly _logger?: Logger;
 
-  constructor(cacheMode: CacheMode = 'local-cache-first', cacheKeyPrefix?: string, logger?: Logger) {
+  constructor(
+    cacheMode: CacheMode = 'local-cache-first',
+    baseUrl: string,
+    getAuthCredential: () => Promise<string>,
+    domain: string,
+    cacheKeyGenerator: CacheKeyGenerator = defaultCacheKeyGenerator,
+    logger?: Logger,
+  ) {
     this._disabled = cacheMode === 'disabled';
-    this._cacheKeyPrefix = cacheKeyPrefix;
+    this._baseUrl = baseUrl;
+    this._getAuthCredential = getAuthCredential;
+    this._domain = domain;
+    this._cacheKeyGenerator = cacheKeyGenerator;
     this._logger = logger;
   }
 
@@ -42,13 +56,24 @@ export class Storage {
     return this._disabled;
   }
 
+  private async _cacheKeyMaterial(context: EvaluationContext): Promise<string> {
+    const auth = await this._getAuthCredential();
+    return this._cacheKeyGenerator({
+      url: this._baseUrl,
+      auth: auth === '[]' ? undefined : auth,
+      domain: this._domain || undefined,
+      targetingKey: context.targetingKey,
+      context,
+    });
+  }
+
   /**
-   * Hashes the targeting key (with optional prefix) to a 16-char hex string.
+   * Hashes the ADR-0009 cache key material to a 16-char hex string.
    * Uses SHA-256 via crypto.subtle when available (secure contexts).
    * Falls back to a double-pass FNV-1a-32 in non-secure contexts where crypto.subtle is absent.
    */
-  private async _hashInput(targetingKey: string): Promise<string> {
-    const input = this._cacheKeyPrefix ? `${this._cacheKeyPrefix}:${targetingKey}` : targetingKey;
+  private async _hashInput(context: EvaluationContext): Promise<string> {
+    const input = await this._cacheKeyMaterial(context);
     if (typeof crypto !== 'undefined' && crypto.subtle) {
       const encoded = new TextEncoder().encode(input);
       const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
@@ -80,11 +105,11 @@ export class Storage {
   }
 
   /**
-   * Returns the localStorage key for the given targeting key.
+   * Returns the localStorage key for the given evaluation context.
    * Format: `ofrep-web-provider:v{version}:{hash}`
    */
-  async getStorageKey(targetingKey: string): Promise<string> {
-    return `${STORAGE_NS}:v${SCHEMA_VERSION}:${await this._hashInput(targetingKey)}`;
+  async getStorageKey(context: EvaluationContext): Promise<string> {
+    return `${STORAGE_NS}:v${SCHEMA_VERSION}:${await this._hashInput(context)}`;
   }
 
   /**
@@ -93,17 +118,17 @@ export class Storage {
    * so the provider continues operating with the fresh in-memory values.
    */
   async store(
-    targetingKey: string,
+    context: EvaluationContext,
     flags: FlagCache,
     etag: string | null,
     metadata?: Record<string, unknown>,
     eventStreams?: EventStream[],
   ): Promise<void> {
     if (this._disabled) return;
-    const key = await this.getStorageKey(targetingKey);
+    const key = await this.getStorageKey(context);
     const entry: PersistedEntry = {
       version: SCHEMA_VERSION,
-      cacheKeyHash: await this._hashInput(targetingKey),
+      cacheKeyHash: await this._hashInput(context),
       etag,
       writtenAt: new Date().toISOString(),
       data: flags,
@@ -121,12 +146,12 @@ export class Storage {
    * Loads a previously persisted entry.
    * Returns `undefined` when:
    *  - cacheMode is 'disabled'
-   *  - no entry exists for this targeting key
+   *  - no entry exists for this context
    *  - the schema version does not match
    *  - the entry is older than `ttlSeconds` (expired entries are removed from storage)
    */
   async retrieve(
-    targetingKey: string,
+    context: EvaluationContext,
     ttlSeconds: number,
   ): Promise<
     | { flags: FlagCache; etag: string | null; metadata?: Record<string, unknown>; eventStreams?: EventStream[] }
@@ -134,7 +159,7 @@ export class Storage {
   > {
     if (this._disabled) return undefined;
     try {
-      const raw = localStorage.getItem(await this.getStorageKey(targetingKey));
+      const raw = localStorage.getItem(await this.getStorageKey(context));
       if (!raw) return undefined;
 
       const entry = JSON.parse(raw) as PersistedEntry;
@@ -145,7 +170,7 @@ export class Storage {
       // Enforce TTL — treat expired entries as a cache miss and evict them.
       const writtenAt = new Date(entry.writtenAt).getTime();
       if (Number.isNaN(writtenAt) || Date.now() - writtenAt > ttlSeconds * 1000) {
-        await this.clear(targetingKey);
+        await this.clear(context);
         return undefined;
       }
 
@@ -157,13 +182,13 @@ export class Storage {
   }
 
   /**
-   * Removes the persisted entry for the given targeting key.
+   * Removes the persisted entry for the given evaluation context.
    * No-op when cacheMode is 'disabled'.
    */
-  async clear(targetingKey: string): Promise<void> {
+  async clear(context: EvaluationContext): Promise<void> {
     if (this._disabled) return;
     try {
-      localStorage.removeItem(await this.getStorageKey(targetingKey));
+      localStorage.removeItem(await this.getStorageKey(context));
     } catch (error) {
       this._logger?.error(`Error clearing flag cache from local storage: ${error}`);
     }

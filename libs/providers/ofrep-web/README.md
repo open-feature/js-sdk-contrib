@@ -100,27 +100,57 @@ OpenFeature.setProvider(
 
 ### Caching
 
-The provider supports persistent local caching via `localStorage` to reduce latency on startup and improve resilience to transient network failures. Caching is controlled with three options.
+The provider supports persistent local caching via `localStorage` per [ADR-0009](https://github.com/open-feature/protocol/blob/main/service/adrs/0009-local-storage-for-static-context-providers.md). Caching reduces latency on startup and improves resilience to transient network failures.
 
-**`cacheMode`** — controls the startup strategy:
+#### Cache modes
+
+**`cacheMode`** controls the startup strategy:
 
 - `'local-cache-first'` _(default)_ — `initialize()` resolves immediately from the persisted cache if one exists, then refreshes from the network in the background. Evaluations served before the refresh completes will have reason `CACHED`.
 - `'network-first'` — `initialize()` blocks on the network request. The persisted cache is used as a fallback only on transient failures (network unavailable, timeout, 5xx). Auth and configuration errors (400, 401, 403, 404) are always surfaced immediately and never masked by cached values.
 - `'disabled'` — no persistence. `initialize()` always blocks on the network and the other cache options have no effect.
 
-**`cacheTTL`** — maximum age in seconds of a persisted cache entry before it is treated as a miss and removed. Defaults to `2_592_000` (30 days).
+**`cacheTTL`** — maximum age in seconds of a persisted cache entry before it is treated as a miss and removed. Defaults to `2_592_000` (30 days). Auth and configuration errors do not clear persisted entries; TTL governs expiry.
 
-**`cacheKeyPrefix`** — a string included in the cache key to avoid collisions when multiple provider instances share the same browser origin. A good value is the OFREP base URL or a project key.
+#### Cache key
+
+Persisted entries are keyed by a hash of key material returned by a cache-key generator, not the full evaluation context. The default generator uses:
+
+1. **`baseUrl`** — the configured OFREP base URL
+2. **Auth credential** — serialized from known auth headers (`Authorization`, `Api-Key`, `X-Api-Key`, `X-Auth-Token`, `X-Access-Token`), taken from `headers` and `headersFactory` at read/write time
+3. **`domain`** — the OpenFeature domain the provider is bound to via `OpenFeature.setProvider('domain', provider)` (passed to `initialize()` by the SDK; empty when registered as the default provider)
+4. **`targetingKey`** — the evaluation context's targeting key
+
+Use **`cacheKeyGenerator`** to customize the key material (namespace instances, drop auth for rotating tokens, or include stable context fields). The provider always hashes whatever the generator returns.
+
+The localStorage key is `ofrep-web-provider:v2:{hash}` where `{hash}` is the first 16 hex characters of SHA-256 (or an FNV-1a fallback in non-secure contexts where `crypto.subtle` is unavailable).
+
+#### Domain scoping
+
+The provider declares itself `domain-scoped`, so each instance is bound to at most one OpenFeature domain via `OpenFeature.setProvider('domain', provider)`. The SDK forwards that domain to `initialize(context, domain?)`; persistence is not initialized until then, so nothing is read from or written to `localStorage` before initialization.
+
+Bind a separate provider instance per domain in micro-frontend or multi-tenant setups:
+
+```ts
+OpenFeature.setProvider('billing', new OFREPWebProvider({ baseUrl: 'https://flags.example.com' }));
+OpenFeature.setProvider('checkout', new OFREPWebProvider({ baseUrl: 'https://flags.example.com' }));
+```
+
+#### Auth headers and rotating tokens
+
+Only the auth header names listed above participate in the cache key. Other custom headers (for example `X-My-Header`) are sent on requests but do not affect persistence.
 
 ```ts
 import { OFREPWebProvider } from '@openfeature/ofrep-web-provider';
 
 OpenFeature.setProvider(
+  'my-app',
   new OFREPWebProvider({
     baseUrl: 'https://localhost:8080',
     cacheMode: 'local-cache-first',
     cacheTTL: 3600, // 1 hour
-    cacheKeyPrefix: 'my-app',
+    cacheKeyGenerator: (input) => `my-app:${JSON.stringify([input.url, input.auth, input.domain, input.targetingKey])}`,
+    headers: [['Authorization', 'my-api-key']],
   }),
 );
 ```
