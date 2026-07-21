@@ -9,8 +9,8 @@ import type {
   ResolutionReason,
 } from '@openfeature/web-sdk';
 import { OpenFeatureEventEmitter, ProviderEvents, TypeMismatchError } from '@openfeature/web-sdk';
-import { createFlagsmithInstance } from 'flagsmith';
-import type { ClientEvaluationContext, IFlagsmith, IInitConfig, IState, ITraits } from 'flagsmith/types';
+import { createFlagsmithInstance } from '@flagsmith/flagsmith';
+import type { ClientEvaluationContext, IFlagsmith, IInitConfig, IState, ITraits } from '@flagsmith/flagsmith/types';
 import type { FlagType } from './type-factory';
 import { typeFactory } from './type-factory';
 
