@@ -1,5 +1,5 @@
 import { SseManager, DEFAULT_GRACE_PERIOD_SEC } from './sse-manager';
-import type { SseManagerCallbacks } from './sse-manager';
+import type { SseEventParser, SseManagerCallbacks } from './sse-manager';
 import type { EventStream } from '@openfeature/ofrep-core';
 
 // Advance past the grace period to ensure the timer would have fired if not cancelled
@@ -41,6 +41,15 @@ class MockEventSource {
     }
   }
 
+  // Dispatch a raw payload without JSON.stringify — used to exercise custom
+  // wire formats that a custom parser is responsible for deserializing.
+  simulateRawMessage(data: unknown): void {
+    const event = new MessageEvent('message', { data });
+    for (const listener of this.listeners['message'] ?? []) {
+      listener(event);
+    }
+  }
+
   simulateError(fatal = false): void {
     this.readyState = fatal ? 2 : 0; // CLOSED or CONNECTING
     const event = new Event('error');
@@ -63,8 +72,15 @@ class MockEventSource {
 }
 
 // Factory that injects MockEventSource so tests don't need a globalThis override
-const makeMgr = (callbacks: SseManagerCallbacks, inactivity?: number, baseUrl?: string) =>
-  new SseManager(callbacks, inactivity, undefined, baseUrl, MockEventSource as unknown as typeof EventSource);
+const makeMgr = (callbacks: SseManagerCallbacks, inactivity?: number, baseUrl?: string, parseEvent?: SseEventParser) =>
+  new SseManager(
+    callbacks,
+    inactivity,
+    undefined,
+    baseUrl,
+    MockEventSource as unknown as typeof EventSource,
+    parseEvent,
+  );
 
 describe('SseManager', () => {
   let callbacks: SseManagerCallbacks;
@@ -269,6 +285,66 @@ describe('SseManager', () => {
       for (const listener of listeners) {
         listener(event);
       }
+
+      jest.advanceTimersByTime(50);
+
+      expect(onRefetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('custom SSE event parser', () => {
+    it('should use the provided parser to deserialize a custom (non-default) wire format', () => {
+      // An Ably-style envelope that wraps the OFREP payload under `data`, which
+      // the default JSON parser would not understand.
+      const customParser: SseEventParser = jest.fn((event: MessageEvent) => {
+        const envelope = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        return envelope.data;
+      });
+
+      const manager = makeMgr(callbacks, undefined, undefined, customParser);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      MockEventSource.instances[0].simulateRawMessage({
+        data: { type: 'refetchEvaluation', etag: '"wrapped"', lastModified: 1771622898 },
+      });
+
+      jest.advanceTimersByTime(50); // debounce
+
+      expect(customParser).toHaveBeenCalledTimes(1);
+      expect(onRefetchMock).toHaveBeenCalledTimes(1);
+      expect(onRefetchMock).toHaveBeenCalledWith({
+        flagConfigEtag: '"wrapped"',
+        flagConfigLastModified: 1771622898,
+      });
+    });
+
+    it('should parse a non-JSON payload the default parser could not handle', () => {
+      // Colon-delimited text format: `<type>:<etag>`
+      const customParser: SseEventParser = (event: MessageEvent) => {
+        const [type, etag] = String(event.data).split(':');
+        return { type, etag };
+      };
+
+      const manager = makeMgr(callbacks, undefined, undefined, customParser);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      MockEventSource.instances[0].simulateRawMessage('refetchEvaluation:"text-etag"');
+
+      jest.advanceTimersByTime(50);
+
+      expect(onRefetchMock).toHaveBeenCalledTimes(1);
+      expect(onRefetchMock).toHaveBeenCalledWith({ flagConfigEtag: '"text-etag"' });
+    });
+
+    it('should default to JSON parsing when no custom parser is provided', () => {
+      const manager = makeMgr(callbacks);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      // Default parser cannot make sense of a wrapped envelope: the outer object
+      // has no `type`, so it is treated as an unknown event and ignored.
+      MockEventSource.instances[0].simulateMessage({
+        data: { type: 'refetchEvaluation', etag: '"wrapped"' },
+      });
 
       jest.advanceTimersByTime(50);
 
