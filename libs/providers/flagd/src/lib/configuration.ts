@@ -48,6 +48,20 @@ export interface Config {
   certPath?: string;
 
   /**
+   * Client certificate path for mutual TLS (mTLS). Requires {@link clientKeyPath} and TLS enabled.
+   *
+   * @example "/etc/cert/client.crt"
+   */
+  clientCertPath?: string;
+
+  /**
+   * Client private key path for mutual TLS (mTLS). Requires {@link clientCertPath} and TLS enabled.
+   *
+   * @example "/etc/cert/client.key"
+   */
+  clientKeyPath?: string;
+
+  /**
    * Resolver type to use by the provider.
    *
    * Options include rpc & in-process.
@@ -176,6 +190,8 @@ enum ENV_VAR {
   FLAGD_TLS = 'FLAGD_TLS',
   FLAGD_SOCKET_PATH = 'FLAGD_SOCKET_PATH',
   FLAGD_SERVER_CERT_PATH = 'FLAGD_SERVER_CERT_PATH',
+  FLAGD_CLIENT_CERT_PATH = 'FLAGD_CLIENT_CERT_PATH',
+  FLAGD_CLIENT_KEY_PATH = 'FLAGD_CLIENT_KEY_PATH',
   FLAGD_CACHE = 'FLAGD_CACHE',
   FLAGD_MAX_CACHE_SIZE = 'FLAGD_MAX_CACHE_SIZE',
   FLAGD_SOURCE_SELECTOR = 'FLAGD_SOURCE_SELECTOR',
@@ -231,6 +247,12 @@ function getEnvVarConfig(): Partial<Config & FlagdGrpcConfig> {
     }),
     ...(process.env[ENV_VAR.FLAGD_SERVER_CERT_PATH] && {
       certPath: process.env[ENV_VAR.FLAGD_SERVER_CERT_PATH],
+    }),
+    ...(process.env[ENV_VAR.FLAGD_CLIENT_CERT_PATH] && {
+      clientCertPath: process.env[ENV_VAR.FLAGD_CLIENT_CERT_PATH],
+    }),
+    ...(process.env[ENV_VAR.FLAGD_CLIENT_KEY_PATH] && {
+      clientKeyPath: process.env[ENV_VAR.FLAGD_CLIENT_KEY_PATH],
     }),
     ...((process.env[ENV_VAR.FLAGD_CACHE] === 'lru' || process.env[ENV_VAR.FLAGD_CACHE] === 'disabled') && {
       cache: process.env[ENV_VAR.FLAGD_CACHE],
