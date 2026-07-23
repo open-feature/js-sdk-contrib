@@ -1,5 +1,5 @@
-import { SseManager, DEFAULT_GRACE_PERIOD_SEC } from './sse-manager';
-import type { SseManagerCallbacks } from './sse-manager';
+import { SseManager, DEFAULT_GRACE_PERIOD_SEC, defaultSseEventParser } from './sse-manager';
+import type { SseEventParser, SseManagerCallbacks } from './sse-manager';
 import type { EventStream } from '@openfeature/ofrep-core';
 
 // Advance past the grace period to ensure the timer would have fired if not cancelled
@@ -41,6 +41,15 @@ class MockEventSource {
     }
   }
 
+  // Dispatch a raw payload without JSON.stringify — used to exercise custom
+  // wire formats that a custom parser is responsible for deserializing.
+  simulateRawMessage(data: unknown): void {
+    const event = new MessageEvent('message', { data });
+    for (const listener of this.listeners['message'] ?? []) {
+      listener(event);
+    }
+  }
+
   simulateError(fatal = false): void {
     this.readyState = fatal ? 2 : 0; // CLOSED or CONNECTING
     const event = new Event('error');
@@ -63,8 +72,35 @@ class MockEventSource {
 }
 
 // Factory that injects MockEventSource so tests don't need a globalThis override
-const makeMgr = (callbacks: SseManagerCallbacks, inactivity?: number, baseUrl?: string) =>
-  new SseManager(callbacks, inactivity, undefined, baseUrl, MockEventSource as unknown as typeof EventSource);
+const makeMgr = (callbacks: SseManagerCallbacks, inactivity?: number, baseUrl?: string, parseEvent?: SseEventParser) =>
+  new SseManager(
+    callbacks,
+    inactivity,
+    undefined,
+    baseUrl,
+    MockEventSource as unknown as typeof EventSource,
+    parseEvent,
+  );
+
+describe('defaultSseEventParser', () => {
+  it('should JSON-parse a string payload and return the resulting object', () => {
+    const payload = { type: 'refetchEvaluation', etag: '"abc"', lastModified: 1771622898 };
+    const event = new MessageEvent('message', { data: JSON.stringify(payload) });
+
+    const result = defaultSseEventParser(event);
+
+    expect(result).toEqual(payload);
+  });
+
+  it('should pass an already-deserialized object through without modification', () => {
+    const payload = { type: 'refetchEvaluation', etag: '"xyz"' };
+    const event = new MessageEvent('message', { data: payload });
+
+    const result = defaultSseEventParser(event);
+
+    expect(result).toBe(payload);
+  });
+});
 
 describe('SseManager', () => {
   let callbacks: SseManagerCallbacks;
@@ -270,6 +306,102 @@ describe('SseManager', () => {
         listener(event);
       }
 
+      jest.advanceTimersByTime(50);
+
+      expect(onRefetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('custom SSE event parser', () => {
+    // An Ably-style envelope that wraps the OFREP payload under `data`, which the
+    // default JSON parser would not understand. Handles both the already-deserialized
+    // object form and the raw-string form an EventSource might deliver.
+    const wrappedEnvelopeParser: SseEventParser = (event: MessageEvent) => {
+      const envelope = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      return envelope.data;
+    };
+
+    it('should use the provided parser to deserialize a custom object payload', () => {
+      const customParser = jest.fn(wrappedEnvelopeParser);
+      const manager = makeMgr(callbacks, undefined, undefined, customParser);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      // EventSource delivered an already-deserialized object.
+      MockEventSource.instances[0].simulateRawMessage({
+        data: { type: 'refetchEvaluation', etag: '"wrapped-object"', lastModified: 1771622898 },
+      });
+
+      jest.advanceTimersByTime(50); // debounce
+
+      expect(customParser).toHaveBeenCalledTimes(1);
+      expect(typeof customParser.mock.calls[0][0].data).toBe('object');
+      expect(onRefetchMock).toHaveBeenCalledTimes(1);
+      expect(onRefetchMock).toHaveBeenCalledWith({
+        flagConfigEtag: '"wrapped-object"',
+        flagConfigLastModified: 1771622898,
+      });
+    });
+
+    it('should use the provided parser to deserialize a custom string payload', () => {
+      const customParser = jest.fn(wrappedEnvelopeParser);
+      const manager = makeMgr(callbacks, undefined, undefined, customParser);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      // EventSource delivered the same envelope as a raw JSON string.
+      MockEventSource.instances[0].simulateRawMessage(
+        JSON.stringify({ data: { type: 'refetchEvaluation', etag: '"wrapped-string"' } }),
+      );
+
+      jest.advanceTimersByTime(50); // debounce
+
+      expect(customParser).toHaveBeenCalledTimes(1);
+      expect(typeof customParser.mock.calls[0][0].data).toBe('string');
+      expect(onRefetchMock).toHaveBeenCalledTimes(1);
+      expect(onRefetchMock).toHaveBeenCalledWith({ flagConfigEtag: '"wrapped-string"' });
+    });
+
+    it('should parse a non-JSON payload the default parser could not handle', () => {
+      // Colon-delimited text format: `<type>:<etag>`
+      const customParser: SseEventParser = (event: MessageEvent) => {
+        const [type, etag] = String(event.data).split(':');
+        return { type, etag };
+      };
+
+      const manager = makeMgr(callbacks, undefined, undefined, customParser);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      MockEventSource.instances[0].simulateRawMessage('refetchEvaluation:"text-etag"');
+
+      jest.advanceTimersByTime(50);
+
+      expect(onRefetchMock).toHaveBeenCalledTimes(1);
+      expect(onRefetchMock).toHaveBeenCalledWith({ flagConfigEtag: '"text-etag"' });
+    });
+
+    it('should default to JSON parsing when no custom parser is provided', () => {
+      const manager = makeMgr(callbacks);
+      manager.connect([sseStream('https://sse.example.com/stream')]);
+
+      // simulateRawMessage skips MockEventSource's internal JSON.stringify so the
+      // listener receives a plain string — only defaultSseEventParser's JSON.parse
+      // branch converts it into a structured object, proving it was invoked.
+      MockEventSource.instances[0].simulateRawMessage(
+        JSON.stringify({ type: 'refetchEvaluation', etag: '"default-parser"', lastModified: 1771622898 }),
+      );
+      jest.advanceTimersByTime(50);
+
+      expect(onRefetchMock).toHaveBeenCalledTimes(1);
+      expect(onRefetchMock).toHaveBeenCalledWith({
+        flagConfigEtag: '"default-parser"',
+        flagConfigLastModified: 1771622898,
+      });
+
+      // And it cannot make sense of a wrapped envelope: the outer object has no
+      // `type`, so it is treated as an unknown event and ignored.
+      onRefetchMock.mockClear();
+      MockEventSource.instances[0].simulateMessage({
+        data: { type: 'refetchEvaluation', etag: '"wrapped"' },
+      });
       jest.advanceTimersByTime(50);
 
       expect(onRefetchMock).not.toHaveBeenCalled();

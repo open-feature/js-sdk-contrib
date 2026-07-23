@@ -34,3 +34,20 @@ export interface EventStream {
    */
   inactivityDelaySec?: number;
 }
+
+/**
+ * The payload of an SSE event delivered over an {@link EventStream} connection.
+ * Per ADR-0008, a `refetchEvaluation` event signals that the client should
+ * re-fetch the bulk evaluation, optionally carrying cache-validation metadata.
+ */
+export interface EventStreamMessage {
+  /**
+   * The event type. Currently only `"refetchEvaluation"` is defined; clients
+   * must ignore events with unknown `type` values for forward compatibility.
+   */
+  type: string;
+  /** ETag of the flag configuration that triggered the event. */
+  etag?: string;
+  /** Last-modified timestamp of the flag configuration. */
+  lastModified?: string | number;
+}
