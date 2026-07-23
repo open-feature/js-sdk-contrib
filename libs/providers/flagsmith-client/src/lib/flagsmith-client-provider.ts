@@ -100,6 +100,11 @@ export class FlagsmithClientProvider implements Provider {
     return this.initialize(newContext);
   }
 
+  async onClose() {
+    this._client.stopListening();
+    await this._client.flushEvents();
+  }
+
   resolveBooleanEvaluation(flagKey: string) {
     return this.evaluate<boolean>(flagKey, 'boolean', false);
   }
@@ -123,7 +128,6 @@ export class FlagsmithClientProvider implements Provider {
   private getMetadata() {
     return {
       targetingKey: this._client.getContext()?.identity?.identifier || '',
-      ...(this._client.getAllTraits() || {}),
     };
   }
 

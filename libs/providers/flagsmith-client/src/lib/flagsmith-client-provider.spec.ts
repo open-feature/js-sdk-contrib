@@ -12,7 +12,9 @@ import {
   exampleNumericFlagName,
   exampleStringFlagName,
   exampleVariantFlagName,
+  exampleFlagsmithResponse,
   getFetchErrorMock,
+  getFetchMock,
   CACHE_KEY,
 } from './flagsmith.mocks';
 import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
@@ -393,6 +395,30 @@ describe('FlagsmithProvider', () => {
         expect.objectContaining({ message: 'Please provide `evaluationContext.environment` with non-empty `apiKey`' }),
       );
     });
+    it('does not leak traits into event payloads', async () => {
+      const config = {
+        ...defaultConfig(),
+        fetch: getFetchMock({
+          default: exampleFlagsmithResponse,
+          'api/v1/identities': {
+            flags: exampleFlagsmithResponse,
+            traits: [{ trait_key: 'secret', trait_value: 'pii-value' }],
+          },
+        }),
+      };
+      const provider = new FlagsmithClientProvider({ ...config, logger });
+      const readyHandler = jest.fn();
+      OpenFeature.addHandler(ProviderEvents.Ready, readyHandler);
+      await OpenFeature.setContext({ targetingKey: 'test-user', traits: { secret: 'pii-value' } });
+      await OpenFeature.setProviderAndWait(provider);
+      const payloads = readyHandler.mock.calls.map(([details]) => details);
+      expect(payloads.length).toBeGreaterThan(0);
+      expect(payloads.some((payload) => payload?.metadata?.targetingKey === 'test-user')).toBe(true);
+      for (const payload of payloads) {
+        expect(JSON.stringify(payload)).not.toContain('pii-value');
+      }
+    });
+
     it('should call the stale handler when context changed', async () => {
       const config = defaultConfig();
       const provider = new FlagsmithClientProvider({ ...config });
@@ -403,6 +429,19 @@ describe('FlagsmithProvider', () => {
       await contextChange;
     });
   });
+  describe('onClose', () => {
+    it('stops listening and flushes buffered events', async () => {
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({ ...config, logger });
+      await OpenFeature.setProviderAndWait(provider);
+      const stopSpy = jest.spyOn(provider.flagsmithClient, 'stopListening').mockImplementation(() => undefined);
+      const flushSpy = jest.spyOn(provider.flagsmithClient, 'flushEvents').mockResolvedValue(undefined);
+      await provider.onClose();
+      expect(stopSpy).toHaveBeenCalledTimes(1);
+      expect(flushSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('context', () => {
     it('should initialize without the targeting key, identify when provided and logout when not provided again', async () => {
       const targetingKey = 'test';
