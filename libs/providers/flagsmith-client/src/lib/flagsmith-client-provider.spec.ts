@@ -19,6 +19,7 @@ import {
 } from './flagsmith.mocks';
 import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from '@flagsmith/flagsmith';
+import { EXPOSURE_TRACKING_EVENT } from './tracking';
 
 const logger = {
   error: jest.fn(),
@@ -508,6 +509,91 @@ describe('FlagsmithProvider', () => {
       );
     });
   });
+  describe('track', () => {
+    const targetingKey = 'test-user';
+
+    const setup = async (opts: { enableEvents?: boolean; withIdentity?: boolean } = {}) => {
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({
+        ...config,
+        logger,
+        ...(opts.enableEvents === false ? {} : { enableEvents: true }),
+      });
+      if (opts.withIdentity !== false) await OpenFeature.setContext({ targetingKey });
+      await OpenFeature.setProviderAndWait(provider);
+      const client = provider.flagsmithClient;
+      return {
+        provider,
+        trackEvent: jest.spyOn(client, 'trackEvent').mockImplementation(() => undefined),
+        trackExposureEvent: jest.spyOn(client, 'trackExposureEvent').mockImplementation(() => undefined),
+        getExperimentFlag: jest.spyOn(client, 'getExperimentFlag').mockImplementation(() => null),
+      };
+    };
+
+    it('drops everything when events are disabled', async () => {
+      const { provider, trackEvent, trackExposureEvent } = await setup({ enableEvents: false });
+      provider.track('purchase', { targetingKey }, { value: 99.77 });
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: exampleVariantFlagName });
+      expect(trackEvent).not.toHaveBeenCalled();
+      expect(trackExposureEvent).not.toHaveBeenCalled();
+      expect(logger.debug).toHaveBeenCalled();
+    });
+
+    it('routes explicit-variant exposures to trackExposureEvent with the context identifier', async () => {
+      const { provider, trackExposureEvent } = await setup();
+      provider.track(
+        EXPOSURE_TRACKING_EVENT,
+        { targetingKey },
+        { flagKey: exampleVariantFlagName, variant: 'treatment', experiment: 'exp-1' },
+      );
+      expect(trackExposureEvent).toHaveBeenCalledWith(exampleVariantFlagName, {
+        identifier: targetingKey,
+        value: 'treatment',
+        metadata: { experiment: 'exp-1' },
+      });
+    });
+
+    it('delegates variant-less exposures to getExperimentFlag', async () => {
+      const { provider, getExperimentFlag, trackExposureEvent } = await setup();
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: exampleVariantFlagName });
+      expect(getExperimentFlag).toHaveBeenCalledWith(exampleVariantFlagName);
+      expect(trackExposureEvent).not.toHaveBeenCalled();
+    });
+
+    it('drops exposures without a flagKey and warns', async () => {
+      const { provider, trackExposureEvent, getExperimentFlag } = await setup();
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { variant: 'treatment' });
+      expect(trackExposureEvent).not.toHaveBeenCalled();
+      expect(getExperimentFlag).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalled();
+    });
+
+    it('skips exposures for anonymous contexts and logs', async () => {
+      const { provider, trackExposureEvent, getExperimentFlag } = await setup({ withIdentity: false });
+      provider.track(EXPOSURE_TRACKING_EVENT, {}, { flagKey: exampleVariantFlagName, variant: 'treatment' });
+      provider.track(EXPOSURE_TRACKING_EVENT, {}, { flagKey: exampleVariantFlagName });
+      expect(trackExposureEvent).not.toHaveBeenCalled();
+      expect(getExperimentFlag).not.toHaveBeenCalled();
+      expect(logger.info).toHaveBeenCalledTimes(2);
+    });
+
+    it('warns and drops $-prefixed reserved event names', async () => {
+      const { provider, trackEvent } = await setup();
+      provider.track('$flag_exposure', { targetingKey }, { flagKey: exampleVariantFlagName });
+      expect(trackEvent).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalled();
+    });
+
+    it('routes plain events to trackEvent with numeric value and metadata', async () => {
+      const { provider, trackEvent } = await setup();
+      provider.track('purchase', { targetingKey }, { value: 99.77, plan: 'pro' });
+      expect(trackEvent).toHaveBeenCalledWith('purchase', {
+        value: 99.77,
+        metadata: { plan: 'pro' },
+      });
+    });
+  });
+
   describe('server state', () => {
     it('should initialize with the targeting key and traits when passed to initialize', async () => {
       const targetingKey = 'test';

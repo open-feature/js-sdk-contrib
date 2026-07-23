@@ -8,6 +8,7 @@ import type {
   ProviderMetadata,
   ResolutionDetails,
   ResolutionReason,
+  TrackingEventDetails,
 } from '@openfeature/web-sdk';
 import { OpenFeatureEventEmitter, ProviderEvents, TypeMismatchError } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from '@flagsmith/flagsmith';
@@ -15,12 +16,14 @@ import type {
   ClientEvaluationContext,
   IFlagsmith,
   IFlagsmithFeature,
+  IFlagsmithValue,
   IInitConfig,
   IState,
   ITraits,
 } from '@flagsmith/flagsmith/types';
 import type { FlagType } from './type-factory';
 import { typeFactory } from './type-factory';
+import { EXPOSURE_TRACKING_EVENT } from './tracking';
 
 type OpenFeatureContext = EvaluationContext & Partial<IState>;
 
@@ -119,6 +122,52 @@ export class FlagsmithClientProvider implements Provider {
 
   resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T) {
     return this.evaluate<T>(flagKey, 'object', defaultValue);
+  }
+
+  /**
+   * Route OpenFeature tracking events to Flagsmith.
+   *
+   * {@link EXPOSURE_TRACKING_EVENT} records a flag/variant exposure (skipped with a
+   * log when the context has no targetingKey); any other name becomes a plain
+   * Flagsmith event. No-op unless the client was initialized with `enableEvents`.
+   *
+   * @experimental Tracking is an experimental OpenFeature capability (spec §6).
+   */
+  track(trackingEventName: string, context: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void {
+    if (!this._client.eventsEnabled) {
+      this._logger?.debug(`Flagsmith events are disabled; dropping tracking event "${trackingEventName}".`);
+      return;
+    }
+
+    if (trackingEventName === EXPOSURE_TRACKING_EVENT) {
+      const { flagKey, variant, ...metadata } = trackingEventDetails ?? {};
+      delete metadata.value;
+      if (typeof flagKey !== 'string') {
+        this._logger?.warn(`"${EXPOSURE_TRACKING_EVENT}" requires a string details.flagKey; dropping exposure event.`);
+        return;
+      }
+      const identifier = context.targetingKey;
+      if (!identifier) {
+        this._logger?.info(`Exposure for "${flagKey}" skipped: no targetingKey in the evaluation context.`);
+        return;
+      }
+      if (typeof variant === 'string') {
+        this._client.trackExposureEvent(flagKey, { identifier, value: variant, metadata });
+      } else {
+        this._client.getExperimentFlag(flagKey);
+      }
+      return;
+    }
+
+    if (trackingEventName.startsWith('$')) {
+      this._logger?.warn(
+        `"${trackingEventName}" is a reserved Flagsmith event name; use "${EXPOSURE_TRACKING_EVENT}" to record exposures.`,
+      );
+      return;
+    }
+
+    const { value, ...metadata } = trackingEventDetails ?? {};
+    this._client.trackEvent(trackingEventName, { value: value as IFlagsmithValue, metadata });
   }
 
   /**
