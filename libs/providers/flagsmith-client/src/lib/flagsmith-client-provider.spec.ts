@@ -6,10 +6,12 @@ import {
   defaultStateWithoutEnvironment,
   exampleBooleanFlag,
   exampleBooleanFlagName,
+  exampleDisabledFlagName,
   exampleFloatFlagName,
   exampleJSONFlagName,
   exampleNumericFlagName,
   exampleStringFlagName,
+  exampleVariantFlagName,
   getFetchErrorMock,
   CACHE_KEY,
 } from './flagsmith.mocks';
@@ -294,6 +296,74 @@ describe('FlagsmithProvider', () => {
       expect(details.reason).toEqual('DEFAULT');
     });
   });
+  describe('resolution details', () => {
+    const setup = async (targetingKey?: string) => {
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({ ...config, logger });
+      if (targetingKey) await OpenFeature.setContext({ targetingKey });
+      await OpenFeature.setProviderAndWait(provider);
+      return OpenFeature.getClient();
+    };
+
+    it('populates variant and experiment metadata for multivariate flags', async () => {
+      const client = await setup();
+      const details = client.getStringDetails(exampleVariantFlagName, 'fallback');
+      expect(details.value).toBe('treatment-value');
+      expect(details.variant).toBe('treatment');
+      expect(details.flagMetadata).toEqual({
+        enabled: true,
+        featureId: 6,
+        'experiment.arm': 'treatment',
+        'experiment.active': true,
+        'experiment.unit': 'user',
+      });
+    });
+
+    it('populates base metadata without experiment keys for plain flags', async () => {
+      const client = await setup();
+      const details = client.getStringDetails(exampleStringFlagName, 'fallback');
+      expect(details.variant).toBeUndefined();
+      expect(details.flagMetadata).toEqual({ enabled: true, featureId: 2 });
+    });
+
+    it('reports DEFAULT with the default value for missing flags', async () => {
+      const client = await setup();
+      const details = client.getStringDetails('missing_flag', 'fallback');
+      expect(details.value).toBe('fallback');
+      expect(details.reason).toBe('DEFAULT');
+    });
+
+    it('reports DISABLED but keeps the configured value for disabled flags', async () => {
+      const client = await setup();
+      const details = client.getStringDetails(exampleDisabledFlagName, 'fallback');
+      expect(details.value).toBe('disabled-value');
+      expect(details.reason).toBe('DISABLED');
+      expect(details.flagMetadata).toEqual({ enabled: false, featureId: 7 });
+    });
+
+    it('reports STATIC for anonymous server-sourced evaluations', async () => {
+      const client = await setup();
+      expect(client.getStringDetails(exampleStringFlagName, 'fallback').reason).toBe('STATIC');
+    });
+
+    it('reports TARGETING_MATCH for identified server-sourced evaluations', async () => {
+      const client = await setup('test-user');
+      expect(client.getStringDetails(exampleStringFlagName, 'fallback').reason).toBe('TARGETING_MATCH');
+    });
+
+    it('reports DEFAULT for flags served from defaultFlags', async () => {
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({
+        ...config,
+        logger,
+        defaultFlags: defaultState.flags,
+        preventFetch: true,
+      });
+      await OpenFeature.setProviderAndWait(provider);
+      expect(OpenFeature.getClient().getStringDetails(exampleStringFlagName, 'fallback').reason).toBe('DEFAULT');
+    });
+  });
+
   describe('events', () => {
     it('should call the ready handler when initialized', async () => {
       const config = defaultConfig();

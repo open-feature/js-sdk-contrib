@@ -87,9 +87,31 @@ export const exampleJSONFlag = {
     name: exampleJSONFlagName,
   },
 };
+export const exampleVariantFlagName = 'example_variant_flag';
+export const exampleVariantFlag = {
+  feature_state_value: 'treatment-value',
+  enabled: true,
+  variant: 'treatment',
+  feature: {
+    id: 6,
+    name: exampleVariantFlagName,
+  },
+};
+
+export const exampleDisabledFlagName = 'example_disabled_flag';
+export const exampleDisabledFlag = {
+  feature_state_value: 'disabled-value',
+  enabled: false,
+  feature: {
+    id: 7,
+    name: exampleDisabledFlagName,
+  },
+};
+
 export const getFetchMock = (routes: Record<string, FeatureResponse[] | IFlagsmithResponse>) => {
   return jest.fn().mockImplementation((url: string) => {
-    const response = routes[url] || routes['default'];
+    const match = Object.keys(routes).find((route) => route !== 'default' && url.includes(route));
+    const response = match ? routes[match] : routes['default'];
     return Promise.resolve({
       text: async () => JSON.stringify(response),
       status: 200,
@@ -106,10 +128,12 @@ export const getFetchErrorMock = () => {
 
 export const exampleFlagsmithResponse = [
   exampleBooleanFlag,
+  exampleDisabledFlag,
   exampleFloatFlag,
   exampleJSONFlag,
   exampleNumericFlag,
   exampleStringFlag,
+  exampleVariantFlag,
 ];
 
 export const defaultStateWithoutEnvironment = {
@@ -147,6 +171,17 @@ export const defaultStateWithoutEnvironment = {
       id: exampleStringFlag.feature.id,
       enabled: exampleStringFlag.enabled,
       value: exampleStringFlag.feature_state_value,
+    },
+    [exampleVariantFlag.feature.name]: {
+      id: exampleVariantFlag.feature.id,
+      enabled: exampleVariantFlag.enabled,
+      value: exampleVariantFlag.feature_state_value,
+      variant: exampleVariantFlag.variant,
+    },
+    [exampleDisabledFlag.feature.name]: {
+      id: exampleDisabledFlag.feature.id,
+      enabled: exampleDisabledFlag.enabled,
+      value: exampleDisabledFlag.feature_state_value,
     },
   },
 };

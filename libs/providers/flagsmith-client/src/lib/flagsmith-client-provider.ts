@@ -1,5 +1,6 @@
 import type {
   EvaluationContext,
+  FlagMetadata,
   FlagValue,
   JsonValue,
   Logger,
@@ -10,7 +11,14 @@ import type {
 } from '@openfeature/web-sdk';
 import { OpenFeatureEventEmitter, ProviderEvents, TypeMismatchError } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from '@flagsmith/flagsmith';
-import type { ClientEvaluationContext, IFlagsmith, IInitConfig, IState, ITraits } from '@flagsmith/flagsmith/types';
+import type {
+  ClientEvaluationContext,
+  IFlagsmith,
+  IFlagsmithFeature,
+  IInitConfig,
+  IState,
+  ITraits,
+} from '@flagsmith/flagsmith/types';
 import type { FlagType } from './type-factory';
 import { typeFactory } from './type-factory';
 
@@ -153,11 +161,12 @@ export class FlagsmithClientProvider implements Provider {
     return evaluationContext;
   }
 
-  /**
-   * Based on Flagsmith's loading state, determine the Open Feature resolution reason
-   * @private
-   */
-  private evaluate<T extends FlagValue>(flagKey: string, type: FlagType, defaultValue: T) {
+  private evaluate<T extends FlagValue>(flagKey: string, type: FlagType, defaultValue: T): ResolutionDetails<T> {
+    const flag = this._client.getAllFlags()?.[this.normalizeFlagKey(flagKey)];
+    if (!flag) {
+      return { value: defaultValue, reason: 'DEFAULT' };
+    }
+
     const value = typeFactory(
       type === 'boolean' ? this._client.hasFeature(flagKey) : this._client.getValue(flagKey),
       type,
@@ -166,19 +175,57 @@ export class FlagsmithClientProvider implements Provider {
       throw new TypeMismatchError(`flag key ${flagKey} is not of type ${type}`);
     }
 
+    const flagMetadata = this.buildFlagMetadata(flag);
+    if (typeof value === 'undefined') {
+      return {
+        value: defaultValue,
+        reason: flag.enabled ? 'DEFAULT' : 'DISABLED',
+        flagMetadata,
+      };
+    }
+
     return {
-      value: (typeof value !== type ? defaultValue : value) as T,
-      reason: this.parseReason(value),
-    } as ResolutionDetails<T>;
+      value: value as T,
+      ...(flag.variant ? { variant: flag.variant } : {}),
+      reason: this.parseReason(flag),
+      flagMetadata,
+    };
   }
 
   /**
-   * Based on Flagsmith's loading state and feature resolution, determine the Open Feature resolution reason
+   * Flagsmith normalizes flag keys on ingestion; apply the same normalization for lookups.
    * @private
    */
-  private parseReason(value: unknown): ResolutionReason {
-    if (value === undefined) {
-      return 'DEFAULT';
+  private normalizeFlagKey(flagKey: string) {
+    return flagKey.toLowerCase().replace(/ /g, '_');
+  }
+
+  /**
+   * The `experiment.*` keys follow the OpenFeature vendor-council conventions and only
+   * appear on multivariate flags; the arm is also exposed as ResolutionDetails.variant.
+   * @private
+   */
+  private buildFlagMetadata(flag: IFlagsmithFeature): FlagMetadata {
+    return {
+      enabled: flag.enabled,
+      ...(typeof flag.id === 'number' ? { featureId: flag.id } : {}),
+      ...(flag.variant
+        ? {
+            'experiment.arm': flag.variant,
+            'experiment.active': flag.enabled,
+            'experiment.unit': 'user',
+          }
+        : {}),
+    };
+  }
+
+  /**
+   * Based on the flag state and Flagsmith's loading state, determine the Open Feature resolution reason
+   * @private
+   */
+  private parseReason(flag: IFlagsmithFeature): ResolutionReason {
+    if (!flag.enabled) {
+      return 'DISABLED';
     }
 
     switch (this._client.loadingState?.source) {
@@ -186,6 +233,8 @@ export class FlagsmithClientProvider implements Provider {
         return 'CACHED';
       case 'DEFAULT_FLAGS':
         return 'DEFAULT';
+      case 'SERVER':
+        return this._client.getContext().identity?.identifier ? 'TARGETING_MATCH' : 'STATIC';
       default:
         return 'STATIC';
     }
