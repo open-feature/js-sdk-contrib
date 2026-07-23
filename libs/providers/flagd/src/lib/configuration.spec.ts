@@ -40,6 +40,8 @@ describe('Configuration', () => {
     const tls = true;
     const socketPath = '/tmp/flagd.socks';
     const certPath = '/etc/cert/ca.crt';
+    const clientCertPath = '/etc/cert/client.crt';
+    const clientKeyPath = '/etc/cert/client.key';
     const maxCacheSize = 333;
     const cache = 'disabled';
     const resolverType = 'in-process';
@@ -55,6 +57,8 @@ describe('Configuration', () => {
     process.env['FLAGD_TLS'] = `${tls}`;
     process.env['FLAGD_SOCKET_PATH'] = socketPath;
     process.env['FLAGD_SERVER_CERT_PATH'] = certPath;
+    process.env['FLAGD_CLIENT_CERT_PATH'] = clientCertPath;
+    process.env['FLAGD_CLIENT_KEY_PATH'] = clientKeyPath;
     process.env['FLAGD_CACHE'] = cache;
     process.env['FLAGD_MAX_CACHE_SIZE'] = `${maxCacheSize}`;
     process.env['FLAGD_SOURCE_SELECTOR'] = `${selector}`;
@@ -72,6 +76,8 @@ describe('Configuration', () => {
         tls,
         socketPath,
         certPath,
+        clientCertPath,
+        clientKeyPath,
         maxCacheSize,
         cache,
         resolverType,
