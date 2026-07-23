@@ -14,7 +14,7 @@ import {
   CACHE_KEY,
 } from './flagsmith.mocks';
 import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
-import { createFlagsmithInstance } from 'flagsmith';
+import { createFlagsmithInstance } from '@flagsmith/flagsmith';
 
 const logger = {
   error: jest.fn(),
