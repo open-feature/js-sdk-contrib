@@ -98,9 +98,9 @@ export class GRPCService implements Service {
     client?: ServiceClient,
     private logger?: Logger,
   ) {
-    const { host, port, tls, socketPath, certPath } = config;
+    const { host, port, tls, socketPath, certPath, clientCertPath, clientKeyPath } = config;
     const clientOptions = buildClientOptions(config);
-    const channelCredentials = createChannelCredentials(tls, certPath);
+    const channelCredentials = createChannelCredentials(tls, certPath, clientCertPath, clientKeyPath);
 
     this._maxBackoffMs = config.retryBackoffMaxMs || DEFAULT_MAX_BACKOFF_MS;
     this._client = client
