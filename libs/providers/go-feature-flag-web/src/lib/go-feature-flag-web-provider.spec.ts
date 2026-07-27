@@ -5,13 +5,16 @@ import WS from 'jest-websocket-mock';
 import TestLogger from './test-logger';
 import type { DataCollectorRequest, GOFeatureFlagWebsocketResponse, TrackingEvent } from './model';
 import fetchMock from 'fetch-mock-jest';
+import { WebSocketFlagChangeStrategy, ServerSentEventFlagChangeStrategy } from './change-strategy';
+import { EventSourceMock } from '../spec-utils/mock';
+import { awaitableTimeout } from './utils';
 
 describe('GoFeatureFlagWebProvider', () => {
   let websocketMockServer: WS;
   const endpoint = 'http://localhost:1031/';
   const allFlagsEndpoint = `${endpoint}v1/allflags`;
   const dataCollectorEndpoint = `${endpoint}v1/data/collector`;
-  const websocketEndpoint = 'ws://localhost:1031/ws/v1/flag/change';
+  const websocketEndpoint = 'ws://localhost:1031/stream/v1/ws/flag/change';
   const defaultAllFlagResponse = {
     flags: {
       bool_flag: {
@@ -74,6 +77,7 @@ describe('GoFeatureFlagWebProvider', () => {
     valid: true,
   };
   let defaultProvider: GoFeatureFlagWebProvider;
+  let defaultProviderSse: GoFeatureFlagWebProvider;
   let defaultContext: EvaluationContext;
   const readyHandler = jest.fn();
   const errorHandler = jest.fn();
@@ -81,8 +85,13 @@ describe('GoFeatureFlagWebProvider', () => {
   const staleHandler = jest.fn();
   const logger = new TestLogger();
 
+  beforeAll(() => {
+    EventSourceMock.activate();
+  });
+
   beforeEach(async () => {
     WS.clean();
+    EventSourceMock.clean();
     await OpenFeature.close();
     fetchMock.mockClear();
     fetchMock.mockReset();
@@ -98,12 +107,22 @@ describe('GoFeatureFlagWebProvider', () => {
       },
       logger,
     );
+    defaultProviderSse = new GoFeatureFlagWebProvider(
+      {
+        endpoint: endpoint,
+        apiTimeout: 1000,
+        maxRetries: 1,
+        mode: 'sse',
+      },
+      logger,
+    );
     defaultContext = { targetingKey: 'user-key' };
   });
 
   afterEach(async () => {
     WS.clean();
     websocketMockServer.close();
+    EventSourceMock.closeAll();
     await OpenFeature.close();
     OpenFeature.clearHooks();
     fetchMock.mockClear();
@@ -115,6 +134,10 @@ describe('GoFeatureFlagWebProvider', () => {
     configurationChangedHandler.mockReset();
     staleHandler.mockReset();
     logger.reset();
+  });
+
+  afterAll(() => {
+    EventSourceMock.deactivate();
   });
 
   function newDefaultProvider(): GoFeatureFlagWebProvider {
@@ -160,14 +183,16 @@ describe('GoFeatureFlagWebProvider', () => {
     it('should return CACHED as a reason is websocket is not connected', async () => {
       await OpenFeature.setContext(defaultContext);
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, newDefaultProvider());
+      const provider = newDefaultProvider();
+      OpenFeature.setProvider(providerName, provider);
       const client = OpenFeature.getClient(providerName);
       await websocketMockServer.connected;
       // Need to wait before using the mock
       await new Promise((resolve) => setTimeout(resolve, 5));
       websocketMockServer.close();
-
+      // Need to wait before using the mock
       const got = client.getBooleanDetails('bool_flag', false);
+      expect(provider.changeStrategy.status).not.toBe('connected');
       expect(got.reason).toEqual(StandardResolutionReasons.CACHED);
     });
 
@@ -383,7 +408,10 @@ describe('GoFeatureFlagWebProvider', () => {
       await websocketMockServer.connected;
 
       // Need to wait before using the mock
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await awaitableTimeout(5);
+
+      expect(defaultProvider.changeStrategy.status).toBe('connected');
+
       websocketMockServer.send({
         added: {
           'added-flag-1': {},
@@ -399,7 +427,7 @@ describe('GoFeatureFlagWebProvider', () => {
         },
       } as GOFeatureFlagWebsocketResponse);
       // waiting the call to the API to be successful
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await awaitableTimeout(50);
 
       expect(readyHandler).toHaveBeenCalled();
       expect(errorHandler).not.toHaveBeenCalled();
@@ -442,10 +470,140 @@ describe('GoFeatureFlagWebProvider', () => {
       await websocketMockServer.connected;
 
       // Need to wait before using the mock
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await awaitableTimeout(50);
       websocketMockServer.close();
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await awaitableTimeout(300);
 
+      expect(readyHandler).toHaveBeenCalled();
+      expect(errorHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler).not.toHaveBeenCalled();
+      expect(staleHandler).toHaveBeenCalled();
+    });
+  });
+
+  describe('Connection mode SSE', () => {
+    it('should use SSE EventSource strategy when mode is "sse"', async () => {
+      const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', mode: 'sse' });
+      expect(provider.changeStrategy).toBeInstanceOf(ServerSentEventFlagChangeStrategy);
+    });
+
+    it('should be in connected state when SSE EventSource is open', async () => {
+      const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', mode: 'sse' });
+      const providerInit = provider.initialize({ targetingKey: 'user-key' });
+      await providerInit;
+      // Let's make the inner EventSource to connect
+      EventSourceMock.connectInstances();
+      // Let's wait a bit of time to let the provider's change strategy to go in connected state
+      await awaitableTimeout(5);
+      expect(provider.changeStrategy.status).toBe('connected');
+    });
+
+    it('should timeout if SSE EventSource stay in CONNECTING state', async () => {
+      const provider = new GoFeatureFlagWebProvider({
+        endpoint: 'http://localhost:1031',
+        apiTimeout: 1000,
+        mode: 'sse',
+      });
+      await provider.initialize({ targetingKey: 'user-key' });
+      // Let's wait a bit longer before checking
+      await awaitableTimeout(2000);
+      // Now we can test the behavior when the EventSource is in CONNECTING state
+      expect(provider.changeStrategy.status).not.toBe('connected');
+      expect(provider.changeStrategy.status).toBe('error');
+    });
+
+    // SSE - Eventing
+
+    it('should call client handler with ProviderEvents.Ready when SSE EventSource is connected', async () => {
+      // await OpenFeature.setContext(defaultContext); // we deactivate this call because the context is already set, and we want to avoid calling contextChanged function
+      await OpenFeature.setProviderAndWait('test-provider', defaultProviderSse);
+      const client = OpenFeature.getClient('test-provider');
+      client.addHandler(ProviderEvents.Ready, readyHandler);
+      client.addHandler(ProviderEvents.Error, errorHandler);
+      client.addHandler(ProviderEvents.Stale, staleHandler);
+      client.addHandler(ProviderEvents.ConfigurationChanged, configurationChangedHandler);
+
+      // wait for the SSE EventSource to be connected to the provider.
+      EventSourceMock.connectInstances();
+      await awaitableTimeout(5);
+
+      expect(readyHandler).toHaveBeenCalled();
+      expect(errorHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler).not.toHaveBeenCalled();
+      expect(staleHandler).not.toHaveBeenCalled();
+    });
+
+    it('should call client handler with ProviderEvents.ConfigurationChanged when SSE EventSource is sending update', async () => {
+      await OpenFeature.setProviderAndWait('test-provider', defaultProviderSse, defaultContext);
+      const client = OpenFeature.getClient('test-provider');
+
+      client.addHandler(ProviderEvents.Ready, readyHandler);
+      client.addHandler(ProviderEvents.Error, errorHandler);
+      client.addHandler(ProviderEvents.Stale, staleHandler);
+      client.addHandler(ProviderEvents.ConfigurationChanged, configurationChangedHandler);
+
+      // wait for the SSE EventSource to be connected to the provider.
+      EventSourceMock.connectInstances();
+      await awaitableTimeout(500);
+
+      expect(defaultProviderSse.changeStrategy.status).toBe('connected');
+
+      EventSourceMock.send({
+        added: {
+          'added-flag-1': {},
+          'added-flag-2': {},
+        },
+        updated: {
+          'updated-flag-1': {},
+          'updated-flag-2': {},
+        },
+        deleted: {
+          'deleted-flag-1': {},
+          'deleted-flag-2': {},
+        },
+      } as GOFeatureFlagWebsocketResponse);
+      // waiting the call to the API to be successful
+      await awaitableTimeout(50);
+
+      expect(readyHandler).toHaveBeenCalled();
+      expect(errorHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler).toHaveBeenCalled();
+      expect(staleHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler.mock.calls[0][0]).toEqual({
+        clientName: 'test-provider',
+        domain: 'test-provider',
+        message: 'flag configuration have changed',
+        providerName: 'GoFeatureFlagWebProvider',
+        flagsChanged: [
+          'deleted-flag-1',
+          'deleted-flag-2',
+          'updated-flag-1',
+          'updated-flag-2',
+          'added-flag-1',
+          'added-flag-2',
+        ],
+      });
+    });
+
+    it('should call client handler with ProviderEvents.Stale when SSE EventSource is unreachable', async () => {
+      // await OpenFeature.setContext(defaultContext); // we deactivate this call because the context is already set, and we want to avoid calling contextChanged function
+      await OpenFeature.setProviderAndWait('test-provider', defaultProviderSse);
+      const client = OpenFeature.getClient('test-provider');
+      client.addHandler(ProviderEvents.Ready, readyHandler);
+      client.addHandler(ProviderEvents.Error, errorHandler);
+      client.addHandler(ProviderEvents.Stale, staleHandler);
+      client.addHandler(ProviderEvents.ConfigurationChanged, configurationChangedHandler);
+
+      // wait for the SSE EventSource to be connected to the provider.
+      EventSourceMock.connectInstances();
+      await awaitableTimeout(5);
+      expect(defaultProviderSse.changeStrategy.status).toBe('connected');
+
+      // Let's disconnect the SSE EventSource
+      EventSourceMock.failAll();
+      await awaitableTimeout(5);
+
+      expect(defaultProviderSse.changeStrategy.status).toBe('error');
       expect(readyHandler).toHaveBeenCalled();
       expect(errorHandler).not.toHaveBeenCalled();
       expect(configurationChangedHandler).not.toHaveBeenCalled();
@@ -769,24 +927,35 @@ describe('GoFeatureFlagWebProvider', () => {
     });
   });
 
+  it('should use WebSocket strategy when mode is unset', async () => {
+    const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', apiTimeout: 1000 });
+    await provider.initialize({ targetingKey: 'user-key' });
+    expect(provider.changeStrategy).toBeInstanceOf(WebSocketFlagChangeStrategy);
+  });
+
+  it('should use WebSocket strategy when mode is "ws"', async () => {
+    const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', apiTimeout: 1000, mode: 'ws' });
+    await provider.initialize({ targetingKey: 'user-key' });
+    expect(provider.changeStrategy).toBeInstanceOf(WebSocketFlagChangeStrategy);
+  });
+
   it('should resolve when WebSocket is open', async () => {
     const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', apiTimeout: 1000 });
     await provider.initialize({ targetingKey: 'user-key' });
-    const websocket = new WebSocket(websocketEndpoint);
     await websocketMockServer.connected;
-    await expect(provider.waitWebsocketFinalStatus(websocket)).resolves.toBeUndefined();
+    expect(provider.changeStrategy.status).toBe('connected');
   });
 
   // how can I mock a websocket server to stay in CONNECTING state
   it('should timeout if websocket stay in CONNECTING state', async () => {
     const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', apiTimeout: 1000 });
     await provider.initialize({ targetingKey: 'user-key' });
-    const websocket = new MockWebSocketConnectingState(websocketEndpoint);
-
+    expect(provider.changeStrategy.status).toBe('connecting');
+    websocketMockServer.server.close();
+    await awaitableTimeout(2000);
     // Now you can test the behavior when the WebSocket is in CONNECTING state
-    await expect(provider.waitWebsocketFinalStatus(websocket)).rejects.toBe(
-      'timeout of 1000 ms reached when initializing the websocket',
-    );
+    expect(provider.changeStrategy.status).not.toBe('connected');
+    expect(provider.changeStrategy.status).toBe('error');
   });
 
   it('should call the data collector with exporter metadata', async () => {
