@@ -48,6 +48,7 @@
     "lodash.isequal": "^4.5.0",
     "lru-cache": "^11.0.0",
     "object-hash": "^3.0.0",
+    "protobufjs": "^7.6.5",
     "tslib": "2.8.1",
     "unleash-proxy-client": "^3.6.0"
   },
@@ -123,7 +124,6 @@
     "@xhmikosr/decompress": ">=10.2.1 <11.0.0",
     "postcss": ">=8.5.18",
     "fast-uri": ">=3.1.4 <4",
-    "protobufjs": ">=7.6.5 <8",
     "brace-expansion@^1.0.0": ">=1.1.16 <2",
     "brace-expansion@^2.0.0": ">=2.1.2 <3",
     "brace-expansion@^5.0.0": ">=5.0.8 <6",
