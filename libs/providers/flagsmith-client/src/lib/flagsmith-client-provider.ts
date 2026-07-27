@@ -8,7 +8,7 @@ import type {
   ResolutionDetails,
   ResolutionReason,
 } from '@openfeature/web-sdk';
-import { OpenFeatureEventEmitter, ProviderEvents, TypeMismatchError } from '@openfeature/web-sdk';
+import { FlagNotFoundError, OpenFeatureEventEmitter, ProviderEvents, TypeMismatchError } from '@openfeature/web-sdk';
 import { createFlagsmithInstance } from 'flagsmith';
 import type { ClientEvaluationContext, IFlagsmith, IInitConfig, IState, ITraits } from 'flagsmith/types';
 import type { FlagType } from './type-factory';
@@ -158,6 +158,13 @@ export class FlagsmithClientProvider implements Provider {
    * @private
    */
   private evaluate<T extends FlagValue>(flagKey: string, type: FlagType, defaultValue: T) {
+    // The Flagsmith SDK normalizes flag names before lookup; mirror it for the existence check
+    const normalizedKey = flagKey.toLowerCase().replace(/ /g, '_');
+    const flags = this._client.getState()?.flags;
+    if (!flags || !Object.prototype.hasOwnProperty.call(flags, normalizedKey)) {
+      throw new FlagNotFoundError(`flag key ${flagKey} was not found`);
+    }
+
     const value = typeFactory(
       type === 'boolean' ? this._client.hasFeature(flagKey) : this._client.getValue(flagKey),
       type,
