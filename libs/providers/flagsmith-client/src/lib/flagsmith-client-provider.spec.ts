@@ -565,6 +565,18 @@ describe('FlagsmithProvider', () => {
       provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: exampleVariantFlagName });
       expect(getExperimentFlag).toHaveBeenCalledWith(exampleVariantFlagName);
       expect(trackExposureEvent).not.toHaveBeenCalled();
+      expect(logger.debug).not.toHaveBeenCalled();
+    });
+
+    it('logs when a variant-less exposure discards metadata', async () => {
+      const { provider, getExperimentFlag } = await setup();
+      provider.track(
+        EXPOSURE_TRACKING_EVENT,
+        { targetingKey },
+        { flagKey: exampleVariantFlagName, experiment: 'exp-1' },
+      );
+      expect(getExperimentFlag).toHaveBeenCalledWith(exampleVariantFlagName);
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('metadata'));
     });
 
     it('drops exposures without a flagKey and warns', async () => {

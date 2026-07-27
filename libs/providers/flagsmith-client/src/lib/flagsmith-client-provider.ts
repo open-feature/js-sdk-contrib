@@ -154,6 +154,9 @@ export class FlagsmithClientProvider implements Provider {
       if (typeof variant === 'string') {
         this._client.trackExposureEvent(flagKey, { identifier, value: variant, metadata });
       } else {
+        if (Object.keys(metadata).length > 0) {
+          this._logger?.debug(`Exposure for "${flagKey}": metadata is ignored when no variant is provided.`);
+        }
         this._client.getExperimentFlag(flagKey);
       }
       return;
