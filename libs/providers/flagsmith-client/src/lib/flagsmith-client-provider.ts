@@ -108,8 +108,8 @@ export class FlagsmithClientProvider implements Provider {
     await this._client.flushEvents();
   }
 
-  resolveBooleanEvaluation(flagKey: string) {
-    return this.evaluate<boolean>(flagKey, 'boolean', false);
+  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean) {
+    return this.evaluate<boolean>(flagKey, 'boolean', defaultValue);
   }
 
   resolveStringEvaluation(flagKey: string, defaultValue: string) {

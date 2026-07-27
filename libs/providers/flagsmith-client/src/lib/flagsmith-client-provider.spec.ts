@@ -336,6 +336,13 @@ describe('FlagsmithProvider', () => {
       expect(details.reason).toBe('DEFAULT');
     });
 
+    it('honors the boolean defaultValue for missing flags', async () => {
+      const client = await setup();
+      const details = client.getBooleanDetails('missing_flag', true);
+      expect(details.value).toBe(true);
+      expect(details.reason).toBe('DEFAULT');
+    });
+
     it('reports DISABLED but keeps the configured value for disabled flags', async () => {
       const client = await setup();
       const details = client.getStringDetails(exampleDisabledFlagName, 'fallback');
