@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v2.2.1...ofrep-core-v2.3.0) (2026-07-27)
+
+
+### ✨ New Features
+
+* Allow overriding SSE message parsing for compat. ([#1583](https://github.com/open-feature/js-sdk-contrib/issues/1583)) ([5d8a460](https://github.com/open-feature/js-sdk-contrib/commit/5d8a460e81d0776fce8d73ec0ba4903428d178fd))
+
 ## [2.2.1](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-core-v2.2.0...ofrep-core-v2.2.1) (2026-07-20)
 
 
