@@ -448,6 +448,18 @@ describe('FlagsmithProvider', () => {
       expect(stopSpy).toHaveBeenCalledTimes(1);
       expect(flushSpy).toHaveBeenCalledTimes(1);
     });
+
+    it('does not stop a caller-provided shared instance listening', async () => {
+      const instance = createFlagsmithInstance();
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({ ...config, logger, flagsmithInstance: instance });
+      await OpenFeature.setProviderAndWait(provider);
+      const stopSpy = jest.spyOn(instance, 'stopListening').mockImplementation(() => undefined);
+      const flushSpy = jest.spyOn(instance, 'flushEvents').mockResolvedValue(undefined);
+      await provider.onClose();
+      expect(stopSpy).not.toHaveBeenCalled();
+      expect(flushSpy).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('context', () => {

@@ -95,7 +95,7 @@ type FlagsmithResolutionReasons =
   | typeof StandardResolutionReasons.ERROR;
 ```
 
-- `DISABLED` — the flag exists but is turned off in Flagsmith. The configured value is returned when the flag has one; otherwise the caller's default is returned. Check `flagMetadata.enabled` to distinguish it.
+- `DISABLED` — the flag exists but is turned off in Flagsmith. Boolean evaluations resolve `false`; other types return the configured value when the flag has one, otherwise the caller's default. Check `flagMetadata.enabled` to distinguish it.
 - `TARGETING_MATCH` — the flag was evaluated for an identified user (`targetingKey` set) from fresh server flags.
 
 ## Flag metadata
@@ -137,7 +137,8 @@ client.track(EXPOSURE_TRACKING_EVENT, { flagKey: 'my_experiment_flag', variant: 
 
 The provider accepts a custom instance (`flagsmithInstance`) and exposes it (`provider.flagsmithClient`),
 so OpenFeature and [Flagsmith's React SDK](https://docs.flagsmith.com/clients/react) can share one
-client — one set of flags, one identity:
+client — one set of flags, one identity. The provider only stops a client it created: closing it
+flushes pending events but leaves a shared instance running for its other consumers.
 
 ```jsx
 import { createFlagsmithInstance } from '@flagsmith/flagsmith';

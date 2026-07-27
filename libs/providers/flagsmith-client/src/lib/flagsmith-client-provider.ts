@@ -34,6 +34,8 @@ export class FlagsmithClientProvider implements Provider {
   readonly runsOn = 'client';
   //The Flagsmith Client
   private _client: IFlagsmith;
+  //Whether the provider created the client (false when a shared flagsmithInstance was passed in)
+  private _ownsClient: boolean;
   //The Open Feature logger to use
   private _logger?: Logger;
   //The configuration used for the Flagsmith SDK
@@ -47,6 +49,7 @@ export class FlagsmithClientProvider implements Provider {
     ...config
   }: Omit<IInitConfig, 'identity' | 'traits'> & { logger?: Logger; flagsmithInstance?: IFlagsmith }) {
     this._logger = logger;
+    this._ownsClient = !flagsmithInstance;
     this._client = flagsmithInstance || createFlagsmithInstance();
     this._config = config;
   }
@@ -103,7 +106,9 @@ export class FlagsmithClientProvider implements Provider {
   }
 
   async onClose() {
-    this._client.stopListening();
+    if (this._ownsClient) {
+      this._client.stopListening();
+    }
     await this._client.flushEvents();
   }
 
