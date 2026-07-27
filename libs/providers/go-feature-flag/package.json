@@ -20,9 +20,5 @@
   "devDependencies": {
     "@ljharb/eslint-config": "^21.2.0",
     "eslint-plugin-tree-shaking": "^1.12.2"
-  },
-  "overrides": {
-    "brace-expansion": ">=1.1.16 <2",
-    "js-yaml": ">=4.3.0 <5"
   }
 }
