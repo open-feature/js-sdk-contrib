@@ -603,6 +603,16 @@ describe('FlagsmithProvider', () => {
       expect(logger.warn).toHaveBeenCalled();
     });
 
+    it('warns and omits non-numeric values from plain events', async () => {
+      const { provider, trackEvent } = await setup();
+      provider.track('purchase', { targetingKey }, { value: { amount: 1 } as unknown as number, plan: 'pro' });
+      expect(trackEvent).toHaveBeenCalledWith('purchase', {
+        value: undefined,
+        metadata: { plan: 'pro' },
+      });
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('numeric'));
+    });
+
     it('routes plain events to trackEvent with numeric value and metadata', async () => {
       const { provider, trackEvent } = await setup();
       provider.track('purchase', { targetingKey }, { value: 99.77, plan: 'pro' });

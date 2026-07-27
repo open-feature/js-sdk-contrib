@@ -16,7 +16,6 @@ import type {
   ClientEvaluationContext,
   IFlagsmith,
   IFlagsmithFeature,
-  IFlagsmithValue,
   IInitConfig,
   IState,
   ITraits,
@@ -170,7 +169,10 @@ export class FlagsmithClientProvider implements Provider {
     }
 
     const { value, ...metadata } = trackingEventDetails ?? {};
-    this._client.trackEvent(trackingEventName, { value: value as IFlagsmithValue, metadata });
+    if (value !== undefined && typeof value !== 'number') {
+      this._logger?.warn(`Tracking event "${trackingEventName}" details.value must be numeric; sending without it.`);
+    }
+    this._client.trackEvent(trackingEventName, { value: typeof value === 'number' ? value : undefined, metadata });
   }
 
   /**

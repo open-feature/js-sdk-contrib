@@ -95,12 +95,12 @@ type FlagsmithResolutionReasons =
   | typeof StandardResolutionReasons.ERROR;
 ```
 
-- `DISABLED` — the flag exists but is turned off in Flagsmith. The configured value is still returned; check `flagMetadata.enabled` to distinguish it.
+- `DISABLED` — the flag exists but is turned off in Flagsmith. The configured value is returned when the flag has one; otherwise the caller's default is returned. Check `flagMetadata.enabled` to distinguish it.
 - `TARGETING_MATCH` — the flag was evaluated for an identified user (`targetingKey` set) from fresh server flags.
 
 ## Flag metadata
 
-Every resolution carries [flag metadata](https://openfeature.dev/specification/types/#flag-metadata): `enabled` and `featureId`. Multivariate flags additionally expose their variant as `ResolutionDetails.variant` and the experiment convention keys `experiment.arm`, `experiment.active` and `experiment.unit`.
+Resolutions backed by an existing Flagsmith flag carry [flag metadata](https://openfeature.dev/specification/types/#flag-metadata): `enabled` and `featureId`. Multivariate flags additionally expose their variant as `ResolutionDetails.variant` and the experiment convention keys `experiment.arm`, `experiment.active` and `experiment.unit`. Missing flags resolve to the caller's default without metadata.
 
 ## Tracking (experimental)
 
