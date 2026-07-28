@@ -117,8 +117,28 @@ const client = OpenFeature.getClient();
 client.track('purchase', { value: 99.77, plan: 'pro' });
 ```
 
-Flag/variant exposures use the reserved event name exported as `EXPOSURE_TRACKING_EVENT`
-(`"feature_flag.exposure"`):
+### Recording experiment exposures
+
+Exposures mark an identity as having entered an experiment, and are deliberately decoupled from
+evaluation — flags are evaluated in places users never see (prefetch, background renders), so the
+provider never records exposures automatically. There are three ways to record one:
+
+**1. Exposure hook — one call, evaluate and expose.** Attach `FlagsmithExposureHook` at the call
+site where the experiment starts; the attachment is the experiment declaration:
+
+```javascript
+import { FlagsmithExposureHook } from '@openfeature/flagsmith-client-provider';
+
+const exposureHook = new FlagsmithExposureHook(provider);
+const details = client.getStringDetails('my_experiment_flag', 'control', { hooks: [exposureHook] });
+```
+
+The hook records an exposure for the resolved variant when the flag is multivariate and resolved
+with reason `TARGETING_MATCH` (enabled, server-sourced, identified context), deduped per
+identity/flag/variant. Evaluations of the same flag elsewhere — without the hook — record nothing.
+
+**2. Explicit tracking.** Use the reserved event name exported as `EXPOSURE_TRACKING_EVENT`
+(`"feature_flag.exposure"`) when you need full control over when the exposure fires:
 
 ```javascript
 import { EXPOSURE_TRACKING_EVENT } from '@openfeature/flagsmith-client-provider';
@@ -127,8 +147,16 @@ const details = client.getStringDetails('my_experiment_flag', 'control');
 client.track(EXPOSURE_TRACKING_EVENT, { flagKey: 'my_experiment_flag', variant: details.variant });
 ```
 
-- Omit `variant` to let Flagsmith resolve the flag and apply its own guards (flag exists, enabled,
-  has a variant, server-sourced).
+Omit `variant` to let Flagsmith resolve the flag and apply its own guards (flag exists, enabled,
+has a variant, server-sourced).
+
+**3. The Flagsmith client directly.** The provider exposes its client (`provider.flagsmithClient`),
+so Flagsmith's native experiment surface — `getExperimentFlag()`, or `useExperiment` via a
+[shared instance](#sharing-one-flagsmith-instance-with-the-flagsmith-react-sdk) — remains available
+when you want first-party semantics at the cost of coupling that call site to Flagsmith.
+
+In all cases:
+
 - Exposures require an identified context (`targetingKey`); anonymous exposures are skipped and logged.
   For anonymous experiments, use a stable device or session id as the `targetingKey`.
 - Event names starting with `$` are reserved and dropped with a warning.
