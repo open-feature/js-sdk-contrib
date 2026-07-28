@@ -129,7 +129,9 @@ site where the experiment starts; the attachment is the experiment declaration:
 ```javascript
 import { FlagsmithExposureHook } from '@openfeature/flagsmith-client-provider';
 
-const exposureHook = new FlagsmithExposureHook(provider);
+const exposureHook = new FlagsmithExposureHook(flagsmithClientProvider);
+const client = OpenFeature.getClient();
+
 const details = client.getStringDetails('my_experiment_flag', 'control', { hooks: [exposureHook] });
 ```
 
@@ -153,7 +155,14 @@ has a variant, server-sourced).
 **3. The Flagsmith client directly.** The provider exposes its client (`provider.flagsmithClient`),
 so Flagsmith's native experiment surface — `getExperimentFlag()`, or `useExperiment` via a
 [shared instance](#sharing-one-flagsmith-instance-with-the-flagsmith-react-sdk) — remains available
-when you want first-party semantics at the cost of coupling that call site to Flagsmith.
+when you want first-party semantics at the cost of coupling that call site to Flagsmith:
+
+```javascript
+const flag = flagsmithClientProvider.flagsmithClient.getExperimentFlag('my_experiment_flag');
+if (flag?.enabled && flag.variant === 'treatment') {
+  // exposure already recorded by the call above; render the treatment experience
+}
+```
 
 In all cases:
 
