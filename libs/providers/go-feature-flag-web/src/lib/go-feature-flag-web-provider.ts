@@ -36,7 +36,7 @@ import {
   WebSocketFlagChangeStrategy,
 } from './change-strategy';
 import { buildOptionsFromProviderOptions } from './change-strategy/utils';
-import { awaitableTimeout, DeferredPromise, whenAnySettle } from './utils';
+import { awaitableTimeout, compositeAbortController, whenAnySettle } from './utils';
 
 type GoFeatureFlagResolvedFlags = {
   flags: {
@@ -81,7 +81,7 @@ export class GoFeatureFlagWebProvider implements Provider {
   // maximum number of retries
   private readonly _maxRetries;
   // _flags is the in memory representation of all the flags.
-  private _flags: GoFeatureFlagResolvedFlags = { flags: {} };
+  private _flags: GoFeatureFlagResolvedFlags = { flags: Object.create(null) };
   private readonly _changeStrategy: FlagChangeStrategy;
 
   private readonly _collectorManager: CollectorManager;
@@ -90,7 +90,7 @@ export class GoFeatureFlagWebProvider implements Provider {
   private readonly _disableDataCollection: boolean;
 
   // Fetch Abort Controller is used to cancel inflight requests.
-  private _fetchAbortController = new AbortController();
+  private _fetchAbortController?: AbortController;
   private _fetchAllUrl!: URL;
 
   // The context to be used for fetchAll() when there are change updates
@@ -144,9 +144,9 @@ export class GoFeatureFlagWebProvider implements Provider {
     }
   }
 
-  private cancelCurrentRequest() {
-    this._fetchAbortController.abort();
-    this._fetchAbortController = new AbortController();
+  private renewSession() {
+    this._fetchAbortController?.abort();
+    return (this._fetchAbortController = new AbortController());
   }
 
   async initialize(context: EvaluationContext): Promise<void> {
@@ -166,7 +166,7 @@ export class GoFeatureFlagWebProvider implements Provider {
       // If: there was a previous not processed change event
       // Then: fetch all flags (because it may be in dirty state)
       // Else: fetch only changed flags
-      this.updateInternalState(this._lastEvaluationContext!, previousChangeEvent ? undefined : changeEvent);
+      this.fetchAllWithRetries(this._lastEvaluationContext!, previousChangeEvent ? undefined : changeEvent);
     });
 
     const onStatusChangeHandlerRef = this._changeStrategy.onStatusChange((status) => {
@@ -178,7 +178,7 @@ export class GoFeatureFlagWebProvider implements Provider {
           // Let's check if we need to re-fetch flags because not Ready
           if (this._lastEmittedProviderEvent !== ProviderEvents.Ready) {
             // we try to update the internal state
-            this.updateInternalState(this._lastEvaluationContext!);
+            this.fetchAllWithRetries(this._lastEvaluationContext!);
           }
           break;
         case 'error':
@@ -195,12 +195,10 @@ export class GoFeatureFlagWebProvider implements Provider {
     });
 
     // make an initial fetch to have cached values.
-    if (!this.handleFetchAllResult(await this.fetchAll(context).catch((err) => this.handleFetchErrors(err)))) {
+    if (!(await this.fetchAll(context))) {
       // initial fetch failed, retry without blocking initialize().
-      this._logger?.warn('Initial fetch failed');
-      this.fetchAllWithRetries(context)
-        .catch((err) => this.handleFetchErrors(err))
-        .then((res) => this.handleFetchAllResult(res));
+      this._logger?.warn('Initial fetch failed, retrying without blocking initialize()');
+      this.fetchAllWithRetries(context);
     }
     // We connect with the change strategy now
     this._changeStrategy.connect();
@@ -226,7 +224,7 @@ export class GoFeatureFlagWebProvider implements Provider {
 
     //this.emitProviderEvent(ProviderEvents.Stale, { message: 'context has changed' });
     this._lastEvaluationContext = { ...newContext };
-    await this.updateInternalState(newContext);
+    await this.fetchAllWithRetries(newContext);
   }
 
   resolveNumberEvaluation(flagKey: string): ResolutionDetails<number> {
@@ -301,7 +299,7 @@ export class GoFeatureFlagWebProvider implements Provider {
   private handleFetchAllResult(
     data: GoFeatureFlagResolvedFlags | FetchErrorHandlerResponse,
     changeEvent?: FlagChangeEvent,
-  ) {
+  ): data is GoFeatureFlagResolvedFlags {
     if (this.isFlagResult(data)) {
       // New flags has been loaded, update state
       this._flags.flags = data.flags;
@@ -320,7 +318,7 @@ export class GoFeatureFlagWebProvider implements Provider {
     } else {
       // Send a ERROR event
       this._logger?.error('Fetch All Result Error', data.error);
-      this.events.emit(ProviderEvents.Error, {
+      this.emitProviderEvent(ProviderEvents.Error, {
         message: 'Cannot get updated configurations, staying with cached values',
         metadata: { reason: data.reason || 'unknown' },
       });
@@ -328,134 +326,142 @@ export class GoFeatureFlagWebProvider implements Provider {
     }
   }
 
-  private async updateInternalState(context: EvaluationContext, changeEvent?: FlagChangeEvent) {
-    // if there is any inflight request, we should cancel it
-    this.cancelCurrentRequest();
-    // Try to get the new flags
-    const data = await this.fetchAllWithRetries(context, changeEvent).catch((err) => this.handleFetchErrors(err));
-    return this.handleFetchAllResult(data, changeEvent);
-  }
-
   private async fetchAllWithRetries(context: EvaluationContext, changeEvent?: FlagChangeEvent) {
     let delay = this._retryInitialDelay;
     let attempts = 0;
-    let errorDetails: FetchErrorHandlerResponse = { reason: 'unknown' };
-    do {
-      try {
-        return await this.fetchAll(context, changeEvent);
-      } catch (err) {
-        // convert to error details
-        errorDetails = this.handleFetchErrors(err);
-        // if it's not a retriable error or if maxAttempt are reached, return it for further handling on caller side
-        if (!errorDetails.retriable || attempts >= this._maxRetries) return errorDetails;
-        // do retries
+    const sessionAbort = this.renewSession();
+
+    try {
+      // Let's start the attempts cycle
+      do {
+        const result = await this.doFetchAll(context, sessionAbort.signal, changeEvent).catch((err) =>
+          this.handleFetchErrors(err),
+        );
+        // if the next method returns true, it means successfull and we can forward it
+        if (this.handleFetchAllResult(result, changeEvent)) return true;
+        // otherwise we had an error, if it's not retryable we can return false
+        if (!result.retriable || attempts >= this._maxRetries) return false;
+        // let's retry after waiting some delay
         attempts++;
         this._logger?.warn(
           `${GoFeatureFlagWebProvider.name}: Waiting ${delay} ms before trying to evaluate the flags (${attempts}/${this._maxRetries}).`,
         );
-        await new Promise<void>((resolve) => setTimeout(() => resolve(), delay));
+        await awaitableTimeout(delay, { signal: sessionAbort.signal }).catch((err) => undefined);
         delay *= this._retryDelayMultiplier;
-      }
-    } while (this._maxRetries);
+      } while (!sessionAbort.signal.aborted);
+      // NOTE: if we are here the session has been cancelled, we return false for now
+      return false;
+    } finally {
+      // some clean-up
+      sessionAbort.abort();
+    }
+  }
 
-    return errorDetails;
+  private async fetchAll(context: EvaluationContext, changeEvent?: FlagChangeEvent) {
+    const sessionAbort = this.renewSession();
+    const result = await this.doFetchAll(context, sessionAbort.signal, changeEvent).catch((err) =>
+      this.handleFetchErrors(err),
+    );
+    sessionAbort.abort();
+    return this.handleFetchAllResult(result, changeEvent);
   }
 
   /**
-   * fetchAll is a function that is calling GO Feature Flag to bulk evaluate flags.
-   * It emits an event to notify when it is ready or on error.
+   * doFetchAll is a function that is calling GO Feature Flag to bulk evaluate flags.
    *
    * @param {EvaluationContext} context - The static evaluation context
    * @param {FlagChangeEvent} changeEvent - (optional) The event containing added/updated/removed flags
    * @private
    */
-  private async fetchAll(context: EvaluationContext, changeEvent?: FlagChangeEvent) {
-    const apiAbortController = new AbortController();
-    const globalAbort = new DeferredPromise({ signal: this._fetchAbortController.signal });
+  private async doFetchAll(context: EvaluationContext, sessionSignal: AbortSignal, changeEvent?: FlagChangeEvent) {
+    const requestAbortController = compositeAbortController([sessionSignal]);
     // if changeEvent has `updated` or `added` flags, let's call GO Feature Flag with a flagList
     // so only the changed flags are retrieved. `deleted` flags won't be available so we don't take them into account
-    const payload: GoFeatureFlagAllFlagRequest = changeEvent
-      ? { evaluationContext: transformContext(context, [...changeEvent.added, ...changeEvent.updated]) }
-      : { evaluationContext: transformContext(context) };
-    const request: RequestInit = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        // we had the authorization header only if we have an API Key
-        ...(this._customHeaders || {}),
-        ...(this._apiKey ? { Authorization: `Bearer ${this._apiKey}` } : {}),
-      },
-      body: JSON.stringify(payload),
-      signal: apiAbortController.signal,
-    };
-
-    const fetchRequest = fetch(this._fetchAllUrl, request);
-    const apiTimeout =
-      this._apiTimeout > 0 ? awaitableTimeout(this._apiTimeout, { signal: apiAbortController.signal }) : undefined;
-
-    const result = await whenAnySettle(
-      apiTimeout ? [globalAbort.promise, fetchRequest, apiTimeout] : [globalAbort.promise, fetchRequest],
-    );
-    // let's end all the running async tasks
-    apiAbortController.abort();
-    globalAbort.resolve();
-
-    if (result.promise === globalAbort.promise || globalAbort.signal?.aborted) {
-      // The request has been cancelled from outside
-      this._logger?.error(`${GoFeatureFlagWebProvider.name}: fetchAll operation was aborted`);
-      throw new FetchAbortedError(globalAbort.signal?.reason);
-    } else if (result.promise === apiTimeout) {
-      // The API timed out
-      this._logger?.error(
-        `${GoFeatureFlagWebProvider.name}: fetchAll operation has timed out after ${this._apiTimeout}ms`,
-      );
-      throw new FetchTimeoutError(this._apiTimeout);
-    } else if (result.error) {
-      // An error occurred during the request, rethrow as-is
-      throw result.error;
-    }
-
-    // If we are here, the request received a response
-    const response = result.data as Response;
-
-    if (!response.ok) {
-      throw new FetchError(response.status);
-    }
-
-    const data = (await (response as Response).json()) as GOFeatureFlagAllFlagsResponse;
-
-    // In case we are in success
-    const flags = { flags: {} } as GoFeatureFlagResolvedFlags;
-    for (const flagKey of Object.keys(data.flags)) {
-      const resolved: FlagState<FlagValue> = data.flags[flagKey];
-      const resolutionDetails: ResolutionDetails<FlagValue> = {
-        value: resolved.value,
-        variant: resolved.variationType,
-        errorCode: resolved.errorCode,
-        flagMetadata: resolved.metadata,
-        reason: resolved.reason,
+    try {
+      const payload: GoFeatureFlagAllFlagRequest = changeEvent
+        ? { evaluationContext: transformContext(context, [...changeEvent.added, ...changeEvent.updated]) }
+        : { evaluationContext: transformContext(context) };
+      const request: RequestInit = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          // we had the authorization header only if we have an API Key
+          ...(this._customHeaders || {}),
+          ...(this._apiKey ? { Authorization: `Bearer ${this._apiKey}` } : {}),
+        },
+        body: JSON.stringify(payload),
+        signal: requestAbortController.signal,
       };
-      flags.flags[flagKey] = resolutionDetails;
-    }
 
-    // If: there is a change event
-    // Then:
-    // - remove eventually deleted flags from changeEvent
-    // - set the added/updated flags
-    // Else: return replace entirely the flags with new values
-    if (changeEvent) {
-      // we use a Set for a fast lookup
-      const deletedFlagsSet = new Set<string>(changeEvent.deleted);
-      for (const flagKey of Object.keys(this._flags.flags)) {
-        // we add the flag evaluation only if it's not a deleted flag and it's not already available in the new flagset
-        if (!deletedFlagsSet.has(flagKey) && !flags.flags[flagKey]) {
-          flags.flags[flagKey] = this._flags.flags[flagKey];
+      const fetchRequest = fetch(this._fetchAllUrl, request);
+      const apiTimeout =
+        this._apiTimeout > 0
+          ? awaitableTimeout(this._apiTimeout, { signal: requestAbortController.signal })
+          : undefined;
+
+      const result = await whenAnySettle(apiTimeout ? [fetchRequest, apiTimeout] : [fetchRequest]);
+
+      // Let's check if the request has been aborted
+      if (sessionSignal.aborted || requestAbortController.signal.aborted) {
+        this._logger?.error(`${GoFeatureFlagWebProvider.name}: fetchAll operation was aborted`);
+        throw new FetchAbortedError(requestAbortController.signal.reason);
+      } else if (result.promise === apiTimeout) {
+        // The API timed out
+        this._logger?.error(
+          `${GoFeatureFlagWebProvider.name}: fetchAll operation has timed out after ${this._apiTimeout}ms`,
+        );
+        throw new FetchTimeoutError(this._apiTimeout);
+      } else if (result.error) {
+        // An error occurred during the request, rethrow as-is
+        throw result.error;
+      }
+
+      // If we are here, the request received a response
+      const response = result.data as Response;
+
+      if (!response.ok) {
+        // throw a FetchError
+        throw new FetchError(response.status);
+      }
+
+      const data = (await (response as Response).json()) as GOFeatureFlagAllFlagsResponse;
+
+      // In case we are in success
+      const flags = { flags: Object.create(null) } as GoFeatureFlagResolvedFlags;
+      for (const flagKey of Object.keys(data.flags)) {
+        const resolved: FlagState<FlagValue> = data.flags[flagKey];
+        const resolutionDetails: ResolutionDetails<FlagValue> = {
+          value: resolved.value,
+          variant: resolved.variationType,
+          errorCode: resolved.errorCode,
+          flagMetadata: resolved.metadata,
+          reason: resolved.reason,
+        };
+        flags.flags[flagKey] = resolutionDetails;
+      }
+
+      // If: there is a change event
+      // Then:
+      // - remove eventually deleted flags from changeEvent
+      // - set the added/updated flags
+      // Else: return replace entirely the flags with new values
+      if (changeEvent) {
+        // we use a Set for a fast lookup
+        const deletedFlagsSet = new Set<string>(changeEvent.deleted);
+        for (const flagKey of Object.keys(this._flags.flags)) {
+          // we add the flag evaluation only if it's not a deleted flag and it's not already available in the new flagset
+          if (!deletedFlagsSet.has(flagKey) && !flags.flags[flagKey]) {
+            flags.flags[flagKey] = this._flags.flags[flagKey];
+          }
         }
       }
-    }
 
-    return flags;
+      return flags;
+    } finally {
+      // let's make some clean-up on any pending request task
+      requestAbortController.abort();
+    }
   }
 
   /**
@@ -470,6 +476,10 @@ export class GoFeatureFlagWebProvider implements Provider {
       // The request was cancelled, just log
       this._logger?.info(`${GoFeatureFlagWebProvider.name}: ${error.message}`);
       return { reason: 'aborted', aborted: true };
+    } else if (error instanceof FetchTimeoutError) {
+      // The request timed out
+      this._logger?.info(`${GoFeatureFlagWebProvider.name}: ${error.message}`);
+      return { reason: 'timeout', retriable: true };
     } else if (error instanceof FetchError) {
       if (error.status == 401) {
         this._logger?.error(
@@ -496,8 +506,6 @@ export class GoFeatureFlagWebProvider implements Provider {
    * @param apiKey
    */
   async setApiKey(apiKey: string) {
-    // We cancel any inflight request happening
-    this.cancelCurrentRequest();
     // Set the new API Key
     this._apiKey = apiKey;
     // mark
@@ -505,7 +513,11 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._collectorManager.setApiKey(apiKey);
     // Update the change strategy
     this._changeStrategy.setApiKey(apiKey);
-    // Update the internal state
-    await this.updateInternalState(this._lastEvaluationContext!);
+    // Update the internal state if any context is available
+    if (this._lastEvaluationContext) {
+      this.fetchAllWithRetries(this._lastEvaluationContext!);
+    }
+
+    await Promise.resolve();
   }
 }

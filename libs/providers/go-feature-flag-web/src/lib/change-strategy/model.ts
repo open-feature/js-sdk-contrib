@@ -1,3 +1,5 @@
+import type { PromiseOptions } from '../utils';
+
 export interface FlagChangeEvent {
   deleted: string[];
   added: string[];
@@ -13,11 +15,14 @@ export interface FlagChangeStrategyHandlerRef {
 
 export interface FlagChangeStrategy {
   connect(): void;
+  disconnect(): void;
   close(): void;
   setApiKey(apiKey: string): void;
   onFlagChange(handler: FlagChangeStrategyOnFlagChangeHandler): FlagChangeStrategyHandlerRef;
   onStatusChange(handler: FlagChangeStrategyOnStatusChangeHandler): FlagChangeStrategyHandlerRef;
-  status: 'idle' | 'connecting' | 'connected' | 'closing' | 'closed' | 'error';
+  waitForStatus(status: FlagChangeStrategy['status'], options?: PromiseOptions): Promise<void>;
+  waitForAnyStatus(status: FlagChangeStrategy['status'][], options?: PromiseOptions): Promise<void>;
+  status: 'idle' | 'connecting' | 'connected' | 'disconnecting' | 'closing' | 'closed' | 'error';
   name: string;
 }
 

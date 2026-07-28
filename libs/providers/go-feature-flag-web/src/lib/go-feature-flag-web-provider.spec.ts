@@ -7,7 +7,7 @@ import type { DataCollectorRequest, GOFeatureFlagWebsocketResponse, TrackingEven
 import fetchMock from 'fetch-mock-jest';
 import { WebSocketFlagChangeStrategy, ServerSentEventFlagChangeStrategy } from './change-strategy';
 import { EventSourceMock } from '../spec-utils/mock';
-import { awaitableTimeout } from './utils';
+import { awaitableTimeout, whenAnySettle } from './utils';
 
 describe('GoFeatureFlagWebProvider', () => {
   let websocketMockServer: WS;
@@ -221,7 +221,7 @@ describe('GoFeatureFlagWebProvider', () => {
       client.addHandler(ProviderEvents.Stale, staleHandler);
       client.addHandler(ProviderEvents.ConfigurationChanged, configurationChangedHandler);
       // wait the event to be triggered
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await awaitableTimeout(5);
       expect(errorHandler).toHaveBeenCalled();
       expect(logger.inMemoryLogger['error'][0]).toEqual(
         'GoFeatureFlagWebProvider: impossible to call go-feature-flag relay proxy Error: Request failed with status code 404',
@@ -386,7 +386,7 @@ describe('GoFeatureFlagWebProvider', () => {
 
       // wait for the websocket to be connected to the provider.
       await websocketMockServer.connected;
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await awaitableTimeout(5);
 
       expect(readyHandler).toHaveBeenCalled();
       expect(errorHandler).not.toHaveBeenCalled();
@@ -498,7 +498,7 @@ describe('GoFeatureFlagWebProvider', () => {
       expect(provider.changeStrategy.status).toBe('connected');
     });
 
-    it('should timeout if SSE EventSource stay in CONNECTING state', async () => {
+    it('should retry connection if SSE EventSource stay in CONNECTING state', async () => {
       const provider = new GoFeatureFlagWebProvider({
         endpoint: 'http://localhost:1031',
         apiTimeout: 1000,
@@ -509,7 +509,13 @@ describe('GoFeatureFlagWebProvider', () => {
       await awaitableTimeout(2000);
       // Now we can test the behavior when the EventSource is in CONNECTING state
       expect(provider.changeStrategy.status).not.toBe('connected');
-      expect(provider.changeStrategy.status).toBe('error');
+      expect(provider.changeStrategy.status).toBe('connecting');
+      // let's enable the connection and wait for the EventSource to connect
+      EventSourceMock.connectInstances();
+      await awaitableTimeout(100);
+
+      expect(provider.changeStrategy.status).not.toBe('connecting');
+      expect(provider.changeStrategy.status).toBe('connected');
     });
 
     // SSE - Eventing
@@ -688,8 +694,9 @@ describe('GoFeatureFlagWebProvider', () => {
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait('test-provider', p);
       await websocketMockServer.connected;
-
       p.setApiKey('new-key');
+      // let's wait a bit before reconnecting
+      await awaitableTimeout(10);
       await websocketMockServer.connected;
 
       // Only one client should be connected at a time
@@ -697,27 +704,29 @@ describe('GoFeatureFlagWebProvider', () => {
     });
 
     it('should abort in-flight fetchAll when setApiKey is called', async () => {
-      const p = new GoFeatureFlagWebProvider({ endpoint, apiTimeout: 1000, maxRetries: 2, apiKey: 'old-key' }, logger);
+      const provider = new GoFeatureFlagWebProvider(
+        { endpoint, apiTimeout: 1000, maxRetries: 2, apiKey: 'old-key' },
+        logger,
+      );
       await OpenFeature.setContext(defaultContext);
-      await OpenFeature.setProviderAndWait('test-provider', p);
+      await OpenFeature.setProviderAndWait('test-provider', provider);
       await websocketMockServer.connected;
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await awaitableTimeout(5);
 
       // Slow down the next fetch so we can rotate the key mid-flight
-      fetchMock.post(
-        allFlagsEndpoint,
-        () => new Promise((resolve) => setTimeout(() => resolve(defaultAllFlagResponse), 200)),
-        { overwriteRoutes: true },
-      );
+      fetchMock.post(allFlagsEndpoint, () => awaitableTimeout(200).then(() => defaultAllFlagResponse), {
+        overwriteRoutes: true,
+      });
 
       // Trigger a fetch then immediately rotate the key
-      await Promise.race([
-        p.onContextChange(defaultContext, { targetingKey: 'another-user' }), // slow fetch (200ms)
-        new Promise((resolve) => setTimeout(resolve, 50)), // timer wins after 50ms
+      await whenAnySettle([
+        provider.onContextChange(defaultContext, { targetingKey: 'another-user' }), // slow fetch (200ms)
+        awaitableTimeout(50), // timer wins after 50ms
       ]);
 
       // Rotate the key
-      await p.setApiKey('new-key');
+      await provider.setApiKey('new-key');
+      await awaitableTimeout(5);
 
       // Ensure the initial fetch was cancelled.
       expect(logger.inMemoryLogger['error']).toContain('GoFeatureFlagWebProvider: fetchAll operation was aborted');

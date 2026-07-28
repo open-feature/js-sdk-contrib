@@ -17,9 +17,9 @@ export class DeferredPromise<T = void> {
   private _reject!: (reason?: any) => void;
   // indicate if the promise has been fulfilled or not
   private _fulfilled = false;
-  private _signalAbortHandler = (() => {
+  private readonly _signalAbortHandler = () => {
     this.reject(getAbortError());
-  }).bind(this);
+  };
 
   get promise() {
     return this._promise;
@@ -79,4 +79,41 @@ export function whenAnySettle(promises: Promise<any>[]) {
         .catch((err) => ({ promise: p, data: undefined, error: err })),
     ),
   );
+}
+
+export function compositeAbortSignal(signals: AbortSignal[]): AbortSignal {
+  return compositeAbortController(signals).signal;
+}
+
+export function compositeAbortController(signals: AbortSignal[]): AbortController {
+  const abortController = new AbortController();
+  const attachedSignals = new Map<AbortSignal, any>();
+  const composite = {
+    abort(reason?: any) {
+      for (const [signal, handler] of attachedSignals) {
+        signal.removeEventListener('abort', handler);
+      }
+      attachedSignals.clear();
+      abortController.abort(reason);
+    },
+    signal: abortController.signal,
+  } as AbortController;
+
+  const attachSignal = (signal: AbortSignal, idx: number) => {
+    if (attachedSignals.has(signal)) return;
+    const handler = () =>
+      composite.abort(`The source signal at position ${idx} has been aborted with reason: ${signal.reason}`);
+    signal.addEventListener('abort', handler);
+    attachedSignals.set(signal, handler);
+  };
+
+  for (let i = 0; i < signals.length; i++) {
+    if (signals[i].aborted) {
+      composite.abort(`The source signal at position ${i} was already aborted`);
+      break;
+    }
+    attachSignal(signals[i], i);
+  }
+
+  return composite;
 }

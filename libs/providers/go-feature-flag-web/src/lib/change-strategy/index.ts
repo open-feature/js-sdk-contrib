@@ -1,3 +1,3 @@
 export * from './model';
-export * from './flag-change-ws-strategy';
-export * from './flag-change-sse-strategy';
+export * from './implementation/flag-change-ws-strategy';
+export * from './implementation/flag-change-sse-strategy';

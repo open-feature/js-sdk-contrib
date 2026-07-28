@@ -37,7 +37,7 @@ export class EventSourceMock implements EventSource {
   close(): void {
     if (this.readyState === this.CLOSED) return;
     this.readyState = this.CLOSED;
-    dispatchEvent(new Event('error'));
+    this.dispatchEvent(new Event('error'));
     EventSourceMock.removeInstance(this);
   }
 

@@ -1,12 +1,11 @@
 import type { Logger } from '@openfeature/core';
-import type { FlagChangeEvent, WebSocketFlagChangeStrategyOptions } from './model';
-import type { GOFeatureFlagWebsocketResponse } from '../model';
-import { AbstractFlagChangeStrategy } from './flag-change-strategy';
+import type { FlagChangeEvent, WebSocketFlagChangeStrategyOptions } from '../model';
+import type { GOFeatureFlagWebsocketResponse } from '../../model';
+import { AbstractFlagChangeStrategy } from '../flag-change-strategy';
 
 export class WebSocketFlagChangeStrategy extends AbstractFlagChangeStrategy<WebSocketFlagChangeStrategyOptions> {
   // the WebSocket path on the relay-proxy
   private static readonly _GOFF_WEBSOCKET_PATH = 'stream/v1/ws/flag/change';
-  private static readonly _WEBSOCKET_NORMAL_CLOSURE = 1_000;
   // _websocket is the reference to the websocket connection
   private _websocket?: WebSocket;
 
@@ -15,6 +14,10 @@ export class WebSocketFlagChangeStrategy extends AbstractFlagChangeStrategy<WebS
   constructor(options: WebSocketFlagChangeStrategyOptions, logger?: Logger) {
     super(options, logger);
     this.buildSourceUrl();
+  }
+
+  private getAbortHandler(ws: WebSocket) {
+    return () => ws.close(1000, 'aborted');
   }
 
   private buildSourceUrl() {
@@ -36,6 +39,7 @@ export class WebSocketFlagChangeStrategy extends AbstractFlagChangeStrategy<WebS
     );
     this.buildSourceUrl();
     const ws = (this._websocket = new WebSocket(this._sourceUrl));
+    const abortHandler = this.getAbortHandler(ws);
 
     ws.onopen = (event) => {
       if (signal.aborted) return;
@@ -54,35 +58,57 @@ export class WebSocketFlagChangeStrategy extends AbstractFlagChangeStrategy<WebS
         return;
       }
       this._logger?.info(`${this.name}: Change in your configuration flag`);
-      const payload: GOFeatureFlagWebsocketResponse = JSON.parse(data);
-      const changeEvent = this.buildFlagChangeEvent(payload);
-      this.notifyFlagChange(changeEvent);
+      try {
+        const payload: GOFeatureFlagWebsocketResponse = typeof data === 'string' ? JSON.parse(data) : data;
+        const changeEvent = this.buildFlagChangeEvent(payload);
+        this.notifyFlagChange(changeEvent);
+      } catch (err) {
+        // Do nothing
+        this._logger?.error(`${this.name} An error occurred while sending flag change event`, err);
+      }
     };
 
     ws.onclose = (e: CloseEvent) => {
       if (signal.aborted) return;
-      this._logger?.warn(`${this.name}: Websocket closed, reason: ${e.reason}.`);
+      this._logger?.warn(`${this.name}: Websocket closed => code: ${e.code}, reason: ${e.reason}.`);
+      // detach the abort handler
+      signal.removeEventListener('abort', abortHandler);
+      // check if it's an expected closing
+      if (e.code === 1000) {
+        switch (e.reason) {
+          case 'aborted':
+            // nothing to do
+            return;
+          case 'disconnect':
+            // set status to idle
+            return this.setStatus('idle');
+          case 'close':
+            // set the status to close
+            return this.setStatus('closed');
+        }
+      }
+      // if we're here, something went wrong
       this.setStatus('error');
     };
 
     ws.onerror = (event: Event) => {
       if (signal.aborted) return;
-      this._logger?.error(`${this.name}: Error while connecting the websocket: ${event}`);
+      this._logger?.error(`${this.name}: Error while connecting the WebSocket`);
       this.setStatus('error');
     };
 
-    signal.addEventListener(
-      'abort',
-      () => {
-        ws.close(undefined, 'WebSocket connection was cancelled');
-      },
-      { once: true },
-    );
+    signal.addEventListener('abort', abortHandler, { once: true });
+  }
+
+  protected async onDisconnect(): Promise<void> {
+    this._websocket?.close(1000, 'disconnect');
+    this._websocket = undefined;
+    await Promise.resolve();
   }
 
   protected async onClose(): Promise<void> {
-    // let's close the websocket
-    this._websocket?.close(1000, `Connection closed by client`);
+    this._websocket?.close(1000, 'close');
+    this._websocket = undefined;
     await Promise.resolve();
   }
 
