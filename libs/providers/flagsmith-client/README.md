@@ -123,8 +123,8 @@ Exposures mark an identity as having entered an experiment, and are deliberately
 evaluation — flags are evaluated in places users never see (prefetch, background renders), so the
 provider never records exposures automatically. There are three ways to record one:
 
-**1. Exposure hook — one call, evaluate and expose.** Attach `FlagsmithExposureHook` at the call
-site where the experiment starts; the attachment is the experiment declaration:
+**1. Exposure hook (recommended) — one call, evaluate and expose.** Attach `FlagsmithExposureHook`
+at the call site where the experiment starts; the attachment is the experiment declaration:
 
 ```javascript
 import { FlagsmithExposureHook } from '@openfeature/flagsmith-client-provider';
