@@ -274,6 +274,8 @@ export class GoFeatureFlagWebProvider implements Provider {
   async onClose(): Promise<void> {
     if (!this._disposing) {
       this._disposing = true;
+      // cancel any inflight/pending fetch operation
+      this._fetchAbortController?.abort(`${this.metadata.name}: closed by OpenFeature SDK`);
       if (!this._disableDataCollection) {
         await this._collectorManager?.close();
       }
