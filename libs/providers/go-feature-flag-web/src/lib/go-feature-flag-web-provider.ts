@@ -384,6 +384,9 @@ export class GoFeatureFlagWebProvider implements Provider {
       }
       this.emitProviderEvent(ProviderEvents.Ready, { message: '' });
       return true;
+    } else if (data.aborted) {
+      // do nothing, still return false;
+      return false;
     } else {
       // Send a ERROR event
       this._logger?.error('Fetch All Result Error', data.error);
