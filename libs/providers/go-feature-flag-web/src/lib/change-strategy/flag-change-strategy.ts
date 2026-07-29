@@ -10,6 +10,10 @@ import type {
 import { awaitableTimeout, DeferredPromise, isAbortError, type PromiseOptions, whenAnySettle } from '../utils';
 import { buildOptionsWithDefaults } from './utils';
 
+/**
+ * An abstract base class implementing {@link FlagChangeStrategy} interface, containing default implementation of methods
+ * This can be extended by any other class (i.e. WebSocket, SSE, etc.)
+ */
 export abstract class AbstractFlagChangeStrategy<
   TOptions extends FlagChangeStrategyOptions,
 > implements FlagChangeStrategy {
@@ -64,8 +68,18 @@ export abstract class AbstractFlagChangeStrategy<
     });
   }
 
+  /**
+   * This method will be called by {@link FlagChangeStrategy.connect()} and needs to be overridden by derived classes.
+   * @param signal
+   */
   protected abstract onConnect(signal: AbortSignal): Promise<void>;
+  /**
+   * This method will be called by {@link FlagChangeStrategy.disconnect()} and needs to be overridden by derived classes.
+   */
   protected abstract onDisconnect(): Promise<void>;
+  /**
+   * This method will be called by {@link FlagChangeStrategy.close()} and needs to be overridden by derived classes.
+   */
   protected abstract onClose(): Promise<void>;
 
   close(): void {
@@ -101,6 +115,7 @@ export abstract class AbstractFlagChangeStrategy<
 
   setApiKey(apiKey: string): void {
     if (this.disposing || this._options.apiKey === apiKey) return;
+    this._options.apiKey = apiKey;
     if (this.status === 'connecting' || this.status === 'connected') {
       // let's reconnect
       this.doConnect().catch((err) => {
@@ -110,6 +125,10 @@ export abstract class AbstractFlagChangeStrategy<
     }
   }
 
+  /**
+   * Used to notify flag changes to the listeners registered through {@link FlagChangeStrategy.onFlagChange()}
+   * @param event
+   */
   protected notifyFlagChange(event: FlagChangeEvent) {
     if (!this.disposing && this._onFlagChangeHandlers.size > 0) {
       this._onFlagChangeHandlers.forEach((handler) => {
@@ -131,6 +150,11 @@ export abstract class AbstractFlagChangeStrategy<
     };
   }
 
+  /**
+   * Used to notify set and notify the status update to the listeners registered through {@link FlagChangeStrategy.onStatusChange()}
+   * @param status
+   * @param skipNotify
+   */
   protected setStatus(status: FlagChangeStrategy['status'], skipNotify?: boolean) {
     if (this._status === status) return;
     this._status = status;
@@ -202,19 +226,24 @@ export abstract class AbstractFlagChangeStrategy<
   protected async doDisconnect() {
     this.setStatus('disconnecting');
     // renew the session
-    const sessionAbort = this.renewSession();
-    // execute the onConnect() handler
-    const err = await this.onDisconnect()
-      // we wait for one of the statuses
-      .then(() => this.waitForAnyStatus(['idle', 'error', 'closed'], { signal: sessionAbort.signal }))
-      // We catch any error that can happen from onConnect() and waitForAnyStatus()
-      .catch((err) => err);
-    // stop the execution if the session ended or if we are not in error
-    if (sessionAbort.signal.aborted || (this.status === 'idle' && !err)) return;
-    // NOTE: if we are here, we are in error and for now we set an failed state,
-    // in the future this may change if we think is better to leave untouched the status
-    this._logger?.error(`${this.name}: error while disconnecting`, err);
-    this.setStatus('error');
+    const sessionAbort = this._abortController;
+    try {
+      // execute the onConnect() handler
+      const err = await this.onDisconnect()
+        // we wait for one of the statuses
+        .then(() => this.waitForAnyStatus(['idle', 'error', 'closed'], { signal: sessionAbort?.signal }))
+        // We catch any error that can happen from onConnect() and waitForAnyStatus()
+        .catch((err) => err);
+      // stop the execution if the session ended or if we are not in error
+      if (sessionAbort?.signal.aborted || (this.status === 'idle' && !err)) return;
+      // NOTE: if we are here, we are in error and for now we set an failed state,
+      // in the future this may change if we think is better to leave untouched the status
+      this._logger?.error(`${this.name}: error while disconnecting`, err);
+      this.setStatus('error');
+    } finally {
+      // some clean-up
+      sessionAbort?.abort();
+    }
   }
 
   /**

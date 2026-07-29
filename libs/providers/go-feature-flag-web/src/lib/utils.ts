@@ -10,6 +10,10 @@ export function isAbortError(err: any): boolean {
   return err && err.name === 'AbortError';
 }
 
+/**
+ * This class can be used to `resolve()` or `reject()` a {@link Promise} in a deferred way.
+ * Useful when the fulfilled value must be provided from callbacks.
+ */
 export class DeferredPromise<T = void> {
   private readonly _options: PromiseOptions;
   private readonly _promise: Promise<T>;
@@ -57,6 +61,13 @@ export class DeferredPromise<T = void> {
   }
 }
 
+/**
+ * Helper function that can be used to get a {@link Promise}-like awaitable timeout,
+ * as a wrapper around {@link setTimeout()} function.
+ * @param milliseconds
+ * @param options
+ * @returns
+ */
 export async function awaitableTimeout(milliseconds?: number, options?: PromiseOptions) {
   if (options?.signal?.aborted) return Promise.reject(getAbortError());
   let timeout: any = undefined;
@@ -71,6 +82,14 @@ export async function awaitableTimeout(milliseconds?: number, options?: PromiseO
   });
 }
 
+/**
+ * Helper function returning an object containing:
+ * - a `promise` field of type {@link Promise} referencing the first resolved/rejected Promise given as input.
+ * - a `data` field containing the eventual resolved value from `promise`
+ * - an `error` field containing the eventual value rejected from `promise`
+ * @param promises
+ * @returns
+ */
 export function whenAnySettle(promises: Promise<any>[]) {
   return Promise.race(
     promises.map((p) =>
@@ -81,10 +100,22 @@ export function whenAnySettle(promises: Promise<any>[]) {
   );
 }
 
+/**
+ * Helper function to create a composite {@link AbortSignal} that will abort
+ * when any of the provided {@link AbortSignal}s are aborted.
+ * @param signals
+ * @returns
+ */
 export function compositeAbortSignal(signals: AbortSignal[]): AbortSignal {
   return compositeAbortController(signals).signal;
 }
 
+/**
+ * Helper function to create an {@link AbortController} that will abort when calling `abort()`
+ * or when any of the provided {@link AbortSignal}s are aborted.
+ * @param signals
+ * @returns
+ */
 export function compositeAbortController(signals: AbortSignal[]): AbortController {
   const abortController = new AbortController();
   const attachedSignals = new Map<AbortSignal, any>();

@@ -38,31 +38,64 @@ import {
 import { buildOptionsFromProviderOptions } from './change-strategy/utils';
 import { awaitableTimeout, compositeAbortController, whenAnySettle } from './utils';
 
+/**
+ * (internal) used to shape the internal cache of flags after retrieval with {@link GoFeatureFlagWebProvider.fetchAll}
+ */
 type GoFeatureFlagResolvedFlags = {
+  /**
+   * the dictionary of evaluated and cached flags
+   */
   flags: {
     [key: string]: ResolutionDetails<FlagValue>;
   };
 };
 
+/**
+ * (internal) used to wrap and process errors from {@link GoFeatureFlagWebProvider.fetchAll}
+ */
 interface FetchErrorHandlerResponse {
+  /**
+   * Indicates if the error is throwed by an abort operation
+   */
   aborted?: boolean;
+  /**
+   * A reason specifing some context on the error (i.e. 'aborted', 'noFound', 'unauthorized', etc.)
+   */
   reason?: string;
+  /**
+   * The error that has been processed
+   */
   error?: unknown;
+  /**
+   * Indicates if the operation that throwed the error should be retried.
+   * This will be used mainly by {@link GoFeatureFlagWebProvider.fetchAllWithRetries} to understand when reconnecting.
+   */
   retriable?: boolean;
 }
 
 export class GoFeatureFlagWebProvider implements Provider {
   readonly runsOn: Paradigm = 'client';
 
+  /**
+   * The provider's metadata request by OpenFeature SDK.
+   */
   metadata = {
     name: GoFeatureFlagWebProvider.name,
   };
+  /**
+   * The event emitter of OpenFeature SDK provider events.
+   */
   events = new OpenFeatureEventEmitter();
   // hooks is the list of hooks that are used by the provider
   hooks?: Hook[];
 
+  /**
+   * (internal) the path used to get flags evaluation from Go Feature Flag relay-proxy.
+   */
   private readonly _fetchAllPath = 'v1/allflags';
-
+  /**
+   * The connection mode to be used for flag change detection. See {@link GoFeatureFlagWebProviderOptions.mode}
+   */
   private readonly _connectionMode: GoFeatureFlagWebProviderConnectionMode;
   // logger is the Open Feature logger to use
   private _logger?: Logger;
@@ -83,14 +116,16 @@ export class GoFeatureFlagWebProvider implements Provider {
   // _flags is the in memory representation of all the flags.
   private _flags: GoFeatureFlagResolvedFlags = { flags: Object.create(null) };
   private readonly _changeStrategy: FlagChangeStrategy;
-
+  // the internal instance of CollectorManager
   private readonly _collectorManager: CollectorManager;
+  // the OpenFeature hook implementation for collecting data and send to the CollecorManager
   private readonly _dataCollectorHook: GoFeatureFlagDataCollectorHook;
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
   private readonly _disableDataCollection: boolean;
 
   // Fetch Abort Controller is used to cancel inflight requests.
   private _fetchAbortController?: AbortController;
+  // (internal) the absolute URL used to fetch flags evaluation from GO Feature Flag relay-proxy
   private _fetchAllUrl!: URL;
 
   // The context to be used for fetchAll() when there are change updates
@@ -98,8 +133,10 @@ export class GoFeatureFlagWebProvider implements Provider {
   // This will force the provider to fetch all the flags, regardless of partial flag updates from `onFlagChange()` handler
   private _lastFetchAllTimestamp = 0;
   private _lastFlagChangeEvent?: FlagChangeEvent;
+  /**
+   * (internal) This is the last emitted provider event by {@link GoFeatureFlagWebProvider}.
+   */
   private _lastEmittedProviderEvent?: ProviderEvents;
-
   // Used to check disposal (i.e. when onClose() has been called)
   private _disposing = false;
 
@@ -121,6 +158,9 @@ export class GoFeatureFlagWebProvider implements Provider {
     this.buildFetchAllUrl();
   }
 
+  /**
+   * This will be used to build the absolute URL used to fetch flags evaluation from GO Feature Flag relay-proxy.
+   */
   private buildFetchAllUrl() {
     this._fetchAllUrl = new URL(this._endpoint);
     this._fetchAllUrl.pathname = this._fetchAllUrl.pathname.endsWith('/')
@@ -132,6 +172,11 @@ export class GoFeatureFlagWebProvider implements Provider {
     return this._changeStrategy;
   }
 
+  /**
+   * (internal) This method is used to build and retrieve the {@link FlagChangeStrategy} implementation to use.
+   * @param {GoFeatureFlagWebProviderOptions} options
+   * @returns {FlagChangeStrategy}
+   */
   private getChangeStrategy(options: GoFeatureFlagWebProviderOptions): FlagChangeStrategy {
     const commonOptions = buildOptionsFromProviderOptions(options);
     switch (this._connectionMode) {
@@ -144,6 +189,10 @@ export class GoFeatureFlagWebProvider implements Provider {
     }
   }
 
+  /**
+   * This method is used to renew the fetch session, cancelling any inflight or pending fetch operation.
+   * @returns
+   */
   private renewSession() {
     this._fetchAbortController?.abort();
     return (this._fetchAbortController = new AbortController());
@@ -166,7 +215,12 @@ export class GoFeatureFlagWebProvider implements Provider {
       // If: there was a previous not processed change event
       // Then: fetch all flags (because it may be in dirty state)
       // Else: fetch only changed flags
-      this.fetchAllWithRetries(this._lastEvaluationContext!, previousChangeEvent ? undefined : changeEvent);
+      this.fetchAllWithRetries(this._lastEvaluationContext!, previousChangeEvent ? undefined : changeEvent).catch(
+        (err) => {
+          this._logger?.error('An error occurred during the fetchAllWithRetries() from flag change handler', err);
+          return false;
+        },
+      );
     });
 
     const onStatusChangeHandlerRef = this._changeStrategy.onStatusChange((status) => {
@@ -176,9 +230,15 @@ export class GoFeatureFlagWebProvider implements Provider {
       switch (status) {
         case 'connected':
           // Let's check if we need to re-fetch flags because not Ready
-          if (this._lastEmittedProviderEvent !== ProviderEvents.Ready) {
+          if (this._lastEmittedProviderEvent !== ProviderEvents.Ready && this._lastEvaluationContext) {
             // we try to update the internal state
-            this.fetchAllWithRetries(this._lastEvaluationContext!);
+            this.fetchAllWithRetries(this._lastEvaluationContext).catch((err) => {
+              this._logger?.error(
+                'An error occurred during the fetchAllWithRetries() from `connected` status handler',
+                err,
+              );
+              return false;
+            });
           }
           break;
         case 'error':
@@ -195,10 +255,17 @@ export class GoFeatureFlagWebProvider implements Provider {
     });
 
     // make an initial fetch to have cached values.
-    if (!(await this.fetchAll(context))) {
+    const initialFetch = await this.fetchAll(context).catch((err) => {
+      this._logger?.error('An error occurred during the initial fetchAll()', err);
+      return false;
+    });
+    if (!initialFetch) {
       // initial fetch failed, retry without blocking initialize().
       this._logger?.warn('Initial fetch failed, retrying without blocking initialize()');
-      this.fetchAllWithRetries(context);
+      this.fetchAllWithRetries(context).catch((err) => {
+        this._logger?.error('An error occurred during the initial fetchAllWithRetries()', err);
+        return false;
+      });
     }
     // We connect with the change strategy now
     this._changeStrategy.connect();
@@ -326,6 +393,15 @@ export class GoFeatureFlagWebProvider implements Provider {
     }
   }
 
+  /**
+   * (internal) this will be used by {@link GoFeatureFlagWebProvider} to refetch flags:
+   * - when {@link FlagChangeEvent} is received from the change strategy;
+   * - when {@link GoFeatureFlagWebProvider.setApiKey()} is called;
+   * - during {@link GoFeatureFlagWebProvider.initialize()} after {@link GoFeatureFlagWebProvider.fetchAll()} when is not successfull;
+   * @param context
+   * @param changeEvent
+   * @returns
+   */
   private async fetchAllWithRetries(context: EvaluationContext, changeEvent?: FlagChangeEvent) {
     let delay = this._retryInitialDelay;
     let attempts = 0;
@@ -357,6 +433,13 @@ export class GoFeatureFlagWebProvider implements Provider {
     }
   }
 
+  /**
+   * (internal) this will be used by {@link GoFeatureFlagWebProvider} to fetch flags:
+   * - during {@link GoFeatureFlagWebProvider.initialize()} phase;
+   * @param context
+   * @param changeEvent
+   * @returns
+   */
   private async fetchAll(context: EvaluationContext, changeEvent?: FlagChangeEvent) {
     const sessionAbort = this.renewSession();
     const result = await this.doFetchAll(context, sessionAbort.signal, changeEvent).catch((err) =>
@@ -367,7 +450,8 @@ export class GoFeatureFlagWebProvider implements Provider {
   }
 
   /**
-   * doFetchAll is a function that is calling GO Feature Flag to bulk evaluate flags.
+   * (internal) doFetchAll is a function that will actually call GO Feature Flag relay-proxy to bulk evaluate flags.
+   * This is used internally by {@link GoFeatureFlagWebProvider.fetchAll()} and {@link GoFeatureFlagWebProvider.fetchAllWithRetries()}.
    *
    * @param {EvaluationContext} context - The static evaluation context
    * @param {FlagChangeEvent} changeEvent - (optional) The event containing added/updated/removed flags
@@ -515,7 +599,10 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._changeStrategy.setApiKey(apiKey);
     // Update the internal state if any context is available
     if (this._lastEvaluationContext) {
-      this.fetchAllWithRetries(this._lastEvaluationContext!);
+      this.fetchAllWithRetries(this._lastEvaluationContext).catch((err) => {
+        this._logger?.error('An error occurred during the fetchAllWithRetries() from setApiKey()', err);
+        return false;
+      });
     }
 
     await Promise.resolve();

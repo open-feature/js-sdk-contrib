@@ -1,9 +1,12 @@
 import type { GoFeatureFlagWebProviderOptions } from '../model';
 import type { FlagChangeStrategyOptions } from './model';
 
+/**
+ * Helper function to build {@link FlagChangeStrategyOptions} options with default values.
+ */
 export function buildOptionsWithDefaults<T extends FlagChangeStrategyOptions = FlagChangeStrategyOptions>(
   options?: Partial<T>,
-) {
+): T {
   const res = Object.assign({} as T, options as T);
   res.apiKey ??= '';
   res.connectionTimeoutMs ??= 0;
@@ -17,6 +20,12 @@ export function buildOptionsWithDefaults<T extends FlagChangeStrategyOptions = F
   return res;
 }
 
+/**
+ * Helper function to build {@link FlagChangeStrategyOptions} options with default values,
+ * from the provided {@link GoFeatureFlagWebProviderOptions} options.
+ * @param options
+ * @returns
+ */
 export function buildOptionsFromProviderOptions<T extends FlagChangeStrategyOptions = FlagChangeStrategyOptions>(
   options?: GoFeatureFlagWebProviderOptions,
 ) {
