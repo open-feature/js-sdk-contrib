@@ -251,10 +251,11 @@ export abstract class AbstractFlagChangeStrategy<
    */
   protected async doClose() {
     this.setStatus('closing');
-    // execute the onConnect() handler
+    // execute onClose() handler
+    await this.onClose();
+    // we can make some clean-up
     this._abortController?.abort();
     this._abortController = undefined;
-    await this.onClose();
     // we can set the status to closed
     this.setStatus('closed');
   }
