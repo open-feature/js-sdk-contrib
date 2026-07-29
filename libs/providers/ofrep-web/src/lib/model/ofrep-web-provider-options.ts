@@ -1,4 +1,5 @@
 import type { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
+import type { SseEventParser } from '../sse-manager';
 
 export type CacheMode = 'local-cache-first' | 'network-first' | 'disabled';
 
@@ -30,6 +31,15 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
    * If neither is set, defaults to 120 seconds.
    */
   inactivityDelaySec?: number;
+
+  /**
+   * Overrides how the raw SSE event payload is parsed into the OFREP-spec
+   * `EventStreamMessage` the provider acts on. Use this to support non-JSON
+   * wire formats or custom deserialization.
+   *
+   * Default: JSON-parses string payloads, otherwise passes the data through as-is.
+   */
+  sseEventParser?: SseEventParser;
 
   /**
    * Controls the background change-detection strategy per ADR-0008.

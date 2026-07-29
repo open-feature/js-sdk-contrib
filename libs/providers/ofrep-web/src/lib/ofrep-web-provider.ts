@@ -492,6 +492,9 @@ export class OFREPWebProvider implements Provider {
           this._options.inactivityDelaySec,
           this._logger,
           this._options.baseUrl,
+          // Leave EventSource implementation as the default; only tests inject a mock
+          undefined,
+          this._options.sseEventParser,
         );
       }
       this._sseManager.connect(result.eventStreams);
