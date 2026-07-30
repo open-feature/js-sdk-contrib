@@ -1,5 +1,6 @@
 import type {
   EvaluationContext,
+  FlagMetadata,
   FlagValue,
   JsonValue,
   Logger,
@@ -7,12 +8,21 @@ import type {
   ProviderMetadata,
   ResolutionDetails,
   ResolutionReason,
+  TrackingEventDetails,
 } from '@openfeature/web-sdk';
 import { OpenFeatureEventEmitter, ProviderEvents, TypeMismatchError } from '@openfeature/web-sdk';
-import { createFlagsmithInstance } from 'flagsmith';
-import type { ClientEvaluationContext, IFlagsmith, IInitConfig, IState, ITraits } from 'flagsmith/types';
+import { createFlagsmithInstance } from '@flagsmith/flagsmith';
+import type {
+  ClientEvaluationContext,
+  IFlagsmith,
+  IFlagsmithFeature,
+  IInitConfig,
+  IState,
+  ITraits,
+} from '@flagsmith/flagsmith/types';
 import type { FlagType } from './type-factory';
 import { typeFactory } from './type-factory';
+import { EXPOSURE_TRACKING_EVENT } from './tracking';
 
 type OpenFeatureContext = EvaluationContext & Partial<IState>;
 
@@ -24,6 +34,8 @@ export class FlagsmithClientProvider implements Provider {
   readonly runsOn = 'client';
   //The Flagsmith Client
   private _client: IFlagsmith;
+  //Whether the provider created the client (false when a shared flagsmithInstance was passed in)
+  private _ownsClient: boolean;
   //The Open Feature logger to use
   private _logger?: Logger;
   //The configuration used for the Flagsmith SDK
@@ -37,6 +49,7 @@ export class FlagsmithClientProvider implements Provider {
     ...config
   }: Omit<IInitConfig, 'identity' | 'traits'> & { logger?: Logger; flagsmithInstance?: IFlagsmith }) {
     this._logger = logger;
+    this._ownsClient = !flagsmithInstance;
     this._client = flagsmithInstance || createFlagsmithInstance();
     this._config = config;
   }
@@ -92,8 +105,15 @@ export class FlagsmithClientProvider implements Provider {
     return this.initialize(newContext);
   }
 
-  resolveBooleanEvaluation(flagKey: string) {
-    return this.evaluate<boolean>(flagKey, 'boolean', false);
+  async onClose() {
+    if (this._ownsClient) {
+      this._client.stopListening();
+    }
+    await this._client.flushEvents();
+  }
+
+  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean) {
+    return this.evaluate<boolean>(flagKey, 'boolean', defaultValue);
   }
 
   resolveStringEvaluation(flagKey: string, defaultValue: string) {
@@ -109,13 +129,71 @@ export class FlagsmithClientProvider implements Provider {
   }
 
   /**
+   * Route OpenFeature tracking events to Flagsmith.
+   *
+   * {@link EXPOSURE_TRACKING_EVENT} records a flag/variant exposure (skipped with a
+   * log when the context has no targetingKey); any other name becomes a plain
+   * Flagsmith event. No-op unless the client was initialized with `enableEvents`.
+   *
+   * @experimental Tracking is an experimental OpenFeature capability (spec §6).
+   */
+  track(trackingEventName: string, context: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void {
+    if (!this._client.eventsEnabled) {
+      this._logger?.debug(`Flagsmith events are disabled; dropping tracking event "${trackingEventName}".`);
+      return;
+    }
+
+    if (trackingEventName === EXPOSURE_TRACKING_EVENT) {
+      const { flagKey, variant, ...metadata } = trackingEventDetails ?? {};
+      delete metadata.value;
+      if (typeof flagKey !== 'string') {
+        this._logger?.warn(`"${EXPOSURE_TRACKING_EVENT}" requires a string details.flagKey; dropping exposure event.`);
+        return;
+      }
+      const identifier = context.targetingKey;
+      if (!identifier) {
+        this._logger?.info(`Exposure for "${flagKey}" skipped: no targetingKey in the evaluation context.`);
+        return;
+      }
+      if (typeof variant === 'string') {
+        this._client.trackExposureEvent(flagKey, { identifier, value: variant, metadata });
+        return;
+      }
+      // Mirrors the SDK's getExperimentFlag guards, with the exposure attributed to the context's targetingKey rather than the client's internal identity.
+      const flag = this._client.getAllFlags()?.[this.normalizeFlagKey(flagKey)];
+      if (!flag?.enabled || !flag.variant) {
+        this._logger?.info(`Exposure for "${flagKey}" skipped: experiments require an enabled multivariate flag.`);
+        return;
+      }
+      if (this._client.loadingState?.source !== 'SERVER') {
+        this._logger?.info(`Exposure for "${flagKey}" skipped: flags were not loaded from the server.`);
+        return;
+      }
+      this._client.trackExposureEvent(flagKey, { identifier, value: flag.variant, metadata });
+      return;
+    }
+
+    if (trackingEventName.startsWith('$')) {
+      this._logger?.warn(
+        `"${trackingEventName}" is a reserved Flagsmith event name; use "${EXPOSURE_TRACKING_EVENT}" to record exposures.`,
+      );
+      return;
+    }
+
+    const { value, ...metadata } = trackingEventDetails ?? {};
+    if (value !== undefined && typeof value !== 'number') {
+      this._logger?.warn(`Tracking event "${trackingEventName}" details.value must be numeric; sending without it.`);
+    }
+    this._client.trackEvent(trackingEventName, { value: typeof value === 'number' ? value : undefined, metadata });
+  }
+
+  /**
    * Based on Flagsmith's state, return flag metadata
    * @private
    */
   private getMetadata() {
     return {
       targetingKey: this._client.getContext()?.identity?.identifier || '',
-      ...(this._client.getAllTraits() || {}),
     };
   }
 
@@ -139,7 +217,7 @@ export class FlagsmithClientProvider implements Provider {
 
     const evaluationContext: ClientEvaluationContext = {
       environment: {
-        apiKey: this._config.environmentID,
+        apiKey: environmentID,
       },
       identity:
         hasIdentifier || hasTraits
@@ -153,11 +231,12 @@ export class FlagsmithClientProvider implements Provider {
     return evaluationContext;
   }
 
-  /**
-   * Based on Flagsmith's loading state, determine the Open Feature resolution reason
-   * @private
-   */
-  private evaluate<T extends FlagValue>(flagKey: string, type: FlagType, defaultValue: T) {
+  private evaluate<T extends FlagValue>(flagKey: string, type: FlagType, defaultValue: T): ResolutionDetails<T> {
+    const flag = this._client.getAllFlags()?.[this.normalizeFlagKey(flagKey)];
+    if (!flag) {
+      return { value: defaultValue, reason: 'DEFAULT' };
+    }
+
     const value = typeFactory(
       type === 'boolean' ? this._client.hasFeature(flagKey) : this._client.getValue(flagKey),
       type,
@@ -166,19 +245,57 @@ export class FlagsmithClientProvider implements Provider {
       throw new TypeMismatchError(`flag key ${flagKey} is not of type ${type}`);
     }
 
+    const flagMetadata = this.buildFlagMetadata(flag);
+    if (typeof value === 'undefined') {
+      return {
+        value: defaultValue,
+        reason: flag.enabled ? 'DEFAULT' : 'DISABLED',
+        flagMetadata,
+      };
+    }
+
     return {
-      value: (typeof value !== type ? defaultValue : value) as T,
-      reason: this.parseReason(value),
-    } as ResolutionDetails<T>;
+      value: value as T,
+      ...(flag.variant ? { variant: flag.variant } : {}),
+      reason: this.parseReason(flag),
+      flagMetadata,
+    };
   }
 
   /**
-   * Based on Flagsmith's loading state and feature resolution, determine the Open Feature resolution reason
+   * Flagsmith normalizes flag keys on ingestion; apply the same normalization for lookups.
    * @private
    */
-  private parseReason(value: unknown): ResolutionReason {
-    if (value === undefined) {
-      return 'DEFAULT';
+  private normalizeFlagKey(flagKey: string) {
+    return flagKey.toLowerCase().replace(/ /g, '_');
+  }
+
+  /**
+   * The `experiment.*` keys follow the OpenFeature vendor-council conventions and only
+   * appear on multivariate flags; the arm is also exposed as ResolutionDetails.variant.
+   * @private
+   */
+  private buildFlagMetadata(flag: IFlagsmithFeature): FlagMetadata {
+    return {
+      enabled: flag.enabled,
+      ...(typeof flag.id === 'number' ? { featureId: flag.id } : {}),
+      ...(flag.variant
+        ? {
+            'experiment.arm': flag.variant,
+            'experiment.active': flag.enabled,
+            'experiment.unit': 'user',
+          }
+        : {}),
+    };
+  }
+
+  /**
+   * Based on the flag state and Flagsmith's loading state, determine the Open Feature resolution reason
+   * @private
+   */
+  private parseReason(flag: IFlagsmithFeature): ResolutionReason {
+    if (!flag.enabled) {
+      return 'DISABLED';
     }
 
     switch (this._client.loadingState?.source) {
@@ -186,6 +303,8 @@ export class FlagsmithClientProvider implements Provider {
         return 'CACHED';
       case 'DEFAULT_FLAGS':
         return 'DEFAULT';
+      case 'SERVER':
+        return this._client.getContext().identity?.identifier ? 'TARGETING_MATCH' : 'STATIC';
       default:
         return 'STATIC';
     }

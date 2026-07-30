@@ -15,7 +15,7 @@
   },
   "peerDependencies": {
     "@openfeature/web-sdk": "^1.0.0",
-    "flagsmith": "^9.3.1"
+    "@flagsmith/flagsmith": "^12.1.2"
   },
   "dependencies": {}
 }
