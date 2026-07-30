@@ -5,7 +5,9 @@
 
 ### ⚠ BREAKING CHANGES
 
-* **flagsmith-client:** implement experimental tracking ([#1591](https://github.com/open-feature/js-sdk-contrib/issues/1591))
+* **flagsmith-client:** the Flagsmith SDK peer dependency moved from `flagsmith` (^9.3.1) to the scoped `@flagsmith/flagsmith` (^12.1.2) — install the new package; a custom `flagsmithInstance` must be created from it ([#1591](https://github.com/open-feature/js-sdk-contrib/issues/1591))
+* **flagsmith-client:** disabled flags now resolve with reason `DISABLED` instead of `STATIC`/`CACHED`; boolean evaluations resolve `false`, and `flagMetadata.enabled` distinguishes a disabled flag from a plain `false` ([#1591](https://github.com/open-feature/js-sdk-contrib/issues/1591))
+* **flagsmith-client:** evaluations for an identified user from fresh server flags now report reason `TARGETING_MATCH` instead of `STATIC` ([#1591](https://github.com/open-feature/js-sdk-contrib/issues/1591))
 
 ### ✨ New Features
 
