@@ -3,6 +3,9 @@ import type { FlagChangeEvent, WebSocketFlagChangeStrategyOptions } from '../mod
 import type { GOFeatureFlagWebsocketResponse } from '../../model';
 import { AbstractFlagChangeStrategy } from '../flag-change-strategy';
 
+/**
+ * The specific implementation of a {@link FlagChangeStrategy} for flag change detection through WebSocket.
+ */
 export class WebSocketFlagChangeStrategy extends AbstractFlagChangeStrategy<WebSocketFlagChangeStrategyOptions> {
   // the WebSocket path on the relay-proxy
   private static readonly _GOFF_WEBSOCKET_PATH = 'stream/v1/ws/flag/change';

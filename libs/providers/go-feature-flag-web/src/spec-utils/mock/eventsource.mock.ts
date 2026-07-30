@@ -11,10 +11,23 @@ export class EventSourceMock implements EventSource {
   readonly url: string;
   readonly withCredentials: boolean;
 
+  /**
+   * (internal) used to track the mocked EventSource instances
+   */
   protected eventListenersMap: Map<string, Set<(...args: any[]) => void>>;
 
+  /**
+   * (internal) indicates if mock is enabled or not
+   */
   private static _mockEnabled = false;
+  /**
+   * (internal) the {@link EventSource} implementation that has been mocked.
+   * It will be restored once `deactivate()` is called.
+   */
   private static _originalEventSourceDef?: any;
+  /**
+   * (internal) the set of tracked {@link EventSource} instances.
+   */
   private static _instances: Set<EventSourceMock> = new Set();
 
   constructor(url: string | URL, eventSourceInitDict?: EventSourceInit) {
@@ -94,14 +107,26 @@ export class EventSourceMock implements EventSource {
     this.eventListenersMap.get(type)?.delete(listener);
   }
 
+  /**
+   * (internal) used to add an {@link EventSource} instance to the tracked instances.
+   * @param e
+   */
   private static addInstance(e: EventSourceMock) {
     this._instances.add(e);
   }
 
+  /**
+   * (internal) used to remove an {@link EventSource} instance to the tracked instances.
+   * @param e
+   */
   private static removeInstance(e: EventSourceMock) {
     this._instances.delete(e);
   }
 
+  /**
+   * Activates the mock.
+   * @returns
+   */
   public static activate() {
     if (this._mockEnabled) return;
     this._originalEventSourceDef = globalThis.EventSource;
@@ -109,6 +134,10 @@ export class EventSourceMock implements EventSource {
     this._mockEnabled = true;
   }
 
+  /**
+   * Deactivates the mock.
+   * @returns
+   */
   public static deactivate() {
     if (!this._mockEnabled) return;
     globalThis.EventSource = this._originalEventSourceDef;
@@ -116,6 +145,10 @@ export class EventSourceMock implements EventSource {
     this._mockEnabled = false;
   }
 
+  /**
+   * Will put all the tracked {@link EventSource} instances in the OPEN state
+   * and it will dispatch an `open` event to all of them.
+   */
   public static connectInstances() {
     for (const e of this._instances) {
       e.readyState = e.OPEN;
@@ -123,6 +156,10 @@ export class EventSourceMock implements EventSource {
     }
   }
 
+  /**
+   * Will put all the tracked {@link EventSource} instances in the CONNECTING state
+   * and it will dispatch an `error` event to all of them.
+   */
   public static failAll() {
     for (const e of this._instances) {
       e.readyState = e.CONNECTING;
@@ -130,16 +167,27 @@ export class EventSourceMock implements EventSource {
     }
   }
 
+  /**
+   * Will call `close()` on all the tracked {@link EventSource} instances.
+   */
   public static closeAll() {
     for (const e of this._instances) {
       e.close();
     }
   }
 
+  /**
+   * Will clean the current mock state
+   */
   public static clean() {
     this.closeAll();
   }
 
+  /**
+   * This method will dispatch a `message` event on all the tracked {@link EventSource} instances.
+   * @param messages
+   * @returns
+   */
   public static send(...messages: any[]) {
     if (!messages.length || !this._instances.size) return;
     for (const m of messages) {

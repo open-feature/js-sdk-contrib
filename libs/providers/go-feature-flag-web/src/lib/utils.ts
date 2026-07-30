@@ -1,11 +1,27 @@
+/**
+ * Used to configure a {@link DeferredPromise} instance
+ */
 export interface PromiseOptions {
+  /**
+   * The {@link AbortSignal} that can be used to reject the related `promise` with an error of type `AbortError`
+   */
   signal?: AbortSignal;
 }
 
+/**
+ * Create an instance of {@link Error} with name `AbortError`
+ * @param reason
+ * @returns
+ */
 export function getAbortError(reason?: string) {
   return new DOMException(reason || 'The operation was aborted', 'AbortError');
 }
 
+/**
+ * An helper function that check if the provided error is an `AbortError`
+ * @param err
+ * @returns
+ */
 export function isAbortError(err: any): boolean {
   return err && err.name === 'AbortError';
 }
@@ -25,12 +41,21 @@ export class DeferredPromise<T = void> {
     this.reject(getAbortError());
   };
 
+  /**
+   * The {@link Promise} linked to the deferred instance.
+   */
   get promise() {
     return this._promise;
   }
+  /**
+   * Indicates if the related `promise` property is fulfilled or not.
+   */
   get fulfilled() {
     return this._fulfilled;
   }
+  /**
+   * The {@link AbortSignal} associated to this deferred instance, if any was provided.
+   */
   get signal() {
     return this._options?.signal;
   }
@@ -44,6 +69,10 @@ export class DeferredPromise<T = void> {
     this._options.signal?.addEventListener('abort', this._signalAbortHandler, { once: true });
   }
 
+  /**
+   * Resolves the related `promise` with the provided value.
+   * @param value
+   */
   public resolve(value: T | PromiseLike<T>) {
     if (!this._fulfilled) {
       this._fulfilled = true;
@@ -52,6 +81,10 @@ export class DeferredPromise<T = void> {
     }
   }
 
+  /**
+   * Rejects the related `promise` with the provided reason.
+   * @param reason
+   */
   public reject(reason?: any) {
     if (!this._fulfilled) {
       this._fulfilled = true;

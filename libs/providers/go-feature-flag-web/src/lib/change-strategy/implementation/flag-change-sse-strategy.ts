@@ -3,11 +3,17 @@ import { AbstractFlagChangeStrategy } from '../flag-change-strategy';
 import type { FlagChangeEvent, ServerSentEventFlagChangeStrategyOptions } from '../model';
 import type { GOFeatureFlagServerSentEventResponse } from '../../model';
 
+/**
+ * (internal) used by {@link ServerSentEventFlagChangeStrategy} to track internal context.
+ */
 type SseContext = {
   source: EventSource;
   closeReason?: 'aborted' | 'disconnect' | 'close';
 };
 
+/**
+ * The specific implementation of a {@link FlagChangeStrategy} for flag change detection through Server-Sent Event (SSE).
+ */
 export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrategy<ServerSentEventFlagChangeStrategyOptions> {
   // the WebSocket path on the relay-proxy
   private static readonly _GOFF_SSE_PATH = 'stream/v1/sse/flag/change';

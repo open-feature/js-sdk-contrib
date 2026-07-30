@@ -22,6 +22,9 @@ export class FetchAbortedError extends Error {
   }
 }
 
+/**
+ * FetchTimeoutError is a wrapper around the timeoout of a fetch() request
+ */
 export class FetchTimeoutError extends Error {
   readonly timeoutMs: number;
   constructor(timeoutMs: number) {
