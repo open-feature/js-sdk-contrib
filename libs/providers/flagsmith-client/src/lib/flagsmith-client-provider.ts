@@ -157,12 +157,19 @@ export class FlagsmithClientProvider implements Provider {
       }
       if (typeof variant === 'string') {
         this._client.trackExposureEvent(flagKey, { identifier, value: variant, metadata });
-      } else {
-        if (Object.keys(metadata).length > 0) {
-          this._logger?.debug(`Exposure for "${flagKey}": metadata is ignored when no variant is provided.`);
-        }
-        this._client.getExperimentFlag(flagKey);
+        return;
       }
+      // Mirrors the SDK's getExperimentFlag guards, with the exposure attributed to the context's targetingKey rather than the client's internal identity.
+      const flag = this._client.getAllFlags()?.[this.normalizeFlagKey(flagKey)];
+      if (!flag?.enabled || !flag.variant) {
+        this._logger?.info(`Exposure for "${flagKey}" skipped: experiments require an enabled multivariate flag.`);
+        return;
+      }
+      if (this._client.loadingState?.source !== 'SERVER') {
+        this._logger?.info(`Exposure for "${flagKey}" skipped: flags were not loaded from the server.`);
+        return;
+      }
+      this._client.trackExposureEvent(flagKey, { identifier, value: flag.variant, metadata });
       return;
     }
 

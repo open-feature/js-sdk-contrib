@@ -38,7 +38,7 @@ export class FlagsmithExposureHook implements Hook {
         logger?.debug(`Exposure for "${flagKey}" skipped: resolution reason is ${reason}, not TARGETING_MATCH.`);
         return;
       }
-      const dedupeKey = `${hookContext.context.targetingKey}:${flagKey}:${variant}`;
+      const dedupeKey = JSON.stringify([hookContext.context.targetingKey, flagKey, variant]);
       if (this._seen.has(dedupeKey)) {
         return;
       }

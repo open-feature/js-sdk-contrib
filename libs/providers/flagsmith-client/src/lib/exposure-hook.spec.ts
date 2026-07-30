@@ -2,6 +2,7 @@ import { FlagsmithClientProvider } from './flagsmith-client-provider';
 import { FlagsmithExposureHook } from './exposure-hook';
 import { defaultConfig, exampleStringFlagName, exampleVariantFlagName } from './flagsmith.mocks';
 import { OpenFeature } from '@openfeature/web-sdk';
+import type { EvaluationDetails, FlagValue, HookContext } from '@openfeature/web-sdk';
 
 const logger = {
   error: jest.fn(),
@@ -65,6 +66,24 @@ describe('FlagsmithExposureHook', () => {
     client.getStringDetails(exampleVariantFlagName, 'fallback', { hooks: [hook] });
     client.getStringDetails(exampleVariantFlagName, 'fallback', { hooks: [hook] });
     expect(trackExposureEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not dedupe distinct exposures whose colon-joined parts would collide', async () => {
+    const { hook, trackExposureEvent } = await setup();
+    const after = (targetingKey: string, flagKey: string) =>
+      hook.after(
+        { context: { targetingKey } } as unknown as HookContext,
+        {
+          flagKey,
+          variant: 'treatment',
+          reason: 'TARGETING_MATCH',
+        } as unknown as EvaluationDetails<FlagValue>,
+      );
+    after('a:b', 'flag');
+    after('a', 'b:flag');
+    expect(trackExposureEvent).toHaveBeenCalledTimes(2);
+    after('a:b', 'flag');
+    expect(trackExposureEvent).toHaveBeenCalledTimes(2);
   });
 
   it('records again when the identity changes', async () => {

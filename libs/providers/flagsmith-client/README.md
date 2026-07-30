@@ -149,8 +149,8 @@ const details = client.getStringDetails('my_experiment_flag', 'control');
 client.track(EXPOSURE_TRACKING_EVENT, { flagKey: 'my_experiment_flag', variant: details.variant });
 ```
 
-Omit `variant` to let Flagsmith resolve the flag and apply its own guards (flag exists, enabled,
-has a variant, server-sourced).
+Omit `variant` to let the provider resolve the flag and apply the experiment guards (flag exists,
+enabled, has a variant, server-sourced).
 
 **3. The Flagsmith client directly.** The provider exposes its client (`provider.flagsmithClient`),
 so Flagsmith's native experiment surface — `getExperimentFlag()`, or `useExperiment` via a

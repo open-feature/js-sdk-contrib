@@ -11,6 +11,7 @@ import {
   exampleJSONFlagName,
   exampleNumericFlagName,
   exampleStringFlagName,
+  exampleVariantFlag,
   exampleVariantFlagName,
   exampleFlagsmithResponse,
   getFetchErrorMock,
@@ -572,23 +573,27 @@ describe('FlagsmithProvider', () => {
       });
     });
 
-    it('delegates variant-less exposures to getExperimentFlag', async () => {
-      const { provider, getExperimentFlag, trackExposureEvent } = await setup();
-      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: exampleVariantFlagName });
-      expect(getExperimentFlag).toHaveBeenCalledWith(exampleVariantFlagName);
-      expect(trackExposureEvent).not.toHaveBeenCalled();
-      expect(logger.debug).not.toHaveBeenCalled();
-    });
-
-    it('logs when a variant-less exposure discards metadata', async () => {
-      const { provider, getExperimentFlag } = await setup();
+    it('resolves variant-less exposures and sends them with the context identifier', async () => {
+      const { provider, trackExposureEvent } = await setup();
       provider.track(
         EXPOSURE_TRACKING_EVENT,
         { targetingKey },
         { flagKey: exampleVariantFlagName, experiment: 'exp-1' },
       );
-      expect(getExperimentFlag).toHaveBeenCalledWith(exampleVariantFlagName);
-      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('metadata'));
+      expect(trackExposureEvent).toHaveBeenCalledWith(exampleVariantFlagName, {
+        identifier: targetingKey,
+        value: exampleVariantFlag.variant,
+        metadata: { experiment: 'exp-1' },
+      });
+    });
+
+    it('skips variant-less exposures for flags that are missing, disabled or not multivariate', async () => {
+      const { provider, trackExposureEvent } = await setup();
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: 'missing_flag' });
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: exampleDisabledFlagName });
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: exampleStringFlagName });
+      expect(trackExposureEvent).not.toHaveBeenCalled();
+      expect(logger.info).toHaveBeenCalledTimes(3);
     });
 
     it('drops exposures without a flagKey and warns', async () => {
