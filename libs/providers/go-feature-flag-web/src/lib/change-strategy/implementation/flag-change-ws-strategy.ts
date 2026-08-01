@@ -4,13 +4,25 @@ import type { GOFeatureFlagWebsocketResponse } from '../../model';
 import { AbstractFlagChangeStrategy } from '../flag-change-strategy';
 
 /**
+ * (internal) used by {@link WebSocketFlagChangeStrategy} to track internal context.
+ */
+type WebsocketContext = {
+  // the reference to the websocket connection
+  source: WebSocket;
+  // the reason of websocket.close()
+  closeReason?: 'aborted' | 'disconnect' | 'close';
+  // the signal assoiciated to the context
+  signal: AbortSignal;
+};
+
+/**
  * The specific implementation of a {@link FlagChangeStrategy} for flag change detection through WebSocket.
  */
 export class WebSocketFlagChangeStrategy extends AbstractFlagChangeStrategy<WebSocketFlagChangeStrategyOptions> {
   // the WebSocket path on the relay-proxy
   private static readonly _GOFF_WEBSOCKET_PATH = 'stream/v1/ws/flag/change';
-  // _websocket is the reference to the websocket connection
-  private _websocket?: WebSocket;
+  // the context of an active connection
+  private _ctx?: WebsocketContext;
 
   public readonly name = WebSocketFlagChangeStrategy.name;
 
@@ -36,22 +48,34 @@ export class WebSocketFlagChangeStrategy extends AbstractFlagChangeStrategy<WebS
     }
   }
 
+  /**
+   * The WebSocket instance associated to this strategy
+   */
+  public get source() {
+    return this._ctx?.source;
+  }
+
   protected override async onConnect(signal: AbortSignal): Promise<void> {
-    this._logger?.info(
+    if (this._ctx?.signal === signal) return;
+    this._logger?.debug(
       `${this.name}: Trying to connect the websocket at ${this._sourceUrl.origin}${this._sourceUrl.pathname}`,
     );
     this.buildSourceUrl();
-    const ws = (this._websocket = new WebSocket(this._sourceUrl));
-    const abortHandler = this.getAbortHandler(ws);
+    const ctx = (this._ctx = {
+      source: new WebSocket(this._sourceUrl),
+      signal,
+    } as WebsocketContext);
 
-    ws.onopen = (event) => {
-      if (signal.aborted) return;
-      this._logger?.info(`${this.name}: Websocket to go-feature-flag open: ${event}`);
+    const abortHandler = this.getAbortHandler(ctx.source);
+
+    ctx.source.onopen = () => {
+      if (signal.aborted || this._ctx !== ctx) return;
+      this._logger?.info(`${this.name}: Websocket to go-feature-flag open.`);
       this.setStatus('connected');
     };
 
-    ws.onmessage = ({ data }) => {
-      if (signal.aborted) return;
+    ctx.source.onmessage = ({ data }) => {
+      if (signal.aborted || this._ctx !== ctx) return;
       // Usually `onmessage` should not fire after `onerror` or `onclose` fired,
       // anyway we still add an additional layer of check for the message to be valid in the session
       if (this.status !== 'connected') {
@@ -71,47 +95,54 @@ export class WebSocketFlagChangeStrategy extends AbstractFlagChangeStrategy<WebS
       }
     };
 
-    ws.onclose = (e: CloseEvent) => {
-      if (signal.aborted) return;
+    ctx.source.onclose = (e: CloseEvent) => {
+      if (signal.aborted || this._ctx !== ctx) return;
       this._logger?.warn(`${this.name}: Websocket closed => code: ${e.code}, reason: ${e.reason}.`);
+      // we clean-up the context so that future calls to onConnect() can be processed
+      this._ctx = undefined;
       // detach the abort handler
       signal.removeEventListener('abort', abortHandler);
       // check if it's an expected closing
-      if (e.code === 1000) {
-        switch (e.reason) {
-          case 'aborted':
-            // nothing to do
-            return;
-          case 'disconnect':
-            // set status to idle
-            return this.setStatus('idle');
-          case 'close':
-            // set the status to close
-            return this.setStatus('closed');
-        }
+      switch (ctx.closeReason) {
+        case 'aborted':
+          // nothing to do
+          return;
+        case 'disconnect':
+          // set status to idle
+          return this.setStatus('idle');
+        case 'close':
+          // set the status to close
+          return this.setStatus('closed');
       }
-      // if we're here, something went wrong
-      this.setStatus('error');
+      // if we're here, something went wrong. If we're connecting, we notify only internally
+      this.setStatus('error', this.status === 'connecting');
     };
 
-    ws.onerror = (event: Event) => {
-      if (signal.aborted) return;
+    ctx.source.onerror = () => {
+      if (signal.aborted || this._ctx !== ctx) return;
       this._logger?.error(`${this.name}: Error while connecting the WebSocket`);
-      this.setStatus('error');
+      // we clean-up the context so that future calls to onConnect() can be processed
+      this._ctx = undefined;
+      // If we're connecting, we notify only internally
+      this.setStatus('error', this.status === 'connecting');
     };
 
     signal.addEventListener('abort', abortHandler, { once: true });
   }
 
   protected async onDisconnect(): Promise<void> {
-    this._websocket?.close(1000, 'disconnect');
-    this._websocket = undefined;
+    if (this._ctx) {
+      this._ctx.closeReason = 'disconnect';
+      this._ctx.source.close(1000, this._ctx.closeReason);
+    }
     await Promise.resolve();
   }
 
   protected async onClose(): Promise<void> {
-    this._websocket?.close(1000, 'close');
-    this._websocket = undefined;
+    if (this._ctx) {
+      this._ctx.closeReason = 'close';
+      this._ctx.source.close(1000, this._ctx.closeReason);
+    }
     await Promise.resolve();
   }
 

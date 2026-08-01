@@ -1,3 +1,6 @@
+import type { Logger } from '@openfeature/core';
+import { awaitableTimeout, DeferredPromise } from '../../lib/utils';
+
 export class EventSourceMock implements EventSource {
   readonly CLOSED: 2;
   readonly CONNECTING: 0;
@@ -12,12 +15,17 @@ export class EventSourceMock implements EventSource {
   readonly withCredentials: boolean;
 
   /**
-   * (internal) used to track the mocked EventSource instances
+   * (internal) the {@link URL} used by the {@link EventSource} instance.
+   */
+  private readonly _url: URL;
+
+  /**
+   * (internal) used to track the mocked EventSource instances.
    */
   protected eventListenersMap: Map<string, Set<(...args: any[]) => void>>;
 
   /**
-   * (internal) indicates if mock is enabled or not
+   * (internal) indicates if mock is enabled or not.
    */
   private static _mockEnabled = false;
   /**
@@ -29,6 +37,26 @@ export class EventSourceMock implements EventSource {
    * (internal) the set of tracked {@link EventSource} instances.
    */
   private static _instances: Set<EventSourceMock> = new Set();
+  /**
+   * (internal) used to track required query params that a source SSE endpoint would require.
+   */
+  private static _requiredQueryParams: Set<string> = new Set();
+  /**
+   * (internal) status of the mocked source.
+   */
+  private static _serverStatus: 'offline' | 'online' = 'online';
+  /**
+   * (internal) delay of time (in milliseconds) to use when connecting a new {@link EventSource} instance.
+   */
+  private static _serverConnectionDelay?: number;
+  /**
+   * (internal) indicates when the mocked server is ready to accept connections form instances.
+   */
+  private static _serverReady: DeferredPromise = new DeferredPromise();
+  /**
+   * (internal) logger used during tests
+   */
+  private static _logger?: Logger;
 
   constructor(url: string | URL, eventSourceInitDict?: EventSourceInit) {
     this.CONNECTING = 0;
@@ -39,19 +67,57 @@ export class EventSourceMock implements EventSource {
     this.onmessage = null;
     this.onerror = null;
 
-    this.url = url.toString();
+    this._url = new URL(url);
+    this.url = `${url}`;
     this.withCredentials = (eventSourceInitDict && eventSourceInitDict.withCredentials) || false;
     this.readyState = this.CONNECTING;
 
     this.eventListenersMap = new Map();
     EventSourceMock.addInstance(this);
+    EventSourceMock.resolveInstanceState(this).catch(() => this.close());
+  }
+
+  private static async resolveInstanceState(e: EventSourceMock): Promise<void> {
+    // First wait on the server readiness
+    await this._serverReady.promise;
+    // Eventually wait for some delay
+    await awaitableTimeout(this._serverConnectionDelay);
+
+    switch (this._serverStatus) {
+      case 'online':
+        if (this.validateQueryParams(e)) return e.connect();
+        else return e.close();
+      case 'offline':
+        e.fail();
+        // we try to reconnect
+        return EventSourceMock.resolveInstanceState(e);
+      default:
+        return e.close();
+    }
   }
 
   close(): void {
     if (this.readyState === this.CLOSED) return;
+    EventSourceMock.removeInstance(this);
     this.readyState = this.CLOSED;
     this.dispatchEvent(new Event('error'));
-    EventSourceMock.removeInstance(this);
+  }
+
+  private connect() {
+    this.readyState = this.OPEN;
+    this.dispatchEvent(new Event('open'));
+  }
+
+  private fail() {
+    this.readyState = this.CONNECTING;
+    this.dispatchEvent(new Event('error'));
+  }
+
+  private send(...messages: any[]) {
+    for (const m of messages) {
+      const jsonData = typeof m === 'string' ? m : JSON.stringify(m);
+      this.dispatchEvent(new MessageEvent('message', { data: jsonData }));
+    }
   }
 
   dispatchEvent(event: Event): boolean {
@@ -123,6 +189,20 @@ export class EventSourceMock implements EventSource {
     this._instances.delete(e);
   }
 
+  private static validateQueryParams(e: EventSourceMock) {
+    return this._requiredQueryParams.keys().every((p) => {
+      if (e._url.searchParams.has(p)) {
+        this._logger?.debug(
+          `${EventSourceMock.name}: found required query param '${p}' with value '${e._url.searchParams.get(p)}'.`,
+        );
+        return true;
+      }
+      // required query param is missing
+      this._logger?.error(`${EventSourceMock.name}: missing required query param '${p}'.`);
+      return false;
+    });
+  }
+
   /**
    * Activates the mock.
    * @returns
@@ -141,19 +221,15 @@ export class EventSourceMock implements EventSource {
   public static deactivate() {
     if (!this._mockEnabled) return;
     globalThis.EventSource = this._originalEventSourceDef;
-    this.closeAll();
+    this.clean();
     this._mockEnabled = false;
   }
 
   /**
-   * Will put all the tracked {@link EventSource} instances in the OPEN state
-   * and it will dispatch an `open` event to all of them.
+   * Will put the EventSource source in ready state.
    */
-  public static connectInstances() {
-    for (const e of this._instances) {
-      e.readyState = e.OPEN;
-      e.dispatchEvent(new Event('open'));
-    }
+  public static ready() {
+    this._serverReady.resolve();
   }
 
   /**
@@ -161,19 +237,14 @@ export class EventSourceMock implements EventSource {
    * and it will dispatch an `error` event to all of them.
    */
   public static failAll() {
-    for (const e of this._instances) {
-      e.readyState = e.CONNECTING;
-      e.dispatchEvent(new Event('error'));
-    }
+    this._instances.forEach((e) => e.fail());
   }
 
   /**
    * Will call `close()` on all the tracked {@link EventSource} instances.
    */
   public static closeAll() {
-    for (const e of this._instances) {
-      e.close();
-    }
+    this._instances.forEach((e) => e.close());
   }
 
   /**
@@ -181,6 +252,11 @@ export class EventSourceMock implements EventSource {
    */
   public static clean() {
     this.closeAll();
+    this._instances.clear();
+    this._requiredQueryParams.clear();
+    this._serverReady = new DeferredPromise();
+    this._serverStatus = 'online';
+    this._serverConnectionDelay = undefined;
   }
 
   /**
@@ -190,11 +266,50 @@ export class EventSourceMock implements EventSource {
    */
   public static send(...messages: any[]) {
     if (!messages.length || !this._instances.size) return;
-    for (const m of messages) {
-      const jsonData = JSON.stringify(m);
-      for (const p of this._instances) {
-        p.dispatchEvent(new MessageEvent('message', { data: jsonData }));
-      }
+    for (const e of this._instances) {
+      e.send(...messages);
     }
   }
+
+  /**
+   * Used to set/unset required query params on the URL of {@link EventSource} instances
+   * @param param
+   * @param required
+   */
+  public static setQueryParam(param: string, required?: boolean) {
+    if (required) this._requiredQueryParams.add(param);
+    else this._requiredQueryParams.delete(param);
+  }
+  /**
+   * Put the mocked EventSource source in offline mode
+   */
+  public static offline() {
+    this._serverStatus = 'offline';
+    this.ready();
+  }
+  /**
+   * Put the mocked EventSource source in online mode
+   */
+  public static online() {
+    this._serverStatus = 'online';
+    this.ready();
+  }
+
+  /**
+   * Used to set a delay between CONNECTING and OPEN state of an {@link EventSource} instance
+   * @param delay
+   */
+  public static setConnectionDelay(delay?: number) {
+    this._serverConnectionDelay = delay;
+  }
+
+  public static setLogger(logger?: Logger) {
+    this._logger = logger;
+  }
 }
+
+// it looks like the following is needed, otherwise is not possible to use `EventSource.CONNECTING` when the mock is active.
+// NOTE: maybe we can find something better.
+(EventSourceMock as any).CONNECTING = 0;
+(EventSourceMock as any).OPEN = 1;
+(EventSourceMock as any).CLOSED = 2;

@@ -9,7 +9,6 @@ export function buildOptionsWithDefaults<T extends FlagChangeStrategyOptions = F
 ): T {
   const res = Object.assign({} as T, options as T);
   res.apiKey ??= '';
-  res.connectionTimeoutMs ??= 0;
   res.endpoint ??= '';
   res.maxAttempts ??= 10;
   res.backoff = {
@@ -36,7 +35,6 @@ export function buildOptionsFromProviderOptions<T extends FlagChangeStrategyOpti
       minDelayMs: options?.retryInitialDelay ?? 100,
       multiplier: options?.retryDelayMultiplier ?? 2,
     },
-    connectionTimeoutMs: options?.apiTimeout ?? 0,
     endpoint: options?.endpoint ?? '',
     maxAttempts: options?.maxRetries ?? 10,
   } as T;

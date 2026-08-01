@@ -9,16 +9,17 @@ import type { GOFeatureFlagServerSentEventResponse } from '../../model';
 type SseContext = {
   source: EventSource;
   closeReason?: 'aborted' | 'disconnect' | 'close';
+  signal: AbortSignal;
 };
 
 /**
  * The specific implementation of a {@link FlagChangeStrategy} for flag change detection through Server-Sent Event (SSE).
  */
 export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrategy<ServerSentEventFlagChangeStrategyOptions> {
-  // the WebSocket path on the relay-proxy
+  // the SSE path on the relay-proxy
   private static readonly _GOFF_SSE_PATH = 'stream/v1/sse/flag/change';
-  // _websocket is the reference to the websocket connection
-  private _sseContext?: SseContext;
+  // the internal context
+  private _ctx?: SseContext;
 
   public readonly name = ServerSentEventFlagChangeStrategy.name;
 
@@ -46,24 +47,33 @@ export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrateg
     }
   }
 
+  /**
+   * The EventSource instance associated to this strategy
+   */
+  public get source() {
+    return this._ctx?.source;
+  }
+
   protected override async onConnect(signal: AbortSignal): Promise<void> {
+    if (this._ctx?.signal === signal) return;
     this._logger?.info(
       `${this.name}: Trying to connect the SSE EventSource at ${this._sourceUrl.origin}${this._sourceUrl.pathname}`,
     );
     this.buildSourceUrl();
-    const sseContext = (this._sseContext = {
-      source: new EventSource(this._sourceUrl, { withCredentials: true }),
+    const ctx = (this._ctx = {
+      source: new EventSource(this._sourceUrl),
+      signal,
     } as SseContext);
-    const abortHandler = this.getAbortHandler(sseContext);
+    const abortHandler = this.getAbortHandler(ctx);
 
-    sseContext.source.onopen = (event) => {
-      if (signal.aborted) return;
+    ctx.source.onopen = (event) => {
+      if (signal.aborted || this._ctx !== ctx) return;
       this._logger?.info(`${this.name}: SSE EventSource to go-feature-flag open: ${event}`);
       this.setStatus('connected');
     };
 
-    sseContext.source.onmessage = ({ data }) => {
-      if (signal.aborted) return;
+    ctx.source.onmessage = ({ data }) => {
+      if (signal.aborted || this._ctx !== ctx) return;
       // don't do anything if not in connected status
       if (this.status !== 'connected') {
         this._logger?.warn(
@@ -82,10 +92,10 @@ export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrateg
       }
     };
 
-    sseContext.source.onerror = async (event: Event) => {
-      if (signal.aborted) return;
+    ctx.source.onerror = async () => {
+      if (signal.aborted || this._ctx !== ctx) return;
       // check if it's an error due closing
-      switch (sseContext.closeReason) {
+      switch (ctx.closeReason) {
         case 'aborted':
           // nothing to do
           return;
@@ -96,33 +106,33 @@ export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrateg
           // set the status to close
           return this.setStatus('closed');
       }
-      // Check if ther is auto-reconnection in place
-      if (sseContext.source.readyState === EventSource.CONNECTING) {
+      // Check if there is auto-reconnection in place
+      if (ctx.source.readyState === EventSource.CONNECTING) {
         this._logger?.warn(`${this.name}: Reconnecting to SSE EventSource`);
-        this.setStatus('connecting');
       } else {
         this._logger?.error(`${this.name}: Error while connecting to SSE EventSource`);
-        this.setStatus('error');
+        // we clean-up the context so that future calls to onConnect() can be processed
+        this._ctx = undefined;
       }
+      // If we're connecting, we notify only internally
+      this.setStatus('error', this.status === 'connecting');
     };
 
     signal.addEventListener('abort', abortHandler, { once: true });
   }
 
   protected async onDisconnect(): Promise<void> {
-    if (this._sseContext) {
-      this._sseContext.closeReason = 'disconnect';
-      this._sseContext.source.close();
-      this._sseContext = undefined;
+    if (this._ctx) {
+      this._ctx.closeReason = 'disconnect';
+      this._ctx.source.close();
     }
     await Promise.resolve();
   }
 
   protected async onClose(): Promise<void> {
-    if (this._sseContext) {
-      this._sseContext.closeReason = 'close';
-      this._sseContext.source.close();
-      this._sseContext = undefined;
+    if (this._ctx) {
+      this._ctx.closeReason = 'close';
+      this._ctx.source.close();
     }
     await Promise.resolve();
   }
