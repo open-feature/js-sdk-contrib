@@ -91,6 +91,13 @@ export interface GoFeatureFlagWebProviderOptions {
   // ‼️Important: If you are using a GO Feature Flag relay proxy before version v1.41.0, the information
   // of this field will not be added to your feature events.
   exporterMetadata?: Record<string, ExporterMetadataValue>;
+
+  /**
+   * pollingIntervalMs (optional) interval of time (in milliseconds) between polling attempts against the GO Feature Flag evaluation endpoint,
+   * used as fallback when the provider is not able to connect through WebSocket or SSE for flag changes.
+   * default: 0 (no polling enabled)
+   */
+  pollingIntervalMs?: number;
 }
 
 // ExporterMetadataValue is the type of the value that can be used in the exporterMetadata

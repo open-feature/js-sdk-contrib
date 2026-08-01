@@ -122,7 +122,15 @@ export class GoFeatureFlagWebProvider implements Provider {
   private readonly _dataCollectorHook: GoFeatureFlagDataCollectorHook;
   // disableDataCollection set to true if you don't want to collect the usage of flags retrieved in the cache.
   private readonly _disableDataCollection: boolean;
+  /**
+   * pollingIntervalMs used to configure the polling interval (in milliseconds) between fetch attempts
+   * when the configured {@link FlagChangeStrategy} is not able to connect.
+   * @default 0 (polling disabled)
+   */
+  private readonly _pollingIntervalMs: number;
 
+  // Polling Abort Controller is used to cancel running polling tasks.
+  private _pollingAbortController?: AbortController;
   // Fetch Abort Controller is used to cancel inflight requests.
   private _fetchAbortController?: AbortController;
   // (internal) the absolute URL used to fetch flags evaluation from GO Feature Flag relay-proxy
@@ -151,6 +159,7 @@ export class GoFeatureFlagWebProvider implements Provider {
     this._apiKey = options.apiKey;
     this._customHeaders = options.customHeaders;
     this._disableDataCollection = options.disableDataCollection || false;
+    this._pollingIntervalMs = Math.max(0, options.pollingIntervalMs || 0);
 
     this._collectorManager = new CollectorManager(options, logger);
     this._dataCollectorHook = new GoFeatureFlagDataCollectorHook(this._collectorManager);
@@ -229,6 +238,8 @@ export class GoFeatureFlagWebProvider implements Provider {
       this._logger?.info(`${this._changeStrategy.name}: changed status to '${status}'`);
       switch (status) {
         case 'connected':
+          // stop the eventual polling used as fallback strategy when disconnected
+          this.stopPolling();
           // Let's check if we need to re-fetch flags because not Ready
           if (this._lastEmittedProviderEvent !== ProviderEvents.Ready && this._lastEvaluationContext) {
             // we try to update the internal state
@@ -246,6 +257,8 @@ export class GoFeatureFlagWebProvider implements Provider {
           this.emitProviderEvent(ProviderEvents.Stale, {
             message: `${this._changeStrategy.name}: error while connecting to the source, cached flags may be outdated`,
           });
+          // we start the polling as fallback
+          this.startPolling().catch((err) => this._logger?.error(`${this.metadata.name}: polling failed.`, err));
           break;
         case 'closed':
           // We clean-up some handlers
@@ -354,15 +367,51 @@ export class GoFeatureFlagWebProvider implements Provider {
     };
   }
 
+  /**
+   * (internal) check if the provided value is a {@link GoFeatureFlagResolvedFlags} result
+   * @param data
+   * @returns
+   */
   private isFlagResult(data: any): data is GoFeatureFlagResolvedFlags {
     return !!data?.flags;
   }
 
+  /**
+   * (internal) emits a provider event only if it was not already sent
+   * @param event
+   * @param context
+   */
   private emitProviderEvent(event: ProviderEmittableEvents, context?: EventContext) {
-    if (this._lastEmittedProviderEvent !== event) {
-      this.events.emit(event, context);
-      this._lastEmittedProviderEvent = event;
+    this.events.emit(event, context);
+    this._lastEmittedProviderEvent = event;
+  }
+
+  /**
+   * (internal) this function compare two full sets of {@link GoFeatureFlagResolvedFlags} values
+   * and returns `true` if we should emit a `ProviderEvents.ConfigurationChanged` event.
+   *
+   * NOTE: this is used because the flags endpoint used by `fetchAll()` doesn't provide an ETag
+   * in the response headers. Should we think about to add it in future releases?
+   * @param oldValue
+   * @param newValue
+   * @returns
+   */
+  private isConfigurationChange(oldValue: GoFeatureFlagResolvedFlags, newValue: GoFeatureFlagResolvedFlags) {
+    const oldKeys = new Set(Object.keys(oldValue.flags));
+    const newKeys = new Set(Object.keys(newValue.flags));
+    // compare the count of flag keys (flags added or removed)
+    if (oldKeys.size !== newKeys.size) return true;
+    // check any diff in keys
+    for (const key of oldKeys) {
+      // check if some keys where added/removed
+      if (!newKeys.has(key)) return true;
+      const oldFlag = oldValue.flags[key];
+      const newFlag = newValue.flags[key];
+      // check if the evaluated variant or value is changed
+      if (oldFlag.variant !== newFlag.variant || oldFlag.value !== newFlag.value) return true;
     }
+    // no valuable changes between the compared flagsets
+    return false;
   }
 
   private handleFetchAllResult(
@@ -373,8 +422,8 @@ export class GoFeatureFlagWebProvider implements Provider {
       // New flags has been loaded, update state
       this._flags.flags = data.flags;
       this._lastFlagChangeEvent = undefined;
-      // Always send a `ConfigurationChanged` and `Ready` event when successful
-      if (this._lastEmittedProviderEvent) {
+      // send a `ConfigurationChanged` when the flags evaluation changed
+      if (this._lastEmittedProviderEvent && (changeEvent || this.isConfigurationChange(this._flags, data))) {
         this.events.emit(ProviderEvents.ConfigurationChanged, {
           message: 'flag configuration have changed',
           flagsChanged: changeEvent
@@ -382,6 +431,7 @@ export class GoFeatureFlagWebProvider implements Provider {
             : undefined,
         });
       }
+      // Always send a `Ready` event when successful
       this.emitProviderEvent(ProviderEvents.Ready, { message: '' });
       return true;
     } else if (data.aborted) {
@@ -611,5 +661,53 @@ export class GoFeatureFlagWebProvider implements Provider {
     }
 
     await Promise.resolve();
+  }
+
+  /**
+   * (internal) This method is used to start the polling as fallback strategy
+   * when the configured {@link FlagChangeStrategy} is not able to connect.
+   */
+  private async startPolling() {
+    // if the provider is going to be closed, do nothing
+    if (this._disposing) return;
+    // If a polling is already running, do nothing
+    if (this._pollingAbortController && !this._pollingAbortController.signal.aborted) {
+      this._logger?.debug(`${this.metadata.name}: polling is already running.`);
+      return;
+    }
+    // Check if polling should run
+    if (!this._pollingIntervalMs) {
+      this._logger?.debug(`${this.metadata.name}: polling is disabled.`);
+      return;
+    }
+    const pollingAbort = (this._pollingAbortController = new AbortController());
+    try {
+      // start polling cycle
+      this._logger?.debug(`${this.metadata.name}: start polling cycle.`);
+      do {
+        const timeoutCanceled = await awaitableTimeout(this._pollingIntervalMs, { signal: pollingAbort.signal })
+          // the catch is fired only if pollingAbort is aborted
+          .catch(() => true);
+        // Stop polling if the operation has been aborted
+        if (timeoutCanceled) return;
+        // let's fetch all the flags
+        await this.fetchAll(this._lastEvaluationContext!).catch((err) =>
+          this._logger?.error(`${this.metadata.name}: An error occured when polling new flag values`, err),
+        );
+        // we also try ro connect again the change strategy
+        this.changeStrategy.connect();
+      } while (!this._disposing && !pollingAbort.signal.aborted);
+    } finally {
+      this._logger?.debug(`${this.metadata.name}: stop polling cycle.`);
+      if (pollingAbort === this._pollingAbortController) this._pollingAbortController = undefined;
+    }
+  }
+
+  /**
+   * (internal) This method is used to stop the polling initiated as fallback strategy
+   * when the configured {@link FlagChangeStrategy} is not able to connect.
+   */
+  private stopPolling() {
+    this._pollingAbortController?.abort();
   }
 }

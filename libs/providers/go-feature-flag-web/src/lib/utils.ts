@@ -101,8 +101,10 @@ export class DeferredPromise<T = void> {
  * @param options
  * @returns
  */
-export async function awaitableTimeout(milliseconds?: number, options?: PromiseOptions) {
-  if (options?.signal?.aborted) return Promise.reject(getAbortError());
+export async function awaitableTimeout(milliseconds?: number, options?: PromiseOptions): Promise<void> {
+  if (options?.signal?.aborted) throw getAbortError();
+  if (!milliseconds || milliseconds <= 0) return;
+  // Let's set-up the timeout resources
   let timeout: any = undefined;
   const deferred = new DeferredPromise(options);
   timeout = setTimeout(() => {
@@ -167,7 +169,7 @@ export function compositeAbortController(signals: AbortSignal[]): AbortControlle
     if (attachedSignals.has(signal)) return;
     const handler = () =>
       composite.abort(`The source signal at position ${idx} has been aborted with reason: ${signal.reason}`);
-    signal.addEventListener('abort', handler);
+    signal.addEventListener('abort', handler, { once: true });
     attachedSignals.set(signal, handler);
   };
 

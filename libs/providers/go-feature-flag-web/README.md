@@ -70,11 +70,16 @@ client.addHandler(ProviderEvents.ConfigurationChanged, () => { //... });
 | dataFlushInterval     | number  | 60000          | (optional) interval time (in millisecond) we use to call the relay proxy to collect data. The parameter is used only if the cache is enabled, otherwise the collection of the data is done directly when calling the evaluation API.                                                                                                                                           |
 | disableDataCollection | boolean | false          | (optional) set to true if you don't want to collect the usage of flags retrieved in the cache.                                                                                                                                                                                                                                                                                 |
 | exporterMetadata      | object  |                | (optional) exporter metadata is a set of key-value pairs that will be added to the metadata when calling the exporter API. All this information will be added to the events produced by the exporter.<br/><br/>‼️**Important**: If you are using a GO Feature Flag relay proxy before version v1.41.0, the information of this field will not be added to your feature events. |
+| pollingIntervalMs     | number  | 0              | (optional) interval of time (in milliseconds) between polling attempts against the GO Feature Flag evaluation endpoint, used as fallback when the provider is not able to connect through WebSocket or SSE for flag changes. Default to `0` (no polling as fallback)                                                                                                           |
 
 ### Reconnection
 
 If the connection to the GO Feature Flag instance fails, the provider will attempt to reconnect with an exponential back-off.  
 The `maxRetries` can be specified to customize reconnect behavior.
+
+#### Polling as a fallback
+
+If the connection is not restored after `maxRetries` and `pollingIntervalMs` is a positive number, the provider will fallback to polling against GO Feature Flag instance. Polling will continue until the connection to WebSocket or SSE endpoints of GO Feature Flag instance is estabilished.
 
 ### Event streaming
 

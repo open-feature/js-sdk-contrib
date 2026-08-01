@@ -7,7 +7,7 @@ import type {
   FlagChangeStrategyOnStatusChangeHandler,
   FlagChangeStrategyOptions,
 } from './model';
-import { awaitableTimeout, DeferredPromise, isAbortError, type PromiseOptions, whenAnySettle } from '../utils';
+import { awaitableTimeout, DeferredPromise, type PromiseOptions } from '../utils';
 import { buildOptionsWithDefaults } from './utils';
 
 /**
@@ -26,6 +26,7 @@ export abstract class AbstractFlagChangeStrategy<
   private _abortController?: AbortController;
   private readonly _onFlagChangeHandlers: Set<FlagChangeStrategyOnFlagChangeHandler>;
   private readonly _onStatusChangeHandlers: Set<FlagChangeStrategyOnStatusChangeHandler>;
+  private readonly _onStatusChangeInternalHandlers: Set<FlagChangeStrategyOnStatusChangeHandler>;
 
   public abstract readonly name: string;
 
@@ -48,6 +49,7 @@ export abstract class AbstractFlagChangeStrategy<
     this._sourceUrl = new URL(this._options.endpoint);
     this._onFlagChangeHandlers = new Set();
     this._onStatusChangeHandlers = new Set();
+    this._onStatusChangeInternalHandlers = new Set();
     this._logger = logger;
   }
 
@@ -94,19 +96,22 @@ export abstract class AbstractFlagChangeStrategy<
     });
   }
 
-  public waitForStatus(status: FlagChangeStrategy['status'], options?: PromiseOptions) {
-    return this.waitForAnyStatus(status ? [status] : [], options);
+  public waitForStatus(status: FlagChangeStrategy['status'], options?: PromiseOptions, internal?: boolean) {
+    return this.waitForAnyStatus([status], options, internal);
   }
 
-  public async waitForAnyStatus(status: FlagChangeStrategy['status'][], options?: PromiseOptions) {
+  public async waitForAnyStatus(status?: FlagChangeStrategy['status'][], options?: PromiseOptions, internal?: boolean) {
+    this._logger?.debug(
+      `${this.name}: waitForAnyStatus => status: ${status ? status.join('|') : null}, internal: ${internal}`,
+    );
     if (status && status.length > 0 && status.indexOf(this.status) >= 0) return;
     const ref = new DeferredPromise(options);
-    const handlerRef = this.onStatusChange((currentStatus) => {
-      if (!status || status.length === 0 || status.indexOf(currentStatus) >= 0) {
+    const handlerRef = this.onStatusChange((updatedStatus) => {
+      if (!status || status.length === 0 || status.indexOf(updatedStatus) >= 0) {
         handlerRef.detach();
         ref.resolve();
       }
-    });
+    }, internal);
     await ref.promise.catch((err) => {
       handlerRef.detach();
       throw err;
@@ -156,26 +161,48 @@ export abstract class AbstractFlagChangeStrategy<
    * @param skipNotify
    */
   protected setStatus(status: FlagChangeStrategy['status'], skipNotify?: boolean) {
-    if (this._status === status) return;
     this._status = status;
+    // always notify internal handlers
+    this._onStatusChangeInternalHandlers.forEach((handler) => handler(status));
+    // eventually notify to other handlers
     if (!skipNotify && this._onStatusChangeHandlers.size > 0) {
-      this._onStatusChangeHandlers.forEach((handler) => {
-        try {
-          handler(status);
-        } catch (err) {
-          this._logger?.error(err);
-        }
-      });
+      this._onStatusChangeHandlers.forEach((handler) => handler(status));
     }
   }
 
-  onStatusChange(handler: FlagChangeStrategyOnStatusChangeHandler): FlagChangeStrategyHandlerRef {
-    this._onStatusChangeHandlers.add(handler);
-    return {
-      detach: () => {
-        this._onStatusChangeHandlers.delete(handler);
-      },
+  onStatusChange(handler: FlagChangeStrategyOnStatusChangeHandler, internal?: boolean): FlagChangeStrategyHandlerRef {
+    let currentStatus = '';
+    const decoratedHandler: FlagChangeStrategyOnStatusChangeHandler = (status) => {
+      try {
+        this._logger?.debug(
+          `${this.name}: Status Handler${internal ? ' (internal)' : ''} => trying to set new status '${status}'`,
+        );
+        if (currentStatus === status) return;
+        this._logger?.debug(
+          `${this.name}: Status Handler${internal ? ' (internal)' : ''} => from: ${currentStatus}, to: ${status}`,
+        );
+        currentStatus = status;
+        handler(status);
+      } catch (err) {
+        this._logger?.error(err);
+      }
     };
+
+    if (internal) {
+      this._onStatusChangeInternalHandlers.add(decoratedHandler);
+      return {
+        detach: () => {
+          this._onStatusChangeInternalHandlers.delete(decoratedHandler);
+        },
+      };
+    } else {
+      this._onStatusChangeHandlers.add(decoratedHandler);
+      return {
+        detach: () => {
+          this._onStatusChangeHandlers.delete(decoratedHandler);
+        },
+      };
+    }
   }
 
   /**
@@ -187,18 +214,21 @@ export abstract class AbstractFlagChangeStrategy<
     let delay = this._options.backoff.minDelayMs;
     let attempts = 0;
     let err: any = undefined;
+    // renew the session
+    const sessionAbort = this.renewSession();
     // start the loop
     do {
       this.setStatus('connecting');
-      // renew the session
-      const sessionAbort = this.renewSession();
       // execute the onConnect() handler
       err = await this.onConnect(sessionAbort.signal)
         // we wait for one of the statuses
-        .then(() => this.waitForAnyStatus(['connected', 'error', 'closed'], { signal: sessionAbort.signal }))
+        .then(() => this.waitForAnyStatus(['connected', 'error', 'closed'], { signal: sessionAbort.signal }, true))
         // We catch any error that can happen from onConnect() and waitForAnyStatus()
         .catch((err) => err);
       // stop the execution if the session ended or if we are not in error
+      this._logger?.debug(
+        `${this.name}: result from onConnect => aborted: ${sessionAbort.signal.aborted}, status: ${this.status}`,
+      );
       if (sessionAbort.signal.aborted || (this.status === 'connected' && !err)) return;
       // here we should be in error state, let's check for max connection attempts
       if (attempts >= this._options.maxAttempts) break;
@@ -217,6 +247,7 @@ export abstract class AbstractFlagChangeStrategy<
     } while (attempts <= this._options.maxAttempts);
     // NOTE: if we are here, all the attemps ended and for now we set the state in error
     // in the future this may change if we think is better to leave untouched the status
+    this._logger?.error(`${this.name}: cannot reconnect, max retries reached`);
     this.setStatus('error');
   }
 
@@ -228,11 +259,11 @@ export abstract class AbstractFlagChangeStrategy<
     // renew the session
     const sessionAbort = this._abortController;
     try {
-      // execute the onConnect() handler
+      // execute the onDisconnect() handler
       const err = await this.onDisconnect()
         // we wait for one of the statuses
-        .then(() => this.waitForAnyStatus(['idle', 'error', 'closed'], { signal: sessionAbort?.signal }))
-        // We catch any error that can happen from onConnect() and waitForAnyStatus()
+        .then(() => this.waitForAnyStatus(['idle', 'error', 'closed'], { signal: sessionAbort?.signal }, true))
+        // We catch any error that can happen from onDisconnect() and waitForAnyStatus()
         .catch((err) => err);
       // stop the execution if the session ended or if we are not in error
       if (sessionAbort?.signal.aborted || (this.status === 'idle' && !err)) return;

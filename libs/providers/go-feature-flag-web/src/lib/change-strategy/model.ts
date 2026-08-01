@@ -77,7 +77,7 @@ export interface FlagChangeStrategy {
    * returns a Promise that resolves when any of the specified statuses will be set for the strategy.
    * If empty or omitted, the next available status will be used to resolve the Promise.
    */
-  waitForAnyStatus(status: FlagChangeStrategy['status'][], options?: PromiseOptions): Promise<void>;
+  waitForAnyStatus(status?: FlagChangeStrategy['status'][], options?: PromiseOptions): Promise<void>;
   /**
    * The current status of the change strategy
    */
@@ -101,11 +101,6 @@ export interface FlagChangeStrategyOptions {
    * NOTE: this can be changed later at runtime as well by using {@link FlagChangeStrategy.setApiKey}
    */
   apiKey: string;
-  /**
-   * The timeout in milliseconds to be used when connecting to the source
-   * @default 0
-   */
-  connectionTimeoutMs: number;
   /**
    * The max attempts to be used when retrying the connection to the source
    * @default 10
