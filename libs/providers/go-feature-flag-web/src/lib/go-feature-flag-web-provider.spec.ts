@@ -90,6 +90,26 @@ describe('GoFeatureFlagWebProvider', () => {
   const staleHandler = jest.fn();
   const logger = new TestLogger();
 
+  const builtProviders = new Set<GoFeatureFlagWebProvider>();
+
+  function newDefaultProvider(options?: Partial<GoFeatureFlagWebProviderOptions>): GoFeatureFlagWebProvider {
+    const provider = new GoFeatureFlagWebProvider(
+      Object.assign(
+        {},
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          disableDataCollection: true,
+        },
+        options ?? undefined,
+      ),
+      logger,
+    );
+    builtProviders.add(provider);
+    return provider;
+  }
+
   beforeAll(() => {
     EventSourceMock.activate();
   });
@@ -97,6 +117,8 @@ describe('GoFeatureFlagWebProvider', () => {
   beforeEach(async () => {
     WS.clean();
     EventSourceMock.clean();
+    builtProviders.forEach((p) => p.onClose().catch(() => true));
+    builtProviders.clear();
     await OpenFeature.close();
     fetchMock.mockClear();
     fetchMock.mockReset();
@@ -104,6 +126,7 @@ describe('GoFeatureFlagWebProvider', () => {
     websocketMockServer = new WS(websocketEndpoint, { jsonProtocol: true });
     fetchMock.post(allFlagsEndpoint, defaultAllFlagResponse);
     fetchMock.post(dataCollectorEndpoint, 200);
+    logger.reset();
     defaultProvider = new GoFeatureFlagWebProvider(
       {
         endpoint: endpoint,
@@ -127,7 +150,7 @@ describe('GoFeatureFlagWebProvider', () => {
   afterEach(async () => {
     WS.clean();
     websocketMockServer.close();
-    EventSourceMock.closeAll();
+    EventSourceMock.clean();
     await OpenFeature.close();
     OpenFeature.clearHooks();
     fetchMock.mockClear();
@@ -144,22 +167,6 @@ describe('GoFeatureFlagWebProvider', () => {
   afterAll(() => {
     EventSourceMock.deactivate();
   });
-
-  function newDefaultProvider(options?: Partial<GoFeatureFlagWebProviderOptions>): GoFeatureFlagWebProvider {
-    return new GoFeatureFlagWebProvider(
-      Object.assign(
-        {},
-        {
-          endpoint: endpoint,
-          apiTimeout: 1000,
-          maxRetries: 1,
-          disableDataCollection: true,
-        },
-        options ?? undefined,
-      ),
-      logger,
-    );
-  }
 
   describe('provider metadata', () => {
     it('should be and instance of GoFeatureFlagWebProvider', () => {
@@ -831,18 +838,28 @@ describe('GoFeatureFlagWebProvider', () => {
     });
 
     it('should not have two websockets open simultaneously during key rotation', async () => {
+      logger.reset();
       const provider = newDefaultProvider({
         apiTimeout: 1000,
         maxRetries: 1,
         apiKey: 'old-key',
       });
+      // Set OpenFeature context and provider
       await OpenFeature.setContext(defaultContext);
       await OpenFeature.setProviderAndWait('test-provider', provider);
       await websocketMockServer.connected;
+      await awaitableTimeout(20);
+      // Rotate the api key
+      logger.info('TEST: rotating api key.');
       provider.setApiKey('new-key');
       // let's wait a bit before reconnecting
-      await awaitableTimeout(10);
+      await awaitableTimeout(20);
+
       await websocketMockServer.connected;
+      await awaitableTimeout(20);
+      websocketMockServer.server
+        .clients()
+        .forEach((e) => logger.info(`TEST: WebSocket instance => readyState: ${e.readyState}`));
 
       // Only one client should be connected at a time
       expect(websocketMockServer.server.clients().length).toBe(1);

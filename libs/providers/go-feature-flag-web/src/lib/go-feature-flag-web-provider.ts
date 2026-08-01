@@ -138,8 +138,7 @@ export class GoFeatureFlagWebProvider implements Provider {
 
   // The context to be used for fetchAll() when there are change updates
   private _lastEvaluationContext?: EvaluationContext;
-  // This will force the provider to fetch all the flags, regardless of partial flag updates from `onFlagChange()` handler
-  private _lastFetchAllTimestamp = 0;
+  // tracks the last triggered change event, used to understand if a full or partial re-fetch of flags is needed
   private _lastFlagChangeEvent?: FlagChangeEvent;
   /**
    * (internal) This is the last emitted provider event by {@link GoFeatureFlagWebProvider}.
@@ -190,8 +189,10 @@ export class GoFeatureFlagWebProvider implements Provider {
     const commonOptions = buildOptionsFromProviderOptions(options);
     switch (this._connectionMode) {
       case 'ws':
+        this._logger?.debug(`${this.metadata.name}: using ${WebSocketFlagChangeStrategy.name}.`);
         return new WebSocketFlagChangeStrategy(commonOptions, this._logger);
       case 'sse':
+        this._logger?.debug(`${this.metadata.name}: using ${ServerSentEventFlagChangeStrategy.name}.`);
         return new ServerSentEventFlagChangeStrategy(commonOptions, this._logger);
       default:
         throw Error(`Invalid or unsupported connection mode: ${this._connectionMode}`);
@@ -258,12 +259,14 @@ export class GoFeatureFlagWebProvider implements Provider {
             message: `${this._changeStrategy.name}: error while connecting to the source, cached flags may be outdated`,
           });
           // we start the polling as fallback
+          this._logger?.debug(`${this.metadata.name}: starting polling as fallback.`);
           this.startPolling().catch((err) => this._logger?.error(`${this.metadata.name}: polling failed.`, err));
           break;
         case 'closed':
           // We clean-up some handlers
           onFlagChangeHandlerRef.detach();
           onStatusChangeHandlerRef.detach();
+          break;
       }
     });
 

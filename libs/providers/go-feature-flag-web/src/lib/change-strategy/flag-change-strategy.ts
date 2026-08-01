@@ -206,15 +206,16 @@ export abstract class AbstractFlagChangeStrategy<
   }
 
   /**
-   * doConnect() will make all the actions to properly connect the change strategy to the source,
+   * (internal) doConnect() will make all the actions to properly connect the change strategy to the source,
    * using an exponential backoff pattern to try to restart the connection if needed.
    */
-  protected async doConnect() {
+  private async doConnect() {
     // initialize retry variables
     let delay = this._options.backoff.minDelayMs;
     let attempts = 0;
     let err: any = undefined;
     // renew the session
+    this._logger?.debug(`${this.name}: connecting with a new session.`);
     const sessionAbort = this.renewSession();
     // start the loop
     do {
@@ -252,9 +253,9 @@ export abstract class AbstractFlagChangeStrategy<
   }
 
   /**
-   * doDisconnect() will make all the actions to properly disconnect the change strategy from the source
+   * (internal) doDisconnect() will make all the actions to properly disconnect the change strategy from the source
    */
-  protected async doDisconnect() {
+  private async doDisconnect() {
     this.setStatus('disconnecting');
     // renew the session
     const sessionAbort = this._abortController;
@@ -278,9 +279,9 @@ export abstract class AbstractFlagChangeStrategy<
   }
 
   /**
-   * doClose() will make all the actions to close properly the change strategy.
+   * (internal) doClose() will make all the actions to close properly the change strategy.
    */
-  protected async doClose() {
+  private async doClose() {
     this.setStatus('closing');
     // execute onClose() handler
     await this.onClose();

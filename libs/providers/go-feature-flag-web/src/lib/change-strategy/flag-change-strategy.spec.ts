@@ -376,7 +376,6 @@ describe('GoFeatureFlagWebProvider => Change Strategy', () => {
       changeStrategy.setApiKey(newKey);
       await awaitableTimeout(100);
 
-      console.log(logger.timeline().join('\n'));
       expect(changeStrategy.status).toBe('connected');
       expect(logger.inMemoryLogger['debug']).toContain(
         `${EventSourceMock.name}: found required query param 'apiKey' with value '${newKey}'.`,
