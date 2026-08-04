@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-feature/js-sdk-contrib/compare/flagsmith-client-provider-v0.2.0...flagsmith-client-provider-v0.3.0) (2026-08-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **flagsmith-client:** implement experimental tracking ([#1591](https://github.com/open-feature/js-sdk-contrib/issues/1591))
+
+### ✨ New Features
+
+* **flagsmith-client:** implement experimental tracking ([#1591](https://github.com/open-feature/js-sdk-contrib/issues/1591)) ([b9680fa](https://github.com/open-feature/js-sdk-contrib/commit/b9680fa058cfae8062e3099752999f5bc8e9ce1f))
+
 ## [0.2.0](https://github.com/open-feature/js-sdk-contrib/compare/flagsmith-client-provider-v0.1.3...flagsmith-client-provider-v0.2.0) (2026-02-09)
 
 
