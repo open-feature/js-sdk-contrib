@@ -661,6 +661,42 @@ describe('OFREPWebProvider', () => {
       expect((provider as any)._sseRetryTimerId).toBeUndefined();
     });
 
+    it('schedules exponential backoff retry when polling is disabled via a negative pollInterval', async () => {
+      const providerName = expect.getState().currentTestName || 'test-provider';
+      const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
+      await OpenFeature.setContext(defaultContext);
+      await OpenFeature.setProviderAndWait(providerName, provider);
+
+      jest.useFakeTimers();
+      try {
+        const mockConnect = jest.fn();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._sseManager = { connect: mockConnect, disconnect: jest.fn(), dispose: jest.fn() };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fetchSpy = jest.spyOn(provider as any, '_fetchFlags').mockResolvedValue({
+          status: BulkEvaluationStatus.SUCCESS_WITH_CHANGES,
+          flags: [],
+          eventStreams: [{ type: 'sse', url: 'https://sse.example.com/stream' }],
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (provider as any)._handleSseError();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._sseRetryTimerId).toBeDefined();
+
+        await jest.advanceTimersByTimeAsync(1_000);
+
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(mockConnect).toHaveBeenCalledWith(
+          expect.arrayContaining([expect.objectContaining({ type: 'sse', url: 'https://sse.example.com/stream' })]),
+        );
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
     it('does not schedule backoff when changeDetection is none', async () => {
       const providerName = expect.getState().currentTestName || 'test-provider';
       const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, changeDetection: 'none' }, new TestLogger());
