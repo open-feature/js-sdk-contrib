@@ -1,12 +1,16 @@
 import {
   buildClientOptions,
   buildRetryPolicy,
+  createChannelCredentials,
   createFatalStatusCodesSet,
   handleFatalStatusCodeError,
   isFatalStatusCodeError,
 } from './grpc-util';
 import type { ServiceError } from '@grpc/grpc-js';
-import { status } from '@grpc/grpc-js';
+import { credentials, status } from '@grpc/grpc-js';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import type { Config } from '../../configuration';
 import type { Logger } from '@openfeature/server-sdk';
@@ -16,6 +20,77 @@ const createMockLogger = (): Logger => ({
   warn: jest.fn(),
   info: jest.fn(),
   debug: jest.fn(),
+});
+
+describe('createChannelCredentials', () => {
+  let dir: string;
+  let caPath: string;
+  let clientCertPath: string;
+  let clientKeyPath: string;
+  let caBuf: Buffer;
+  let certBuf: Buffer;
+  let keyBuf: Buffer;
+
+  let createInsecureSpy: jest.SpyInstance;
+  let createSslSpy: jest.SpyInstance;
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'flagd-mtls-'));
+    caPath = join(dir, 'ca.crt');
+    clientCertPath = join(dir, 'client.crt');
+    clientKeyPath = join(dir, 'client.key');
+    caBuf = Buffer.from('ca-cert');
+    certBuf = Buffer.from('client-cert');
+    keyBuf = Buffer.from('client-key');
+    writeFileSync(caPath, caBuf);
+    writeFileSync(clientCertPath, certBuf);
+    writeFileSync(clientKeyPath, keyBuf);
+  });
+
+  afterAll(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  beforeEach(() => {
+    // Spy on the real credentials factory rather than mocking the module, so @grpc/grpc-js loads.
+    createInsecureSpy = jest.spyOn(credentials, 'createInsecure').mockReturnValue({} as never);
+    createSslSpy = jest.spyOn(credentials, 'createSsl').mockReturnValue({} as never);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should create insecure credentials when TLS is disabled', () => {
+    createChannelCredentials(false);
+    expect(createInsecureSpy).toHaveBeenCalledTimes(1);
+    expect(createSslSpy).not.toHaveBeenCalled();
+  });
+
+  it('should create SSL credentials with system trust store when no cert paths are set', () => {
+    createChannelCredentials(true);
+    expect(createSslSpy).toHaveBeenCalledWith(null);
+  });
+
+  it('should create SSL credentials with a root cert when certPath is set', () => {
+    createChannelCredentials(true, caPath);
+    expect(createSslSpy).toHaveBeenCalledWith(caBuf);
+  });
+
+  it('should create mTLS credentials when both client cert and key paths are set', () => {
+    createChannelCredentials(true, caPath, clientCertPath, clientKeyPath);
+    expect(createSslSpy).toHaveBeenCalledWith(caBuf, keyBuf, certBuf);
+  });
+
+  it('should create mTLS credentials with null root certs when certPath is omitted', () => {
+    createChannelCredentials(true, undefined, clientCertPath, clientKeyPath);
+    expect(createSslSpy).toHaveBeenCalledWith(null, keyBuf, certBuf);
+  });
+
+  it('should fall back to server-side TLS when only the client cert path is set', () => {
+    createChannelCredentials(true, undefined, clientCertPath);
+    expect(createSslSpy).toHaveBeenCalledWith(null);
+  });
 });
 
 describe('buildClientOptions', () => {
