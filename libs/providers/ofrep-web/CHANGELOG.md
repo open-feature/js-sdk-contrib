@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.2...ofrep-web-provider-v0.4.3) (2026-08-04)
+
+
+### 🐛 Bug Fixes
+
+* **ofrep-web:** reconnect SSE when polling is disabled via a negative pollInterval ([#1597](https://github.com/open-feature/js-sdk-contrib/issues/1597)) ([9750615](https://github.com/open-feature/js-sdk-contrib/commit/9750615d3846b689f0c5837f29fca6da3abf4c2d))
+
 ## [0.4.2](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.1...ofrep-web-provider-v0.4.2) (2026-07-27)
 
 
