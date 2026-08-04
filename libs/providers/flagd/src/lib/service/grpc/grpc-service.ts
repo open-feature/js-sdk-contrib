@@ -87,6 +87,9 @@ export class GRPCService implements Service {
   private _maxBackoffMs: number;
   private _errorThrottled = false;
   private readonly _metadata: Metadata;
+  private _disconnected = false;
+  private _reconnectTimer?: ReturnType<typeof setTimeout>;
+  private _rejectConnect?: (reason: Error) => void;
 
   private get _cacheActive() {
     // the cache is "active" (able to be used) if the config enabled it, AND the gRPC stream is live
@@ -132,12 +135,32 @@ export class GRPCService implements Service {
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: (message: string) => void,
   ): Promise<void> {
-    return new Promise((resolve, reject) =>
-      this.listen(reconnectCallback, changedCallback, disconnectCallback, resolve, reject),
-    );
+    return new Promise((resolve, reject) => {
+      this._rejectConnect = reject;
+      this.listen(
+        reconnectCallback,
+        changedCallback,
+        disconnectCallback,
+        () => {
+          this._rejectConnect = undefined;
+          resolve();
+        },
+        (reason) => {
+          this._rejectConnect = undefined;
+          reject(reason);
+        },
+      );
+    });
   }
 
   async disconnect(): Promise<void> {
+    this._disconnected = true;
+    this._rejectConnect?.(new Error('gRPC client disconnected before connecting'));
+    this._rejectConnect = undefined;
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = undefined;
+    }
     closeStreamIfDefined(this._eventStream);
     this._client.close();
   }
@@ -192,6 +215,10 @@ export class GRPCService implements Service {
 
     // wait for connection to be stable
     this._client.waitForReady(Date.now() + this._deadline, (err) => {
+      if (this._disconnected) {
+        rejectConnect?.(err ?? new Error('gRPC client disconnected before connecting'));
+        return;
+      }
       if (err) {
         // Check if error is a fatal status code on first connection only
         if (isFatalStatusCodeError(err, this._initialized, this._fatalStatusCodes)) {
@@ -259,8 +286,16 @@ export class GRPCService implements Service {
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: (message: string) => void,
   ) {
-    setTimeout(
-      () => this.listen(reconnectCallback, changedCallback, disconnectCallback),
+    if (this._disconnected) {
+      return;
+    }
+    this._reconnectTimer = setTimeout(
+      () => {
+        this._reconnectTimer = undefined;
+        if (!this._disconnected) {
+          this.listen(reconnectCallback, changedCallback, disconnectCallback);
+        }
+      },
       this._errorThrottled ? this._maxBackoffMs : 0,
     );
     this._errorThrottled = false;

@@ -553,6 +553,59 @@ describe(FlagdProvider.name, () => {
         // eventStream should have been called twice (initial + reconnect attempt)
         expect(streamingServiceClientMock.eventStream).toHaveBeenCalledTimes(2);
       });
+
+      it('should not reconnect after disconnect when an error has scheduled a retry', async () => {
+        const provider = new FlagdProvider(
+          undefined,
+          undefined,
+          new GRPCService(
+            { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false, cache: 'lru' },
+            streamingServiceClientMock,
+          ),
+        );
+        const initializePromise = provider.initialize();
+        registeredOnMessageCallback({ type: EVENT_PROVIDER_READY, data: {} });
+        await initializePromise;
+
+        registeredOnErrorCallback();
+        await provider.onClose();
+        expect(jest.getTimerCount()).toBe(0);
+        jest.runOnlyPendingTimers();
+
+        expect(streamingServiceClientMock.eventStream).toHaveBeenCalledTimes(1);
+      });
+
+      it('should reject initialization when disconnected before the stream is ready', async () => {
+        const service = new GRPCService(
+          { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false, cache: 'lru' },
+          streamingServiceClientMock,
+        );
+        const connectPromise = service.connect(jest.fn(), jest.fn(), jest.fn());
+        const rejection = expect(connectPromise).rejects.toThrow('gRPC client disconnected before connecting');
+
+        await service.disconnect();
+
+        await rejection;
+        expect(streamingServiceClientMock.eventStream).toHaveBeenCalledTimes(1);
+      });
+
+      it('should reject initialization when disconnected before the client is ready', async () => {
+        const pendingServiceClientMock = {
+          ...streamingServiceClientMock,
+          waitForReady: jest.fn(() => undefined),
+        } as unknown as ServiceClient;
+        const service = new GRPCService(
+          { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false, cache: 'lru' },
+          pendingServiceClientMock,
+        );
+        const connectPromise = service.connect(jest.fn(), jest.fn(), jest.fn());
+        const rejection = expect(connectPromise).rejects.toThrow('gRPC client disconnected before connecting');
+
+        await service.disconnect();
+
+        await rejection;
+        expect(pendingServiceClientMock.eventStream).not.toHaveBeenCalled();
+      });
     });
   });
 
