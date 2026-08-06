@@ -256,12 +256,14 @@ export class InProcessEvaluator implements IEvaluator {
     defaultValue: unknown,
     evaluationContext?: EvaluationContext,
   ): Promise<EvaluationResponse> {
-    // If the provider is not initialized, return a default value and an error
+    // No configuration has been loaded yet, so we cannot answer for any flag. This check precedes
+    // the flag lookup below deliberately: reporting FLAG_NOT_FOUND here would blame the caller's
+    // flag key for what is an infrastructure failure.
     if (this.configurationState !== ConfigurationState.INITIALIZED) {
       return {
         value: defaultValue as JsonValue,
         reason: StandardResolutionReasons.ERROR,
-        errorCode: ErrorCode.GENERAL,
+        errorCode: ErrorCode.PROVIDER_NOT_READY,
         errorDetails: 'Provider is not initialized, impossible to retrieve configuration',
         trackEvents: true,
       };
