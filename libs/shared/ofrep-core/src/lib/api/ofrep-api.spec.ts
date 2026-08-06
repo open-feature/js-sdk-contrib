@@ -175,6 +175,25 @@ describe('OFREPApi', () => {
         expect(result.httpStatus).toEqual(200);
       });
 
+      it('encode the flagKey in the evaluate path so reserved characters do not alter the URL', async () => {
+        const capturedUrls: string[] = [];
+        const mockFetch = jest.fn(async (input: RequestInfo | URL) => {
+          capturedUrls.push((input as Request).url);
+          return new Response(
+            JSON.stringify({ key: 'flag/with/slash', value: true, reason: 'STATIC', variant: 'on' }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        }) as unknown as FetchAPI;
+        const localApi = new OFREPApi({ baseUrl: 'https://localhost:8080' }, mockFetch);
+
+        await localApi.postEvaluateFlag('flag/with/slash').catch(() => undefined);
+
+        expect(capturedUrls[0]).toBe('https://localhost:8080/ofrep/v1/evaluate/flags/flag%2Fwith%2Fslash');
+      });
+
       it('send evaluation context in request body', async () => {
         const result = await api.postEvaluateFlag('context-in-metadata', {
           context: {

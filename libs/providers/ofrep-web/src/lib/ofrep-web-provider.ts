@@ -492,6 +492,9 @@ export class OFREPWebProvider implements Provider {
           this._options.inactivityDelaySec,
           this._logger,
           this._options.baseUrl,
+          // Leave EventSource implementation as the default; only tests inject a mock
+          undefined,
+          this._options.sseEventParser,
         );
       }
       this._sseManager.connect(result.eventStreams);
@@ -547,9 +550,10 @@ export class OFREPWebProvider implements Provider {
       return;
     }
 
-    // Polling is disabled — retry SSE with exponential backoff (1 s → 2 s → 4 s … capped at 60 s)
+    // Polling is disabled — retry SSE with exponential backoff (1 s → 2 s → 4 s … capped at 60 s).
+    // Any non-positive pollInterval means polling is disabled, so treat negatives the same as 0.
     const changeDetection = this._options.changeDetection ?? 'sse';
-    if (this._pollingInterval === 0 && changeDetection !== 'none') {
+    if (this._pollingInterval <= 0 && changeDetection !== 'none') {
       const delayMs = Math.min(1_000 * Math.pow(2, this._sseRetryCount), 60_000);
       this._sseRetryCount++;
       this._logger?.info(`SSE error — polling disabled, retrying SSE in ${delayMs}ms (attempt ${this._sseRetryCount})`);

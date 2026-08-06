@@ -1,4 +1,4 @@
-import type { BulkEvaluationRefetchMetadata, EventStream } from '@openfeature/ofrep-core';
+import type { BulkEvaluationRefetchMetadata, EventStream, EventStreamMessage } from '@openfeature/ofrep-core';
 import type { Logger } from '@openfeature/web-sdk';
 
 const DEFAULT_INACTIVITY_DELAY_SEC = 120;
@@ -21,6 +21,20 @@ export interface SseManagerCallbacks {
   onStale: () => void;
   onError: () => void;
 }
+
+/**
+ * Parses the payload of an incoming SSE {@link MessageEvent} into the object the
+ * SseManager inspects for `type`/`etag`/`lastModified`. Override to support
+ * non-JSON payloads or custom wire formats.
+ */
+export type SseEventParser = (event: MessageEvent) => EventStreamMessage;
+
+/**
+ * Default parser: JSON-parses string payloads, otherwise passes the data through
+ * as-is (e.g. when the EventSource implementation already deserialized it).
+ */
+export const defaultSseEventParser: SseEventParser = (event) =>
+  typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
 
 /**
  * Resolves the connection URL from an EventStream entry.
@@ -63,6 +77,8 @@ export class SseManager {
     private _baseUrl?: string,
     // Allows tests to inject a mock instead of the global EventSource
     private _EventSourceImpl: new (url: string) => EventSource = EventSource,
+    // Overrides how incoming SSE payloads are parsed; defaults to JSON parsing
+    private _parseEvent: SseEventParser = defaultSseEventParser,
   ) {
     this._inactivityDelaySec = _clientInactivityOverride ?? DEFAULT_INACTIVITY_DELAY_SEC;
   }
@@ -219,7 +235,7 @@ export class SseManager {
     }
 
     try {
-      const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      const data = this._parseEvent(event);
 
       if (data.type !== 'refetchEvaluation') {
         // Ignore unknown event types for forward compatibility
