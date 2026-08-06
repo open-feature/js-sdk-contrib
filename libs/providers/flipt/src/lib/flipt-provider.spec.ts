@@ -98,6 +98,50 @@ describe('FliptProvider', () => {
       const value = await provider.resolveStringEvaluation('flag_string', 'default', { fizz: 'buzz' });
       expect(value).toHaveProperty('value', 'variant1');
     });
+
+    it('should return the default variant served by Flipt when no rule matches', async () => {
+      fetchMock.post(
+        variantEndpoint,
+        {
+          match: false,
+          segmentKeys: [],
+          reason: 'DEFAULT_EVALUATION_REASON',
+          variantKey: 'variant_default',
+          variantAttachment: '',
+          requestId: '0f39483c-d52b-42b4-adbb-40b98bc7058d',
+          requestDurationMillis: 0.409,
+          timestamp: '2024-01-15T18:51:50.629551Z',
+          flagKey: 'flag_default_variant',
+        },
+        { overwriteRoutes: true },
+      );
+
+      const value = await provider.resolveStringEvaluation('flag_default_variant', 'default', { fizz: 'buzz' });
+      expect(value).toHaveProperty('value', 'variant_default');
+      expect(value).toHaveProperty('reason', 'DEFAULT');
+    });
+
+    it('should return the application default when no rule matches and no default variant is set', async () => {
+      fetchMock.post(
+        variantEndpoint,
+        {
+          match: false,
+          segmentKeys: [],
+          reason: 'DEFAULT_EVALUATION_REASON',
+          variantKey: '',
+          variantAttachment: '',
+          requestId: '0f39483c-d52b-42b4-adbb-40b98bc7058d',
+          requestDurationMillis: 0.409,
+          timestamp: '2024-01-15T18:51:50.629551Z',
+          flagKey: 'flag_string',
+        },
+        { overwriteRoutes: true },
+      );
+
+      const value = await provider.resolveStringEvaluation('flag_string', 'default', { fizz: 'buzz' });
+      expect(value).toHaveProperty('value', 'default');
+      expect(value).toHaveProperty('reason', 'DEFAULT');
+    });
   });
 
   describe('method resolveBooleanEvaluation', () => {
@@ -254,6 +298,7 @@ describe('FliptProvider', () => {
 
       const value = await provider.resolveObjectEvaluation('flag_json', {}, { fizz: 'buzz' });
       expect(value).toHaveProperty('value', { hello: 'world' });
+      expect(value).toHaveProperty('reason', 'DEFAULT');
     });
 
     it('should throw TypeMismatchError on non-number value', async () => {
