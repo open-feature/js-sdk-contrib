@@ -20,6 +20,7 @@ import type { IEvaluator } from './evaluator';
 import type { GoFeatureFlagApi } from '../service/api';
 import type { GoFeatureFlagProviderOptions } from '../go-feature-flag-provider-options';
 import type { EvaluationResponse, Flag, WasmInput } from '../model';
+import { NOT_MODIFIED } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
 
@@ -270,6 +271,13 @@ export class InProcessEvaluator implements IEvaluator {
     try {
       // Call the API to retrieve the flags' configuration and store it in the local copy
       const flagConfigResponse = await this.api.retrieveFlagConfiguration(this.etag, undefined);
+
+      // Nothing changed: return before touching any configuration state. The stored flags,
+      // enrichment, timestamp and ETag must all survive a 304 untouched.
+      if (flagConfigResponse === NOT_MODIFIED) {
+        this.logger?.debug('Flag configuration has not changed');
+        return;
+      }
 
       if (!flagConfigResponse) {
         throw new ImpossibleToRetrieveConfigurationException('Flag configuration response is null');

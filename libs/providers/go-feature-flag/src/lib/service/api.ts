@@ -1,6 +1,14 @@
 import { type FetchAPI, isomorphicFetch } from '../helper/fetch-api';
 import type { GoFeatureFlagProviderOptions } from '../go-feature-flag-provider-options';
-import type { ExporterMetadata, ExporterRequest, ExportEvent, FlagConfigRequest, FlagConfigResponse } from '../model';
+import type {
+  ExporterMetadata,
+  ExporterRequest,
+  ExportEvent,
+  FlagConfigRequest,
+  FlagConfigResponse,
+  FlagConfigurationResult,
+} from '../model';
+import { NOT_MODIFIED } from '../model';
 import type { Logger } from '@openfeature/server-sdk';
 import {
   APPLICATION_JSON,
@@ -52,11 +60,13 @@ export class GoFeatureFlagApi {
    * RetrieveFlagConfiguration is a method that retrieves the flag configuration from the GO Feature Flag API.
    * @param etag If provided, we call the API with "If-None-Match" header.
    * @param flags List of flags to retrieve, if not set or empty, we will retrieve all available flags.
-   * @returns A FlagConfigResponse returning the success data.
+   * @returns A FlagConfigResponse with the new configuration, or the NOT_MODIFIED sentinel when the
+   * relay proxy reports that nothing has changed.
    * @throws FlagConfigurationEndpointNotFoundException if the endpoint is not reachable.
-   * @throws ImpossibleToRetrieveConfigurationException if the endpoint is returning an error.
+   * @throws ImpossibleToRetrieveConfigurationException if the endpoint is returning an error, or
+   * returns a body we cannot use as a configuration.
    */
-  async retrieveFlagConfiguration(etag?: string, flags?: string[]): Promise<FlagConfigResponse> {
+  async retrieveFlagConfiguration(etag?: string, flags?: string[]): Promise<FlagConfigurationResult> {
     const requestBody: FlagConfigRequest = { flags: flags || [] };
     const requestStr = JSON.stringify(requestBody);
 
@@ -88,8 +98,13 @@ export class GoFeatureFlagApi {
       clearTimeout(timeoutId);
 
       switch (response.status) {
-        case HTTP_STATUS.OK:
-        case HTTP_STATUS.NOT_MODIFIED: {
+        case HTTP_STATUS.NOT_MODIFIED:
+          // Deliberately returned before reading the body or any header: a 304 must not be able to
+          // carry flags, enrichment, a timestamp or an ETag back to the caller. Returning a
+          // sentinel rather than an empty response object is what keeps the caller from mistaking
+          // "nothing changed" for "the configuration is now empty".
+          return NOT_MODIFIED;
+        case HTTP_STATUS.OK: {
           const body = await response.text();
           return this.handleFlagConfigurationSuccess(response, body);
         }
@@ -189,35 +204,45 @@ export class GoFeatureFlagApi {
   }
 
   /**
-   * HandleFlagConfigurationSuccess is handling the success response of the flag configuration request.
+   * HandleFlagConfigurationSuccess is handling the 200 response of the flag configuration request.
+   *
+   * Anything that leaves us without a usable flag map is reported as a failed refresh rather than
+   * as an empty configuration. Returning empty flags here would make the caller overwrite the live
+   * configuration and advance the stored ETag, so the next poll would be answered with a 304 and
+   * the empty state would become permanent.
    * @param response HTTP response.
    * @param body String of the body.
    * @returns A FlagConfigResponse object.
+   * @throws ImpossibleToRetrieveConfigurationException if the body cannot be parsed, or carries no
+   * flag map.
    */
   private handleFlagConfigurationSuccess(response: Response, body: string): FlagConfigResponse {
     const etagHeader = response.headers.get(HTTP_HEADER_ETAG) || undefined;
     const lastModifiedHeader = response.headers.get(HTTP_HEADER_LAST_MODIFIED);
     const lastUpdated = lastModifiedHeader ? new Date(lastModifiedHeader) : new Date(0);
 
-    const result: FlagConfigResponse = {
+    let goffResp: FlagConfigResponse | null;
+    try {
+      goffResp = JSON.parse(body) as FlagConfigResponse | null;
+    } catch (error) {
+      throw new ImpossibleToRetrieveConfigurationException(
+        `retrieve flag configuration error: impossible to parse the response body: ${error}`,
+      );
+    }
+
+    // An absent or null flag map tells us nothing about the flags, so we keep what we already have.
+    // An explicitly empty map is a legitimate configuration and is accepted as one.
+    if (goffResp?.flags === undefined || goffResp.flags === null) {
+      throw new ImpossibleToRetrieveConfigurationException(
+        'retrieve flag configuration error: the response contains no flag configuration',
+      );
+    }
+
+    return {
       etag: etagHeader,
       lastUpdated,
-      flags: {},
-      evaluationContextEnrichment: {},
+      flags: goffResp.flags,
+      evaluationContextEnrichment: goffResp.evaluationContextEnrichment || {},
     };
-
-    if (response.status === HTTP_STATUS.NOT_MODIFIED) {
-      return result;
-    }
-
-    try {
-      const goffResp = JSON.parse(body) as FlagConfigResponse;
-      result.evaluationContextEnrichment = goffResp.evaluationContextEnrichment || {};
-      result.flags = goffResp.flags || {};
-    } catch (error) {
-      this.logger?.warn(`Failed to parse flag configuration response: ${error}. Response body: "${body}"`);
-      // Return the default result with empty flags and enrichment
-    }
-    return result;
   }
 }

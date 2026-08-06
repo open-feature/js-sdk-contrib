@@ -1,7 +1,14 @@
 import { GoFeatureFlagApi } from './api';
 import type { GoFeatureFlagProviderOptions } from '../go-feature-flag-provider-options';
 import type { FetchAPI } from '../helper/fetch-api';
-import { ExporterMetadata, type FeatureEvent, type TrackingEvent } from '../model';
+import {
+  ExporterMetadata,
+  NOT_MODIFIED,
+  type FeatureEvent,
+  type FlagConfigResponse,
+  type FlagConfigurationResult,
+  type TrackingEvent,
+} from '../model';
 import {
   FlagConfigurationEndpointNotFoundException,
   ImpossibleToRetrieveConfigurationException,
@@ -41,9 +48,15 @@ describe('GoFeatureFlagApi', () => {
       fetchImplementation,
     };
 
+    /** Asserts the fetch returned a configuration rather than the not-modified sentinel. */
+    const expectConfiguration = (result: FlagConfigurationResult): FlagConfigResponse => {
+      expect(result).not.toBe(NOT_MODIFIED);
+      return result as FlagConfigResponse;
+    };
+
     it('should call the configuration endpoint', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
-      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{}'));
+      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{"flags":{}}'));
 
       await api.retrieveFlagConfiguration();
 
@@ -59,7 +72,7 @@ describe('GoFeatureFlagApi', () => {
         apiKey: 'my-api-key',
       };
       const api = new GoFeatureFlagApi(options);
-      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{}'));
+      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{"flags":{}}'));
 
       await api.retrieveFlagConfiguration();
 
@@ -69,7 +82,7 @@ describe('GoFeatureFlagApi', () => {
 
     it('should not include authorization header when API key is not provided', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
-      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{}'));
+      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{"flags":{}}'));
 
       await api.retrieveFlagConfiguration();
 
@@ -79,7 +92,7 @@ describe('GoFeatureFlagApi', () => {
 
     it('should include content-type header', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
-      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{}'));
+      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{"flags":{}}'));
 
       await api.retrieveFlagConfiguration();
 
@@ -89,7 +102,7 @@ describe('GoFeatureFlagApi', () => {
 
     it('should include If-None-Match header when etag is provided', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
-      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{}'));
+      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{"flags":{}}'));
 
       await api.retrieveFlagConfiguration('12345');
 
@@ -99,7 +112,7 @@ describe('GoFeatureFlagApi', () => {
 
     it('should include flags in request body when provided', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
-      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{}'));
+      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{"flags":{}}'));
 
       await api.retrieveFlagConfiguration(undefined, ['flag1', 'flag2']);
 
@@ -174,7 +187,7 @@ describe('GoFeatureFlagApi', () => {
         }),
       );
 
-      const result = await api.retrieveFlagConfiguration();
+      const result = expectConfiguration(await api.retrieveFlagConfiguration());
 
       expect(result.etag).toBe('"123456789"');
       expect(result.lastUpdated).toEqual(new Date('Wed, 21 Oct 2015 07:28:00 GMT'));
@@ -183,7 +196,7 @@ describe('GoFeatureFlagApi', () => {
       expect(result.evaluationContextEnrichment).toHaveProperty('env', 'production');
     });
 
-    it('should handle 304 response without flags and context', async () => {
+    it('should return the NOT_MODIFIED sentinel on a 304 response', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
       mockFetch.setResponseByStatus(
         '304',
@@ -195,23 +208,74 @@ describe('GoFeatureFlagApi', () => {
 
       const result = await api.retrieveFlagConfiguration();
 
-      expect(result.etag).toBe('"123456789"');
-      expect(result.lastUpdated).toEqual(new Date('Wed, 21 Oct 2015 07:28:00 GMT'));
+      // The sentinel carries nothing at all: no flags, no enrichment, and crucially no ETag, so a
+      // 304 cannot overwrite the stored validator.
+      expect(result).toBe(NOT_MODIFIED);
+    });
+
+    it('should return the NOT_MODIFIED sentinel on a 304 that echoes no ETag', async () => {
+      const api = new GoFeatureFlagApi(baseOptions);
+      mockFetch.setResponseByStatus('304', new MockResponse(304, ''));
+
+      const result = await api.retrieveFlagConfiguration('"123456789"');
+
+      expect(result).toBe(NOT_MODIFIED);
+    });
+
+    it('should treat an unparseable 200 body as a failed refresh', async () => {
+      const api = new GoFeatureFlagApi(baseOptions);
+      mockFetch.setResponse(
+        'http://localhost:8080/v1/flag/configuration',
+        new MockResponse(200, '<html>502 Bad Gateway</html>', { etag: '"newer-etag"' }),
+      );
+
+      await expect(api.retrieveFlagConfiguration()).rejects.toThrow(ImpossibleToRetrieveConfigurationException);
+    });
+
+    it('should treat a 200 with a null flag map as a failed refresh', async () => {
+      const api = new GoFeatureFlagApi(baseOptions);
+      mockFetch.setResponse(
+        'http://localhost:8080/v1/flag/configuration',
+        new MockResponse(200, '{"flags":null}', { etag: '"newer-etag"' }),
+      );
+
+      await expect(api.retrieveFlagConfiguration()).rejects.toThrow(ImpossibleToRetrieveConfigurationException);
+    });
+
+    it('should treat a 200 with an absent flag map as a failed refresh', async () => {
+      const api = new GoFeatureFlagApi(baseOptions);
+      mockFetch.setResponse(
+        'http://localhost:8080/v1/flag/configuration',
+        new MockResponse(200, '{"evaluationContextEnrichment":{"env":"production"}}', { etag: '"newer-etag"' }),
+      );
+
+      await expect(api.retrieveFlagConfiguration()).rejects.toThrow(ImpossibleToRetrieveConfigurationException);
+    });
+
+    it('should accept a 200 with an explicitly empty flag map', async () => {
+      const api = new GoFeatureFlagApi(baseOptions);
+      mockFetch.setResponse(
+        'http://localhost:8080/v1/flag/configuration',
+        new MockResponse(200, '{"flags":{}}', { etag: '"123456789"' }),
+      );
+
+      // A relay proxy that genuinely serves no flags is a valid configuration, not a failure.
+      const result = expectConfiguration(await api.retrieveFlagConfiguration());
+
       expect(result.flags).toEqual({});
-      expect(result.evaluationContextEnrichment).toEqual({});
     });
 
     it('should handle invalid last-modified header', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
       mockFetch.setResponse(
         'http://localhost:8080/v1/flag/configuration',
-        new MockResponse(200, '{}', {
+        new MockResponse(200, '{"flags":{}}', {
           etag: '"123456789"',
           'last-modified': 'invalid-date',
         }),
       );
 
-      const result = await api.retrieveFlagConfiguration();
+      const result = expectConfiguration(await api.retrieveFlagConfiguration());
 
       expect(result.lastUpdated?.getTime()).toBeNaN();
     });
@@ -238,7 +302,7 @@ describe('GoFeatureFlagApi', () => {
         if (options.signal && (options.signal as AbortSignal).aborted) {
           throw new Error('Request aborted');
         }
-        return new MockResponse(200, '{}');
+        return new MockResponse(200, '{"flags":{}}');
       };
 
       const optionsWithDelayFetch: GoFeatureFlagProviderOptions = {
