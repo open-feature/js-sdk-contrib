@@ -176,9 +176,7 @@ export class FlagdCore implements Storage {
     if (flag.state === 'DISABLED') {
       return {
         value: defaultValue,
-        reason: StandardResolutionReasons.ERROR,
-        errorCode: ErrorCode.FLAG_NOT_FOUND,
-        errorMessage: `flag '${flagKey}' is disabled`,
+        reason: StandardResolutionReasons.DISABLED,
         flagMetadata: flag.metadata,
       };
     }

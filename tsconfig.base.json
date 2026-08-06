@@ -41,7 +41,8 @@
       "@openfeature/ofrep-core": ["libs/shared/ofrep-core/src/index.ts"],
       "@openfeature/ofrep-provider": ["libs/providers/ofrep/src/index.ts"],
       "@openfeature/ofrep-web-provider": ["libs/providers/ofrep-web/src/index.ts"],
-      "@openfeature/unleash-web-provider": ["libs/providers/unleash-web/src/index.ts"]
+      "@openfeature/unleash-web-provider": ["libs/providers/unleash-web/src/index.ts"],
+      "@openfeature/azure-app-configuration-provider": ["libs/providers/azure-app-configuration/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -18,8 +18,8 @@ import {
 
 import isEmpty from 'lodash.isempty';
 
-import type { LDClient, LDOptions, LDFlagChangeset } from 'launchdarkly-js-client-sdk';
-import { basicLogger, initialize } from 'launchdarkly-js-client-sdk';
+import type { LDClient, LDOptions, LDStartOptions, LDContext } from '@launchdarkly/js-client-sdk';
+import { basicLogger, createClient } from '@launchdarkly/js-client-sdk';
 
 import type { LaunchDarklyProviderOptions } from './launchdarkly-provider-options';
 import translateContext from './translate-context';
@@ -48,8 +48,8 @@ export class LaunchDarklyClientProvider implements Provider {
   };
 
   private readonly ldOptions: LDOptions | undefined;
+  private readonly ldStartOptions: LDStartOptions;
   private readonly logger: Logger;
-  private readonly initializationTimeout?: number;
   private _client?: LDClient;
 
   public events = new OpenFeatureEventEmitter();
@@ -70,19 +70,29 @@ export class LaunchDarklyClientProvider implements Provider {
 
   constructor(
     private readonly envKey: string,
-    { logger, initializationTimeout, ...ldOptions }: LaunchDarklyProviderOptions,
+    { logger, initializationTimeout, bootstrap, identifyOptions, timeout, ...ldOptions }: LaunchDarklyProviderOptions,
   ) {
     if (logger) {
       this.logger = logger;
     } else {
       this.logger = basicLogger({ level: 'info' });
     }
-    this.initializationTimeout = initializationTimeout;
+
+    if (initializationTimeout !== undefined && timeout === undefined) {
+      this.logger.warn?.('The "initializationTimeout" option is deprecated. Please use the "timeout" option instead.');
+    }
+
     this.ldOptions = {
       ...ldOptions,
       logger: this.logger,
       wrapperName: WRAPPER_NAME,
       wrapperVersion: WRAPPER_VERSION,
+    };
+
+    this.ldStartOptions = {
+      timeout: timeout ?? initializationTimeout,
+      bootstrap,
+      identifyOptions,
     };
   }
 
@@ -94,8 +104,8 @@ export class LaunchDarklyClientProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    const _context = isEmpty(context) ? { anonymous: true } : this.translateContext(context);
-    this._client = initialize(this.envKey, _context, this.ldOptions);
+    const _context: LDContext = isEmpty(context) ? ({ anonymous: true } as LDContext) : this.translateContext(context);
+    this._client = createClient(this.envKey, _context, this.ldOptions);
 
     /*
      * set event listeners to propagate ld events to open feature provider,
@@ -106,8 +116,12 @@ export class LaunchDarklyClientProvider implements Provider {
     }
 
     try {
-      await this._client.waitForInitialization(this.initializationTimeout);
-      this.status = ProviderStatus.READY;
+      const result = await this._client.start(this.ldStartOptions);
+      if (result.status === 'complete') {
+        this.status = ProviderStatus.READY;
+      } else {
+        this.status = ProviderStatus.ERROR;
+      }
     } catch {
       this.status = ProviderStatus.ERROR;
     }
@@ -121,10 +135,8 @@ export class LaunchDarklyClientProvider implements Provider {
    * necessary for LD streaming changes
    * */
   private setListeners() {
-    this.client.on('change', (changeset: LDFlagChangeset) => {
-      this.events.emit(ProviderEvents.ConfigurationChanged, {
-        flagsChanged: Object.keys(changeset),
-      });
+    this.client.on('change', (_context: LDContext, flagsChanged: string[]) => {
+      this.events.emit(ProviderEvents.ConfigurationChanged, { flagsChanged });
     });
   }
 
@@ -134,7 +146,7 @@ export class LaunchDarklyClientProvider implements Provider {
   }
 
   resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
-    const res = this.client.variationDetail(flagKey, defaultValue);
+    const res = this.client.boolVariationDetail(flagKey, defaultValue);
     if (typeof res.value === 'boolean') {
       return translateResult(res);
     }
@@ -142,7 +154,7 @@ export class LaunchDarklyClientProvider implements Provider {
   }
 
   resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number> {
-    const res = this.client.variationDetail(flagKey, defaultValue);
+    const res = this.client.numberVariationDetail(flagKey, defaultValue);
     if (typeof res.value === 'number') {
       return translateResult(res);
     }
@@ -150,7 +162,7 @@ export class LaunchDarklyClientProvider implements Provider {
   }
 
   resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
-    const res = this.client.variationDetail(flagKey, defaultValue);
+    const res = this.client.jsonVariationDetail(flagKey, defaultValue);
     if (typeof res.value === 'object') {
       return translateResult(res);
     }
@@ -158,7 +170,7 @@ export class LaunchDarklyClientProvider implements Provider {
   }
 
   resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
-    const res = this.client.variationDetail(flagKey, defaultValue);
+    const res = this.client.stringVariationDetail(flagKey, defaultValue);
     if (typeof res.value === 'string') {
       return translateResult(res);
     }

@@ -1,5 +1,5 @@
 /* eslint-disable */
-export default {
+module.exports = {
   displayName: 'providers-ofrep-web',
   preset: '../../../jest.preset.js',
   globals: {

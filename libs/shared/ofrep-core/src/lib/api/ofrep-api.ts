@@ -1,6 +1,7 @@
 import type { FlagMetadata, ResolutionDetails } from '@openfeature/core';
 import { ErrorCode, StandardResolutionReasons } from '@openfeature/core';
 import type {
+  BulkEvaluationRefetchMetadata,
   EvaluationFailureResponse,
   EvaluationFlagValue,
   EvaluationRequest,
@@ -162,7 +163,7 @@ export class OFREPApi {
     flagKey: string,
     evaluationRequest?: EvaluationRequest,
   ): Promise<OFREPApiEvaluationResult> {
-    let url = `${this.baseOptions.baseUrl}/ofrep/v1/evaluate/flags/${flagKey}`;
+    let url = `${this.baseOptions.baseUrl}/ofrep/v1/evaluate/flags/${encodeURIComponent(flagKey)}`;
     if (this.baseOptions.query) {
       url = url + `?${this.baseOptions.query.toString()}`;
     }
@@ -186,10 +187,19 @@ export class OFREPApi {
   public async postBulkEvaluateFlags(
     requestBody?: EvaluationRequest,
     etag: string | null = null,
+    sseMetadata?: BulkEvaluationRefetchMetadata,
   ): Promise<OFREPApiBulkEvaluationResult> {
     let url = `${this.baseOptions.baseUrl}/ofrep/v1/evaluate/flags`;
-    if (this.baseOptions.query) {
-      url = url + `?${this.baseOptions.query.toString()}`;
+    const params = new URLSearchParams(this.baseOptions.query);
+    if (sseMetadata?.flagConfigEtag) {
+      params.set('flagConfigEtag', sseMetadata.flagConfigEtag);
+    }
+    if (sseMetadata?.flagConfigLastModified !== undefined) {
+      params.set('flagConfigLastModified', String(sseMetadata.flagConfigLastModified));
+    }
+    const qs = params.toString();
+    if (qs) {
+      url = url + `?${qs}`;
     }
 
     const request = new Request(url, {

@@ -1,5 +1,5 @@
 /* eslint-disable */
-export default {
+module.exports = {
   displayName: 'aws-ssm',
   preset: '../../../jest.preset.js',
   globals: {

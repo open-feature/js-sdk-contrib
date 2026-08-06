@@ -23,9 +23,7 @@ describe('rpc', () => {
   autoBindSteps(
     loadFeatures(GHERKIN_FLAGD, {
       tagFilter:
-        // remove filters as we add support for features
-        // see: https://github.com/open-feature/js-sdk-contrib/issues/1096 and child issues
-        '@rpc and not @targetURI and not @caching and not @unixsocket and not @deprecated and not @fractional-v1 and not @operator-errors',
+        '@rpc and not @targetURI and not @caching and not @unixsocket and not @deprecated and not @fractional-v1',
       scenarioNameTemplate: (vars) => {
         return `${vars.scenarioTitle} (${vars.scenarioTags.join(',')} ${vars.featureTags.join(',')})`;
       },

@@ -1,4 +1,4 @@
-abstract class OFREPApiError extends Error {
+export abstract class OFREPApiError extends Error {
   constructor(
     public error: unknown | undefined,
     public response: Response | undefined,

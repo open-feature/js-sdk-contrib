@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.4.2](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.1...ofrep-web-provider-v0.4.2) (2026-07-27)
+
+
+### 🐛 Bug Fixes
+
+* SSE eventstream urls are not stored in cache ([#1559](https://github.com/open-feature/js-sdk-contrib/issues/1559)) ([8ca6024](https://github.com/open-feature/js-sdk-contrib/commit/8ca602442da500ea3a2b1d6c25ad7a735fe4c164))
+
+
+### ✨ New Features
+
+* Allow overriding SSE message parsing for compat. ([#1583](https://github.com/open-feature/js-sdk-contrib/issues/1583)) ([5d8a460](https://github.com/open-feature/js-sdk-contrib/commit/5d8a460e81d0776fce8d73ec0ba4903428d178fd))
+
+## [0.4.1](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.0...ofrep-web-provider-v0.4.1) (2026-06-01)
+
+
+### 🐛 Bug Fixes
+
+* require ofrep-core ^2.2.0 ([#1555](https://github.com/open-feature/js-sdk-contrib/issues/1555)) ([3ce58e9](https://github.com/open-feature/js-sdk-contrib/commit/3ce58e99ad06906e435c38010de9f45b75b8b3fd))
+
+## [0.4.0](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.3.6...ofrep-web-provider-v0.4.0) (2026-05-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ofrep:** Disable polling by default ([#1510](https://github.com/open-feature/js-sdk-contrib/issues/1510))
+
+### 🐛 Bug Fixes
+
+* **ofrep-web:** fall back to FNV-1a hash when crypto.subtle is unavailable ([#1549](https://github.com/open-feature/js-sdk-contrib/issues/1549)) ([00b2457](https://github.com/open-feature/js-sdk-contrib/commit/00b2457f9a8aa593200cef0d486044a20ebeb8c6))
+
+
+### ✨ New Features
+
+* added local persistence to ofrep-web provider ([#1508](https://github.com/open-feature/js-sdk-contrib/issues/1508)) ([3103f2c](https://github.com/open-feature/js-sdk-contrib/commit/3103f2cb92037886ee32a2076542a717b4fcc52f))
+* **ofrep-web:** add SSE event stream support ([#1497](https://github.com/open-feature/js-sdk-contrib/issues/1497)) ([#1509](https://github.com/open-feature/js-sdk-contrib/issues/1509)) ([7b79536](https://github.com/open-feature/js-sdk-contrib/commit/7b7953650b6437d46c9aa06b18377a2f49505261))
+* **ofrep:** Disable polling by default ([#1510](https://github.com/open-feature/js-sdk-contrib/issues/1510)) ([d860849](https://github.com/open-feature/js-sdk-contrib/commit/d860849ee0b3a5b0c29819d8202a7620dc0a6a6d))
+
+## [Unreleased]
+
+### ⚠️ BREAKING CHANGES
+
+* **polling:** polling is now disabled by default (pollInterval defaults to 0). Polling can be enabled by explicitly setting `pollInterval` to a positive number (ms). This applies to OFREP providers which are still sub-v1.
+
+### ✨ New Features
+
+* **visibility-change:** automatically re-fetch flags when page/app becomes visible
+
 ## [0.3.6](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.3.5...ofrep-web-provider-v0.3.6) (2026-03-27)
 
 

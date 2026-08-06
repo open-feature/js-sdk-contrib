@@ -17,6 +17,7 @@ export class EvaluateWasm {
   private readonly go: Go;
   private readonly logger?: Logger;
   private readonly wasmBinaryPath?: string;
+  private readonly encoder: TextEncoder;
 
   /**
    * Constructor of the EvaluationWasm. It initializes the WASM module and the host functions.
@@ -27,6 +28,7 @@ export class EvaluateWasm {
     this.logger = logger;
     this.wasmBinaryPath = wasmBinaryPath;
     this.go = new Go();
+    this.encoder = new TextEncoder();
   }
 
   /**
@@ -226,14 +228,14 @@ export class EvaluateWasm {
       }
 
       // Serialize the input to JSON
-      const wasmInputAsStr = JSON.stringify(wasmInput);
+      const wasmInputSerialized = this.encoder.encode(JSON.stringify(wasmInput));
 
       // Copy input to WASM memory
-      const inputPtr = this.copyToMemory(wasmInputAsStr);
+      const inputPtr = this.copyToMemory(wasmInputSerialized);
 
       try {
         // Call the WASM evaluate function
-        const evaluateRes = this.callWasmEvaluate(inputPtr, wasmInputAsStr.length);
+        const evaluateRes = this.callWasmEvaluate(inputPtr, wasmInputSerialized.length);
 
         // Read the result from WASM memory
         const resAsString = this.readFromMemory(evaluateRes);
@@ -308,7 +310,7 @@ export class EvaluateWasm {
    * @returns the address location of this string
    * @throws WasmInvalidResultException - If for any reasons we have an issue calling the wasm module.
    */
-  private copyToMemory(inputString: string): number {
+  private copyToMemory(inputBytes: Uint8Array): number {
     if (!this.wasmExports) {
       throw new WasmFunctionNotFoundException('malloc');
     }
@@ -319,13 +321,15 @@ export class EvaluateWasm {
       throw new WasmFunctionNotFoundException('malloc');
     }
 
-    const ptr = mallocFunction(inputString.length + 1);
+    const ptr = mallocFunction(inputBytes.length + 1);
     if (typeof ptr !== 'number') {
       throw new WasmInvalidResultException('Malloc should return a number value.');
+    } else if (ptr === 0) {
+      throw new WasmInvalidResultException('Failed to allocate memory in WASM module.');
     }
 
     // Write the string to WASM memory
-    this.writeStringToMemory(ptr, inputString);
+    this.writeStringToMemory(ptr, inputBytes);
     return ptr;
   }
 
@@ -334,14 +338,12 @@ export class EvaluateWasm {
    * @param ptr - Pointer to write to
    * @param str - String to write
    */
-  private writeStringToMemory(ptr: number, str: string): void {
+  private writeStringToMemory(ptr: number, bytes: Uint8Array): void {
     if (!this.wasmMemory) {
       throw new WasmInvalidResultException('WASM memory not available.');
     }
 
     const buffer = new Uint8Array(this.wasmMemory.buffer);
-    const encoder = new TextEncoder();
-    const bytes = encoder.encode(str);
 
     for (let i = 0; i < bytes.length; i++) {
       buffer[ptr + i] = bytes[i];

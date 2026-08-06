@@ -5,6 +5,8 @@ components:
     - toddbaert
   libs/providers/aws-ssm:
     - gdegiorgio
+  libs/providers/azure-app-configuration:
+    - wilqq
   libs/providers/config-cat:
     - lukas-reining
     - adams85
