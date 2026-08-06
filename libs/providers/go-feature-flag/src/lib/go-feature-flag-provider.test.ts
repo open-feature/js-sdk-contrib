@@ -1248,7 +1248,7 @@ describe('GoFeatureFlagProvider', () => {
 
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         return {
-          body: JSON.stringify({}),
+          body: JSON.stringify({ flags: {} }),
           status: 200,
           headers: {
             'Content-Type': 'application/json',
@@ -1309,7 +1309,7 @@ describe('GoFeatureFlagProvider', () => {
 
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         return {
-          body: JSON.stringify({}),
+          body: JSON.stringify({ flags: {} }),
           status: 200,
           headers: {
             'Content-Type': 'application/json',

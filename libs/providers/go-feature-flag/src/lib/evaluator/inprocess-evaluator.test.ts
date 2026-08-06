@@ -2,8 +2,9 @@ import { InProcessEvaluator } from './inprocess-evaluator';
 import type { GoFeatureFlagApi } from '../service/api';
 import type { GoFeatureFlagProviderOptions } from '../go-feature-flag-provider-options';
 import { FlagNotFoundError, type Logger, OpenFeatureEventEmitter } from '@openfeature/server-sdk';
-import { EvaluationType } from '../model';
+import { EvaluationType, NOT_MODIFIED } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
+import { ImpossibleToRetrieveConfigurationException } from '../exception';
 
 // Mock the EvaluateWasm class
 jest.mock('../wasm/evaluate-wasm', () => ({
@@ -111,6 +112,66 @@ describe('InProcessEvaluator', () => {
       await evaluator.initialize();
 
       await expect(evaluator.dispose()).resolves.not.toThrow();
+    });
+  });
+
+  describe('configuration refresh', () => {
+    const evaluatedFlag = { value: true, reason: 'TARGETING_MATCH' };
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(async () => {
+      await evaluator.dispose();
+      jest.useRealTimers();
+    });
+
+    const pollOnce = () => jest.advanceTimersByTimeAsync(mockOptions.flagChangePollingIntervalMs as number);
+
+    it('should keep the flag configuration when a refresh reports not-modified', async () => {
+      await evaluator.initialize();
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(NOT_MODIFIED);
+
+      await pollOnce();
+
+      await expect(evaluator.evaluateBoolean('test-flag', false, { user: 'test' })).resolves.toEqual(evaluatedFlag);
+    });
+
+    it('should not overwrite the stored ETag when a refresh reports not-modified', async () => {
+      await evaluator.initialize();
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(NOT_MODIFIED);
+
+      await pollOnce();
+      await pollOnce();
+
+      // Every refresh still presents the validator captured at initialization. If a 304 were
+      // allowed to write back an absent ETag, the next poll would send none at all.
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenLastCalledWith('test-etag', undefined);
+    });
+
+    it('should keep the flag configuration when a refresh fails', async () => {
+      await evaluator.initialize();
+      mockApi.retrieveFlagConfiguration.mockRejectedValue(
+        new ImpossibleToRetrieveConfigurationException('unparseable body'),
+      );
+
+      await pollOnce();
+
+      await expect(evaluator.evaluateBoolean('test-flag', false, { user: 'test' })).resolves.toEqual(evaluatedFlag);
+    });
+
+    it('should keep polling after a failed refresh', async () => {
+      await evaluator.initialize();
+      mockApi.retrieveFlagConfiguration.mockRejectedValue(
+        new ImpossibleToRetrieveConfigurationException('unparseable body'),
+      );
+
+      await pollOnce();
+      await pollOnce();
+
+      // one initial load plus two polls
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(3);
     });
   });
 
