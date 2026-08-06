@@ -1,7 +1,12 @@
 import { InProcessEvaluator } from './inprocess-evaluator';
 import type { GoFeatureFlagApi } from '../service/api';
 import type { GoFeatureFlagProviderOptions } from '../go-feature-flag-provider-options';
-import { FlagNotFoundError, type Logger, OpenFeatureEventEmitter } from '@openfeature/server-sdk';
+import {
+  FlagNotFoundError,
+  type Logger,
+  OpenFeatureEventEmitter,
+  ProviderNotReadyError,
+} from '@openfeature/server-sdk';
 import { EvaluationType, NOT_MODIFIED } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
@@ -119,6 +124,36 @@ describe('InProcessEvaluator', () => {
       await evaluator.initialize();
 
       await expect(evaluator.dispose()).resolves.not.toThrow();
+    });
+  });
+
+  describe('before a configuration has loaded', () => {
+    it('should report PROVIDER_NOT_READY when never initialized', async () => {
+      await expect(evaluator.evaluateBoolean('test-flag', false, { user: 'test' })).rejects.toThrow(
+        ProviderNotReadyError,
+      );
+    });
+
+    it('should report PROVIDER_NOT_READY after a failed initialization', async () => {
+      mockApi.retrieveFlagConfiguration.mockRejectedValue(
+        new ImpossibleToRetrieveConfigurationException('relay proxy unreachable'),
+      );
+
+      await expect(evaluator.initialize()).rejects.toThrow(ImpossibleToRetrieveConfigurationException);
+
+      // The SDK short-circuits NOT_READY and FATAL, but not ERROR, so a failed initialization still
+      // lets evaluations reach the provider. They must not be answered with a generic error.
+      await expect(evaluator.evaluateBoolean('test-flag', false, { user: 'test' })).rejects.toThrow(
+        ProviderNotReadyError,
+      );
+    });
+
+    it('should not report FLAG_NOT_FOUND for an unknown flag before initialization', async () => {
+      // Reporting FLAG_NOT_FOUND here would blame the caller's flag key for an infrastructure
+      // failure, so the readiness check has to precede the flag lookup.
+      await expect(evaluator.evaluateBoolean('no-such-flag', false, { user: 'test' })).rejects.not.toThrow(
+        FlagNotFoundError,
+      );
     });
   });
 

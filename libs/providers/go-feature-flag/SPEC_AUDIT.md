@@ -68,33 +68,33 @@ Remote evaluation is delegated to `@openfeature/ofrep-provider` (declared at `pa
 ```text
 GO Feature Flag Provider Specification 1.0 — @openfeature/go-feature-flag-provider 1.4.0
 TIERS: Core, Remote, In-process, WASM  (Optional/§17: no cache → N/A)
-VERDICT: NON-CONFORMANT — 8 Critical, 34 Major, 10 Minor
-         (87 PASS, 45 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
+VERDICT: NON-CONFORMANT — 7 Critical, 34 Major, 10 Minor
+         (88 PASS, 45 FAIL, 6 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 7 — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`). Remaining: 52.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 8 — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`). Remaining: 51.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |      87 |
+| PASS         |      88 |
 | FAIL         |      45 |
-| PARTIAL      |       7 |
+| PARTIAL      |       6 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 7 `PARTIAL` results count as non-conformance**, giving 52 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 6 `PARTIAL` results count as non-conformance**, giving 51 unmet requirements.
 
 ### 1.2 Failures by severity
 
 | Severity  |   FAIL | PARTIAL |  Total |
 | --------- | -----: | ------: | -----: |
-| Critical  |      7 |       1 |  **8** |
+| Critical  |      7 |       0 |  **7** |
 | Major     |     28 |       6 | **34** |
 | Minor     |     10 |       0 | **10** |
-| **Total** | **45** |   **7** | **52** |
+| **Total** | **45** |   **6** | **51** |
 
 ### 1.3 Counts by area
 
@@ -103,7 +103,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-ENG` (§1.6)     |       3 |      2 |      1 |       0 |     0 |
 | `GOFF-META` (§2)      |       3 |      1 |      2 |       0 |     0 |
 | `GOFF-CFG` (§3)       |      10 |      1 |      7 |       2 |     0 |
-| `GOFF-LIFE` (§4)      |       7 |      6 |      0 |       1 |     0 |
+| `GOFF-LIFE` (§4)      |       7 |      7 |      0 |       0 |     0 |
 | `GOFF-EVT` (§5)       |       8 |      3 |      5 |       0 |     0 |
 | `GOFF-EVAL` (§6)      |      11 |      8 |      1 |       1 |     1 |
 | `GOFF-CTX` (§7)       |       9 |      7 |      2 |       0 |     0 |
@@ -117,7 +117,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |      3 |      1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |      0 |      9 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |      0 |      0 |       0 |     7 |
-| **Total**             | **147** | **87** | **45** |   **7** | **8** |
+| **Total**             | **147** | **88** | **45** |   **6** | **8** |
 
 ### 1.4 Headline
 
@@ -160,7 +160,7 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-LIFE-003`     | Critical | Core       | PASS        | `gff/src/lib/service/event-publisher.ts:47-53, 71-82`; `gff/src/lib/evaluator/inprocess-evaluator.ts:211-217`                                    | `isRunning` and `periodicRunner` are both reset by a subsequent `start`/`initialize`; no latch survives.                                                                                                                                                                                                                                  |
 | `GOFF-LIFE-004`     | Major    | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:121-124`                                                                                                | Unconditional in both modes: evaluator disposed (clears polling), publisher stopped (flushes).                                                                                                                                                                                                                                            |
 | `GOFF-LIFE-005`     | Major    | Core       | PASS        | `gff/src/lib/service/api.ts:149-150, 160`                                                                                                        | The shutdown flush is bounded by the configured request timeout via `AbortController`.                                                                                                                                                                                                                                                    |
-| `GOFF-LIFE-006`     | Critical | Core       | **PARTIAL** | `gff/src/lib/evaluator/inprocess-evaluator.ts:232-240`                                                                                           | Correctly avoids `FLAG_NOT_FOUND` (the check precedes the flag lookup) but reports `GENERAL`, not `PROVIDER_NOT_READY`.                                                                                                                                                                                                                   |
+| `GOFF-LIFE-006`     | Critical | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:259-269`                                                                                           | Reports `PROVIDER_NOT_READY`, and the readiness check still precedes the flag lookup so `FLAG_NOT_FOUND` is never used for an unloaded configuration. _Fixed — Step 4._                                                                                                                                                                   |
 | `GOFF-LIFE-007`     | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:296-297`                                                                                           | _Accidental_: single-threaded event loop; `flags` swapped by reference, no guard held across I/O.                                                                                                                                                                                                                                         |
 | `GOFF-EVT-001`      | Major    | Core       | **FAIL**    | `gff/src/lib/go-feature-flag-provider.ts:132-134`; `gff/src/lib/evaluator/remote-evaluator.ts` (whole file)                                      | The event emitter is passed only to the in-process evaluator; remote mode emits nothing.                                                                                                                                                                                                                                                  |
 | `GOFF-EVT-002`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:300-303`                                                                                           | Emitted when the poll yields a different `ETag`.                                                                                                                                                                                                                                                                                          |
@@ -538,7 +538,12 @@ This also fixes `GOFF-CTX-007` (M11) and keeps `GOFF-CTX-008` satisfied by the n
 
 ---
 
-#### C11 — `GOFF-LIFE-006` (PARTIAL) · Pre-ready evaluations report `GENERAL`, not `PROVIDER_NOT_READY`
+#### ✅ C11 — `GOFF-LIFE-006` · **RESOLVED in Step 4**
+
+_The pre-ready branch now reports `PROVIDER_NOT_READY`, which `handleError` already mapped to `ProviderNotReadyError`. The prohibition half was already satisfied and is now pinned by a test. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "Until a flag configuration has been successfully loaded at least once, evaluations **MUST** report `PROVIDER_NOT_READY`. They **MUST NOT** report `FLAG_NOT_FOUND`, which misattributes an infrastructure failure to the caller's flag key."
 
@@ -549,6 +554,10 @@ This path is reachable in normal operation. When `initialize()` fails, `configur
 **Consequence:** Callers and dashboards that branch on `PROVIDER_NOT_READY` — the one code that means "wait and retry, this is not your fault" — see the catch-all `GENERAL` instead. The distinction between a not-yet-ready provider and a genuine evaluation fault is lost.
 
 **Smallest fix:** Change the `errorCode` at `:236` to `ErrorCode.PROVIDER_NOT_READY`; `handleError` already maps it to `ProviderNotReadyError` at `:333-334`.
+
+---
+
+</details>
 
 ---
 
