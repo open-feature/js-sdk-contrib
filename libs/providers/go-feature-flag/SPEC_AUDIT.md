@@ -68,33 +68,33 @@ Remote evaluation is delegated to `@openfeature/ofrep-provider` (declared at `pa
 ```text
 GO Feature Flag Provider Specification 1.0 — @openfeature/go-feature-flag-provider 1.4.0
 TIERS: Core, Remote, In-process, WASM  (Optional/§17: no cache → N/A)
-VERDICT: NON-CONFORMANT — 7 Critical, 34 Major, 10 Minor
-         (88 PASS, 45 FAIL, 6 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
+VERDICT: NON-CONFORMANT — 6 Critical, 34 Major, 10 Minor
+         (89 PASS, 44 FAIL, 6 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 8 — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`). Remaining: 51.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 9 — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`). Remaining: 50.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |      88 |
-| FAIL         |      45 |
+| PASS         |      89 |
+| FAIL         |      44 |
 | PARTIAL      |       6 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 6 `PARTIAL` results count as non-conformance**, giving 51 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 6 `PARTIAL` results count as non-conformance**, giving 50 unmet requirements.
 
 ### 1.2 Failures by severity
 
 | Severity  |   FAIL | PARTIAL |  Total |
 | --------- | -----: | ------: | -----: |
-| Critical  |      7 |       0 |  **7** |
+| Critical  |      6 |       0 |  **6** |
 | Major     |     28 |       6 | **34** |
 | Minor     |     10 |       0 | **10** |
-| **Total** | **45** |   **6** | **51** |
+| **Total** | **44** |   **6** | **50** |
 
 ### 1.3 Counts by area
 
@@ -104,7 +104,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-META` (§2)      |       3 |      1 |      2 |       0 |     0 |
 | `GOFF-CFG` (§3)       |      10 |      1 |      7 |       2 |     0 |
 | `GOFF-LIFE` (§4)      |       7 |      7 |      0 |       0 |     0 |
-| `GOFF-EVT` (§5)       |       8 |      3 |      5 |       0 |     0 |
+| `GOFF-EVT` (§5)       |       8 |      4 |      4 |       0 |     0 |
 | `GOFF-EVAL` (§6)      |      11 |      8 |      1 |       1 |     1 |
 | `GOFF-CTX` (§7)       |       9 |      7 |      2 |       0 |     0 |
 | `GOFF-REM` (§8)       |       6 |      6 |      0 |       0 |     0 |
@@ -117,7 +117,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |      3 |      1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |      0 |      9 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |      0 |      0 |       0 |     7 |
-| **Total**             | **147** | **88** | **45** |   **6** | **8** |
+| **Total**             | **147** | **89** | **44** |   **6** | **8** |
 
 ### 1.4 Headline
 
@@ -168,7 +168,7 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-EVT-004`      | Major    | Core       | **FAIL**    | `gff/src/lib/evaluator/inprocess-evaluator.ts:278, 300-303`                                                                                      | Only `ETag`s are compared; with no `ETag` the event fires on every poll. No content comparison.                                                                                                                                                                                                                                           |
 | `GOFF-EVT-005`      | Major    | Core       | **FAIL**    | `gff/src/lib/evaluator/inprocess-evaluator.ts:92-101`                                                                                            | No consecutive-failure counter and no `PROVIDER_STALE` emission (searched `src/` for `Stale`).                                                                                                                                                                                                                                            |
 | `GOFF-EVT-006`      | Major    | Core       | **FAIL**    | (inherited from `GOFF-EVT-005`, §C.1)                                                                                                            | No stale state exists to recover from.                                                                                                                                                                                                                                                                                                    |
-| `GOFF-EVT-007`      | Critical | Core       | **FAIL**    | `gff/src/lib/service/api.ts:98-102`; `gff/src/lib/exception/unauthorized-exception.ts:3`                                                         | `UnauthorizedException` carries no `code`, so the SDK maps it to `ERROR`, not `PROVIDER_FATAL`.                                                                                                                                                                                                                                           |
+| `GOFF-EVT-007`      | Critical | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:118-129`                                                                                                | An `UnauthorizedException` (401/403) raised during initialization is rethrown as the SDK's `ProviderFatalError`, which carries `code: PROVIDER_FATAL`, so the SDK settles the provider in `FATAL` and short-circuits evaluations. _Fixed — Step 5._                                                                                       |
 | `GOFF-EVT-008`      | Major    | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:112-115`; SDK `core dist/cjs/index.js:1056-1057`                                                        | All non-fatal init failures land in `ERROR`.                                                                                                                                                                                                                                                                                              |
 | `GOFF-EVAL-001`     | Major    | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:71-103`                                                                                                 | All four SDK resolvers implemented, all asynchronous.                                                                                                                                                                                                                                                                                     |
 | `GOFF-EVAL-002`     | Critical | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:184-189`; `libs/shared/ofrep-core/src/lib/api/ofrep-api.ts:248-256`                                | Scalars yield `TYPE_MISMATCH` on both paths. See Open question 1 on the SDK's `JsonValue` admitting scalars.                                                                                                                                                                                                                              |
@@ -488,7 +488,12 @@ Contrast `EventPublisher.start()` at `src/lib/service/event-publisher.ts:48-50`,
 
 ---
 
-#### C8 — `GOFF-EVT-007` · Authentication failure at initialization lands in `ERROR`, not `PROVIDER_FATAL`
+#### ✅ C8 — `GOFF-EVT-007` · **RESOLVED in Step 5**
+
+_An `UnauthorizedException` raised during initialization is now rethrown as the SDK's `ProviderFatalError`, preserving the original as `cause`. Every other initialization failure is rethrown untouched and still settles in `ERROR`, so `GOFF-EVT-008` is unaffected — both halves are pinned by tests asserting the resulting provider status. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "Authentication failure (`401`, `403`) during initialization **MUST** put the provider in `PROVIDER_FATAL`. Credentials cannot be repaired by retrying."
 
@@ -497,6 +502,10 @@ Contrast `EventPublisher.start()` at `src/lib/service/event-publisher.ts:48-50`,
 **Consequence:** A provider with a bad API key looks recoverable. It stays in `ERROR`, evaluations are _not_ short-circuited (`server-sdk dist/cjs/index.js:849-855` short-circuits only `NOT_READY` and `FATAL`), and every call falls through to `genericEvaluate`, returning defaults with `GENERAL`. Operators see a transient-looking error where the specification wants an unmistakable terminal one.
 
 **Smallest fix:** Have `InProcessEvaluator.initialize` (or the provider's `initialize` catch at `go-feature-flag-provider.ts:112-115`) translate `UnauthorizedException` into the SDK's `ProviderFatalError` before rethrowing.
+
+---
+
+</details>
 
 ---
 
@@ -1107,15 +1116,19 @@ D4 and D5 are the more consequential pair: both advertise capabilities the packa
 
 ### 3.5 Tests asserting non-conformant behaviour (§C.2)
 
-A green suite pinning a defect raises the cost of remediation and indicates the behaviour was deliberate. Three cases:
+A green suite pinning a defect raises the cost of remediation and indicates the behaviour was deliberate. **Five cases** — the original audit found three; remediation surfaced two more, recorded here as they were hit:
 
 | Test                                                                                                           | Assertion                                                                                                                                                                                                                                                | Requirement it pins                                                                                                                |
 | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `src/lib/go-feature-flag-provider.test.ts:50-55` — _"should validate metadata name"_                           | `expect(provider.metadata.name).toBe('GoFeatureFlagProvider')`                                                                                                                                                                                           | `GOFF-META-001`, `GOFF-META-002` (**m1**, **m2**)                                                                                  |
 | `src/lib/hook/enrich-evaluation-context-hook.test.ts:84-110` — _"should merge metadata with existing context"_ | Seeds `gofeatureflag: { existing: 'value' }`, then asserts `result['gofeatureflag']` **equals** `metadata.asObject()` — i.e. asserts the sibling key is destroyed. The comment on line 108 states the intent: _"should override existing gofeatureflag"_ | `GOFF-CTX-006`, `GOFF-CTX-007` (**C9**, **M11**)                                                                                   |
 | `src/lib/service/api.test.ts` — _"should handle 304 response without flags and context"_                       | Asserted a `304` returns a normal result object with `flags: {}` and the echoed `etag` — the "empty response object" shape `GOFF-IP-007` explicitly forbids                                                                                              | `GOFF-IP-007`, `GOFF-IP-015` (**C4**) — ✅ **replaced in Step 1** by `"should return the NOT_MODIFIED sentinel on a 304 response"` |
+| `src/lib/go-feature-flag-provider.test.ts` — _"Should error if flag configuration endpoint return a 401"_      | Asserted the rejection is an `UnauthorizedException`, i.e. a plain error carrying no `code`, which is exactly what kept the provider out of `FATAL`                                                                                                      | `GOFF-EVT-007` (**C8**) — ✅ **replaced in Step 5** by a test asserting `ProviderStatus.FATAL`                                     |
+| `src/lib/go-feature-flag-provider.test.ts` — _"Should error if flag configuration endpoint return a 403"_      | As above, for 403                                                                                                                                                                                                                                        | `GOFF-EVT-007` (**C8**) — ✅ **replaced in Step 5**                                                                                |
 
 The second is the most consequential: it does not merely tolerate the `GOFF-CTX-006` defect, it asserts the destructive behaviour as the expected outcome, so any correct fix breaks the suite.
+
+The two authentication cases are a milder form of the same pattern: they assert _that_ initialization fails, but pin the exact error type that made the failure look recoverable. Both were rewritten in Step 5 to assert the resulting provider **status**, which is the property the specification actually constrains.
 
 ---
 
