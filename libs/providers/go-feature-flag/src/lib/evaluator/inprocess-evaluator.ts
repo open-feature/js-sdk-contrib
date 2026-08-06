@@ -53,6 +53,8 @@ export class InProcessEvaluator implements IEvaluator {
   private flags: Record<string, Flag> = {};
   private evaluationContextEnrichment: Record<string, JsonValue> = {};
   private periodicRunner?: ReturnType<typeof setTimeout>;
+  /** Refresh currently in flight, so that shutdown and re-initialization can join it. */
+  private pollInFlight?: Promise<void>;
   private configurationState: ConfigurationState = ConfigurationState.NOT_INITIALIZED;
   /**
    * Constructor of the InProcessEvaluator.
@@ -81,6 +83,10 @@ export class InProcessEvaluator implements IEvaluator {
    * Initialize the evaluator.
    */
   async initialize(): Promise<void> {
+    // Initialization may be called more than once. Cancel any polling task left over from a
+    // previous call and wait for a refresh already in flight to settle, so that its reschedule
+    // cannot attach a second chain to the timer we are about to install below.
+    await this.stopPolling();
     await this.evaluationEngine.initialize();
     try {
       await this.loadConfiguration(true);
@@ -99,7 +105,7 @@ export class InProcessEvaluator implements IEvaluator {
    * Poll the configuration from the API.
    */
   private poll(): void {
-    this.loadConfiguration(false)
+    this.pollInFlight = this.loadConfiguration(false)
       .catch((error) => this.logger?.error('Failed to load configuration:', error))
       .finally(() => {
         if (this.periodicRunner) {
@@ -107,6 +113,22 @@ export class InProcessEvaluator implements IEvaluator {
           this.periodicRunner = setTimeout(() => this.poll(), this.pollingIntervalMs);
         }
       });
+  }
+
+  /**
+   * Cancels the polling task and waits for a refresh already in flight to settle.
+   *
+   * Clearing the timer alone is not enough: a refresh that is mid-flight reschedules itself when it
+   * settles, and it decides whether to do so by looking at periodicRunner. Waiting for it here,
+   * while periodicRunner is still undefined, is what stops it attaching to a later timer.
+   */
+  private async stopPolling(): Promise<void> {
+    if (this.periodicRunner) {
+      clearTimeout(this.periodicRunner);
+      this.periodicRunner = undefined;
+    }
+    await this.pollInFlight;
+    this.pollInFlight = undefined;
   }
 
   /**
@@ -218,10 +240,7 @@ export class InProcessEvaluator implements IEvaluator {
    * Dispose the evaluator.
    */
   async dispose(): Promise<void> {
-    if (this.periodicRunner) {
-      clearTimeout(this.periodicRunner);
-      this.periodicRunner = undefined;
-    }
+    await this.stopPolling();
     return this.evaluationEngine.dispose();
   }
 
