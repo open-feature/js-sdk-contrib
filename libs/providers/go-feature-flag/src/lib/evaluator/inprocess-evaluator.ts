@@ -23,7 +23,7 @@ import type { EvaluationResponse, Flag, WasmInput } from '../model';
 import { NOT_MODIFIED } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
-import { DEFAULT_POLLING_INTERVAL_MS } from '../helper/constants';
+import { DEFAULT_POLLING_INTERVAL_MS, STALE_AFTER_CONSECUTIVE_FAILURES } from '../helper/constants';
 
 enum ConfigurationState {
   INITIALIZED = 'initialized',
@@ -55,6 +55,10 @@ export class InProcessEvaluator implements IEvaluator {
   private periodicRunner?: ReturnType<typeof setTimeout>;
   /** Refresh currently in flight, so that shutdown and re-initialization can join it. */
   private pollInFlight?: Promise<void>;
+  /** Consecutive failed refreshes, reset by the next successful one. */
+  private consecutiveRefreshFailures = 0;
+  /** Whether the provider has already reported itself stale, so it is reported only once. */
+  private stale = false;
   private configurationState: ConfigurationState = ConfigurationState.NOT_INITIALIZED;
   /**
    * Constructor of the InProcessEvaluator.
@@ -91,6 +95,9 @@ export class InProcessEvaluator implements IEvaluator {
     try {
       await this.loadConfiguration(true);
       this.configurationState = ConfigurationState.INITIALIZED;
+      // A fresh configuration clears any staleness carried over from a previous initialization.
+      this.consecutiveRefreshFailures = 0;
+      this.stale = false;
       // Polling is always on: a provider that only ever reads the configuration once serves its
       // start-up snapshot for the lifetime of the process, and never learns about a flag change.
       this.periodicRunner = setTimeout(() => this.poll(), this.pollingIntervalMs);
@@ -106,13 +113,52 @@ export class InProcessEvaluator implements IEvaluator {
    */
   private poll(): void {
     this.pollInFlight = this.loadConfiguration(false)
-      .catch((error) => this.logger?.error('Failed to load configuration:', error))
+      .then(
+        () => this.onRefreshSucceeded(),
+        (error) => {
+          this.logger?.error('Failed to load configuration:', error);
+          this.onRefreshFailed();
+        },
+      )
       .finally(() => {
         if (this.periodicRunner) {
           // check if polling is still active
           this.periodicRunner = setTimeout(() => this.poll(), this.pollingIntervalMs);
         }
       });
+  }
+
+  /**
+   * Records a successful refresh, returning the provider to ready if it had gone stale.
+   */
+  private onRefreshSucceeded(): void {
+    this.consecutiveRefreshFailures = 0;
+    if (!this.stale) {
+      return;
+    }
+    this.stale = false;
+    this.logger?.info('Flag configuration refresh recovered, provider is ready again');
+    this.eventChannel?.emit(ServerProviderEvents.Ready, {});
+  }
+
+  /**
+   * Records a failed refresh, reporting the provider stale once enough have failed in a row.
+   *
+   * The last known-good configuration keeps being served throughout: a failed refresh rejects
+   * before writing anything, so going stale reports that the configuration is ageing rather than
+   * that evaluation has stopped working.
+   */
+  private onRefreshFailed(): void {
+    this.consecutiveRefreshFailures++;
+    if (this.stale || this.consecutiveRefreshFailures < STALE_AFTER_CONSECUTIVE_FAILURES) {
+      return;
+    }
+    this.stale = true;
+    this.logger?.warn(
+      `Flag configuration could not be refreshed ${this.consecutiveRefreshFailures} times in a row, ` +
+        'the configuration being served may be out of date',
+    );
+    this.eventChannel?.emit(ServerProviderEvents.Stale, {});
   }
 
   /**
