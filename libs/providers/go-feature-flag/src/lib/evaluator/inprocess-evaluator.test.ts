@@ -5,6 +5,7 @@ import { FlagNotFoundError, type Logger, OpenFeatureEventEmitter } from '@openfe
 import { EvaluationType, NOT_MODIFIED } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
+import { DEFAULT_POLLING_INTERVAL_MS } from '../helper/constants';
 
 // Mock the EvaluateWasm class
 jest.mock('../wasm/evaluate-wasm', () => ({
@@ -112,6 +113,99 @@ describe('InProcessEvaluator', () => {
       await evaluator.initialize();
 
       await expect(evaluator.dispose()).resolves.not.toThrow();
+    });
+  });
+
+  describe('polling', () => {
+    let pollingEvaluator: InProcessEvaluator;
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(async () => {
+      await pollingEvaluator?.dispose();
+      jest.useRealTimers();
+    });
+
+    /** Options with no polling interval at all, i.e. the documented default configuration. */
+    const optionsWithoutInterval: GoFeatureFlagProviderOptions = {
+      endpoint: 'http://localhost:1031',
+      evaluationType: EvaluationType.InProcess,
+    };
+
+    it('should poll on the default interval when none is configured', async () => {
+      pollingEvaluator = new InProcessEvaluator(
+        optionsWithoutInterval,
+        mockApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      await pollingEvaluator.initialize();
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(1);
+
+      await jest.advanceTimersByTimeAsync(DEFAULT_POLLING_INTERVAL_MS);
+
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not poll before the default interval has elapsed', async () => {
+      pollingEvaluator = new InProcessEvaluator(
+        optionsWithoutInterval,
+        mockApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      await pollingEvaluator.initialize();
+
+      await jest.advanceTimersByTimeAsync(DEFAULT_POLLING_INTERVAL_MS - 1);
+
+      // Guards against handing the unset option straight to setTimeout, which would schedule with a
+      // zero delay and turn polling into a tight loop against the relay proxy.
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep using the default interval when rescheduling', async () => {
+      pollingEvaluator = new InProcessEvaluator(
+        optionsWithoutInterval,
+        mockApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      await pollingEvaluator.initialize();
+
+      await jest.advanceTimersByTimeAsync(DEFAULT_POLLING_INTERVAL_MS * 3);
+
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(4);
+    });
+
+    it('should honour a configured interval', async () => {
+      pollingEvaluator = new InProcessEvaluator(
+        { ...optionsWithoutInterval, flagChangePollingIntervalMs: 5000 },
+        mockApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      await pollingEvaluator.initialize();
+
+      await jest.advanceTimersByTimeAsync(5000);
+
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(2);
+    });
+
+    it('should stop polling once disposed', async () => {
+      pollingEvaluator = new InProcessEvaluator(
+        optionsWithoutInterval,
+        mockApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      await pollingEvaluator.initialize();
+      await pollingEvaluator.dispose();
+
+      await jest.advanceTimersByTimeAsync(DEFAULT_POLLING_INTERVAL_MS * 2);
+
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(1);
     });
   });
 

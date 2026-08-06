@@ -23,6 +23,7 @@ import type { EvaluationResponse, Flag, WasmInput } from '../model';
 import { NOT_MODIFIED } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
+import { DEFAULT_POLLING_INTERVAL_MS } from '../helper/constants';
 
 enum ConfigurationState {
   INITIALIZED = 'initialized',
@@ -36,10 +37,15 @@ enum ConfigurationState {
  */
 export class InProcessEvaluator implements IEvaluator {
   private readonly api: GoFeatureFlagApi;
-  private readonly options: GoFeatureFlagProviderOptions;
   private readonly evaluationEngine: EvaluateWasm;
   private readonly logger?: Logger;
   private readonly eventChannel?: OpenFeatureEventEmitter; // Event channel for notifications
+  /**
+   * Interval between configuration refreshes, in milliseconds. Resolved once so that the initial
+   * schedule and every reschedule use the same value: passing the raw option straight to setTimeout
+   * would mean an unset option becomes a zero delay, i.e. a tight polling loop.
+   */
+  private readonly pollingIntervalMs: number;
 
   // Configuration state
   private etag?: string;
@@ -62,10 +68,13 @@ export class InProcessEvaluator implements IEvaluator {
     logger?: Logger,
   ) {
     this.api = api;
-    this.options = options;
     this.eventChannel = eventChannel;
     this.logger = logger;
     this.evaluationEngine = new EvaluateWasm(logger, options.wasmBinaryPath);
+    this.pollingIntervalMs =
+      options.flagChangePollingIntervalMs && options.flagChangePollingIntervalMs > 0
+        ? options.flagChangePollingIntervalMs
+        : DEFAULT_POLLING_INTERVAL_MS;
   }
 
   /**
@@ -76,10 +85,9 @@ export class InProcessEvaluator implements IEvaluator {
     try {
       await this.loadConfiguration(true);
       this.configurationState = ConfigurationState.INITIALIZED;
-      // Start periodic configuration polling
-      if (this.options.flagChangePollingIntervalMs && this.options.flagChangePollingIntervalMs > 0) {
-        this.periodicRunner = setTimeout(() => this.poll(), this.options.flagChangePollingIntervalMs);
-      }
+      // Polling is always on: a provider that only ever reads the configuration once serves its
+      // start-up snapshot for the lifetime of the process, and never learns about a flag change.
+      this.periodicRunner = setTimeout(() => this.poll(), this.pollingIntervalMs);
     } catch (error) {
       this.logger?.error('Failed to initialize evaluator:', error);
       this.configurationState = ConfigurationState.ERROR;
@@ -96,7 +104,7 @@ export class InProcessEvaluator implements IEvaluator {
       .finally(() => {
         if (this.periodicRunner) {
           // check if polling is still active
-          this.periodicRunner = setTimeout(() => this.poll(), this.options.flagChangePollingIntervalMs);
+          this.periodicRunner = setTimeout(() => this.poll(), this.pollingIntervalMs);
         }
       });
   }

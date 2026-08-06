@@ -21,5 +21,6 @@ export const HTTP_STATUS = {
 
 export const DEFAULT_FLUSH_INTERVAL_MS = 120000;
 export const DEFAULT_MAX_PENDING_EVENTS = 10000;
+export const DEFAULT_POLLING_INTERVAL_MS = 120000;
 
 export const DEFAULT_TARGETING_KEY = 'undefined-targetingKey';

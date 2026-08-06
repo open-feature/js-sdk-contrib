@@ -68,33 +68,33 @@ Remote evaluation is delegated to `@openfeature/ofrep-provider` (declared at `pa
 ```text
 GO Feature Flag Provider Specification 1.0 — @openfeature/go-feature-flag-provider 1.4.0
 TIERS: Core, Remote, In-process, WASM  (Optional/§17: no cache → N/A)
-VERDICT: NON-CONFORMANT — 10 Critical, 34 Major, 10 Minor
-         (85 PASS, 48 FAIL, 6 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
+VERDICT: NON-CONFORMANT — 9 Critical, 34 Major, 10 Minor
+         (86 PASS, 46 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 5 — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`). Remaining: 54.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 6 — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL). Remaining: 53.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |      85 |
-| FAIL         |      48 |
-| PARTIAL      |       6 |
+| PASS         |      86 |
+| FAIL         |      46 |
+| PARTIAL      |       7 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 6 `PARTIAL` results count as non-conformance**, giving 54 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 7 `PARTIAL` results count as non-conformance**, giving 53 unmet requirements.
 
 ### 1.2 Failures by severity
 
 | Severity  |   FAIL | PARTIAL |  Total |
 | --------- | -----: | ------: | -----: |
-| Critical  |      9 |       1 | **10** |
-| Major     |     29 |       5 | **34** |
+| Critical  |      8 |       1 |  **9** |
+| Major     |     28 |       6 | **34** |
 | Minor     |     10 |       0 | **10** |
-| **Total** | **48** |   **6** | **54** |
+| **Total** | **46** |   **7** | **53** |
 
 ### 1.3 Counts by area
 
@@ -102,13 +102,13 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | --------------------- | ------: | -----: | -----: | ------: | ----: |
 | `GOFF-ENG` (§1.6)     |       3 |      2 |      1 |       0 |     0 |
 | `GOFF-META` (§2)      |       3 |      1 |      2 |       0 |     0 |
-| `GOFF-CFG` (§3)       |      10 |      1 |      8 |       1 |     0 |
+| `GOFF-CFG` (§3)       |      10 |      1 |      7 |       2 |     0 |
 | `GOFF-LIFE` (§4)      |       7 |      5 |      1 |       1 |     0 |
 | `GOFF-EVT` (§5)       |       8 |      3 |      5 |       0 |     0 |
 | `GOFF-EVAL` (§6)      |      11 |      8 |      1 |       1 |     1 |
 | `GOFF-CTX` (§7)       |       9 |      7 |      2 |       0 |     0 |
 | `GOFF-REM` (§8)       |       6 |      6 |      0 |       0 |     0 |
-| `GOFF-IP` (§9)        |      17 |     15 |      2 |       0 |     0 |
+| `GOFF-IP` (§9)        |      17 |     16 |      1 |       0 |     0 |
 | `GOFF-WASM` (§10)     |      13 |      7 |      4 |       2 |     0 |
 | `GOFF-ERR` (§11)      |       6 |      6 |      0 |       0 |     0 |
 | `GOFF-HOOK` (§12)     |       6 |      3 |      3 |       0 |     0 |
@@ -117,7 +117,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |      3 |      1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |      0 |      9 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |      0 |      0 |       0 |     7 |
-| **Total**             | **147** | **85** | **48** |   **6** | **8** |
+| **Total**             | **147** | **86** | **46** |   **7** | **8** |
 
 ### 1.4 Headline
 
@@ -147,7 +147,7 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-META-003`     | Minor    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:302`; SDK `core@1.9.1 dist/cjs/index.js:781`                                                       | Provider emits no name of its own; the SDK stamps `metadata.name`, so they are equal by construction.                                                                                                                                 |
 | `GOFF-CFG-001`      | Major    | Core       | **PARTIAL** | `gff/src/lib/go-feature-flag-provider.ts:160-173`; `gff/src/lib/go-feature-flag-provider-options.ts:78-82`                                       | Required and URL-validated in in-process mode; both checks are skipped in remote mode.                                                                                                                                                |
 | `GOFF-CFG-002`      | Major    | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:130-135`                                                                                                | `switch` default branch returns `InProcessEvaluator`.                                                                                                                                                                                 |
-| `GOFF-CFG-003`      | Major    | Core       | **FAIL**    | `gff/src/lib/helper/constants.ts:22`; `gff/src/lib/evaluator/inprocess-evaluator.ts:79`                                                          | `dataFlushInterval` defaults to `120000` (spec: `60000`); `flagChangePollingInterval` has no default at all.                                                                                                                          |
+| `GOFF-CFG-003`      | Major    | Core       | **PARTIAL** | `gff/src/lib/helper/constants.ts:22`; `gff/src/lib/evaluator/inprocess-evaluator.ts:74-77`                                                       | `flagChangePollingInterval` now defaults to `120000 ms` as required (Step 2). `dataFlushInterval` still defaults to `120000` where §3.1 requires `60000` — Step 18.                                                                   |
 | `GOFF-CFG-004`      | Major    | Core       | **FAIL**    | `gff/src/lib/go-feature-flag-provider.ts:44-45`                                                                                                  | Stores the caller's object by reference and then writes `this.options.endpoint`.                                                                                                                                                      |
 | `GOFF-CFG-005`      | Critical | Core       | **FAIL**    | `libs/providers/ofrep/src/lib/configuration.ts:17-39, 138-148` (delegated)                                                                       | Endpoint, headers and timeout are read from `OFREP_ENDPOINT` / `OFREP_HEADERS` / `OFREP_TIMEOUT_MS`.                                                                                                                                  |
 | `GOFF-CFG-006`      | Major    | Core       | **FAIL**    | `gff/src/lib/go-feature-flag-provider-options.ts:4-58`; `gff/src/lib/service/api.ts:153`                                                         | `dataCollectorBaseURL` is not offered; the collector always uses `endpoint`.                                                                                                                                                          |
@@ -201,7 +201,7 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-IP-003`       | Critical | In-process | PASS        | `gff/src/lib/service/api.ts:81`                                                                                                                  | String concatenation onto `endpoint` preserves any path prefix.                                                                                                                                                                       |
 | `GOFF-IP-004`       | Major    | In-process | PASS        | `gff/src/lib/service/api.ts:215-216`; `gff/src/lib/evaluator/inprocess-evaluator.ts:296-297`                                                     | Both `flags` and `evaluationContextEnrichment` are stored.                                                                                                                                                                            |
 | `GOFF-IP-005`       | Major    | In-process | PASS        | `gff/src/lib/service/api.ts:198, 68-70`                                                                                                          | Header value stored raw (quotes intact) and echoed verbatim as `If-None-Match`.                                                                                                                                                       |
-| `GOFF-IP-006`       | Critical | In-process | **FAIL**    | `gff/src/lib/evaluator/inprocess-evaluator.ts:79-81`                                                                                             | Polling starts only when `flagChangePollingIntervalMs` is explicitly set — opt-in, not default.                                                                                                                                       |
+| `GOFF-IP-006`       | Critical | In-process | PASS        | `gff/src/lib/helper/constants.ts:24`; `gff/src/lib/evaluator/inprocess-evaluator.ts:74-77, 90`                                                   | Polling is scheduled unconditionally on a resolved interval defaulting to `120000 ms`. The interval is resolved once in the constructor so the initial schedule and every reschedule agree. _Fixed — Step 2._                         |
 | `GOFF-IP-007`       | Critical | In-process | PASS        | `gff/src/lib/model/flag-config-response.ts:38, 48`; `gff/src/lib/service/api.ts:101-106`; `gff/src/lib/evaluator/inprocess-evaluator.ts:277-281` | A `304` returns the `NOT_MODIFIED` sentinel before the body or any header is read, and the refresh routine returns on it before touching state. The union return type makes a body on the 304 path unrepresentable. _Fixed — Step 1._ |
 | `GOFF-IP-015`       | Major    | In-process | PASS        | `gff/src/lib/model/flag-config-response.ts:38`; `gff/src/lib/evaluator/inprocess-evaluator.ts:277-281`                                           | The sentinel carries no `ETag` to write back, and the early return precedes the write at `:302`. _Fixed — Step 1._                                                                                                                    |
 | `GOFF-IP-008`       | Critical | In-process | PASS        | `gff/src/lib/service/api.ts:226-231`                                                                                                             | A `JSON.parse` failure now throws `ImpossibleToRetrieveConfigurationException`, which `loadConfiguration` propagates as a failed refresh. _Fixed — Step 1._                                                                           |
@@ -351,7 +351,12 @@ This is reachable by design, not by accident: `src/lib/go-feature-flag-provider-
 
 ---
 
-#### C3 — `GOFF-IP-006` · Polling is opt-in, so configuration never refreshes by default
+#### ✅ C3 — `GOFF-IP-006` · **RESOLVED in Step 2**
+
+_Polling is now scheduled unconditionally on an interval resolved once in the constructor, defaulting to `120000 ms`. Resolving it once matters: `poll()` reschedules from the same field, so handing the raw option to `setTimeout` would have turned an unset interval into a zero delay — a tight loop against the relay proxy. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The provider **MUST** poll for configuration changes on the configured interval. Polling **MUST** be active by default; it **MUST NOT** require explicit opt-in."
 
@@ -368,6 +373,10 @@ No default is applied anywhere: `src/lib/helper/constants.ts` defines `DEFAULT_F
 **Consequence:** A provider constructed the documented way — `new GoFeatureFlagProvider({endpoint})` — fetches the flag configuration exactly once and then serves that snapshot for the process lifetime. Flag changes never arrive, `PROVIDER_CONFIGURATION_CHANGED` never fires, and nothing in the logs indicates it. Anyone reading `README.md:80` will believe polling runs every 120 s.
 
 **Smallest fix:** Default the value: `const interval = this.options.flagChangePollingIntervalMs ?? DEFAULT_POLLING_INTERVAL_MS;` (adding `DEFAULT_POLLING_INTERVAL_MS = 120000` to `constants.ts`) and schedule unconditionally. Note `src/lib/go-feature-flag-provider.ts:175-177` already rejects non-positive values, so the guard is redundant once a default exists.
+
+---
+
+</details>
 
 ---
 
