@@ -8,7 +8,7 @@ import type {
   Tracking,
   TrackingEventDetails,
 } from '@openfeature/server-sdk';
-import { OpenFeatureEventEmitter } from '@openfeature/server-sdk';
+import { OpenFeatureEventEmitter, ProviderFatalError } from '@openfeature/server-sdk';
 import type { GoFeatureFlagProviderOptions } from './go-feature-flag-provider-options';
 import type { IEvaluator } from './evaluator/evaluator';
 import { InProcessEvaluator } from './evaluator/inprocess-evaluator';
@@ -18,7 +18,7 @@ import { EventPublisher } from './service/event-publisher';
 import { getContextKind } from './helper/event-util';
 import { DEFAULT_TARGETING_KEY } from './helper/constants';
 import { EvaluationType, type TrackingEvent } from './model';
-import { InvalidOptionsException } from './exception';
+import { InvalidOptionsException, UnauthorizedException } from './exception';
 import { RemoteEvaluator } from './evaluator/remote-evaluator';
 
 export class GoFeatureFlagProvider implements Provider, Tracking {
@@ -111,6 +111,18 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
       this.eventPublisher && (await this.eventPublisher.start());
     } catch (error) {
       this.logger?.error('Failed to initialize the provider', error);
+
+      // Rejected credentials cannot be repaired by retrying, so this state has to be terminal.
+      // The SDK only moves a provider to FATAL when the rejection carries the PROVIDER_FATAL error
+      // code, and it short-circuits evaluations in that state; left as a plain exception the
+      // provider would settle in ERROR, where evaluations keep reaching it and a permanently
+      // invalid API key is indistinguishable from a relay proxy that is briefly unreachable.
+      if (error instanceof UnauthorizedException) {
+        throw new ProviderFatalError(error.message, { cause: error });
+      }
+
+      // Every other initialization failure stays recoverable, so the provider comes back on its
+      // own once the relay proxy is reachable again.
       throw error;
     }
   }

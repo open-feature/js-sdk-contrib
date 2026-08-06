@@ -1,4 +1,4 @@
-import { ErrorCode, OpenFeature, ServerProviderEvents } from '@openfeature/server-sdk';
+import { ErrorCode, OpenFeature, ProviderStatus, ServerProviderEvents } from '@openfeature/server-sdk';
 import { GoFeatureFlagProvider } from './go-feature-flag-provider';
 import fetchMock from 'jest-fetch-mock';
 import * as fs from 'fs';
@@ -7,8 +7,8 @@ import { HTTP_HEADER_LAST_MODIFIED } from './helper/constants';
 import { EvaluationType } from './model';
 import {
   FlagConfigurationEndpointNotFoundException,
+  ImpossibleToRetrieveConfigurationException,
   InvalidOptionsException,
-  UnauthorizedException,
 } from './exception';
 
 const DefaultEvaluationContext = {
@@ -1052,11 +1052,11 @@ describe('GoFeatureFlagProvider', () => {
       }
     });
 
-    it('Should error if flag configuration endpoint return a 403', async () => {
+    it.each([401, 403])('Should become PROVIDER_FATAL if flag configuration endpoint returns a %i', async (status) => {
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         return {
           body: '{}',
-          status: 403,
+          status,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -1067,19 +1067,20 @@ describe('GoFeatureFlagProvider', () => {
         endpoint: 'http://localhost:1031',
         flagChangePollingIntervalMs: 100,
       });
-      try {
-        await OpenFeature.setProviderAndWait(testClientName, provider);
-        expect(true).toBe(false); // if we reach this line, the test should fail
-      } catch (error) {
-        expect(error).toBeInstanceOf(UnauthorizedException);
-      }
+
+      // Rejected credentials are terminal: the SDK only reaches FATAL when the rejection carries
+      // the PROVIDER_FATAL code, and only in FATAL does it stop letting evaluations through.
+      await expect(OpenFeature.setProviderAndWait(testClientName, provider)).rejects.toMatchObject({
+        code: ErrorCode.PROVIDER_FATAL,
+      });
+      expect(OpenFeature.getClient(testClientName).providerStatus).toBe(ProviderStatus.FATAL);
     });
 
-    it('Should error if flag configuration endpoint return a 401', async () => {
+    it('Should stay recoverable if flag configuration endpoint returns a 500', async () => {
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         return {
           body: '{}',
-          status: 401,
+          status: 500,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -1090,12 +1091,13 @@ describe('GoFeatureFlagProvider', () => {
         endpoint: 'http://localhost:1031',
         flagChangePollingIntervalMs: 100,
       });
-      try {
-        await OpenFeature.setProviderAndWait(testClientName, provider);
-        expect(true).toBe(false); // if we reach this line, the test should fail
-      } catch (error) {
-        expect(error).toBeInstanceOf(UnauthorizedException);
-      }
+
+      // Anything that is not an authentication failure must leave the provider able to recover
+      // unattended once the relay proxy is reachable again.
+      await expect(OpenFeature.setProviderAndWait(testClientName, provider)).rejects.toBeInstanceOf(
+        ImpossibleToRetrieveConfigurationException,
+      );
+      expect(OpenFeature.getClient(testClientName).providerStatus).toBe(ProviderStatus.ERROR);
     });
 
     it('Should apply a scheduled rollout step', async () => {
