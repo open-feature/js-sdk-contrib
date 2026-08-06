@@ -61,6 +61,12 @@ describe('InProcessEvaluator', () => {
     evaluator = new InProcessEvaluator(mockOptions, mockApi, new OpenFeatureEventEmitter(), mockLogger);
   });
 
+  afterEach(async () => {
+    // Every initialize() schedules a refresh, so a test that initializes without disposing leaves a
+    // live timer holding the event loop open.
+    await evaluator.dispose();
+  });
+
   describe('initialize', () => {
     it('should initialize successfully', async () => {
       await expect(evaluator.initialize()).resolves.not.toThrow();
@@ -189,6 +195,41 @@ describe('InProcessEvaluator', () => {
       await pollingEvaluator.initialize();
 
       await jest.advanceTimersByTimeAsync(5000);
+
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not start a second polling chain when initialized twice', async () => {
+      pollingEvaluator = new InProcessEvaluator(
+        optionsWithoutInterval,
+        mockApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      await pollingEvaluator.initialize();
+      await pollingEvaluator.initialize();
+      mockApi.retrieveFlagConfiguration.mockClear();
+
+      await jest.advanceTimersByTimeAsync(DEFAULT_POLLING_INTERVAL_MS);
+
+      // One refresh per interval. Two chains would double the request rate against the relay proxy
+      // for every subsequent interval, indefinitely.
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not leave a second polling chain after many re-initializations', async () => {
+      pollingEvaluator = new InProcessEvaluator(
+        optionsWithoutInterval,
+        mockApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      for (let i = 0; i < 4; i++) {
+        await pollingEvaluator.initialize();
+      }
+      mockApi.retrieveFlagConfiguration.mockClear();
+
+      await jest.advanceTimersByTimeAsync(DEFAULT_POLLING_INTERVAL_MS * 2);
 
       expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(2);
     });

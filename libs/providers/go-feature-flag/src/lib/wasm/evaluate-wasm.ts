@@ -36,6 +36,13 @@ export class EvaluateWasm {
    * In a real implementation, this would load the WASM binary and instantiate it.
    */
   public async initialize(): Promise<void> {
+    // Already holding a live instance. Instantiating a second one would abandon the first without
+    // disposing it, leaking its linear memory and its Go runtime for the lifetime of the process.
+    // dispose() clears these fields, so a deliberate rebuild still goes through.
+    if (this.wasmExports && this.wasmMemory) {
+      return;
+    }
+
     try {
       // Load the WASM binary
       const wasmBuffer = await this.loadWasmBinary();
