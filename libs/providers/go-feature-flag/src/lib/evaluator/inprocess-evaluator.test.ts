@@ -6,6 +6,7 @@ import {
   type Logger,
   OpenFeatureEventEmitter,
   ProviderNotReadyError,
+  ServerProviderEvents,
 } from '@openfeature/server-sdk';
 import { EvaluationType, NOT_MODIFIED } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
@@ -282,6 +283,114 @@ describe('InProcessEvaluator', () => {
       await jest.advanceTimersByTimeAsync(DEFAULT_POLLING_INTERVAL_MS * 2);
 
       expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('staleness', () => {
+    let staleEvaluator: InProcessEvaluator;
+    let events: OpenFeatureEventEmitter;
+    let emitted: string[];
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      emitted = [];
+      events = new OpenFeatureEventEmitter();
+      events.addHandler(ServerProviderEvents.Stale, () => emitted.push('stale'));
+      events.addHandler(ServerProviderEvents.Ready, () => emitted.push('ready'));
+      staleEvaluator = new InProcessEvaluator(mockOptions, mockApi, events, mockLogger);
+    });
+
+    afterEach(async () => {
+      await staleEvaluator.dispose();
+      jest.useRealTimers();
+    });
+
+    const failRefreshes = () =>
+      mockApi.retrieveFlagConfiguration.mockRejectedValue(
+        new ImpossibleToRetrieveConfigurationException('relay proxy unreachable'),
+      );
+
+    const pollTimes = async (n: number) => {
+      for (let i = 0; i < n; i++) {
+        await jest.advanceTimersByTimeAsync(mockOptions.flagChangePollingIntervalMs as number);
+      }
+    };
+
+    it('should not report stale before three consecutive failures', async () => {
+      await staleEvaluator.initialize();
+      failRefreshes();
+
+      await pollTimes(2);
+
+      expect(emitted).toEqual([]);
+    });
+
+    it('should report stale on the third consecutive failure', async () => {
+      await staleEvaluator.initialize();
+      failRefreshes();
+
+      await pollTimes(3);
+
+      expect(emitted).toEqual(['stale']);
+    });
+
+    it('should report stale only once while it keeps failing', async () => {
+      await staleEvaluator.initialize();
+      failRefreshes();
+
+      await pollTimes(6);
+
+      expect(emitted).toEqual(['stale']);
+    });
+
+    it('should keep serving the last known-good configuration while stale', async () => {
+      await staleEvaluator.initialize();
+      failRefreshes();
+
+      await pollTimes(4);
+
+      // Going stale reports that the configuration is ageing, not that evaluation has stopped.
+      await expect(staleEvaluator.evaluateBoolean('test-flag', false, { user: 'test' })).resolves.toEqual({
+        value: true,
+        reason: 'TARGETING_MATCH',
+      });
+    });
+
+    it('should return to ready once a refresh succeeds again', async () => {
+      await staleEvaluator.initialize();
+      failRefreshes();
+      await pollTimes(3);
+      expect(emitted).toEqual(['stale']);
+
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(NOT_MODIFIED);
+      await pollTimes(1);
+
+      expect(emitted).toEqual(['stale', 'ready']);
+    });
+
+    it('should not report ready when it was never stale', async () => {
+      await staleEvaluator.initialize();
+      failRefreshes();
+      await pollTimes(2);
+
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(NOT_MODIFIED);
+      await pollTimes(1);
+
+      expect(emitted).toEqual([]);
+    });
+
+    it('should require three fresh failures after recovering', async () => {
+      await staleEvaluator.initialize();
+      failRefreshes();
+      await pollTimes(2);
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(NOT_MODIFIED);
+      await pollTimes(1);
+
+      // The counter resets on success, so two more failures must not be enough to go stale.
+      failRefreshes();
+      await pollTimes(2);
+
+      expect(emitted).toEqual([]);
     });
   });
 

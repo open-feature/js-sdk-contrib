@@ -23,4 +23,10 @@ export const DEFAULT_FLUSH_INTERVAL_MS = 120000;
 export const DEFAULT_MAX_PENDING_EVENTS = 10000;
 export const DEFAULT_POLLING_INTERVAL_MS = 120000;
 
+/**
+ * Consecutive failed configuration refreshes after which the provider reports itself stale.
+ * Below this, a refresh failure is treated as a transient blip and is only logged.
+ */
+export const STALE_AFTER_CONSECUTIVE_FAILURES = 3;
+
 export const DEFAULT_TARGETING_KEY = 'undefined-targetingKey';

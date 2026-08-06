@@ -68,33 +68,33 @@ Remote evaluation is delegated to `@openfeature/ofrep-provider` (declared at `pa
 ```text
 GO Feature Flag Provider Specification 1.0 — @openfeature/go-feature-flag-provider 1.4.0
 TIERS: Core, Remote, In-process, WASM  (Optional/§17: no cache → N/A)
-VERDICT: NON-CONFORMANT — 6 Critical, 34 Major, 10 Minor
-         (89 PASS, 44 FAIL, 6 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
+VERDICT: NON-CONFORMANT — 6 Critical, 32 Major, 10 Minor
+         (91 PASS, 42 FAIL, 6 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 9 — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`). Remaining: 50.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 11 — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`). Remaining: 48.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |      89 |
-| FAIL         |      44 |
+| PASS         |      91 |
+| FAIL         |      42 |
 | PARTIAL      |       6 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 6 `PARTIAL` results count as non-conformance**, giving 50 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 6 `PARTIAL` results count as non-conformance**, giving 48 unmet requirements.
 
 ### 1.2 Failures by severity
 
 | Severity  |   FAIL | PARTIAL |  Total |
 | --------- | -----: | ------: | -----: |
 | Critical  |      6 |       0 |  **6** |
-| Major     |     28 |       6 | **34** |
+| Major     |     26 |       6 | **32** |
 | Minor     |     10 |       0 | **10** |
-| **Total** | **44** |   **6** | **50** |
+| **Total** | **42** |   **6** | **48** |
 
 ### 1.3 Counts by area
 
@@ -104,7 +104,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-META` (§2)      |       3 |      1 |      2 |       0 |     0 |
 | `GOFF-CFG` (§3)       |      10 |      1 |      7 |       2 |     0 |
 | `GOFF-LIFE` (§4)      |       7 |      7 |      0 |       0 |     0 |
-| `GOFF-EVT` (§5)       |       8 |      4 |      4 |       0 |     0 |
+| `GOFF-EVT` (§5)       |       8 |      6 |      2 |       0 |     0 |
 | `GOFF-EVAL` (§6)      |      11 |      8 |      1 |       1 |     1 |
 | `GOFF-CTX` (§7)       |       9 |      7 |      2 |       0 |     0 |
 | `GOFF-REM` (§8)       |       6 |      6 |      0 |       0 |     0 |
@@ -117,7 +117,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |      3 |      1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |      0 |      9 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |      0 |      0 |       0 |     7 |
-| **Total**             | **147** | **89** | **44** |   **6** | **8** |
+| **Total**             | **147** | **91** | **42** |   **6** | **8** |
 
 ### 1.4 Headline
 
@@ -166,8 +166,8 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-EVT-002`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:300-303`                                                                                           | Emitted when the poll yields a different `ETag`.                                                                                                                                                                                                                                                                                          |
 | `GOFF-EVT-003`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:300`                                                                                               | `!firstLoad` guard suppresses the initial load.                                                                                                                                                                                                                                                                                           |
 | `GOFF-EVT-004`      | Major    | Core       | **FAIL**    | `gff/src/lib/evaluator/inprocess-evaluator.ts:278, 300-303`                                                                                      | Only `ETag`s are compared; with no `ETag` the event fires on every poll. No content comparison.                                                                                                                                                                                                                                           |
-| `GOFF-EVT-005`      | Major    | Core       | **FAIL**    | `gff/src/lib/evaluator/inprocess-evaluator.ts:92-101`                                                                                            | No consecutive-failure counter and no `PROVIDER_STALE` emission (searched `src/` for `Stale`).                                                                                                                                                                                                                                            |
-| `GOFF-EVT-006`      | Major    | Core       | **FAIL**    | (inherited from `GOFF-EVT-005`, §C.1)                                                                                                            | No stale state exists to recover from.                                                                                                                                                                                                                                                                                                    |
+| `GOFF-EVT-005`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:143-160`; `gff/src/lib/helper/constants.ts:27-31`                                                  | Emits `ServerProviderEvents.Stale` once the third consecutive refresh fails, and keeps serving the last known-good configuration throughout — a failed refresh rejects before writing anything. _Fixed — Step 6._                                                                                                                         |
+| `GOFF-EVT-006`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:130-141`                                                                                           | Emits `ServerProviderEvents.Ready` on the first successful refresh after going stale, and only then — the counter resets on every success, so recovery is not reported for a provider that never went stale. _Fixed — Step 6._                                                                                                            |
 | `GOFF-EVT-007`      | Critical | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:118-129`                                                                                                | An `UnauthorizedException` (401/403) raised during initialization is rethrown as the SDK's `ProviderFatalError`, which carries `code: PROVIDER_FATAL`, so the SDK settles the provider in `FATAL` and short-circuits evaluations. _Fixed — Step 5._                                                                                       |
 | `GOFF-EVT-008`      | Major    | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:112-115`; SDK `core dist/cjs/index.js:1056-1057`                                                        | All non-fatal init failures land in `ERROR`.                                                                                                                                                                                                                                                                                              |
 | `GOFF-EVAL-001`     | Major    | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:71-103`                                                                                                 | All four SDK resolvers implemented, all asynchronous.                                                                                                                                                                                                                                                                                     |
@@ -740,7 +740,12 @@ The identity test on `anonymous` is correct — boolean `false`, absent and non-
 
 ---
 
-#### M17 — `GOFF-EVT-005` · No `PROVIDER_STALE` after consecutive refresh failures
+#### ✅ M17 — `GOFF-EVT-005` · **RESOLVED in Step 6**
+
+_A consecutive-failure counter now emits `Stale` on the third failure and only once per stale episode; the counter resets on any success, so a recovered provider needs three fresh failures to go stale again. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The provider **SHOULD** emit `PROVIDER_STALE` after **3** consecutive failed configuration refreshes, and **MUST** continue serving the last known-good configuration."
 
@@ -752,11 +757,24 @@ The identity test on `anonymous` is correct — boolean `false`, absent and non-
 
 ---
 
-#### M18 — `GOFF-EVT-006` · No recovery-to-ready event (inherited from M17)
+</details>
+
+---
+
+#### ✅ M18 — `GOFF-EVT-006` · **RESOLVED in Step 6**
+
+_`Ready` is emitted on the first successful refresh after going stale. Guarded on the stale flag rather than the counter, so a provider that merely had one or two transient failures never announces a recovery it did not need. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "On recovery from stale, the provider **MUST** emit an event returning it to ready."
 
 Inherited FAIL per §C.1 — there is no stale state to recover from. Fixed alongside M17 by emitting `ServerProviderEvents.Ready` when the failure counter resets from ≥ 3 to 0.
+
+---
+
+</details>
 
 ---
 
