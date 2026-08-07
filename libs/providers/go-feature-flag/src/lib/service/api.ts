@@ -34,6 +34,8 @@ import {
  */
 export class GoFeatureFlagApi {
   private readonly endpoint: string;
+  /** Base for the data collector; falls back to `endpoint` when the option is unset. */
+  private readonly dataCollectorBaseURL: string;
   private readonly timeout: number;
   private readonly apiKey?: string;
   private readonly fetchImplementation: FetchAPI;
@@ -52,6 +54,7 @@ export class GoFeatureFlagApi {
     }
 
     this.endpoint = options.endpoint;
+    this.dataCollectorBaseURL = options.dataCollectorBaseURL ?? options.endpoint;
     this.timeout = options.timeout || 10000;
     this.apiKey = options.apiKey;
     this.fetchImplementation = options.fetchImplementation || isomorphicFetch();
@@ -171,7 +174,9 @@ export class GoFeatureFlagApi {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      const response = await this.fetchImplementation(`${this.endpoint}/v1/data/collector`, {
+      // The collector alone moves. Flag configuration stays on `endpoint`, which is what makes
+      // this an override of one endpoint rather than of the relay proxy as a whole.
+      const response = await this.fetchImplementation(`${this.dataCollectorBaseURL}/v1/data/collector`, {
         method: 'POST',
         headers,
         body: requestStr,

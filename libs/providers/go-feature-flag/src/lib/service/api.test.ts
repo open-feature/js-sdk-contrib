@@ -92,6 +92,19 @@ describe('GoFeatureFlagApi', () => {
       expect(request?.options.headers).not.toHaveProperty('Authorization');
     });
 
+    it('should not use dataCollectorBaseURL for the configuration endpoint', async () => {
+      const api = new GoFeatureFlagApi({
+        ...baseOptions,
+        dataCollectorBaseURL: 'https://collector.example.com',
+      } as GoFeatureFlagProviderOptions);
+      mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{"flags":{}}'));
+
+      await api.retrieveFlagConfiguration();
+
+      // The override is scoped to the collector; configuration and evaluation stay on `endpoint`.
+      expect(mockFetch.getLastRequest()?.url).toBe('http://localhost:8080/v1/flag/configuration');
+    });
+
     describe('custom headers', () => {
       const CONFIG_URL = 'http://localhost:8080/v1/flag/configuration';
 
@@ -445,6 +458,49 @@ describe('GoFeatureFlagApi', () => {
       expect(request?.options.headers).not.toHaveProperty('X-API-Key');
       // Retained as a migration guard: the provider used to authenticate with Authorization.
       expect(request?.options.headers).not.toHaveProperty('Authorization');
+    });
+
+    describe('dataCollectorBaseURL', () => {
+      /** Sends one batch and returns the request that went out. */
+      const requestFor = async (options: Partial<GoFeatureFlagProviderOptions>, url: string) => {
+        const api = new GoFeatureFlagApi({ ...baseOptions, ...options } as GoFeatureFlagProviderOptions);
+        mockFetch.setResponse(url, new MockResponse(200, 'Success'));
+
+        await api.sendEventToDataCollector([], new ExporterMetadata());
+
+        return mockFetch.getLastRequest();
+      };
+
+      it('should fall back to endpoint when unset', async () => {
+        const request = await requestFor({}, 'http://localhost:8080/v1/data/collector');
+
+        expect(request?.url).toBe('http://localhost:8080/v1/data/collector');
+      });
+
+      it('should replace the whole base including scheme, host, port and path prefix', async () => {
+        const request = await requestFor(
+          { dataCollectorBaseURL: 'https://collector.example.com:8443/telemetry' },
+          'https://collector.example.com:8443/telemetry/v1/data/collector',
+        );
+
+        expect(request?.url).toBe('https://collector.example.com:8443/telemetry/v1/data/collector');
+      });
+
+      it('should apply authentication, custom headers and timeout to the overridden base', async () => {
+        const request = await requestFor(
+          {
+            dataCollectorBaseURL: 'https://collector.example.com',
+            apiKey: 'my-api-key',
+            headers: { 'X-Api-Gateway-Key': 'gateway-secret' },
+          },
+          'https://collector.example.com/v1/data/collector',
+        );
+
+        // GOFF-CFG-007: moving the base must not quietly drop the credentials that reach it.
+        expect(request?.options.headers).toHaveProperty('X-API-Key', 'my-api-key');
+        expect(request?.options.headers).toHaveProperty('X-Api-Gateway-Key', 'gateway-secret');
+        expect(request?.options.signal).toBeDefined();
+      });
     });
 
     describe('custom headers', () => {
