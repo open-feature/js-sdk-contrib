@@ -38,9 +38,16 @@ describe('OFREPWebProvider', () => {
     lastname: 'Doe',
   };
 
-  function createTestStorage(domain = ''): Storage {
-    return new Storage('local-cache-first', endpointBaseURL, () =>
-      deriveAuthCredential({ baseUrl: endpointBaseURL }),
+  /** Matches the domain passed to `setProvider(name, provider)` in each test. */
+  function testDomain(): string {
+    return expect.getState().currentTestName || 'test-provider';
+  }
+
+  function createTestStorage(domain = testDomain()): Storage {
+    return new Storage(
+      'local-cache-first',
+      endpointBaseURL,
+      () => deriveAuthCredential({ baseUrl: endpointBaseURL }),
       domain,
     );
   }
@@ -876,7 +883,7 @@ describe('OFREPWebProvider', () => {
       etag: string | null = null,
       writtenAt: Date = new Date(),
       metadata?: Record<string, unknown>,
-      domain = '',
+      domain = testDomain(),
     ): Promise<void> {
       const storage = createTestStorage(domain);
       const key = await storage.getStorageKey({ targetingKey });
