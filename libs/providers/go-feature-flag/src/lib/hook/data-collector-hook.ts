@@ -1,10 +1,30 @@
-import type { Hook, HookContext, EvaluationDetails, JsonValue } from '@openfeature/server-sdk';
+import type { Hook, HookContext, EvaluationDetails, FlagMetadata, JsonValue } from '@openfeature/server-sdk';
 import type { IEvaluator } from '../evaluator/evaluator';
 import type { EventPublisher } from '../service/event-publisher';
 import type { FeatureEvent } from '../model';
 import { EvaluatorNotFoundException, EventPublisherNotFoundException } from '../exception';
 import { getContextKind } from '../helper/event-util';
 import { DEFAULT_TARGETING_KEY } from '../helper/constants';
+
+/**
+ * Reads the flag version out of the resolution metadata.
+ *
+ * `FlagMetadata` values are `string | number | boolean`, and a version is meaningfully either of
+ * the first two - a GO Feature Flag configuration carries `version: "1.0"` as readily as
+ * `version: 1`. A boolean is not a version, so it is dropped rather than stringified into `"true"`.
+ * @param flagMetadata - metadata from the resolution, when the stage has any
+ * @returns the version, or undefined when the flag carries none
+ */
+const readVersion = (flagMetadata?: FlagMetadata): string | undefined => {
+  const version = flagMetadata?.['version'];
+  if (typeof version === 'string') {
+    return version;
+  }
+  if (typeof version === 'number') {
+    return String(version);
+  }
+  return undefined;
+};
 
 /**
  * Options for {@link DataCollectorHook}.
@@ -85,6 +105,10 @@ export class DataCollectorHook implements Hook {
       value: details.value,
       variation: details.variant ?? 'SdkDefault',
       userKey: context.context?.targetingKey ?? DEFAULT_TARGETING_KEY,
+      version: readVersion(details.flagMetadata),
+      // Unconditional: the remote evaluator reports every flag as untrackable, so this hook only
+      // ever runs for a locally evaluated flag.
+      source: 'INPROCESS',
     };
 
     this.eventPublisher.addEvent(eventToPublish);
@@ -117,6 +141,8 @@ export class DataCollectorHook implements Hook {
       value: context.defaultValue,
       userKey: context.context?.targetingKey ?? DEFAULT_TARGETING_KEY,
       creationDate: Math.floor(Date.now() / 1000),
+      // No `version`: the error stage receives no resolution metadata to read it from.
+      source: 'INPROCESS',
     };
 
     this.eventPublisher.addEvent(eventToPublish);

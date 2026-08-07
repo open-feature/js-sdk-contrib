@@ -72,20 +72,20 @@ VERDICT: NON-CONFORMANT — 3 Critical, 29 Major, 10 Minor
          (97 PASS, 35 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`). Remaining: 29.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`). Remaining: 27.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |     110 |
-| FAIL         |      24 |
+| PASS         |     112 |
+| FAIL         |      22 |
 | PARTIAL      |       5 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 5 `PARTIAL` results count as non-conformance**, giving 29 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 5 `PARTIAL` results count as non-conformance**, giving 27 unmet requirements.
 
 ### 1.2 Failures by severity
 
@@ -93,8 +93,8 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | --------- | -----: | ------: | -----: |
 | Critical  |      1 |       1 |  **2** |
 | Major     |     14 |       4 | **18** |
-| Minor     |      9 |       0 |  **9** |
-| **Total** | **24** |   **5** | **29** |
+| Minor     |      7 |       0 |  **7** |
+| **Total** | **22** |   **5** | **27** |
 
 ### 1.3 Counts by area
 
@@ -112,12 +112,12 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-WASM` (§10)     |      13 |      12 |      1 |       0 |     0 |
 | `GOFF-ERR` (§11)      |       6 |       6 |      0 |       0 |     0 |
 | `GOFF-HOOK` (§12)     |       6 |       6 |      0 |       0 |     0 |
-| `GOFF-COLL` (§13)     |      23 |      19 |      3 |       1 |     0 |
+| `GOFF-COLL` (§13)     |      23 |      21 |      1 |       1 |     0 |
 | `GOFF-TRACK` (§14)    |       5 |       5 |      0 |       0 |     0 |
 | `GOFF-AUTH` (§15)     |       4 |       3 |      1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |       0 |      9 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |       0 |      0 |       0 |     7 |
-| **Total**             | **147** | **110** | **24** |   **5** | **8** |
+| **Total**             | **147** | **112** | **22** |   **5** | **8** |
 
 ### 1.4 Headline
 
@@ -246,8 +246,8 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-COLL-006`     | Major    | Core       | PASS        | `gff/src/lib/hook/data-collector-hook.ts:59, 90`; `gff/src/lib/helper/constants.ts:25`                                                                                                                                                                          | Targeting key or the `undefined-targetingKey` sentinel.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `GOFF-COLL-007`     | Major    | Core       | PASS        | `gff/src/lib/hook/data-collector-hook.ts:54, 91`                                                                                                                                                                                                                | `Math.floor(Date.now() / 1000)`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `GOFF-COLL-008`     | Major    | Core       | PASS        | `gff/src/lib/hook/data-collector-hook.ts:58, 88`                                                                                                                                                                                                                | `details.variant ?? 'SdkDefault'`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `GOFF-COLL-009`     | Minor    | Core       | **FAIL**    | `gff/src/lib/hook/data-collector-hook.ts:51-60`; `gff/src/lib/model/feature-event.ts:51`                                                                                                                                                                        | `version` is declared on the event type but never populated.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `GOFF-COLL-010`     | Minor    | Core       | **FAIL**    | `gff/src/lib/model/feature-event.ts:6-52`                                                                                                                                                                                                                       | No `source` field exists (searched `src/` for `INPROCESS`, `PROVIDER_CACHE`, `source:`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `GOFF-COLL-009`     | Minor    | Core       | PASS        | `gff/src/lib/hook/data-collector-hook.ts:18-27, 108`                                                                                                                                                                                                            | `version` is read from the resolution metadata on the `after` stage, narrowing string and number and rejecting anything else. The `error` stage receives no metadata, which the requirement's "when present" allows. _Fixed — Step 17._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `GOFF-COLL-010`     | Minor    | Core       | PASS        | `gff/src/lib/model/feature-event.ts:59`; `gff/src/lib/hook/data-collector-hook.ts:111, 145`                                                                                                                                                                     | `source` is a required field on `FeatureEvent`, set to `INPROCESS` by both stages — unconditionally correct because the remote evaluator reports every flag as untrackable. `SERVER` is excluded from the union, since the specification reserves it for the relay proxy. _Fixed — Step 17._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `GOFF-COLL-011`     | Major    | Core       | PASS        | `gff/src/lib/helper/constants.ts:52-55`; `gff/src/lib/model/exporter-metadata.ts:29`                                                                                                                                                                            | `asObject()` always appends `provider` and `openfeature: true`, so the `meta` envelope carries them whether or not the caller configured metadata. Seeded in `ExporterMetadata` rather than in the envelope so the evaluation-context copy the enrichment hook writes carries them too. _Fixed — Step 15._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `GOFF-COLL-012`     | Minor    | Core       | **FAIL**    | `gff/src/lib/helper/constants.ts:53`                                                                                                                                                                                                                            | The key now exists and cannot be shadowed, but its value is `nodejs`, which is not one of the nine identifiers the requirement enumerates (`javascript` is the one for this language). Set deliberately by the maintainer during Step 15 — see finding M13. _Open: awaiting a decision._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `GOFF-COLL-013`     | Major    | Core       | **PARTIAL** | `gff/src/lib/model/exporter-metadata.ts:12-15`                                                                                                                                                                                                                  | Types are constrained at compile time only; `add()` performs no runtime validation and nothing is rejected at construction.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -1278,7 +1278,12 @@ Covered in full under **M10**; listed here because the specification numbers it 
 
 ---
 
-#### m7 — `GOFF-COLL-009` · `version` is never populated on feature events
+#### ✅ m7 — `GOFF-COLL-009` · **RESOLVED in Step 17**
+
+_A `readVersion` helper (`data-collector-hook.ts:18-27`) reads the version from the resolution metadata on the `after` stage (`:108`). It narrows rather than casting as the audit suggested: `FlagMetadata` values are `string | number | boolean`, so a cast would have put a raw number into a string-typed field at runtime, and would have stringified a boolean into `"true"`. The `error` stage receives no metadata, which "when present" allows. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "`version` **MUST** be populated from flag metadata when present."
 
@@ -1290,7 +1295,16 @@ Covered in full under **M10**; listed here because the specification numbers it 
 
 ---
 
-#### m8 — `GOFF-COLL-010` · No `source` field on feature events
+</details>
+
+---
+
+#### ✅ m8 — `GOFF-COLL-010` · **RESOLVED in Step 17**
+
+_`source` is a **required** field on `FeatureEvent` (`feature-event.ts:59`), set to `INPROCESS` by both stages (`data-collector-hook.ts:111, 145`). Required rather than optional so the compiler rejects any future event built without stating its provenance — it flagged both production sites the moment the field was added, and removing it from one stage now fails to compile rather than fails a test. `SERVER` is excluded from the union because the specification reserves it for the relay proxy's own records. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "`source` **MUST** be `INPROCESS` for a locally evaluated flag, or `PROVIDER_CACHE` for a value served from a remote-mode cache. `SERVER` is reserved for the relay proxy."
 
@@ -1299,6 +1313,10 @@ Covered in full under **M10**; listed here because the specification numbers it 
 **Consequence:** The collector cannot distinguish locally evaluated events from relay-proxy-recorded ones, so in-process and remote traffic cannot be told apart in exported data.
 
 **Smallest fix:** Add `source: 'INPROCESS'` to the `FeatureEvent` type and set it in both stages of `DataCollectorHook` — correct unconditionally here, since only the in-process evaluator reports flags as trackable (`remote-evaluator.ts:98-100`).
+
+---
+
+</details>
 
 ---
 
