@@ -396,6 +396,7 @@ describe('GoFeatureFlagApi', () => {
           value: 'toto',
           variation: 'on',
           version: '1.0.0',
+          source: 'INPROCESS',
         },
       ];
 

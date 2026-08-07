@@ -1,9 +1,10 @@
 import { DataCollectorHook } from './data-collector-hook';
 import type { IEvaluator } from '../evaluator/evaluator';
 import type { EventPublisher } from '../service/event-publisher';
-import type { HookContext, EvaluationDetails, Logger } from '@openfeature/server-sdk';
+import type { HookContext, EvaluationDetails, FlagMetadata, Logger } from '@openfeature/server-sdk';
 import { MapHookData } from '@openfeature/server-sdk';
 import { EvaluatorNotFoundException, EventPublisherNotFoundException } from '../exception';
+import type { FeatureEvent } from '../model';
 
 describe('DataCollectorHook', () => {
   let mockEvaluator: jest.Mocked<IEvaluator>;
@@ -45,6 +46,64 @@ describe('DataCollectorHook', () => {
 
     it('should throw error if eventPublisher is null', () => {
       expect(() => new DataCollectorHook(mockEvaluator, null as any)).toThrow(EventPublisherNotFoundException);
+    });
+  });
+
+  describe('feature event fields', () => {
+    const contextFor = (): HookContext<boolean> => ({
+      flagKey: 'test-flag',
+      defaultValue: false,
+      context: { targetingKey: 'user-1' },
+      flagValueType: 'boolean',
+      clientMetadata: { providerMetadata: { name: 'test' } },
+      providerMetadata: { name: 'test' },
+      logger: mockLogger,
+      hookData: new MapHookData(),
+    });
+
+    const detailsWith = (flagMetadata: FlagMetadata): EvaluationDetails<boolean> => ({
+      flagKey: 'test-flag',
+      value: true,
+      variant: 'on',
+      reason: 'TARGETING_MATCH',
+      flagMetadata,
+    });
+
+    /** The single event the hook published, for assertions about individual fields. */
+    const publishedEvent = () => mockEventPublisher.addEvent.mock.calls[0][0] as FeatureEvent;
+
+    beforeEach(() => {
+      mockEvaluator.isFlagTrackable.mockReturnValue(true);
+    });
+
+    const versionCases: { label: string; metadata: FlagMetadata; expected?: string }[] = [
+      { label: 'a string version', metadata: { version: '1.0.0' }, expected: '1.0.0' },
+      // A configuration carries `version: "1.0"` as readily as `version: 1`; a cast would have put
+      // the number straight into a string-typed field.
+      { label: 'a numeric version', metadata: { version: 3 }, expected: '3' },
+      { label: 'no version', metadata: {}, expected: undefined },
+      // Not a version. Stringifying it would export the literal "true".
+      { label: 'a boolean version', metadata: { version: true }, expected: undefined },
+    ];
+
+    it.each(versionCases)('should populate version from $label', async ({ metadata, expected }) => {
+      await hook.after(contextFor(), detailsWith(metadata));
+
+      expect(publishedEvent().version).toBe(expected);
+    });
+
+    it('should mark a successful evaluation as INPROCESS', async () => {
+      await hook.after(contextFor(), detailsWith({}));
+
+      // Unconditional: the remote evaluator reports every flag as untrackable, so this hook only
+      // ever runs for a locally evaluated flag.
+      expect(publishedEvent().source).toBe('INPROCESS');
+    });
+
+    it('should mark a failed evaluation as INPROCESS', async () => {
+      await hook.error(contextFor(), new Error('boom'));
+
+      expect(publishedEvent().source).toBe('INPROCESS');
     });
   });
 
@@ -181,6 +240,8 @@ describe('DataCollectorHook', () => {
         value: true,
         userKey: 'user-1',
         creationDate: expect.any(Number),
+        version: undefined,
+        source: 'INPROCESS',
       });
     });
 
@@ -217,6 +278,8 @@ describe('DataCollectorHook', () => {
         value: true,
         userKey: '1234',
         creationDate: expect.any(Number),
+        version: undefined,
+        source: 'INPROCESS',
       });
     });
   });
@@ -272,6 +335,7 @@ describe('DataCollectorHook', () => {
         value: false,
         userKey: 'user-1',
         creationDate: expect.any(Number),
+        source: 'INPROCESS',
       });
     });
   });

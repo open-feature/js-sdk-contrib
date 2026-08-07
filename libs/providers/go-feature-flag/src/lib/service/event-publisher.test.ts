@@ -70,6 +70,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
       eventPublisher.addEvent(mockEvent);
 
@@ -121,6 +122,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
 
       // Start the publisher first
@@ -144,6 +146,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
 
       eventPublisher.addEvent(mockEvent);
@@ -178,6 +181,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
 
       // Add events up to the max pending limit
@@ -205,6 +209,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
 
       const publisherWithLogger = new EventPublisher(mockApi, mockOptions, mockLogger);
@@ -238,6 +243,7 @@ describe('EventPublisher', () => {
       userKey: 'test-user',
       default: false,
       variation: 'test-variation',
+      source: 'INPROCESS',
     });
 
     const keysOfBatch = (call: number) =>
@@ -382,6 +388,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
       publisher.addEvent(mockEvent);
 
@@ -414,6 +421,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
 
       const mockTrackingEvent: TrackingEvent = {
