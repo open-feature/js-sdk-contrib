@@ -30,3 +30,13 @@ export const DEFAULT_POLLING_INTERVAL_MS = 120000;
 export const STALE_AFTER_CONSECUTIVE_FAILURES = 3;
 
 export const DEFAULT_TARGETING_KEY = 'undefined-targetingKey';
+
+/**
+ * Evaluation-context key of the GO Feature Flag reserved namespace.
+ * It is shared: the provider owns `exporterMetadata`, the caller owns `flagList` and
+ * `currentDateTime`.
+ */
+export const GO_FEATURE_FLAG_CONTEXT_KEY = 'gofeatureflag';
+
+/** Key within the reserved namespace under which the relay proxy reads the exporter metadata. */
+export const EXPORTER_METADATA_KEY = 'exporterMetadata';
