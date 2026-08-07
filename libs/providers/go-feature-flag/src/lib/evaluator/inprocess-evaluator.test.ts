@@ -9,6 +9,7 @@ import {
   ServerProviderEvents,
 } from '@openfeature/server-sdk';
 import { EvaluationType, NOT_MODIFIED } from '../model';
+import type { Flag, FlagConfigResponse } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
 import { DEFAULT_POLLING_INTERVAL_MS } from '../helper/constants';
@@ -283,6 +284,143 @@ describe('InProcessEvaluator', () => {
       await jest.advanceTimersByTimeAsync(DEFAULT_POLLING_INTERVAL_MS * 2);
 
       expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('configuration changed events', () => {
+    let changeEvaluator: InProcessEvaluator;
+    let events: OpenFeatureEventEmitter;
+    /** Payload of each ConfigurationChanged event, in order. */
+    let changes: (string[] | undefined)[];
+
+    const asFlags = (flags: Record<string, unknown>) => flags as unknown as Record<string, Flag>;
+
+    const flagsFixture = asFlags({
+      flagA: { trackEvents: true, defaultRule: { variation: 'on' } },
+      flagB: { trackEvents: true, defaultRule: { variation: 'off' } },
+    });
+
+    /** A 200 response carrying no ETag at all, which is what makes content comparison necessary. */
+    const responseWithoutEtag = (flags: Record<string, Flag>): FlagConfigResponse => ({
+      flags,
+      evaluationContextEnrichment: {},
+      etag: undefined,
+      lastUpdated: undefined,
+    });
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      changes = [];
+      events = new OpenFeatureEventEmitter();
+      events.addHandler(ServerProviderEvents.ConfigurationChanged, (details) => {
+        changes.push(details?.flagsChanged as string[] | undefined);
+      });
+      changeEvaluator = new InProcessEvaluator(mockOptions, mockApi, events, mockLogger);
+    });
+
+    afterEach(async () => {
+      await changeEvaluator.dispose();
+      jest.useRealTimers();
+    });
+
+    const pollTimes = async (n: number) => {
+      for (let i = 0; i < n; i++) {
+        await jest.advanceTimersByTimeAsync(mockOptions.flagChangePollingIntervalMs as number);
+      }
+    };
+
+    it('should not emit when an ETag-less server keeps returning the same configuration', async () => {
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(responseWithoutEtag(flagsFixture));
+      await changeEvaluator.initialize();
+
+      await pollTimes(5);
+
+      // Without content comparison this emits once per poll, forever.
+      expect(changes).toEqual([]);
+    });
+
+    it('should report only the flag whose configuration changed', async () => {
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(responseWithoutEtag(flagsFixture));
+      await changeEvaluator.initialize();
+
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(
+        responseWithoutEtag(
+          asFlags({
+            flagA: { trackEvents: true, defaultRule: { variation: 'on' } },
+            flagB: { trackEvents: false, defaultRule: { variation: 'on' } },
+          }),
+        ),
+      );
+      await pollTimes(1);
+
+      expect(changes).toEqual([['flagB']]);
+    });
+
+    it('should report an added flag', async () => {
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(responseWithoutEtag(flagsFixture));
+      await changeEvaluator.initialize();
+
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(
+        responseWithoutEtag(asFlags({ ...flagsFixture, flagC: { defaultRule: { variation: 'on' } } })),
+      );
+      await pollTimes(1);
+
+      expect(changes).toEqual([['flagC']]);
+    });
+
+    it('should report a removed flag', async () => {
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(responseWithoutEtag(flagsFixture));
+      await changeEvaluator.initialize();
+
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(
+        responseWithoutEtag(asFlags({ flagA: { trackEvents: true, defaultRule: { variation: 'on' } } })),
+      );
+      await pollTimes(1);
+
+      expect(changes).toEqual([['flagB']]);
+    });
+
+    it('should emit once per distinct configuration, not once per poll', async () => {
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(responseWithoutEtag(flagsFixture));
+      await changeEvaluator.initialize();
+
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(responseWithoutEtag(asFlags({ other: { defaultRule: {} } })));
+      await pollTimes(3);
+
+      expect(changes).toHaveLength(1);
+    });
+
+    it('should report every flag when the enrichment changes', async () => {
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(responseWithoutEtag(flagsFixture));
+      await changeEvaluator.initialize();
+
+      mockApi.retrieveFlagConfiguration.mockResolvedValue({
+        ...responseWithoutEtag(flagsFixture),
+        evaluationContextEnrichment: { env: 'production' },
+      });
+      await pollTimes(1);
+
+      // The enrichment feeds every evaluation, so any flag's result may have changed.
+      expect(changes).toHaveLength(1);
+      expect(changes[0]?.sort()).toEqual(['flagA', 'flagB']);
+    });
+
+    it('should not emit for the initial load', async () => {
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(responseWithoutEtag(flagsFixture));
+
+      await changeEvaluator.initialize();
+
+      // Consumers must not observe a configuration-changed event before the provider is ready.
+      expect(changes).toEqual([]);
+    });
+
+    it('should not emit when the server reports not-modified', async () => {
+      await changeEvaluator.initialize();
+      mockApi.retrieveFlagConfiguration.mockResolvedValue(NOT_MODIFIED);
+
+      await pollTimes(3);
+
+      expect(changes).toEqual([]);
     });
   });
 
