@@ -2,12 +2,35 @@
  * Constants used throughout the GO Feature Flag API.
  */
 export const HTTP_HEADER_CONTENT_TYPE = 'Content-Type';
-export const HTTP_HEADER_AUTHORIZATION = 'Authorization';
 export const HTTP_HEADER_IF_NONE_MATCH = 'If-None-Match';
 export const HTTP_HEADER_ETAG = 'etag';
 export const HTTP_HEADER_LAST_MODIFIED = 'last-modified';
 export const APPLICATION_JSON = 'application/json';
-export const BEARER_TOKEN = 'Bearer ';
+
+/**
+ * The header carrying `apiKey` on every call to the relay proxy.
+ *
+ * The relay proxy accepts `X-API-Key` and `Authorization: Bearer` and resolves `X-API-Key` first.
+ * The exact casing matters: request headers are carried as a plain object, so a mismatch would go
+ * out on the wire verbatim.
+ */
+export const HTTP_HEADER_API_KEY = 'X-API-Key';
+
+/**
+ * Header names a caller may never set, whether or not the provider is sending one itself.
+ *
+ * Both are transport details rather than credentials. `Content-Type` must match a body this
+ * provider serialises, and on the remote path it is absent from the request the delegate is given
+ * precisely because the delegate sets it — so a caller value would be appended, not replaced.
+ * `If-None-Match` belongs to the polling loop and is absent exactly when there is no etag, so a
+ * static value would freeze the configuration.
+ *
+ * `X-API-Key` is deliberately **not** here. It is protected only while `apiKey` is set, by the
+ * ordinary rule that the provider's own headers win; with no `apiKey` configured, a caller who
+ * writes one into `headers` has asked for it explicitly, the same as any other credential they
+ * supply that way.
+ */
+export const RESERVED_HEADERS: readonly string[] = [HTTP_HEADER_CONTENT_TYPE, HTTP_HEADER_IF_NONE_MATCH];
 
 export const HTTP_STATUS = {
   OK: 200,

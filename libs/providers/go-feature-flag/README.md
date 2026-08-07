@@ -72,19 +72,42 @@ const provider = new GoFeatureFlagProvider({
 
 ### Provider Options
 
-| Option                        | Type               | Default      | Description                                                   |
-| ----------------------------- | ------------------ | ------------ | ------------------------------------------------------------- |
-| `endpoint`                    | `string`           | **Required** | The endpoint of the GO Feature Flag relay-proxy               |
-| `evaluationType`              | `EvaluationType`   | `InProcess`  | Evaluation mode: `InProcess` or `Remote`                      |
-| `timeout`                     | `number`           | `10000`      | HTTP request timeout in milliseconds                          |
-| `flagChangePollingIntervalMs` | `number`           | `120000`     | Polling interval for configuration changes                    |
-| `dataFlushInterval`           | `number`           | `60000`      | Data collection flush interval                                |
-| `maxPendingEvents`            | `number`           | `10000`      | Maximum pending events before flushing                        |
-| `disableDataCollection`       | `boolean`          | `false`      | Disable data collection entirely                              |
-| `apiKey`                      | `string`           | `undefined`  | API key for authentication                                    |
-| `exporterMetadata`            | `ExporterMetadata` | `undefined`  | Custom metadata for events                                    |
-| `fetchImplementation`         | `FetchAPI`         | `undefined`  | Custom fetch implementation                                   |
-| `wasmBinaryPath`              | `string`           | `undefined`  | Custom path to the WASM binary file _(in-process mode only)_. |
+| Option                        | Type                     | Default      | Description                                                   |
+| ----------------------------- | ------------------------ | ------------ | ------------------------------------------------------------- |
+| `endpoint`                    | `string`                 | **Required** | The endpoint of the GO Feature Flag relay-proxy               |
+| `evaluationType`              | `EvaluationType`         | `InProcess`  | Evaluation mode: `InProcess` or `Remote`                      |
+| `timeout`                     | `number`                 | `10000`      | HTTP request timeout in milliseconds                          |
+| `flagChangePollingIntervalMs` | `number`                 | `120000`     | Polling interval for configuration changes                    |
+| `dataFlushInterval`           | `number`                 | `60000`      | Data collection flush interval                                |
+| `maxPendingEvents`            | `number`                 | `10000`      | Maximum pending events before flushing                        |
+| `disableDataCollection`       | `boolean`                | `false`      | Disable data collection entirely                              |
+| `apiKey`                      | `string`                 | `undefined`  | API key for authentication                                    |
+| `exporterMetadata`            | `ExporterMetadata`       | `undefined`  | Custom metadata for events                                    |
+| `fetchImplementation`         | `FetchAPI`               | `undefined`  | Custom fetch implementation                                   |
+| `headers`                     | `Record<string, string>` | `undefined`  | Extra headers on every relay-proxy request, in both modes     |
+| `wasmBinaryPath`              | `string`                 | `undefined`  | Custom path to the WASM binary file _(in-process mode only)_. |
+
+### Authentication
+
+When `apiKey` is set, the provider sends it as **`X-API-Key`** on every call to the relay proxy —
+flag configuration, remote evaluation and data collection alike. When it is unset or empty, no
+authentication header is sent at all.
+
+Use `headers` for a relay proxy behind an API gateway that needs its own credentials. Those headers
+are sent on every request in both evaluation modes. `Content-Type` and `If-None-Match` are transport
+details owned by the provider and a value supplied under either name is ignored, whatever its
+casing.
+
+`X-API-Key` is ignored there only while `apiKey` is set — that option is the supported way to
+authenticate, and it wins. With no `apiKey` configured you may supply one through `headers` instead.
+
+```ts
+new GoFeatureFlagProvider({
+  endpoint: 'https://relay.example.com',
+  apiKey: 'my-relay-proxy-key',
+  headers: { 'X-Api-Gateway-Key': 'my-gateway-secret' },
+});
+```
 
 ### Evaluation Types
 

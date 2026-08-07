@@ -66,7 +66,7 @@ describe('GoFeatureFlagApi', () => {
       expect(request?.options.body).toEqual(JSON.stringify({ flags: [] }));
     });
 
-    it('should include API key in authorization header when provided', async () => {
+    it('should include the API key in the X-API-Key header when provided', async () => {
       const options: GoFeatureFlagProviderOptions = {
         ...baseOptions,
         apiKey: 'my-api-key',
@@ -77,17 +77,94 @@ describe('GoFeatureFlagApi', () => {
       await api.retrieveFlagConfiguration();
 
       const request = mockFetch.getLastRequest();
-      expect(request?.options.headers).toHaveProperty('Authorization', 'Bearer my-api-key');
+      expect(request?.options.headers).toHaveProperty('X-API-Key', 'my-api-key');
     });
 
-    it('should not include authorization header when API key is not provided', async () => {
+    it('should not include an authentication header when API key is not provided', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
       mockFetch.setResponse('http://localhost:8080/v1/flag/configuration', new MockResponse(200, '{"flags":{}}'));
 
       await api.retrieveFlagConfiguration();
 
       const request = mockFetch.getLastRequest();
+      expect(request?.options.headers).not.toHaveProperty('X-API-Key');
+      // Retained as a migration guard: the provider used to authenticate with Authorization.
       expect(request?.options.headers).not.toHaveProperty('Authorization');
+    });
+
+    describe('custom headers', () => {
+      const CONFIG_URL = 'http://localhost:8080/v1/flag/configuration';
+
+      /** Runs one configuration fetch and returns the headers that went out. */
+      const headersFor = async (
+        options: Partial<GoFeatureFlagProviderOptions>,
+        etag?: string,
+      ): Promise<Record<string, string>> => {
+        const api = new GoFeatureFlagApi({ ...baseOptions, ...options } as GoFeatureFlagProviderOptions);
+        mockFetch.setResponse(CONFIG_URL, new MockResponse(200, '{"flags":{}}'));
+
+        await api.retrieveFlagConfiguration(etag);
+
+        return mockFetch.getLastRequest()?.options.headers as Record<string, string>;
+      };
+
+      it('should send a caller-supplied header', async () => {
+        const headers = await headersFor({ headers: { 'X-Api-Gateway-Key': 'gateway-secret' } });
+
+        // A relay proxy behind a gateway could not be polled for configuration at all before this.
+        expect(headers['X-Api-Gateway-Key']).toBe('gateway-secret');
+      });
+
+      it('should drop a caller X-API-Key when apiKey is configured', async () => {
+        const headers = await headersFor({ apiKey: 'goff-key', headers: { 'X-API-Key': 'caller' } });
+
+        expect(headers['X-API-Key']).toBe('goff-key');
+      });
+
+      it('should pass a caller X-API-Key through when no apiKey is configured', async () => {
+        const headers = await headersFor({ headers: { 'X-API-Key': 'caller' } });
+
+        // The provider itself sends no authentication header here; a caller who writes one into
+        // `headers` has asked for it explicitly.
+        expect(headers['X-API-Key']).toBe('caller');
+      });
+
+      it('should drop a caller X-API-Key given in another casing', async () => {
+        const headers = await headersFor({ apiKey: 'goff-key', headers: { 'x-api-key': 'caller' } });
+
+        // A Record holds both spellings and fetch comma-joins them, so a case-sensitive merge
+        // would put `x-api-key: "caller, goff-key"` on the wire.
+        expect(Object.keys(headers).filter((name) => name.toLowerCase() === 'x-api-key')).toEqual(['X-API-Key']);
+        expect(headers['X-API-Key']).toBe('goff-key');
+      });
+
+      it('should send no authentication header for an empty apiKey', async () => {
+        const headers = await headersFor({ apiKey: '' });
+
+        // The requirement says "unset or empty"; only the unset case was covered before.
+        expect(headers).not.toHaveProperty('X-API-Key');
+      });
+
+      it('should drop a caller Content-Type', async () => {
+        const headers = await headersFor({ headers: { 'Content-Type': 'text/plain' } });
+
+        // The body is JSON.stringify'd, so a caller value would make body and header disagree.
+        expect(headers['Content-Type']).toBe('application/json');
+      });
+
+      it('should drop a caller If-None-Match and keep the poller etag', async () => {
+        const headers = await headersFor({ headers: { 'If-None-Match': 'caller-etag' } }, '12345');
+
+        // A static caller value would freeze the configuration permanently: the refresh path
+        // short-circuits on the not-modified sentinel before reading anything.
+        expect(headers['If-None-Match']).toBe('12345');
+      });
+
+      it('should drop a caller If-None-Match when the poller has no etag', async () => {
+        const headers = await headersFor({ headers: { 'If-None-Match': 'caller-etag' } });
+
+        expect(headers).not.toHaveProperty('If-None-Match');
+      });
     });
 
     it('should include content-type header', async () => {
@@ -338,7 +415,7 @@ describe('GoFeatureFlagApi', () => {
       expect(request?.options.method).toBe('POST');
     });
 
-    it('should include API key in authorization header when provided', async () => {
+    it('should include the API key in the X-API-Key header when provided', async () => {
       const options: GoFeatureFlagProviderOptions = {
         ...baseOptions,
         apiKey: 'my-api-key',
@@ -352,10 +429,10 @@ describe('GoFeatureFlagApi', () => {
       await api.sendEventToDataCollector(events, metadata);
 
       const request = mockFetch.getLastRequest();
-      expect(request?.options.headers).toHaveProperty('Authorization', 'Bearer my-api-key');
+      expect(request?.options.headers).toHaveProperty('X-API-Key', 'my-api-key');
     });
 
-    it('should not include authorization header when API key is not provided', async () => {
+    it('should not include an authentication header when API key is not provided', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
       mockFetch.setResponse('http://localhost:8080/v1/data/collector', new MockResponse(200, 'Success'));
 
@@ -365,7 +442,40 @@ describe('GoFeatureFlagApi', () => {
       await api.sendEventToDataCollector(events, metadata);
 
       const request = mockFetch.getLastRequest();
+      expect(request?.options.headers).not.toHaveProperty('X-API-Key');
+      // Retained as a migration guard: the provider used to authenticate with Authorization.
       expect(request?.options.headers).not.toHaveProperty('Authorization');
+    });
+
+    describe('custom headers', () => {
+      const COLLECTOR_URL = 'http://localhost:8080/v1/data/collector';
+
+      const headersFor = async (options: Partial<GoFeatureFlagProviderOptions>): Promise<Record<string, string>> => {
+        const api = new GoFeatureFlagApi({ ...baseOptions, ...options } as GoFeatureFlagProviderOptions);
+        mockFetch.setResponse(COLLECTOR_URL, new MockResponse(200, 'Success'));
+
+        await api.sendEventToDataCollector([], new ExporterMetadata());
+
+        return mockFetch.getLastRequest()?.options.headers as Record<string, string>;
+      };
+
+      it('should send a caller-supplied header', async () => {
+        const headers = await headersFor({ headers: { 'X-Api-Gateway-Key': 'gateway-secret' } });
+
+        expect(headers['X-Api-Gateway-Key']).toBe('gateway-secret');
+      });
+
+      it('should pass a caller X-API-Key through when no apiKey is configured', async () => {
+        const headers = await headersFor({ headers: { 'X-API-Key': 'caller' } });
+
+        expect(headers['X-API-Key']).toBe('caller');
+      });
+
+      it('should send no authentication header for an empty apiKey', async () => {
+        const headers = await headersFor({ apiKey: '' });
+
+        expect(headers).not.toHaveProperty('X-API-Key');
+      });
     });
 
     it('should include content-type header', async () => {

@@ -215,26 +215,42 @@ describe('GoFeatureFlagProvider', () => {
       expect(() => new GoFeatureFlagProvider(undefined as any)).toThrow('No options provided');
     });
 
-    it('should not throw InvalidOptionsException when EvaluationType is Remote', () => {
+    it('should require an endpoint in remote mode', () => {
+      // Previously exempted, so a missing endpoint was an invitation to OFREP_ENDPOINT rather than
+      // a configuration error, and a malformed one surfaced late as the delegate's generic Error.
       expect(
         () =>
           new GoFeatureFlagProvider({
             evaluationType: EvaluationType.Remote,
-          }),
-      ).toThrow('The given OFREP URL "" is not a valid URL.');
+          } as any),
+      ).toThrow('endpoint is a mandatory field when initializing the provider');
     });
 
-    it('should not throw exception when EvaluationType is Remote and env variable is set', () => {
-      process.env['OFREP_ENDPOINT'] = 'https://api.example.com';
-
+    it('should reject a malformed endpoint in remote mode', () => {
       expect(
         () =>
           new GoFeatureFlagProvider({
+            endpoint: 'not-a-url',
             evaluationType: EvaluationType.Remote,
           }),
-      ).not.toThrow();
+      ).toThrow('endpoint must be a valid URL (http or https)');
+    });
 
-      delete process.env['OFREP_ENDPOINT'];
+    it('should ignore OFREP_ENDPOINT in remote mode', () => {
+      process.env['OFREP_ENDPOINT'] = 'https://api.example.com';
+
+      try {
+        // The environment must not be able to supply what the caller did not. This test asserted
+        // the opposite before - that construction succeeded on the strength of the env var alone.
+        expect(
+          () =>
+            new GoFeatureFlagProvider({
+              evaluationType: EvaluationType.Remote,
+            } as any),
+        ).toThrow('endpoint is a mandatory field when initializing the provider');
+      } finally {
+        delete process.env['OFREP_ENDPOINT'];
+      }
     });
 
     it('should throw InvalidOptionsException when endpoint is null', () => {
@@ -1139,7 +1155,7 @@ describe('GoFeatureFlagProvider', () => {
     it('Should change evaluation details if config has changed', async () => {
       jest.useRealTimers();
       let callCount = 0;
-      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async (request) => {
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         callCount++;
         if (callCount <= 1) {
           return {
