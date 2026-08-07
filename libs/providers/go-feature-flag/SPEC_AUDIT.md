@@ -68,33 +68,33 @@ Remote evaluation is delegated to `@openfeature/ofrep-provider` (declared at `pa
 ```text
 GO Feature Flag Provider Specification 1.0 — @openfeature/go-feature-flag-provider 1.4.0
 TIERS: Core, Remote, In-process, WASM  (Optional/§17: no cache → N/A)
-VERDICT: NON-CONFORMANT — 5 Critical, 30 Major, 10 Minor
-         (94 PASS, 38 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
+VERDICT: NON-CONFORMANT — 3 Critical, 29 Major, 10 Minor
+         (97 PASS, 35 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`). Remaining: 45.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`). Remaining: 42.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |      94 |
-| FAIL         |      38 |
+| PASS         |      97 |
+| FAIL         |      35 |
 | PARTIAL      |       7 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 7 `PARTIAL` results count as non-conformance**, giving 45 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 7 `PARTIAL` results count as non-conformance**, giving 42 unmet requirements.
 
 ### 1.2 Failures by severity
 
 | Severity  |   FAIL | PARTIAL |  Total |
 | --------- | -----: | ------: | -----: |
-| Critical  |      4 |       1 |  **5** |
-| Major     |     24 |       6 | **30** |
+| Critical  |      2 |       1 |  **3** |
+| Major     |     23 |       6 | **29** |
 | Minor     |     10 |       0 | **10** |
-| **Total** | **38** |   **7** | **45** |
+| **Total** | **35** |   **7** | **42** |
 
 ### 1.3 Counts by area
 
@@ -109,7 +109,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-CTX` (§7)       |       9 |      9 |      0 |       0 |     0 |
 | `GOFF-REM` (§8)       |       6 |      6 |      0 |       0 |     0 |
 | `GOFF-IP` (§9)        |      17 |     16 |      1 |       0 |     0 |
-| `GOFF-WASM` (§10)     |      13 |      7 |      4 |       2 |     0 |
+| `GOFF-WASM` (§10)     |      13 |     10 |      1 |       2 |     0 |
 | `GOFF-ERR` (§11)      |       6 |      6 |      0 |       0 |     0 |
 | `GOFF-HOOK` (§12)     |       6 |      3 |      3 |       0 |     0 |
 | `GOFF-COLL` (§13)     |      23 |     14 |      8 |       1 |     0 |
@@ -117,7 +117,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |      3 |      1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |      0 |      9 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |      0 |      0 |       0 |     7 |
-| **Total**             | **147** | **94** | **38** |   **7** | **8** |
+| **Total**             | **147** | **97** | **35** |   **7** | **8** |
 
 ### 1.4 Headline
 
@@ -220,12 +220,12 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-WASM-005`     | Critical | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:238-254`                                                                                                                                                                                                                     | Output is read at :241, `free` runs in the `finally` at :250-254 — read before free.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `GOFF-WASM-006`     | Major    | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:252-254, 367-369`                                                                                                                                                                                                            | Input freed after the read; output never freed; packed `0` raises `WasmInvalidResultException`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `GOFF-WASM-007`     | Critical | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:234-254`                                                                                                                                                                                                                     | _Accidental_: `malloc → evaluate → read → free` contains no `await`, so the single-threaded event loop cannot interleave two calls. No explicit guard.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `GOFF-WASM-008`     | Critical | WASM       | **FAIL**    | `gff/src/lib/wasm/evaluate-wasm.ts:256-263`                                                                                                                                                                                                                     | A trap is swallowed into a `GENERAL` response; the poisoned instance is retained and reused.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `GOFF-WASM-012`     | Critical | WASM       | **FAIL**    | `gff/src/lib/wasm/evaluate-wasm.ts:250-254`                                                                                                                                                                                                                     | The `finally` calls `free` on the trapped instance unconditionally.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `GOFF-WASM-008`     | Critical | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:283-303`; `:52-56`                                                                                                                                                                                                           | A fault in any call into the instance discards it, so the next evaluation rebuilds. The Go runtime is recreated per instantiation, since it holds references into the instance it was started with. _Fixed — Step 10._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `GOFF-WASM-012`     | Critical | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:283-297`                                                                                                                                                                                                                     | Nothing is run on the instance after a fault, `free` included; the `finally` releasing the input is reachable only once `evaluate` has returned normally. _Fixed — Step 10._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `GOFF-WASM-009`     | Major    | WASM       | **FAIL**    | `gff/src/lib/evaluator/inprocess-evaluator.ts:67`; `gff/src/lib/go-feature-flag-provider-options.ts:4-58`                                                                                                                                                       | Exactly one instance; no pool and no `wasmEvaluatorPoolSize` option.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `GOFF-WASM-010`     | Major    | WASM       | PASS        | `gff/scripts/copy-latest-wasm.js:11`                                                                                                                                                                                                                            | Single machine-readable pin, value `0.2.4`. Resolvability is `GOFF-ENG-001`'s concern, not this one's.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `GOFF-WASM-011`     | Minor    | WASM       | PASS        | `gff/src/lib/go-feature-flag-provider-options.ts:57`; `gff/src/lib/wasm/evaluate-wasm.ts:140-147`                                                                                                                                                               | `wasmBinaryPath` overrides path resolution.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `GOFF-WASM-013`     | Major    | WASM       | **FAIL**    | (inherited from `GOFF-WASM-008` / `-012`, §C.1)                                                                                                                                                                                                                 | No trap handling regardless of binary.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `GOFF-WASM-013`     | Major    | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:283-303`                                                                                                                                                                                                                     | Trap handling is implemented in the host and is independent of which binary is bundled. _Fixed — Step 10._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `GOFF-ERR-001`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:316-339`                                                                                                                                                                                                          | Every engine code with an SDK equivalent is mapped to it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `GOFF-ERR-002`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:337-338`                                                                                                                                                                                                          | `default:` branch throws `GeneralError`; `FLAG_CONFIG` correctly lands there.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `GOFF-ERR-003`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:323-338`                                                                                                                                                                                                          | `response.errorDetails` becomes the error message on every branch.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -608,7 +608,12 @@ This path is reachable in normal operation. When `initialize()` fails, `configur
 
 ---
 
-#### C12 — `GOFF-WASM-008` · A trapped instance is retained and reused
+#### ✅ C12 — `GOFF-WASM-008` · **RESOLVED in Step 10**
+
+_Any fault in a call into the instance discards it, so the next evaluation rebuilds. The Go runtime is now recreated per instantiation too: it holds references into the instance it was started with, so reusing one across a rebuild would point the new module at the old memory. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "If evaluation traps, the instance **MUST** be discarded and rebuilt. A trap does not unwind the module's shadow-stack pointer, so a trapped instance is permanently poisoned and **MUST NOT** be returned to a pool or reused."
 
@@ -620,7 +625,16 @@ This path is reachable in normal operation. When `initialize()` fails, `configur
 
 ---
 
-#### C13 — `GOFF-WASM-012` · `free` is called on the trapped instance
+</details>
+
+---
+
+#### ✅ C13 — `GOFF-WASM-012` · **RESOLVED in Step 10**
+
+_The `finally` that released the input ran on the trap path too. It is now reachable only once `evaluate` has returned normally, so nothing at all runs on a faulted instance. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "After a trap the host **MUST NOT** call `free` on the trapped instance. Running further code on it faults inside `malloc` at a wrapped address and masks the original error."
 
@@ -640,6 +654,10 @@ A `finally` runs on the trap path as well as the success path, so `free` is invo
 **Consequence:** The secondary fault inside `free` replaces the original trap in the thrown error, so the `GENERAL` response returned to the caller describes a memory-management symptom rather than the real cause. Diagnosing why evaluation traps becomes materially harder — and the mandated ordering of §16 ("catch the trap, discard and rebuild the instance, _then_ fall back") is unreachable.
 
 **Smallest fix:** Track whether `callWasmEvaluate` completed and free only on that path — replace the `finally` with an explicit `callWasmFree` after the successful read, plus instance teardown (C12) in the `catch`.
+
+---
+
+</details>
 
 ---
 
@@ -973,11 +991,20 @@ this.options.endpoint = this.options.endpoint?.replace(/\/+$/, ''); // writes th
 
 ---
 
-#### M29 — `GOFF-WASM-013` · Trap handling absent regardless of binary (inherited from C12/C13)
+#### ✅ M29 — `GOFF-WASM-013` · **RESOLVED in Step 10**
+
+_Trap handling now lives in the host and is independent of which binary is bundled, which is what the requirement asks for — the `0.2.4` guards reduce traps but do not eliminate them. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The host **MUST** implement trap handling (`GOFF-WASM-008`, `-012`) regardless of which binary it bundles. The guards reduce traps but do not eliminate them, and older binaries carrying none of them remain in the field."
 
 Inherited FAIL, and the one §10 requirement the engine bump does **not** touch. The requirement is explicit that trap handling is owed "regardless of which binary it bundles", because "[t]he guards reduce traps but do not eliminate them". Moving to `0.2.4` lowers the probability of reaching C12/C13; it does not remove the defect, and it does not help the deployments still pinned to an older binary. Fixed only by C12 and C13.
+
+---
+
+</details>
 
 ---
 

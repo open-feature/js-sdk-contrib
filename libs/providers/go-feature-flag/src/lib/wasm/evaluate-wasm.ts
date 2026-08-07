@@ -14,7 +14,8 @@ export class EvaluateWasm {
   private readonly WASM_MODULE_PATH = path.join('wasm-module', 'gofeatureflag-evaluation.wasm');
   private wasmMemory: WebAssembly.Memory | null = null;
   private wasmExports: WebAssembly.Exports | null = null;
-  private readonly go: Go;
+  /** Replaced on each instantiation: a Go runtime is bound to the instance it was started with. */
+  private go: Go;
   private readonly logger?: Logger;
   private readonly wasmBinaryPath?: string;
   private readonly encoder: TextEncoder;
@@ -48,6 +49,10 @@ export class EvaluateWasm {
       const wasmBuffer = await this.loadWasmBinary();
 
       // Instantiate the WebAssembly module
+      // A fresh runtime per instantiation. The Go runtime holds references into the instance it was
+      // started with, so reusing one across a rebuild would point the new module at the old memory.
+      this.go = new Go();
+
       const wasm = await WebAssembly.instantiate(wasmBuffer, this.go.importObject);
 
       // Run the Go runtime
@@ -237,29 +242,27 @@ export class EvaluateWasm {
       // Serialize the input to JSON
       const wasmInputSerialized = this.encoder.encode(JSON.stringify(wasmInput));
 
-      // Copy input to WASM memory
-      const inputPtr = this.copyToMemory(wasmInputSerialized);
+      // malloc and evaluate both run guest code, so a fault in either leaves the instance poisoned.
+      const inputPtr = this.callGuest(() => this.copyToMemory(wasmInputSerialized));
+      const evaluateRes = this.callGuest(() => this.callWasmEvaluate(inputPtr, wasmInputSerialized.length));
 
+      // Read the output before any further call into the instance. The output buffer belongs to the
+      // module's garbage collector and is pinned only until the next call - and free is such a call,
+      // so freeing first would be a use-after-free that returns reclaimed memory intermittently.
+      let resAsString: string;
       try {
-        // Call the WASM evaluate function
-        const evaluateRes = this.callWasmEvaluate(inputPtr, wasmInputSerialized.length);
-
-        // Read the result from WASM memory
-        const resAsString = this.readFromMemory(evaluateRes);
-
-        // Deserialize the response
-        const goffResp = JSON.parse(resAsString) as EvaluationResponse;
-
-        if (!goffResp) {
-          throw new WasmInvalidResultException('Deserialization of EvaluationResponse failed.');
-        }
-        return goffResp;
+        resAsString = this.readFromMemory(evaluateRes);
       } finally {
-        // Free the allocated memory
-        if (inputPtr !== 0) {
-          this.callWasmFree(inputPtr);
-        }
+        // Reached only when evaluate returned rather than trapped, so the instance is healthy and
+        // the input allocation must be released whether or not the output could be read.
+        this.callGuest(() => this.callWasmFree(inputPtr));
       }
+
+      const goffResp = JSON.parse(resAsString) as EvaluationResponse;
+      if (!goffResp) {
+        throw new WasmInvalidResultException('Deserialization of EvaluationResponse failed.');
+      }
+      return goffResp;
     } catch (error) {
       // Return error response if WASM evaluation fails
       return {
@@ -268,6 +271,36 @@ export class EvaluateWasm {
         errorDetails: error instanceof Error ? error.message : 'Unknown error',
       } as EvaluationResponse;
     }
+  }
+
+  /**
+   * Runs a call into the WASM instance, discarding the instance if it faults.
+   *
+   * A trap does not unwind the module's shadow-stack pointer, so a trapped instance is permanently
+   * poisoned: reusing it yields non-deterministic results and faults inside malloc at wrapped
+   * addresses. Discarding here is what makes the next evaluation rebuild instead.
+   * @param call - the call into the instance
+   * @returns whatever the call returns
+   * @throws the original fault, after the instance has been discarded
+   */
+  private callGuest<T>(call: () => T): T {
+    try {
+      return call();
+    } catch (error) {
+      // Deliberately nothing else is run on the instance on the way out - not even free. Running
+      // further guest code faults again and replaces the original error with that second fault.
+      this.discardInstance();
+      throw error;
+    }
+  }
+
+  /**
+   * Drops the current instance so that the next evaluation builds a fresh one.
+   */
+  private discardInstance(): void {
+    this.logger?.warn('Discarding the WASM instance after a fault; the next evaluation will rebuild it');
+    this.wasmMemory = null;
+    this.wasmExports = null;
   }
 
   /**
