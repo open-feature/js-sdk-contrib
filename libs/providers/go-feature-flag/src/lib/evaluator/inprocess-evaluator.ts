@@ -47,6 +47,13 @@ export class InProcessEvaluator implements IEvaluator {
    * would mean an unset option becomes a zero delay, i.e. a tight polling loop.
    */
   private readonly pollingIntervalMs: number;
+  /**
+   * Flag keys to request, or undefined for the whole configuration. An empty list is normalised to
+   * undefined, because the relay proxy reads an empty `flags` array as "send everything" — so
+   * storing it as-is would make an explicitly empty option indistinguishable from an unset one only
+   * by accident rather than by intent.
+   */
+  private readonly evaluationFlagList?: string[];
 
   // Configuration state
   private etag?: string;
@@ -83,6 +90,7 @@ export class InProcessEvaluator implements IEvaluator {
       options.flagChangePollingIntervalMs && options.flagChangePollingIntervalMs > 0
         ? options.flagChangePollingIntervalMs
         : DEFAULT_POLLING_INTERVAL_MS;
+    this.evaluationFlagList = options.evaluationFlagList?.length ? options.evaluationFlagList : undefined;
   }
 
   /**
@@ -374,7 +382,7 @@ export class InProcessEvaluator implements IEvaluator {
   private async loadConfiguration(firstLoad = false): Promise<void> {
     try {
       // Call the API to retrieve the flags' configuration and store it in the local copy
-      const flagConfigResponse = await this.api.retrieveFlagConfiguration(this.etag, undefined);
+      const flagConfigResponse = await this.api.retrieveFlagConfiguration(this.etag, this.evaluationFlagList);
 
       // Nothing changed: return before touching any configuration state. The stored flags,
       // enrichment, timestamp and ETag must all survive a 304 untouched.

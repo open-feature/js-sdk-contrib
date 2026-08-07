@@ -86,6 +86,7 @@ const provider = new GoFeatureFlagProvider({
 | `fetchImplementation`         | `FetchAPI`               | `undefined`  | Custom fetch implementation                                                  |
 | `headers`                     | `Record<string, string>` | `undefined`  | Extra headers on every relay-proxy request, in both modes                    |
 | `dataCollectorBaseURL`        | `string`                 | `endpoint`   | Base URL for the data collector, when served separately from the relay proxy |
+| `evaluationFlagList`          | `string[]`               | all flags    | Restrict the retrieved configuration to these flags _(in-process mode only)_ |
 | `wasmBinaryPath`              | `string`                 | `undefined`  | Custom path to the WASM binary file _(in-process mode only)_.                |
 
 ### Authentication
