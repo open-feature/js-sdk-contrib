@@ -41,12 +41,20 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
 
   constructor(options: GoFeatureFlagProviderOptions, logger?: Logger) {
     this.validateInputOptions(options);
-    this.options = options;
-    this.options.endpoint = this.options.endpoint?.replace(/\/+$/, '');
+    // Normalisation operates on a copy. Writing the trimmed endpoint back through the caller's
+    // reference meant a caller who built one options object, constructed two providers from it, or
+    // read `options.endpoint` afterwards saw their own input silently rewritten - and under
+    // `Object.freeze` the assignment threw, turning normalisation into a construction failure.
+    this.options = { ...options };
+    if (this.options.endpoint !== undefined) {
+      this.options.endpoint = this.options.endpoint.replace(/\/+$/, '');
+    }
     this.logger = logger;
-    const api = new GoFeatureFlagApi(options);
-    this.evaluator = this.getEvaluator(options, api, logger);
-    this.eventPublisher = new EventPublisher(api, options, logger);
+    // Everything downstream takes the normalised copy. The old code got away with passing the
+    // caller's object because it had already mutated it in place.
+    const api = new GoFeatureFlagApi(this.options);
+    this.evaluator = this.getEvaluator(this.options, api, logger);
+    this.eventPublisher = new EventPublisher(api, this.options, logger);
 
     // Initialize hooks
     this.initializeHooks();

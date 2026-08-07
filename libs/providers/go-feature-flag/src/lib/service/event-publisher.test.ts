@@ -392,9 +392,37 @@ describe('EventPublisher', () => {
       };
       publisher.addEvent(mockEvent);
 
-      // Default should be 10000ms (from constants)
-      jest.advanceTimersByTime(120010);
+      // The normative default is 60000 ms (DEFAULT_FLUSH_INTERVAL_MS).
+      jest.advanceTimersByTime(60010);
 
+      expect(mockApi.sendEventToDataCollector).toHaveBeenCalled();
+
+      jest.useRealTimers();
+      await publisher.stop();
+    });
+
+    it('should not flush before the normative 60s default has elapsed', async () => {
+      const publisher = new EventPublisher(mockApi, { ...mockOptions, dataFlushInterval: undefined });
+
+      jest.useFakeTimers();
+      await publisher.start();
+      publisher.addEvent({
+        kind: 'feature',
+        creationDate: 1,
+        contextKind: 'user',
+        key: 'test-flag',
+        userKey: 'test-user',
+        default: false,
+        variation: 'test-variation',
+        source: 'INPROCESS',
+      });
+
+      // Pins the value, not just "some default fires eventually": the constant was 120000, double
+      // the normative default, so telemetry reached the collector at half the mandated rate.
+      jest.advanceTimersByTime(59000);
+      expect(mockApi.sendEventToDataCollector).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(2000);
       expect(mockApi.sendEventToDataCollector).toHaveBeenCalled();
 
       jest.useRealTimers();

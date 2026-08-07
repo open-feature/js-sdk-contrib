@@ -72,29 +72,29 @@ VERDICT: NON-CONFORMANT — 3 Critical, 29 Major, 10 Minor
          (97 PASS, 35 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`). Remaining: 27.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`). Remaining: 25.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |     112 |
-| FAIL         |      22 |
-| PARTIAL      |       5 |
+| PASS         |     114 |
+| FAIL         |      21 |
+| PARTIAL      |       4 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 5 `PARTIAL` results count as non-conformance**, giving 27 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 4 `PARTIAL` results count as non-conformance**, giving 25 unmet requirements.
 
 ### 1.2 Failures by severity
 
 | Severity  |   FAIL | PARTIAL |  Total |
 | --------- | -----: | ------: | -----: |
 | Critical  |      1 |       1 |  **2** |
-| Major     |     14 |       4 | **18** |
+| Major     |     13 |       3 | **16** |
 | Minor     |      7 |       0 |  **7** |
-| **Total** | **22** |   **5** | **27** |
+| **Total** | **21** |   **4** | **25** |
 
 ### 1.3 Counts by area
 
@@ -102,7 +102,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | --------------------- | ------: | ------: | -----: | ------: | ----: |
 | `GOFF-ENG` (§1.6)     |       3 |       2 |      1 |       0 |     0 |
 | `GOFF-META` (§2)      |       3 |       1 |      2 |       0 |     0 |
-| `GOFF-CFG` (§3)       |      10 |       3 |      5 |       2 |     0 |
+| `GOFF-CFG` (§3)       |      10 |       5 |      4 |       1 |     0 |
 | `GOFF-LIFE` (§4)      |       7 |       7 |      0 |       0 |     0 |
 | `GOFF-EVT` (§5)       |       8 |       7 |      1 |       0 |     0 |
 | `GOFF-EVAL` (§6)      |      11 |       8 |      0 |       2 |     1 |
@@ -117,7 +117,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |       3 |      1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |       0 |      9 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |       0 |      0 |       0 |     7 |
-| **Total**             | **147** | **112** | **22** |   **5** | **8** |
+| **Total**             | **147** | **114** | **21** |   **4** | **8** |
 
 ### 1.4 Headline
 
@@ -147,8 +147,8 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-META-003`     | Minor    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:302`; SDK `core@1.9.1 dist/cjs/index.js:781`                                                                                                                                                                      | Provider emits no name of its own; the SDK stamps `metadata.name`, so they are equal by construction.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `GOFF-CFG-001`      | Major    | Core       | **PARTIAL** | `gff/src/lib/go-feature-flag-provider.ts:160-173`; `gff/src/lib/go-feature-flag-provider-options.ts:78-82`                                                                                                                                                      | Required and URL-validated in in-process mode; both checks are skipped in remote mode.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `GOFF-CFG-002`      | Major    | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:130-135`                                                                                                                                                                                                               | `switch` default branch returns `InProcessEvaluator`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `GOFF-CFG-003`      | Major    | Core       | **PARTIAL** | `gff/src/lib/helper/constants.ts:22`; `gff/src/lib/evaluator/inprocess-evaluator.ts:74-77`                                                                                                                                                                      | `flagChangePollingInterval` now defaults to `120000 ms` as required (Step 2). `dataFlushInterval` still defaults to `120000` where §3.1 requires `60000` — Step 18.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `GOFF-CFG-004`      | Major    | Core       | **FAIL**    | `gff/src/lib/go-feature-flag-provider.ts:44-45`                                                                                                                                                                                                                 | Stores the caller's object by reference and then writes `this.options.endpoint`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `GOFF-CFG-003`      | Major    | Core       | PASS        | `gff/src/lib/helper/constants.ts:22`; `gff/src/lib/evaluator/inprocess-evaluator.ts:74-77`                                                                                                                                                                      | Both halves now match §3.1: `flagChangePollingInterval` defaults to `120000 ms` (Step 2) and `dataFlushInterval` to `60000 ms` (Step 18). The JSDoc and `README.md` were corrected with the constant.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `GOFF-CFG-004`      | Major    | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:48-51`                                                                                                                                                                                                                 | Normalisation operates on a shallow copy, and every downstream consumer is constructed from that copy rather than from the caller's object. _Fixed — Step 18._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `GOFF-CFG-005`      | Critical | Core       | **FAIL**    | `libs/providers/ofrep/src/lib/configuration.ts:17-39, 138-148` (delegated)                                                                                                                                                                                      | Endpoint, headers and timeout are read from `OFREP_ENDPOINT` / `OFREP_HEADERS` / `OFREP_TIMEOUT_MS`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `GOFF-CFG-006`      | Major    | Core       | **FAIL**    | `gff/src/lib/go-feature-flag-provider-options.ts:4-58`; `gff/src/lib/service/api.ts:153`                                                                                                                                                                        | `dataCollectorBaseURL` is not offered; the collector always uses `endpoint`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `GOFF-CFG-007`      | Major    | Core       | **FAIL**    | (inherited from `GOFF-CFG-006`, §C.1)                                                                                                                                                                                                                           | Governing capability absent.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -1037,7 +1037,12 @@ _The failed batch is returned with `unshift` (`event-publisher.ts:170`), ahead o
 
 ---
 
-#### M25 — `GOFF-CFG-003` · Two option defaults diverge from the normative table
+#### ✅ M25 — `GOFF-CFG-003` · **RESOLVED in Step 18**
+
+_`DEFAULT_FLUSH_INTERVAL_MS` is now `60000` (`constants.ts:22`), matching §3.1, with the JSDoc and `README.md` corrected alongside it. The other half — `flagChangePollingInterval` — was closed in Step 2, so this row moves PARTIAL → PASS. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "Every option listed in §3.1 that the provider supports **MUST** use the default value given there." §3.1 specifies `dataFlushInterval` = `60000 ms` and `flagChangePollingInterval` = `120000 ms`.
 
@@ -1051,7 +1056,16 @@ Verified as correct: `timeout` `10000` (`api.ts:45`; remote path `ofrep-api.ts:4
 
 ---
 
-#### M26 — `GOFF-CFG-004` · The caller's options object is mutated
+</details>
+
+---
+
+#### ✅ M26 — `GOFF-CFG-004` · **RESOLVED in Step 18**
+
+_The constructor takes a shallow copy and normalises the endpoint on it (`go-feature-flag-provider.ts:48-51`). The load-bearing half is what follows: `GoFeatureFlagApi`, the evaluator and the `EventPublisher` are all constructed from `this.options` rather than from `options`. The old code got away with passing the caller's object to them precisely because it had already mutated it in place, so copying without redirecting them would have left every outbound URL built from the un-normalised endpoint. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The provider **MUST NOT** mutate the caller's options object or any collection it contains. Normalisation **MUST** operate on a copy."
 
@@ -1065,6 +1079,10 @@ this.options.endpoint = this.options.endpoint?.replace(/\/+$/, ''); // writes th
 **Consequence:** A caller who builds one options object and constructs two providers from it — or who reads `options.endpoint` afterwards, or shares a frozen config module — observes the provider silently rewriting their input. Under `Object.freeze`, the assignment throws in strict mode, turning a normalisation detail into a construction failure.
 
 **Smallest fix:** `this.options = { ...options, endpoint: options.endpoint?.replace(/\/+$/, '') };`
+
+---
+
+</details>
 
 ---
 
@@ -1345,7 +1363,7 @@ The specification requires these to be reported in their own right, and §C.3 ma
 | #   | Documentation claim                                                                                                                                                                 | Contradicting code                                                                                                                                            | Reported as                                                         |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | D1  | `README.md:80` — `flagChangePollingIntervalMs` default `120000`                                                                                                                     | `src/lib/evaluator/inprocess-evaluator.ts:79-81` applies no default; polling is disabled when the option is unset                                             | `GOFF-CFG-009` (declared option not honoured) — see **C3**, **M25** |
-| D2  | `README.md:81` and `src/lib/go-feature-flag-provider-options.ts:20` — `dataFlushInterval` default `120000`                                                                          | `src/lib/helper/constants.ts:22` — the code agrees with the docs but both contradict the spec's `60000`                                                       | `GOFF-CFG-003` — see **M25**                                        |
+| D2  | ✅ **Resolved in Step 18** — `README.md:81`, `src/lib/go-feature-flag-provider-options.ts:20` and `src/lib/helper/constants.ts:22` all now read `60000`                             | —                                                                                                                                                             | `GOFF-CFG-003` — see **M25**                                        |
 | D3  | `README.md:83, 135` — `disableDataCollection` "Disable data collection entirely"                                                                                                    | Never read in `src/`                                                                                                                                          | `GOFF-CFG-009` — see **M10**                                        |
 | D4  | `README.md:13` — "**Caching**: Intelligent caching with automatic cache invalidation"                                                                                               | No cache exists anywhere in `src/` (§0.1)                                                                                                                     | Minor finding, no requirement identifier                            |
 | D5  | `README.md:14` — "**Error Handling**: Robust error handling with fallback mechanisms"                                                                                               | No fallback path exists; §16 is entirely unimplemented (**M1**)                                                                                               | Minor finding, no requirement identifier                            |
