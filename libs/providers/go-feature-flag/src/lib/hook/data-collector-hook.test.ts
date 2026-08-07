@@ -48,6 +48,76 @@ describe('DataCollectorHook', () => {
     });
   });
 
+  describe('disableDataCollection', () => {
+    /** The hook context both stages take; the stages only read `flagKey` before the gate. */
+    const contextFor = (): HookContext<boolean> => ({
+      flagKey: 'test-flag',
+      defaultValue: false,
+      context: { targetingKey: 'user-1' },
+      flagValueType: 'boolean',
+      clientMetadata: { providerMetadata: { name: 'test' } },
+      providerMetadata: { name: 'test' },
+      logger: mockLogger,
+      hookData: new MapHookData(),
+    });
+
+    const details: EvaluationDetails<boolean> = {
+      flagKey: 'test-flag',
+      value: true,
+      variant: 'on',
+      reason: 'TARGETING_MATCH',
+      flagMetadata: {},
+    };
+
+    it('should not record a successful evaluation when data collection is disabled', async () => {
+      // Trackable on purpose: the option has to win over the flag's own trackability, otherwise it
+      // only suppresses events the provider was not going to send anyway.
+      mockEvaluator.isFlagTrackable.mockReturnValue(true);
+      const disabledHook = new DataCollectorHook(mockEvaluator, mockEventPublisher, {
+        disableDataCollection: true,
+      });
+
+      await disabledHook.after(contextFor(), details);
+
+      expect(mockEventPublisher.addEvent).not.toHaveBeenCalled();
+    });
+
+    it('should not record a failed evaluation when data collection is disabled', async () => {
+      mockEvaluator.isFlagTrackable.mockReturnValue(true);
+      const disabledHook = new DataCollectorHook(mockEvaluator, mockEventPublisher, {
+        disableDataCollection: true,
+      });
+
+      await disabledHook.error(contextFor(), new Error('boom'));
+
+      // Gating only one stage leaves telemetry covering errors but not successes, which reads
+      // downstream as data loss rather than as the opt-out the caller asked for.
+      expect(mockEventPublisher.addEvent).not.toHaveBeenCalled();
+    });
+
+    it('should record on both stages when data collection is enabled', async () => {
+      mockEvaluator.isFlagTrackable.mockReturnValue(true);
+      const enabledHook = new DataCollectorHook(mockEvaluator, mockEventPublisher, {
+        disableDataCollection: false,
+      });
+
+      await enabledHook.after(contextFor(), details);
+      await enabledHook.error(contextFor(), new Error('boom'));
+
+      expect(mockEventPublisher.addEvent).toHaveBeenCalledTimes(2);
+    });
+
+    it('should default to collecting when the flag is omitted', async () => {
+      mockEvaluator.isFlagTrackable.mockReturnValue(true);
+      const defaultHook = new DataCollectorHook(mockEvaluator, mockEventPublisher);
+
+      await defaultHook.after(contextFor(), details);
+
+      // `@default false` - an omitted option must not silently turn telemetry off.
+      expect(mockEventPublisher.addEvent).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('after', () => {
     it('should not collect data if flag is not trackable', async () => {
       mockEvaluator.isFlagTrackable.mockReturnValue(false);

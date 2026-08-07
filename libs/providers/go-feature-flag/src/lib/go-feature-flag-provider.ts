@@ -54,6 +54,13 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
 
   /** @inheritdoc */
   track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void {
+    // Custom events are telemetry too. Honouring the option only for evaluations would leave a
+    // caller who disabled data collection - for a privacy requirement, or because they run no
+    // collector at all - still posting to `/v1/data/collector` on every `track` call.
+    if (this.options.disableDataCollection) {
+      return;
+    }
+
     // Create a tracking event object
     const event: TrackingEvent = {
       kind: 'tracking',
@@ -161,7 +168,11 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
     // which is the common one, with no namespace at all.
     this.hooks.push(new EnrichEvaluationContextHook(this.options.exporterMetadata));
     this.logger?.debug('Enrich evaluation context hook initialized');
-    this.hooks.push(new DataCollectorHook(this.evaluator, this.eventPublisher));
+    this.hooks.push(
+      new DataCollectorHook(this.evaluator, this.eventPublisher, {
+        disableDataCollection: this.options.disableDataCollection,
+      }),
+    );
     this.logger?.debug('Data collector hook initialized');
   }
 
