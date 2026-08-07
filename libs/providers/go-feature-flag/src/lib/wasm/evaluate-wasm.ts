@@ -7,6 +7,31 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
+ * The exports the host requires from the module. `memory` belongs here as much as the three
+ * functions: every read and write goes through it, so an instance without it cannot evaluate.
+ */
+const REQUIRED_WASM_EXPORTS = ['memory', 'malloc', 'free', 'evaluate'] as const;
+
+/** Selects the low 32 bits of a 64-bit value. Kept as a BigInt so masking never leaves that domain. */
+const LOW_32_BITS = (BigInt(1) << BigInt(32)) - BigInt(1);
+
+/**
+ * Unpacks the `i64` returned by `evaluate` into the output pointer and its length.
+ *
+ * Both halves are masked *before* the conversion to `Number`. Converting first and masking with `&`
+ * coerces the operand to a **signed** 32-bit integer, so a pointer at or above `0x80000000` (2 GiB)
+ * comes back negative and indexes outside the linear memory.
+ * @param packed - the packed result: pointer in the high 32 bits, length in the low 32 bits
+ * @returns the pointer and length, both non-negative across the whole 32-bit range
+ */
+export function unpackEvaluateResult(packed: bigint): { ptr: number; length: number } {
+  return {
+    ptr: Number((packed >> BigInt(32)) & LOW_32_BITS),
+    length: Number(packed & LOW_32_BITS),
+  };
+}
+
+/**
  * EvaluationWasm is a class that represents the evaluation of a feature flag
  * it calls an external WASM module to evaluate the feature flag.
  */
@@ -54,20 +79,23 @@ export class EvaluateWasm {
       this.go = new Go();
 
       const wasm = await WebAssembly.instantiate(wasmBuffer, this.go.importObject);
+      const exports = wasm.instance.exports;
+
+      // Checked before the runtime is started and before anything is stored. Storing first and
+      // checking after leaves `wasmExports` set with `wasmMemory` undefined, which `evaluate` reads
+      // as "not initialized" - so it would re-instantiate the module on every call instead of
+      // failing, and surface the absence much later as "WASM memory not available".
+      const missing = REQUIRED_WASM_EXPORTS.filter((name) => !exports[name]);
+      if (missing.length > 0) {
+        throw new WasmFunctionNotFoundException(missing.join(', '));
+      }
 
       // Run the Go runtime
       this.go.run(wasm.instance);
 
       // Store the instance and exports
-      this.wasmExports = wasm.instance.exports;
-
-      // Get the required exports
-      this.wasmMemory = this.wasmExports['memory'] as WebAssembly.Memory;
-
-      // Verify required functions exist
-      if (!this.wasmExports['malloc'] || !this.wasmExports['free'] || !this.wasmExports['evaluate']) {
-        throw new WasmFunctionNotFoundException('Required WASM functions not found');
-      }
+      this.wasmExports = exports;
+      this.wasmMemory = exports['memory'] as WebAssembly.Memory;
     } catch (error) {
       if (error instanceof WasmNotLoadedException || error instanceof WasmFunctionNotFoundException) {
         throw error;
@@ -398,11 +426,7 @@ export class EvaluateWasm {
    * @throws WasmInvalidResultException - If for any reasons we have an issue calling the wasm module.
    */
   private readFromMemory(evaluateRes: bigint): string {
-    // In the .NET implementation, the result is packed as:
-    // Higher 32 bits for pointer, lower 32 bits for length
-    const MASK = BigInt(2 ** 32) - BigInt(1);
-    const ptr = Number(evaluateRes >> BigInt(32)) & 0xffffffff; // Higher 32 bits for a pointer
-    const outputStringLength = Number(evaluateRes & MASK); // Lower 32 bits for length
+    const { ptr, length: outputStringLength } = unpackEvaluateResult(evaluateRes);
 
     if (ptr === 0 || outputStringLength === 0) {
       throw new WasmInvalidResultException('Output string pointer or length is invalid.');
@@ -413,6 +437,16 @@ export class EvaluateWasm {
     }
 
     const buffer = new Uint8Array(this.wasmMemory.buffer);
+
+    // Out-of-range indices on a typed array read as `undefined`, which stores as 0 - so without
+    // this the caller gets a run of NUL bytes and an opaque JSON parse error instead of the real
+    // fault. The bound is re-read here because a call into the guest can have grown the memory.
+    if (ptr + outputStringLength > buffer.length) {
+      throw new WasmInvalidResultException(
+        `Output string [${ptr}, ${ptr + outputStringLength}) falls outside the WASM memory of ${buffer.length} bytes.`,
+      );
+    }
+
     const bytes = new Uint8Array(outputStringLength);
 
     for (let i = 0; i < outputStringLength; i++) {

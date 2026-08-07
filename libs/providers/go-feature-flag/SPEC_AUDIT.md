@@ -72,29 +72,29 @@ VERDICT: NON-CONFORMANT — 3 Critical, 29 Major, 10 Minor
          (97 PASS, 35 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`). Remaining: 42.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`). Remaining: 40.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |      97 |
+| PASS         |      99 |
 | FAIL         |      35 |
-| PARTIAL      |       7 |
+| PARTIAL      |       5 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 7 `PARTIAL` results count as non-conformance**, giving 42 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 5 `PARTIAL` results count as non-conformance**, giving 40 unmet requirements.
 
 ### 1.2 Failures by severity
 
 | Severity  |   FAIL | PARTIAL |  Total |
 | --------- | -----: | ------: | -----: |
 | Critical  |      2 |       1 |  **3** |
-| Major     |     23 |       6 | **29** |
+| Major     |     23 |       4 | **27** |
 | Minor     |     10 |       0 | **10** |
-| **Total** | **35** |   **7** | **42** |
+| **Total** | **35** |   **5** | **40** |
 
 ### 1.3 Counts by area
 
@@ -109,7 +109,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-CTX` (§7)       |       9 |      9 |      0 |       0 |     0 |
 | `GOFF-REM` (§8)       |       6 |      6 |      0 |       0 |     0 |
 | `GOFF-IP` (§9)        |      17 |     16 |      1 |       0 |     0 |
-| `GOFF-WASM` (§10)     |      13 |     10 |      1 |       2 |     0 |
+| `GOFF-WASM` (§10)     |      13 |     12 |      1 |       0 |     0 |
 | `GOFF-ERR` (§11)      |       6 |      6 |      0 |       0 |     0 |
 | `GOFF-HOOK` (§12)     |       6 |      3 |      3 |       0 |     0 |
 | `GOFF-COLL` (§13)     |      23 |     14 |      8 |       1 |     0 |
@@ -117,7 +117,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |      3 |      1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |      0 |      9 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |      0 |      0 |       0 |     7 |
-| **Total**             | **147** | **97** | **35** |   **7** | **8** |
+| **Total**             | **147** | **99** | **35** |   **5** | **8** |
 
 ### 1.4 Headline
 
@@ -213,10 +213,10 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-IP-014`       | Major    | In-process | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:252-260`                                                                                                                                                                                                          | Input carries `flagKey`, `flag`, `evalContext` and `flagContext{defaultSdkValue, evaluationContextEnrichment}`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `GOFF-IP-016`       | Critical | In-process | PASS        | `gff/src/lib/service/api.ts:214-216`; `gff/src/lib/wasm/evaluate-wasm.ts:231`; `gff/src/lib/evaluator/inprocess-evaluator.ts:205`                                                                                                                               | The `Flag` interface is a compile-time type assertion only; the parsed object is re-serialised untouched. `trackEvents` is the sole field read.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `GOFF-IP-017`       | Major    | In-process | PASS        | `gff/src/lib/service/api.ts:214`                                                                                                                                                                                                                                | No schema validation exists, so unknown fields are tolerated and preserved.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `GOFF-WASM-001`     | Major    | WASM       | **PARTIAL** | `gff/src/lib/wasm/evaluate-wasm.ts:53, 56-58`                                                                                                                                                                                                                   | `malloc`/`free`/`evaluate` are checked; `memory` is assigned without any presence check.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `GOFF-WASM-001`     | Major    | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:13, 88-91`                                                                                                                                                                                                                   | All four exports — `memory` included — are resolved from a single list and initialization fails naming whichever is absent. The check runs before `go.run` and before any field is stored, so a rejected module leaves no partial instance. _Fixed — Step 11._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `GOFF-WASM-002`     | Major    | WASM       | PASS        | `gff/src/lib/wasm/wasm_exec.js:554-568`; `gff/src/lib/wasm/evaluate-wasm.ts:47`                                                                                                                                                                                 | `_start` invoked once per instance; exit code `0` is returned, not treated as failure.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `GOFF-WASM-003`     | Critical | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:231, 238`                                                                                                                                                                                                                    | `TextEncoder.encode(...).length` is the UTF-8 byte length.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `GOFF-WASM-004`     | Major    | WASM       | **PARTIAL** | `gff/src/lib/wasm/evaluate-wasm.ts:363-365`                                                                                                                                                                                                                     | Length uses BigInt masking (correct); the pointer is narrowed by `& 0xffffffff` on a `Number`, a signed 32-bit operation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `GOFF-WASM-004`     | Major    | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:27-31, 429`                                                                                                                                                                                                                  | Both halves are masked in BigInt and converted to `Number` afterwards, so a pointer stays non-negative across the whole 32-bit range. Unpacking is a pure function so the range above 2 GiB is testable without a module that large. _Fixed — Step 11._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `GOFF-WASM-005`     | Critical | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:238-254`                                                                                                                                                                                                                     | Output is read at :241, `free` runs in the `finally` at :250-254 — read before free.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `GOFF-WASM-006`     | Major    | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:252-254, 367-369`                                                                                                                                                                                                            | Input freed after the read; output never freed; packed `0` raises `WasmInvalidResultException`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `GOFF-WASM-007`     | Critical | WASM       | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:234-254`                                                                                                                                                                                                                     | _Accidental_: `malloc → evaluate → read → free` contains no `await`, so the single-threaded event loop cannot interleave two calls. No explicit guard.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -1032,7 +1032,12 @@ Inherited FAIL, and the one §10 requirement the engine bump does **not** touch.
 
 ---
 
-#### M32 — `GOFF-WASM-001` (PARTIAL) · The `memory` export is never validated
+#### ✅ M32 — `GOFF-WASM-001` · **RESOLVED in Step 11**
+
+_All four exports are resolved from one list (`evaluate-wasm.ts:13`) and initialization fails naming whichever is absent (`:88-91`). The check was also moved ahead of `go.run` and ahead of every field assignment, so a rejected module leaves `wasmExports` and `wasmMemory` null rather than the half-assigned state that made the original defect silent. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The host **MUST** resolve the exports `memory`, `malloc`, `free` and `evaluate`, and **MUST** fail initialization if any is absent."
 
@@ -1050,7 +1055,16 @@ if (!this.wasmExports['malloc'] || !this.wasmExports['free'] || !this.wasmExport
 
 ---
 
-#### M33 — `GOFF-WASM-004` (PARTIAL) · Pointer unpacking narrows to signed 32-bit
+</details>
+
+---
+
+#### ✅ M33 — `GOFF-WASM-004` · **RESOLVED in Step 11**
+
+_Unpacking moved into a pure `unpackEvaluateResult` (`evaluate-wasm.ts:27-31`) that masks both halves in BigInt before converting, so a pointer stays non-negative across the whole 32-bit range. Extracting it is what makes the requirement testable: proving the fix through an evaluation would need a module holding more than 2 GiB of linear memory. `readFromMemory` (`:444`) additionally rejects an output slice extending past the end of the memory — without that, an out-of-range pointer reads `undefined` per index, which stores as `0`, so the caller got a run of NUL bytes and an opaque JSON parse error. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The packed `i64` result **MUST** be unpacked as pointer in the high 32 bits and length in the low 32 bits, using arithmetic wide enough not to overflow."
 
@@ -1067,6 +1081,10 @@ The length is computed entirely in BigInt and is correct. The pointer is not: Ja
 **Consequence:** Correct for every address below 2 GiB, which covers realistic linear-memory sizes for this module — so this is latent rather than currently reachable. It becomes a wrong-value or crash the moment the module's memory grows past 2 GiB.
 
 **Smallest fix:** Keep it in BigInt: `const ptr = Number((evaluateRes >> BigInt(32)) & MASK);`
+
+---
+
+</details>
 
 ---
 
