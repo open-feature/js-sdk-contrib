@@ -151,12 +151,18 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
    * Initialize the hooks for the provider.
    */
   private initializeHooks(): void {
+    // The order is normative. The SDK runs provider `before` stages in array order and `after`,
+    // `error` and `finally` in reverse, so enrichment has to be registered first for the data
+    // collector to observe an enriched context once it grows a `before` stage of its own.
+    //
+    // Registered unconditionally: the hook builds an empty `ExporterMetadata` when the caller
+    // supplied none, and it is the only place the reserved `gofeatureflag` namespace is attached to
+    // the evaluation context - so gating it on `exporterMetadata` left the default configuration,
+    // which is the common one, with no namespace at all.
+    this.hooks.push(new EnrichEvaluationContextHook(this.options.exporterMetadata));
+    this.logger?.debug('Enrich evaluation context hook initialized');
     this.hooks.push(new DataCollectorHook(this.evaluator, this.eventPublisher));
     this.logger?.debug('Data collector hook initialized');
-    if (this.options.exporterMetadata) {
-      this.hooks.push(new EnrichEvaluationContextHook(this.options.exporterMetadata));
-      this.logger?.debug('Enrich evaluation context hook initialized');
-    }
   }
 
   /**
