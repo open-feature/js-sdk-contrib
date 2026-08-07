@@ -95,7 +95,7 @@ describe('EnrichEvaluationContextHook', () => {
 
       expect(namespaceOf(result)).toEqual({
         flagList: ['flagA'],
-        exporterMetadata: { version: '2.0.0' },
+        exporterMetadata: { version: '2.0.0', provider: 'nodejs', openfeature: true },
       });
     });
 
@@ -109,7 +109,6 @@ describe('EnrichEvaluationContextHook', () => {
       hook = new EnrichEvaluationContextHook(metadata);
 
       const result = await hook.before(hookContextFor({ gofeatureflag: value as never }));
-      console.log(namespaceOf(result));
       expect(namespaceOf(result)).toEqual({ exporterMetadata: metadata.asObject() });
     });
 
@@ -119,8 +118,12 @@ describe('EnrichEvaluationContextHook', () => {
       const result = await hook.before(hookContextFor({ user: 'test-user', gofeatureflag: { flagList: ['a'] } }));
 
       // The hook is registered unconditionally, so it must leave a well-formed namespace behind and
-      // must not destroy the caller's entries on the way.
-      expect(namespaceOf(result)).toEqual({ flagList: ['a'], exporterMetadata: {} });
+      // must not destroy the caller's entries on the way. Even with no caller metadata the reserved
+      // keys are there, which is what gives the unconditional registration something to contribute.
+      expect(namespaceOf(result)).toEqual({
+        flagList: ['a'],
+        exporterMetadata: { provider: 'nodejs', openfeature: true },
+      });
     });
 
     it('should return a new context rather than mutate the caller', async () => {

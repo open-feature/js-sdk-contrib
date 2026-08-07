@@ -87,7 +87,11 @@ describe('GoFeatureFlagProvider', () => {
         hookData: new MapHookData(),
       });
 
-      expect(enriched['gofeatureflag']).toEqual({ exporterMetadata: {} });
+      // The reserved keys are what make the unconditional registration worth anything: with no
+      // caller metadata the hook still has the SDK identity to contribute.
+      expect(enriched['gofeatureflag']).toEqual({
+        exporterMetadata: { provider: 'nodejs', openfeature: true },
+      });
     });
   });
 
@@ -1258,7 +1262,7 @@ describe('GoFeatureFlagProvider', () => {
       expect(lastCall[0]).toBe('http://localhost:1031/v1/data/collector');
 
       const want = {
-        meta: {},
+        meta: { provider: 'nodejs', openfeature: true },
         events: [
           {
             kind: 'tracking',
@@ -1317,7 +1321,7 @@ describe('GoFeatureFlagProvider', () => {
       jest.advanceTimersByTime(110);
 
       const want = {
-        meta: {},
+        meta: { provider: 'nodejs', openfeature: true },
         events: [
           {
             kind: 'tracking',
@@ -1381,7 +1385,7 @@ describe('GoFeatureFlagProvider', () => {
       jest.advanceTimersByTime(150);
 
       const want = {
-        meta: {},
+        meta: { provider: 'nodejs', openfeature: true },
         events: [
           {
             kind: 'tracking',
@@ -1469,7 +1473,7 @@ describe('GoFeatureFlagProvider', () => {
       jest.advanceTimersByTime(100);
 
       const want = {
-        meta: {},
+        meta: { provider: 'nodejs', openfeature: true },
         events: [
           {
             kind: 'tracking',

@@ -40,3 +40,16 @@ export const GO_FEATURE_FLAG_CONTEXT_KEY = 'gofeatureflag';
 
 /** Key within the reserved namespace under which the relay proxy reads the exporter metadata. */
 export const EXPORTER_METADATA_KEY = 'exporterMetadata';
+
+/**
+ * Exporter-metadata keys the provider always contributes, whatever the caller configured.
+ *
+ * They are a wire contract shared with the relay proxy and with every other GO Feature Flag
+ * provider: `provider` is the lowercase language identifier the collector groups by, and
+ * `openfeature` marks the events as coming from an OpenFeature SDK rather than a native client.
+ * Without them an exported event cannot be attributed to an SDK at all.
+ */
+export const RESERVED_EXPORTER_METADATA = Object.freeze({
+  provider: 'nodejs',
+  openfeature: true,
+} as const);
