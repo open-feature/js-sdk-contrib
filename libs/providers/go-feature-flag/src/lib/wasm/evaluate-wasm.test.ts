@@ -1,4 +1,5 @@
-import { EvaluateWasm } from './evaluate-wasm';
+import { EvaluateWasm, unpackEvaluateResult } from './evaluate-wasm';
+import { WasmFunctionNotFoundException } from '../exception';
 
 /**
  * These tests instantiate the real WASM module copied in by the `copy-wasm` target, because the
@@ -75,6 +76,77 @@ describe('EvaluateWasm', () => {
 
       expect(result.value).toBe(true);
       expect(result.errorCode).toBeFalsy();
+    });
+  });
+
+  describe('export validation', () => {
+    /** Instantiates to a stub module whose exports are complete except for `missing`. */
+    const instantiateWithout = (missing: string) => {
+      const exports: Record<string, unknown> = {
+        memory: new WebAssembly.Memory({ initial: 1 }),
+        malloc: () => 1,
+        free: () => undefined,
+        evaluate: () => BigInt(0),
+      };
+      delete exports[missing];
+      instantiateSpy.mockResolvedValue({
+        instance: { exports } as unknown as WebAssembly.Instance,
+        module: {} as WebAssembly.Module,
+      });
+    };
+
+    // `memory` is as required as the three functions - every read and write goes through it - and it
+    // was the one export the check omitted.
+    it.each(['memory', 'malloc', 'free', 'evaluate'])(
+      'should fail initialization when the module does not export %s',
+      async (missing) => {
+        instantiateWithout(missing);
+
+        await expect(engine.initialize()).rejects.toThrow(WasmFunctionNotFoundException);
+      },
+    );
+
+    it('should name the export that is missing', async () => {
+      instantiateWithout('memory');
+
+      await expect(engine.initialize()).rejects.toThrow(/memory/);
+    });
+
+    it('should leave no instance behind when an export is missing', async () => {
+      instantiateWithout('memory');
+
+      await expect(engine.initialize()).rejects.toThrow();
+
+      // Half-assigned state is what made this silent: `evaluate` reads a populated `wasmExports`
+      // with an undefined `wasmMemory` as "not initialized", so it re-instantiated the module on
+      // every call and failed much later with "WASM memory not available".
+      expect((engine as unknown as { wasmExports: unknown }).wasmExports).toBeNull();
+      expect((engine as unknown as { wasmMemory: unknown }).wasmMemory).toBeNull();
+    });
+  });
+
+  describe('reading the output', () => {
+    /** Replaces `evaluate` with one returning `packed`, keeping the real memory and allocator. */
+    const makeEvaluateReturn = (packed: bigint) => {
+      const real = (engine as unknown as { wasmExports: Record<string, unknown> }).wasmExports;
+      (engine as unknown as { wasmExports: Record<string, unknown> }).wasmExports = {
+        memory: real['memory'],
+        malloc: real['malloc'],
+        free: real['free'],
+        evaluate: () => packed,
+      };
+    };
+
+    it('should reject an output that falls outside the linear memory', async () => {
+      await engine.initialize();
+      makeEvaluateReturn((BigInt(0xffffffff) << BigInt(32)) | BigInt(16));
+
+      const result = await engine.evaluate(sampleInput);
+
+      // Out-of-range typed-array reads are `undefined`, which stores as 0, so without the bound the
+      // caller gets a run of NUL bytes and an opaque JSON parse error instead of the real fault.
+      expect(result.errorCode).toBe('GENERAL');
+      expect(result.errorDetails).toContain('outside the WASM memory');
     });
   });
 
@@ -157,5 +229,32 @@ describe('EvaluateWasm', () => {
         expect(recovered.errorCode).toBeFalsy();
       }
     });
+  });
+});
+
+/**
+ * Unpacking is tested directly rather than through an evaluation: proving the pointer survives the
+ * top of the 32-bit range would otherwise need a module holding more than 2 GiB of linear memory.
+ */
+describe('unpackEvaluateResult', () => {
+  /** Packs a pointer and a length the way the module's `evaluate` does. */
+  const pack = (ptr: number, length: number) => (BigInt(ptr) << BigInt(32)) | BigInt(length);
+
+  it('should unpack a pointer and a length below 2 GiB', () => {
+    expect(unpackEvaluateResult(pack(1024, 42))).toEqual({ ptr: 1024, length: 42 });
+  });
+
+  // `Number(x) & 0xffffffff` coerces to a *signed* 32-bit integer, so each of these came back
+  // negative and indexed outside the linear memory.
+  it.each([
+    { label: 'at 2 GiB', ptr: 0x80000000 },
+    { label: 'above 2 GiB', ptr: 0xdeadbeef },
+    { label: 'at the top of the 32-bit range', ptr: 0xffffffff },
+  ])('should keep a pointer $label non-negative', ({ ptr }) => {
+    expect(unpackEvaluateResult(pack(ptr, 8)).ptr).toBe(ptr);
+  });
+
+  it('should not let a high pointer bleed into the length', () => {
+    expect(unpackEvaluateResult(pack(0xffffffff, 16)).length).toBe(16);
   });
 });
