@@ -49,6 +49,10 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
     if (this.options.endpoint !== undefined) {
       this.options.endpoint = this.options.endpoint.replace(/\/+$/, '');
     }
+    // The spread is shallow, so `headers` would otherwise still be the caller's own object.
+    if (options.headers !== undefined) {
+      this.options.headers = { ...options.headers };
+    }
     this.logger = logger;
     // Everything downstream takes the normalised copy. The old code got away with passing the
     // caller's object because it had already mutated it in place.
@@ -194,11 +198,15 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
       throw new InvalidOptionsException('No options provided');
     }
 
-    if ((!options.endpoint || options.endpoint.trim() === '') && options.evaluationType !== EvaluationType.Remote) {
+    // Both checks apply in remote mode too. Exempting it was what let OFREP_ENDPOINT supply the
+    // endpoint instead, so the process environment could redirect evaluation traffic to a host the
+    // caller never configured - and a malformed value was caught late, by the delegate, as a
+    // generic Error rather than this provider's own InvalidOptionsException.
+    if (!options.endpoint || options.endpoint.trim() === '') {
       throw new InvalidOptionsException('endpoint is a mandatory field when initializing the provider');
     }
 
-    if (options.evaluationType !== EvaluationType.Remote && options.endpoint !== undefined) {
+    {
       try {
         const url = new URL(options.endpoint);
         if (url.protocol !== 'http:' && url.protocol !== 'https:') {

@@ -12,14 +12,14 @@ import { NOT_MODIFIED } from '../model';
 import type { Logger } from '@openfeature/server-sdk';
 import {
   APPLICATION_JSON,
-  BEARER_TOKEN,
-  HTTP_HEADER_AUTHORIZATION,
+  HTTP_HEADER_API_KEY,
   HTTP_HEADER_CONTENT_TYPE,
   HTTP_HEADER_ETAG,
   HTTP_HEADER_IF_NONE_MATCH,
   HTTP_HEADER_LAST_MODIFIED,
   HTTP_STATUS,
 } from '../helper/constants';
+import { buildRequestHeaders } from '../helper/headers';
 import {
   FlagConfigurationEndpointNotFoundException,
   GoFeatureFlagException,
@@ -38,6 +38,8 @@ export class GoFeatureFlagApi {
   private readonly apiKey?: string;
   private readonly fetchImplementation: FetchAPI;
   private readonly logger?: Logger;
+  /** Caller-supplied headers, merged into every request to the relay proxy. */
+  private readonly customHeaders?: Record<string, string>;
 
   /**
    * Constructor for GoFeatureFlagApi.
@@ -49,11 +51,12 @@ export class GoFeatureFlagApi {
       throw new InvalidOptionsException('Options cannot be null');
     }
 
-    this.endpoint = options.endpoint!;
+    this.endpoint = options.endpoint;
     this.timeout = options.timeout || 10000;
     this.apiKey = options.apiKey;
     this.fetchImplementation = options.fetchImplementation || isomorphicFetch();
     this.logger = logger;
+    this.customHeaders = options.headers;
   }
 
   /**
@@ -70,19 +73,21 @@ export class GoFeatureFlagApi {
     const requestBody: FlagConfigRequest = { flags: flags || [] };
     const requestStr = JSON.stringify(requestBody);
 
-    const headers: Record<string, string> = {
+    const ownedHeaders: Record<string, string> = {
       [HTTP_HEADER_CONTENT_TYPE]: APPLICATION_JSON,
     };
 
     // Adding the If-None-Match header if etag is provided
     if (etag) {
-      headers[HTTP_HEADER_IF_NONE_MATCH] = etag;
+      ownedHeaders[HTTP_HEADER_IF_NONE_MATCH] = etag;
     }
 
-    // Add authorization header if API key is provided
+    // Truthiness, not a presence check: an empty apiKey must send no authentication header at all.
     if (this.apiKey) {
-      headers[HTTP_HEADER_AUTHORIZATION] = `${BEARER_TOKEN}${this.apiKey}`;
+      ownedHeaders[HTTP_HEADER_API_KEY] = this.apiKey;
     }
+
+    const headers = buildRequestHeaders(ownedHeaders, this.customHeaders);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -152,14 +157,15 @@ export class GoFeatureFlagApi {
 
     const requestStr = JSON.stringify(requestBody);
 
-    const headers: Record<string, string> = {
+    const ownedHeaders: Record<string, string> = {
       [HTTP_HEADER_CONTENT_TYPE]: APPLICATION_JSON,
     };
 
-    // Add authorization header if API key is provided
     if (this.apiKey) {
-      headers[HTTP_HEADER_AUTHORIZATION] = `${BEARER_TOKEN}${this.apiKey}`;
+      ownedHeaders[HTTP_HEADER_API_KEY] = this.apiKey;
     }
+
+    const headers = buildRequestHeaders(ownedHeaders, this.customHeaders);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
