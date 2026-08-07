@@ -405,7 +405,9 @@ describe('GoFeatureFlagApi', () => {
 
       const request = mockFetch.getLastRequest();
       const body = JSON.parse(request?.options.body as string);
-      expect(body.meta).toEqual({ env: 'production' });
+      // The envelope always carries the reserved keys, so the collector can attribute the
+      // events to an SDK and a language even when the caller configured no metadata.
+      expect(body.meta).toEqual({ env: 'production', provider: 'nodejs', openfeature: true });
       expect(body.events).toHaveLength(1);
       expect(JSON.stringify(body.events)).toBe(JSON.stringify(events));
     });
