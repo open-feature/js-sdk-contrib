@@ -72,6 +72,46 @@ describe('GoFeatureFlagProvider', () => {
       expect(provider.hooks[1]).toBeInstanceOf(DataCollectorHook);
     });
 
+    /** Drives the registered data collector hook and reports whether it published anything. */
+    const collectorPublishesFor = async (disableDataCollection?: boolean): Promise<boolean> => {
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'https://gofeatureflag.org',
+        disableDataCollection,
+      });
+      const internals = provider as unknown as {
+        eventPublisher: { addEvent: (event: unknown) => void };
+        evaluator: { isFlagTrackable: (flagKey: string) => boolean };
+      };
+      const addEvent = jest.spyOn(internals.eventPublisher, 'addEvent').mockImplementation(() => undefined);
+      // Trackable on purpose, so the only thing that can suppress the event is the option.
+      jest.spyOn(internals.evaluator, 'isFlagTrackable').mockReturnValue(true);
+
+      await (provider.hooks[1] as DataCollectorHook).after(
+        {
+          flagKey: 'test-flag',
+          defaultValue: false,
+          context: { targetingKey: 'user-1' },
+          flagValueType: 'boolean',
+          clientMetadata: { providerMetadata: { name: 'test' } },
+          providerMetadata: { name: 'test' },
+          logger: console,
+          hookData: new MapHookData(),
+        },
+        { flagKey: 'test-flag', value: true, variant: 'on', reason: 'TARGETING_MATCH', flagMetadata: {} },
+      );
+
+      return addEvent.mock.calls.length > 0;
+    };
+
+    it('should wire disableDataCollection into the data collector hook', async () => {
+      // The hook honouring the option is worth nothing if the provider never passes it down.
+      await expect(collectorPublishesFor(true)).resolves.toBe(false);
+    });
+
+    it('should still collect when disableDataCollection is not set', async () => {
+      await expect(collectorPublishesFor(undefined)).resolves.toBe(true);
+    });
+
     it('should still enrich the context when no exporterMetadata is configured', async () => {
       const provider = new GoFeatureFlagProvider({ endpoint: 'https://gofeatureflag.org' });
       const enrichmentHook = provider.hooks[0] as EnrichEvaluationContextHook;
@@ -1220,6 +1260,46 @@ describe('GoFeatureFlagProvider', () => {
   });
 
   describe('Track method', () => {
+    it('should not send tracking events when data collection is disabled', async () => {
+      jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/data\/collector/, async () => {
+        return {
+          body: JSON.stringify({}),
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
+      });
+
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'http://localhost:1031',
+        evaluationType: EvaluationType.Remote,
+        dataFlushInterval: 100,
+        maxPendingEvents: 1,
+        disableDataCollection: true,
+      });
+
+      await OpenFeature.setProviderAndWait('track-events-data-collection-disabled', provider);
+      await provider.initialize();
+      const client = OpenFeature.getClient('track-events-data-collection-disabled');
+
+      client.track('testEvent', { targetingKey: 'testTargetingKey' }, { metric: 42 });
+
+      jest.advanceTimersByTime(100);
+
+      // Asserted on the tracking events rather than on the call count: an earlier test in this file
+      // leaks a provider whose publisher flushes a feature event when the timers advance here.
+      const trackingEventsSent = fetchMock.mock.calls
+        .filter((call) => call[0] === 'http://localhost:1031/v1/data/collector')
+        .flatMap((call) => JSON.parse(call[1]?.body as string).events as { kind: string }[])
+        .filter((event) => event.kind === 'tracking');
+
+      // The option was declared and documented but never read, so a caller who disabled collection
+      // - for a privacy requirement, or because they run no collector - still posted every event.
+      expect(trackingEventsSent).toHaveLength(0);
+    });
+
     it('should track events with context and details', async () => {
       jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/data\/collector/, async () => {
