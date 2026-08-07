@@ -40,9 +40,7 @@ OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080'
 Flags are automatically re-fetched when the page becomes visible (e.g. the user switches back to the tab). This follows [ADR-0010](https://github.com/open-feature/protocol/pull/69) and is **enabled by default**. To opt out:
 
 ```ts
-OpenFeature.setProvider(
-  new OFREPWebProvider({ baseUrl: 'https://localhost:8080', disableVisibilityRefresh: true }),
-);
+OpenFeature.setProvider(new OFREPWebProvider({ baseUrl: 'https://localhost:8080', disableVisibilityRefresh: true }));
 ```
 
 ### HTTP headers
@@ -122,6 +120,8 @@ Persisted entries are keyed by a hash of key material returned by a cache-key ge
 4. **`targetingKey`** — the evaluation context's targeting key
 
 Use **`cacheKeyGenerator`** to customize the key material (namespace instances, drop auth for rotating tokens, or include stable context fields). The provider always hashes whatever the generator returns.
+
+Only omit `input.auth` when authentication cannot affect flag results for the same `baseUrl`, `domain`, and `targetingKey`. Otherwise retain `input.auth` or include another stable identity discriminator so different credentials do not share persisted values.
 
 The localStorage key is `ofrep-web-provider:v2:{hash}` where `{hash}` is the first 16 hex characters of SHA-256 (or an FNV-1a fallback in non-secure contexts where `crypto.subtle` is unavailable).
 
