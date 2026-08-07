@@ -17,6 +17,7 @@ import { DataCollectorHook, EnrichEvaluationContextHook } from './hook';
 import { EventPublisher } from './service/event-publisher';
 import { getContextKind } from './helper/event-util';
 import { DEFAULT_TARGETING_KEY } from './helper/constants';
+import { stripTrailingSlashes, validateUrlOption } from './helper/validate-url';
 import { EvaluationType, type TrackingEvent } from './model';
 import { InvalidOptionsException, UnauthorizedException } from './exception';
 import { RemoteEvaluator } from './evaluator/remote-evaluator';
@@ -46,8 +47,9 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
     // read `options.endpoint` afterwards saw their own input silently rewritten - and under
     // `Object.freeze` the assignment threw, turning normalisation into a construction failure.
     this.options = { ...options };
-    if (this.options.endpoint !== undefined) {
-      this.options.endpoint = this.options.endpoint.replace(/\/+$/, '');
+    this.options.endpoint = stripTrailingSlashes(this.options.endpoint);
+    if (this.options.dataCollectorBaseURL !== undefined) {
+      this.options.dataCollectorBaseURL = stripTrailingSlashes(this.options.dataCollectorBaseURL);
     }
     // The spread is shallow, so `headers` would otherwise still be the caller's own object.
     if (options.headers !== undefined) {
@@ -206,15 +208,11 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
       throw new InvalidOptionsException('endpoint is a mandatory field when initializing the provider');
     }
 
-    {
-      try {
-        const url = new URL(options.endpoint);
-        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-          throw new InvalidOptionsException('endpoint must be a valid URL (http or https)');
-        }
-      } catch {
-        throw new InvalidOptionsException('endpoint must be a valid URL (http or https)');
-      }
+    validateUrlOption('endpoint', options.endpoint);
+    // Held to the same standard as `endpoint`: it replaces the whole base, so a malformed value
+    // would otherwise surface much later as a failed flush rather than as a configuration error.
+    if (options.dataCollectorBaseURL !== undefined) {
+      validateUrlOption('dataCollectorBaseURL', options.dataCollectorBaseURL);
     }
 
     if (options.flagChangePollingIntervalMs !== undefined && options.flagChangePollingIntervalMs <= 0) {

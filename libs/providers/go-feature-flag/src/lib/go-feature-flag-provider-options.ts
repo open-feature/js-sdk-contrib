@@ -18,6 +18,16 @@ export interface GoFeatureFlagProviderOptions {
   evaluationType?: EvaluationType;
 
   /**
+   * Base URL for the data-collector endpoint, when it is served separately from the relay proxy.
+   *
+   * Replaces the whole base - scheme, host, port and path prefix - for data collection **only**.
+   * Flag-configuration and evaluation requests continue to use `endpoint`. Authentication, custom
+   * `headers` and `timeout` apply to it identically.
+   * @default the value of `endpoint`
+   */
+  dataCollectorBaseURL?: string;
+
+  /**
    * The timeout for HTTP requests in milliseconds.
    * @default 10000
    */

@@ -87,6 +87,30 @@ describe('GoFeatureFlagProvider', () => {
       await provider.onClose();
     });
 
+    it('should normalise a trailing slash on dataCollectorBaseURL', () => {
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'https://gofeatureflag.org',
+        dataCollectorBaseURL: 'https://collector.example.com///',
+      });
+
+      // Without this the collector URL would carry a doubled slash before /v1/data/collector.
+      expect((provider as unknown as { options: { dataCollectorBaseURL: string } }).options.dataCollectorBaseURL).toBe(
+        'https://collector.example.com',
+      );
+    });
+
+    it('should reject a malformed dataCollectorBaseURL at construction', () => {
+      // It replaces the whole base, so a malformed value would otherwise surface much later as a
+      // failed flush rather than as a configuration error.
+      expect(
+        () =>
+          new GoFeatureFlagProvider({
+            endpoint: 'https://gofeatureflag.org',
+            dataCollectorBaseURL: 'not-a-url',
+          }),
+      ).toThrow('dataCollectorBaseURL must be a valid URL (http or https)');
+    });
+
     it('should accept a frozen options object', () => {
       const frozenOptions = Object.freeze({ endpoint: 'https://gofeatureflag.org/' });
 
