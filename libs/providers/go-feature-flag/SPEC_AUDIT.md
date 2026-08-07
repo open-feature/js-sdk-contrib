@@ -72,52 +72,52 @@ VERDICT: NON-CONFORMANT — 3 Critical, 29 Major, 10 Minor
          (97 PASS, 35 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`). Remaining: 40.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`). Remaining: 37.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |      99 |
-| FAIL         |      35 |
+| PASS         |     102 |
+| FAIL         |      32 |
 | PARTIAL      |       5 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 5 `PARTIAL` results count as non-conformance**, giving 40 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 5 `PARTIAL` results count as non-conformance**, giving 37 unmet requirements.
 
 ### 1.2 Failures by severity
 
 | Severity  |   FAIL | PARTIAL |  Total |
 | --------- | -----: | ------: | -----: |
-| Critical  |      2 |       1 |  **3** |
-| Major     |     23 |       4 | **27** |
+| Critical  |      1 |       1 |  **2** |
+| Major     |     21 |       4 | **25** |
 | Minor     |     10 |       0 | **10** |
-| **Total** | **35** |   **5** | **40** |
+| **Total** | **32** |   **5** | **37** |
 
 ### 1.3 Counts by area
 
-| Area                  |   Total |   PASS |   FAIL | PARTIAL |   N/A |
-| --------------------- | ------: | -----: | -----: | ------: | ----: |
-| `GOFF-ENG` (§1.6)     |       3 |      2 |      1 |       0 |     0 |
-| `GOFF-META` (§2)      |       3 |      1 |      2 |       0 |     0 |
-| `GOFF-CFG` (§3)       |      10 |      1 |      7 |       2 |     0 |
-| `GOFF-LIFE` (§4)      |       7 |      7 |      0 |       0 |     0 |
-| `GOFF-EVT` (§5)       |       8 |      7 |      1 |       0 |     0 |
-| `GOFF-EVAL` (§6)      |      11 |      8 |      0 |       2 |     1 |
-| `GOFF-CTX` (§7)       |       9 |      9 |      0 |       0 |     0 |
-| `GOFF-REM` (§8)       |       6 |      6 |      0 |       0 |     0 |
-| `GOFF-IP` (§9)        |      17 |     16 |      1 |       0 |     0 |
-| `GOFF-WASM` (§10)     |      13 |     12 |      1 |       0 |     0 |
-| `GOFF-ERR` (§11)      |       6 |      6 |      0 |       0 |     0 |
-| `GOFF-HOOK` (§12)     |       6 |      3 |      3 |       0 |     0 |
-| `GOFF-COLL` (§13)     |      23 |     14 |      8 |       1 |     0 |
-| `GOFF-TRACK` (§14)    |       5 |      4 |      1 |       0 |     0 |
-| `GOFF-AUTH` (§15)     |       4 |      3 |      1 |       0 |     0 |
-| `GOFF-FALLBACK` (§16) |       9 |      0 |      9 |       0 |     0 |
-| `GOFF-CACHE` (§17)    |       7 |      0 |      0 |       0 |     7 |
-| **Total**             | **147** | **99** | **35** |   **5** | **8** |
+| Area                  |   Total |    PASS |   FAIL | PARTIAL |   N/A |
+| --------------------- | ------: | ------: | -----: | ------: | ----: |
+| `GOFF-ENG` (§1.6)     |       3 |       2 |      1 |       0 |     0 |
+| `GOFF-META` (§2)      |       3 |       1 |      2 |       0 |     0 |
+| `GOFF-CFG` (§3)       |      10 |       1 |      7 |       2 |     0 |
+| `GOFF-LIFE` (§4)      |       7 |       7 |      0 |       0 |     0 |
+| `GOFF-EVT` (§5)       |       8 |       7 |      1 |       0 |     0 |
+| `GOFF-EVAL` (§6)      |      11 |       8 |      0 |       2 |     1 |
+| `GOFF-CTX` (§7)       |       9 |       9 |      0 |       0 |     0 |
+| `GOFF-REM` (§8)       |       6 |       6 |      0 |       0 |     0 |
+| `GOFF-IP` (§9)        |      17 |      16 |      1 |       0 |     0 |
+| `GOFF-WASM` (§10)     |      13 |      12 |      1 |       0 |     0 |
+| `GOFF-ERR` (§11)      |       6 |       6 |      0 |       0 |     0 |
+| `GOFF-HOOK` (§12)     |       6 |       3 |      3 |       0 |     0 |
+| `GOFF-COLL` (§13)     |      23 |      17 |      5 |       1 |     0 |
+| `GOFF-TRACK` (§14)    |       5 |       4 |      1 |       0 |     0 |
+| `GOFF-AUTH` (§15)     |       4 |       3 |      1 |       0 |     0 |
+| `GOFF-FALLBACK` (§16) |       9 |       0 |      9 |       0 |     0 |
+| `GOFF-CACHE` (§17)    |       7 |       0 |      0 |       0 |     7 |
+| **Total**             | **147** | **102** | **32** |   **5** | **8** |
 
 ### 1.4 Headline
 
@@ -253,10 +253,10 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-COLL-013`     | Major    | Core       | **PARTIAL** | `gff/src/lib/model/exporter-metadata.ts:12-15`                                                                                                                                                                                                                  | Types are constrained at compile time only; `add()` performs no runtime validation and nothing is rejected at construction.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `GOFF-COLL-014`     | Major    | Core       | PASS        | `gff/src/lib/service/event-publisher.ts:59-65, 89-97, 71-82`                                                                                                                                                                                                    | Interval, `maxPendingEvents` threshold and shutdown all flush.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `GOFF-COLL-015`     | Minor    | Core       | PASS        | `gff/src/lib/service/event-publisher.ts:60, 107-109`                                                                                                                                                                                                            | _Accidental_: `runPublisher` does call `publishEvents` on start, but the empty-buffer guard returns before any HTTP call.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `GOFF-COLL-016`     | Major    | Core       | **FAIL**    | `gff/src/lib/service/event-publisher.ts:104-119`                                                                                                                                                                                                                | No in-flight flag; a timer flush can overlap an over-threshold flush.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `GOFF-COLL-016`     | Major    | Core       | PASS        | `gff/src/lib/service/event-publisher.ts:23, 138-140, 149-153`                                                                                                                                                                                                   | `publishEvents` returns early while `inFlight` is set, and the handle is assigned before the first suspension point so a threshold flush cannot slip past it. `stop` joins it before the final flush. _Fixed — Step 12._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `GOFF-COLL-017`     | Critical | Core       | PASS        | `gff/src/lib/service/event-publisher.ts:110-113`                                                                                                                                                                                                                | Buffer is swapped synchronously before the `await`; no lock spans the HTTP call.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `GOFF-COLL-018`     | Major    | Core       | **FAIL**    | `gff/src/lib/service/event-publisher.ts:117`                                                                                                                                                                                                                    | The failed batch is appended to the tail, behind anything enqueued during the flight.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `GOFF-COLL-019`     | Critical | Core       | **FAIL**    | `gff/src/lib/service/event-publisher.ts:17, 90, 117`                                                                                                                                                                                                            | The array is never capped and nothing is discarded on overflow.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `GOFF-COLL-018`     | Major    | Core       | PASS        | `gff/src/lib/service/event-publisher.ts:170`                                                                                                                                                                                                                    | The failed batch is returned with `unshift`, ahead of anything `addEvent` buffered while the POST was in flight. _Fixed — Step 12._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `GOFF-COLL-019`     | Critical | Core       | PASS        | `gff/src/lib/service/event-publisher.ts:102-110, 119, 171`                                                                                                                                                                                                      | `enforceCap` trims to `2 × maxPendingEvents`, discarding oldest first, and runs on both growth paths — the `addEvent` push and the failed-batch re-queue. Discards are logged. _Fixed — Step 12._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `GOFF-COLL-020`     | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:205`                                                                                                                                                                                                              | `flag.trackEvents ?? true`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `GOFF-COLL-021`     | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:199-203`                                                                                                                                                                                                          | Unknown flag returns `true`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `GOFF-COLL-022`     | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:205`                                                                                                                                                                                                              | Explicit `trackEvents: false` suppresses the event.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -661,7 +661,12 @@ A `finally` runs on the trap path as well as the success path, so `free` is invo
 
 ---
 
-#### C14 — `GOFF-COLL-019` · The event buffer is uncapped
+#### ✅ C14 — `GOFF-COLL-019` · **RESOLVED in Step 12**
+
+_`enforceCap` (`event-publisher.ts:102-110`) trims the buffer to `2 × maxPendingEvents`, discarding oldest first, and runs on both paths that can grow it — the push in `addEvent` (`:119`) and the failed-batch re-queue (`:171`). The threshold and the cap now derive from one accessor (`:91`), so they cannot drift apart. Discards are logged at warning level rather than being silent. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The buffer **MUST** be capped at twice `maxPendingEvents`, discarding **oldest** events on overflow. An uncapped buffer is an unbounded memory leak during a collector outage."
 
@@ -670,6 +675,10 @@ A `finally` runs on the trap path as well as the success path, so `free` is invo
 **Consequence:** While the data collector is unreachable, every evaluation and every `track()` call appends an event that is never removed: each flush attempt drains the array and then puts the whole batch back. Memory grows without bound for the duration of the outage, and the failing publish grows in size with it. On a busy service this ends in an OOM kill.
 
 **Smallest fix:** After the push in `addEvent` and after the re-queue at `:117`, trim from the front: `const cap = 2 * (this.options.maxPendingEvents ?? DEFAULT_MAX_PENDING_EVENTS); if (this.events.length > cap) this.events.splice(0, this.events.length - cap);`
+
+---
+
+</details>
 
 ---
 
@@ -902,7 +911,12 @@ Inherited FAIL per §C.1 — there is no stale state to recover from. Fixed alon
 
 ---
 
-#### M23 — `GOFF-COLL-016` · Flushing is not single-flight
+#### ✅ M23 — `GOFF-COLL-016` · **RESOLVED in Step 12**
+
+_`publishEvents` returns early while `inFlight` is set (`event-publisher.ts:138-140`). The handle is a promise rather than a boolean so `stop` can join it (`:85`) before the shutdown flush — with a bare flag, single-flight would have turned that flush into a no-op and dropped everything buffered at shutdown, trading this defect for a worse one. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "Flushing **MUST** be single-flight — concurrent publishes **MUST NOT** overlap."
 
@@ -914,7 +928,16 @@ Inherited FAIL per §C.1 — there is no stale state to recover from. Fixed alon
 
 ---
 
-#### M24 — `GOFF-COLL-018` · A failed batch is re-queued out of chronological order
+</details>
+
+---
+
+#### ✅ M24 — `GOFF-COLL-018` · **RESOLVED in Step 12**
+
+_The failed batch is returned with `unshift` (`event-publisher.ts:170`), ahead of anything `addEvent` buffered while the POST was in flight, and the C14 cap is applied immediately afterwards (`:171`) so the discard-oldest rule still trims from the head. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "A failed batch **MUST** be re-queued preserving chronological order."
 
@@ -933,6 +956,10 @@ Inherited FAIL per §C.1 — there is no stale state to recover from. Fixed alon
 **Consequence:** The collector receives events out of order after any transient failure. Since `creationDate` is second-granularity (`data-collector-hook.ts:54`), downstream ordering that relies on arrival order — or on the batch sequence — sees evaluations transposed across the failure boundary.
 
 **Smallest fix:** `this.events.unshift(...eventsToPublish);` — and apply the C14 cap afterwards, trimming from the front so the discard-oldest rule still holds.
+
+---
+
+</details>
 
 ---
 
