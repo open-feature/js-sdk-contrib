@@ -104,12 +104,16 @@ export class Storage {
     return lo.toString(16).padStart(8, '0') + hi.toString(16).padStart(8, '0');
   }
 
+  private _formatStorageKey(cacheKeyHash: string): string {
+    return `${STORAGE_NS}:v${SCHEMA_VERSION}:${cacheKeyHash}`;
+  }
+
   /**
    * Returns the localStorage key for the given evaluation context.
    * Format: `ofrep-web-provider:v{version}:{hash}`
    */
   async getStorageKey(context: EvaluationContext): Promise<string> {
-    return `${STORAGE_NS}:v${SCHEMA_VERSION}:${await this._hashInput(context)}`;
+    return this._formatStorageKey(await this._hashInput(context));
   }
 
   /**
@@ -125,17 +129,18 @@ export class Storage {
     eventStreams?: EventStream[],
   ): Promise<void> {
     if (this._disabled) return;
-    const key = await this.getStorageKey(context);
-    const entry: PersistedEntry = {
-      version: SCHEMA_VERSION,
-      cacheKeyHash: await this._hashInput(context),
-      etag,
-      writtenAt: new Date().toISOString(),
-      data: flags,
-      ...(metadata !== undefined && { metadata }),
-      ...(eventStreams !== undefined && { eventStreams }),
-    };
     try {
+      const cacheKeyHash = await this._hashInput(context);
+      const key = this._formatStorageKey(cacheKeyHash);
+      const entry: PersistedEntry = {
+        version: SCHEMA_VERSION,
+        cacheKeyHash,
+        etag,
+        writtenAt: new Date().toISOString(),
+        data: flags,
+        ...(metadata !== undefined && { metadata }),
+        ...(eventStreams !== undefined && { eventStreams }),
+      };
       localStorage.setItem(key, JSON.stringify(entry));
     } catch (error) {
       this._logger?.error(`Error storing flag cache in local storage: ${error}`);
