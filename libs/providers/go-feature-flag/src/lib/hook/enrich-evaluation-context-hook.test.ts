@@ -35,102 +35,102 @@ describe('EnrichEvaluationContextHook', () => {
   });
 
   describe('before', () => {
-    it('should return original context when no metadata is provided', async () => {
+    /** Builds the hook context the SDK would pass, around a caller-supplied evaluation context. */
+    const hookContextFor = (evaluationContext: EvaluationContext): HookContext<boolean> => ({
+      flagKey: 'test-flag',
+      defaultValue: false,
+      context: evaluationContext,
+      flagValueType: 'boolean',
+      clientMetadata: { providerMetadata: { name: 'test' } },
+      providerMetadata: { name: 'test' },
+      logger: mockLogger,
+      hookData: new MapHookData(),
+    });
+
+    const namespaceOf = (context: EvaluationContext) => context['gofeatureflag'] as Record<string, unknown>;
+
+    it('should nest the metadata under exporterMetadata', async () => {
+      const metadata = new ExporterMetadata().add('version', '1.0.0').add('environment', 'test');
+      hook = new EnrichEvaluationContextHook(metadata);
+
+      const result = await hook.before(hookContextFor({ user: 'test-user' }));
+
+      // Written flat under `gofeatureflag`, the relay proxy never reads it.
+      expect(namespaceOf(result)['exporterMetadata']).toEqual(metadata.asObject());
+      expect(result['user']).toBe('test-user');
+    });
+
+    it('should preserve caller-owned siblings in the namespace', async () => {
+      const metadata = new ExporterMetadata().add('version', '1.0.0');
+      hook = new EnrichEvaluationContextHook(metadata);
+
+      const result = await hook.before(
+        hookContextFor({
+          user: 'test-user',
+          gofeatureflag: {
+            flagList: ['flagA', 'flagB'],
+            currentDateTime: '2026-01-01T00:00:00Z',
+          },
+        }),
+      );
+
+      // flagList and currentDateTime are caller inputs. Replacing the whole namespace discards them
+      // and the evaluation then succeeds against the wrong inputs.
+      expect(namespaceOf(result)).toEqual({
+        flagList: ['flagA', 'flagB'],
+        currentDateTime: '2026-01-01T00:00:00Z',
+        exporterMetadata: metadata.asObject(),
+      });
+    });
+
+    it('should replace a previous exporterMetadata rather than merge into it', async () => {
+      const metadata = new ExporterMetadata().add('version', '2.0.0');
+      hook = new EnrichEvaluationContextHook(metadata);
+
+      const result = await hook.before(
+        hookContextFor({
+          gofeatureflag: { exporterMetadata: { version: '1.0.0', stale: 'entry' }, flagList: ['flagA'] },
+        }),
+      );
+
+      expect(namespaceOf(result)).toEqual({
+        flagList: ['flagA'],
+        exporterMetadata: { version: '2.0.0' },
+      });
+    });
+
+    it.each([
+      ['a string', 'not-a-map'],
+      ['an array', ['a', 'b']],
+      ['null', null],
+      ['a number', 42],
+    ])('should replace the namespace when it is %s rather than fail', async (_label, value) => {
+      const metadata = new ExporterMetadata().add('version', '1.0.0');
+      hook = new EnrichEvaluationContextHook(metadata);
+
+      const result = await hook.before(hookContextFor({ gofeatureflag: value as never }));
+      console.log(namespaceOf(result));
+      expect(namespaceOf(result)).toEqual({ exporterMetadata: metadata.asObject() });
+    });
+
+    it('should still write the namespace when no metadata is configured', async () => {
       hook = new EnrichEvaluationContextHook(undefined);
 
-      const originalContext: EvaluationContext = { user: 'test-user' };
+      const result = await hook.before(hookContextFor({ user: 'test-user', gofeatureflag: { flagList: ['a'] } }));
 
-      const context: HookContext<boolean> = {
-        flagKey: 'test-flag',
-        defaultValue: false,
-        context: originalContext,
-        flagValueType: 'boolean',
-        clientMetadata: { providerMetadata: { name: 'test' } },
-        providerMetadata: { name: 'test' },
-        logger: mockLogger,
-        hookData: new MapHookData(),
-      };
-
-      const result = await hook.before(context);
-
-      expect(result).toEqual(originalContext);
+      // The hook is registered unconditionally, so it must leave a well-formed namespace behind and
+      // must not destroy the caller's entries on the way.
+      expect(namespaceOf(result)).toEqual({ flagList: ['a'], exporterMetadata: {} });
     });
 
-    it('should enrich context with metadata when provided', async () => {
-      const metadata = new ExporterMetadata().add('version', '1.0.0').add('environment', 'test');
-      hook = new EnrichEvaluationContextHook(metadata);
-
+    it('should return a new context rather than mutate the caller', async () => {
+      hook = new EnrichEvaluationContextHook(new ExporterMetadata().add('version', '1.0.0'));
       const originalContext: EvaluationContext = { user: 'test-user' };
 
-      const context: HookContext<boolean> = {
-        flagKey: 'test-flag',
-        defaultValue: false,
-        context: originalContext,
-        flagValueType: 'boolean',
-        clientMetadata: { providerMetadata: { name: 'test' } },
-        providerMetadata: { name: 'test' },
-        logger: mockLogger,
-        hookData: new MapHookData(),
-      };
+      const result = await hook.before(hookContextFor(originalContext));
 
-      const result = await hook.before(context);
-
-      // Check that the original context is preserved
-      expect(result['user']).toBe('test-user');
-
-      // Check that the metadata is added
-      expect(result['gofeatureflag']).toEqual(metadata.asObject());
-    });
-
-    it('should merge metadata with existing context', async () => {
-      const metadata = new ExporterMetadata().add('version', '1.0.0').add('environment', 'test');
-      hook = new EnrichEvaluationContextHook(metadata);
-
-      const originalContext: EvaluationContext = {
-        user: 'test-user',
-        gofeatureflag: { existing: 'value' },
-      };
-
-      const context: HookContext<boolean> = {
-        flagKey: 'test-flag',
-        defaultValue: false,
-        context: originalContext,
-        flagValueType: 'boolean',
-        clientMetadata: { providerMetadata: { name: 'test' } },
-        providerMetadata: { name: 'test' },
-        logger: mockLogger,
-        hookData: new MapHookData(),
-      };
-
-      const result = await hook.before(context);
-
-      // Check that the original context is preserved
-      expect(result['user']).toBe('test-user');
-
-      // Check that the metadata is added (should override existing gofeatureflag)
-      expect(result['gofeatureflag']).toEqual(metadata.asObject());
-    });
-
-    it('should handle empty metadata object', async () => {
-      hook = new EnrichEvaluationContextHook(new ExporterMetadata());
-
-      const originalContext: EvaluationContext = { user: 'test-user' };
-
-      const context: HookContext<boolean> = {
-        flagKey: 'test-flag',
-        defaultValue: false,
-        context: originalContext,
-        flagValueType: 'boolean',
-        clientMetadata: { providerMetadata: { name: 'test' } },
-        providerMetadata: { name: 'test' },
-        logger: mockLogger,
-        hookData: new MapHookData(),
-      };
-
-      const result = await hook.before(context);
-
-      // Should return original context unchanged
-      expect(result).toEqual(originalContext);
+      expect(originalContext['gofeatureflag']).toBeUndefined();
+      expect(result).not.toBe(originalContext);
     });
   });
 });
