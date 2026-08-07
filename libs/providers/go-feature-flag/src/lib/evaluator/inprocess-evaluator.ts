@@ -24,6 +24,7 @@ import { NOT_MODIFIED } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
 import { DEFAULT_POLLING_INTERVAL_MS, STALE_AFTER_CONSECUTIVE_FAILURES } from '../helper/constants';
+import { diffFlagSerializations, serializeFlags } from '../helper/flag-serialization';
 
 enum ConfigurationState {
   INITIALIZED = 'initialized',
@@ -358,11 +359,6 @@ export class InProcessEvaluator implements IEvaluator {
         throw new ImpossibleToRetrieveConfigurationException('Flag configuration response is null');
       }
 
-      if (this.etag && this.etag === flagConfigResponse.etag) {
-        this.logger?.debug('Flag configuration has not changed');
-        return;
-      }
-
       const respLastUpdated = flagConfigResponse.lastUpdated || new Date(0);
       if (
         this.lastUpdate.getTime() !== new Date(0).getTime() &&
@@ -373,16 +369,36 @@ export class InProcessEvaluator implements IEvaluator {
         return;
       }
 
-      this.logger?.debug('Flag configuration has changed');
+      // Which flags changed is decided on content, not on the ETag. A relay proxy or an
+      // intermediary that omits ETag would otherwise make every single poll look like a change.
+      const previousFlagSerializations = serializeFlags(this.flags);
+      const nextFlagSerializations = serializeFlags(flagConfigResponse.flags);
+      const previousEnrichmentSerialization = JSON.stringify(this.evaluationContextEnrichment);
+      const nextEnrichmentSerialization = JSON.stringify(flagConfigResponse.evaluationContextEnrichment ?? {});
+
+      // The enrichment is merged into the context of every evaluation, so a change to it can change
+      // the result of any flag. There is no way to narrow that down, so every flag is reported.
+      const flagsChanged =
+        nextEnrichmentSerialization !== previousEnrichmentSerialization
+          ? [...new Set([...Object.keys(previousFlagSerializations), ...Object.keys(nextFlagSerializations)])]
+          : diffFlagSerializations(previousFlagSerializations, nextFlagSerializations);
+
       this.etag = flagConfigResponse.etag;
-      this.lastUpdate = flagConfigResponse.lastUpdated || new Date(0);
-      this.flags = flagConfigResponse.flags || {};
+      this.lastUpdate = respLastUpdated;
+      this.flags = flagConfigResponse.flags;
       this.evaluationContextEnrichment = flagConfigResponse.evaluationContextEnrichment || {};
 
-      // Send an event to the event channel to notify about the configuration change
+      if (flagsChanged.length === 0) {
+        this.logger?.debug('Flag configuration has not changed');
+        return;
+      }
+
+      this.logger?.debug(`Flag configuration has changed for: ${flagsChanged.join(', ')}`);
+      // The initial load is not a change: consumers must not observe a configuration-changed event
+      // before the provider is ready.
       if (this.eventChannel && !firstLoad) {
         this.logger?.debug('Emitting configuration changed event');
-        this.eventChannel.emit(ServerProviderEvents.ConfigurationChanged, {});
+        this.eventChannel.emit(ServerProviderEvents.ConfigurationChanged, { flagsChanged });
       }
     } catch (error) {
       this.logger?.error('Failed to load configuration:', error);
