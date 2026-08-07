@@ -48,6 +48,67 @@ describe('GoFeatureFlagProvider', () => {
     await OpenFeature.close();
   });
 
+  describe('options hygiene', () => {
+    it('should not rewrite the caller options object', () => {
+      const callerOptions = { endpoint: 'https://gofeatureflag.org///' };
+
+      new GoFeatureFlagProvider(callerOptions);
+
+      // The endpoint was normalised through the caller's own reference, so a caller who built one
+      // options object and constructed two providers from it saw their input silently rewritten.
+      expect(callerOptions.endpoint).toBe('https://gofeatureflag.org///');
+    });
+
+    it('should still normalise the endpoint it uses', () => {
+      const provider = new GoFeatureFlagProvider({ endpoint: 'https://gofeatureflag.org///' });
+
+      // Copying without redirecting the downstream consumers would have left them on the
+      // un-normalised endpoint - the old code got away with passing the caller's object because it
+      // had already mutated it in place.
+      expect((provider as unknown as { options: { endpoint: string } }).options.endpoint).toBe(
+        'https://gofeatureflag.org',
+      );
+    });
+
+    it('should build outbound URLs from the normalised endpoint', async () => {
+      fetchMock.mockResponse(JSON.stringify({ flags: {} }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const provider = new GoFeatureFlagProvider({ endpoint: 'http://localhost:1031///' });
+      await provider.initialize();
+
+      // Copying the options without redirecting GoFeatureFlagApi, the evaluator and the publisher
+      // onto the copy would leave them on the caller's un-normalised endpoint - the old code got
+      // away with passing the caller's object only because it had mutated it in place first.
+      expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1031/v1/flag/configuration');
+
+      await provider.onClose();
+    });
+
+    it('should accept a frozen options object', () => {
+      const frozenOptions = Object.freeze({ endpoint: 'https://gofeatureflag.org/' });
+
+      // In strict mode the write through the caller's reference threw, turning a normalisation
+      // detail into a construction failure.
+      expect(() => new GoFeatureFlagProvider(frozenOptions)).not.toThrow();
+    });
+
+    it('should let two providers share one options object', () => {
+      const shared = { endpoint: 'https://gofeatureflag.org/' };
+
+      const first = new GoFeatureFlagProvider(shared);
+      const second = new GoFeatureFlagProvider(shared);
+
+      const endpointOf = (p: GoFeatureFlagProvider) =>
+        (p as unknown as { options: { endpoint: string } }).options.endpoint;
+      expect(endpointOf(first)).toBe('https://gofeatureflag.org');
+      expect(endpointOf(second)).toBe('https://gofeatureflag.org');
+      expect(shared.endpoint).toBe('https://gofeatureflag.org/');
+    });
+  });
+
   describe('hook registration', () => {
     it('should register the enrichment hook ahead of the data collector hook', () => {
       const provider = new GoFeatureFlagProvider({

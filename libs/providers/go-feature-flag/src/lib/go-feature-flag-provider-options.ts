@@ -16,7 +16,7 @@ export interface GoFeatureFlagProviderBaseOptions {
 
   /**
    * The interval for flushing data collection events in milliseconds.
-   * @default 120000
+   * @default 60000
    */
   dataFlushInterval?: number;
 
