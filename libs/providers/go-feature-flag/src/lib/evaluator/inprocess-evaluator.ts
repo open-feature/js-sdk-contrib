@@ -23,7 +23,13 @@ import type { EvaluationResponse, Flag, WasmInput } from '../model';
 import { NOT_MODIFIED } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
-import { DEFAULT_POLLING_INTERVAL_MS, STALE_AFTER_CONSECUTIVE_FAILURES } from '../helper/constants';
+import {
+  DEFAULT_POLLING_INTERVAL_MS,
+  EVALUATED_REMOTELY_KEY,
+  FALLBACK_ENGINE_ERROR_CODES,
+  STALE_AFTER_CONSECUTIVE_FAILURES,
+} from '../helper/constants';
+import { RemoteEvaluator } from './remote-evaluator';
 import { diffFlagSerializations, serializeFlags, toFlagLookup } from '../helper/flag-serialization';
 
 enum ConfigurationState {
@@ -54,6 +60,15 @@ export class InProcessEvaluator implements IEvaluator {
    * by accident rather than by intent.
    */
   private readonly evaluationFlagList?: string[];
+  /**
+   * Kept solely to build the fallback evaluator. Holding the options again is deliberate: §16
+   * requires the fallback to authenticate and time out exactly as a normal remote evaluation does,
+   * and reusing the same options object is what makes that true by construction rather than by
+   * two code paths agreeing.
+   */
+  private readonly options: GoFeatureFlagProviderOptions;
+  /** Built on the first fallback, so a deployment that never hits one pays nothing for it. */
+  private fallbackEvaluator?: RemoteEvaluator;
 
   // Configuration state
   private etag?: string;
@@ -91,6 +106,7 @@ export class InProcessEvaluator implements IEvaluator {
         ? options.flagChangePollingIntervalMs
         : DEFAULT_POLLING_INTERVAL_MS;
     this.evaluationFlagList = options.evaluationFlagList?.length ? options.evaluationFlagList : undefined;
+    this.options = options;
   }
 
   /**
@@ -200,6 +216,14 @@ export class InProcessEvaluator implements IEvaluator {
     evaluationContext?: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
     const response = await this.genericEvaluate(flagKey, defaultValue, evaluationContext);
+
+    const remote = await this.fallbackToRemote(response, flagKey, (evaluator) =>
+      evaluator.evaluateBoolean(flagKey, defaultValue, evaluationContext),
+    );
+    if (remote) {
+      return remote;
+    }
+
     this.handleError(response, flagKey);
 
     // A null result is the engine reporting "no value", not a type error. The caller's default is
@@ -229,6 +253,14 @@ export class InProcessEvaluator implements IEvaluator {
     evaluationContext?: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
     const response = await this.genericEvaluate(flagKey, defaultValue, evaluationContext);
+
+    const remote = await this.fallbackToRemote(response, flagKey, (evaluator) =>
+      evaluator.evaluateString(flagKey, defaultValue, evaluationContext),
+    );
+    if (remote) {
+      return remote;
+    }
+
     this.handleError(response, flagKey);
 
     // A null result is the engine reporting "no value", not a type error. The caller's default is
@@ -258,6 +290,14 @@ export class InProcessEvaluator implements IEvaluator {
     evaluationContext?: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
     const response = await this.genericEvaluate(flagKey, defaultValue, evaluationContext);
+
+    const remote = await this.fallbackToRemote(response, flagKey, (evaluator) =>
+      evaluator.evaluateNumber(flagKey, defaultValue, evaluationContext),
+    );
+    if (remote) {
+      return remote;
+    }
+
     this.handleError(response, flagKey);
 
     // A null result is the engine reporting "no value", not a type error. The caller's default is
@@ -287,6 +327,14 @@ export class InProcessEvaluator implements IEvaluator {
     evaluationContext?: EvaluationContext,
   ): Promise<ResolutionDetails<T>> {
     const response = await this.genericEvaluate(flagKey, defaultValue, evaluationContext);
+
+    const remote = await this.fallbackToRemote(response, flagKey, (evaluator) =>
+      evaluator.evaluateObject<T>(flagKey, defaultValue, evaluationContext),
+    );
+    if (remote) {
+      return remote;
+    }
+
     this.handleError(response, flagKey);
 
     // A null result is the engine reporting "no value", not a type error. The caller's default is
@@ -448,6 +496,53 @@ export class InProcessEvaluator implements IEvaluator {
    * @param flagKey - Name of the feature flag.
    * @throws Error - When the evaluation is on error.
    */
+  /**
+   * Hands a failed local evaluation to the relay proxy, which is authoritative.
+   *
+   * The trigger is read from the **raw** engine code, before {@link handleError} maps it onto the
+   * SDK's enumeration - that mapping is lossy, and `FLAG_CONFIG` in particular would become
+   * indistinguishable from the codes that do qualify.
+   *
+   * Attempted on every qualifying occurrence, with no circuit breaker. That is the specification's
+   * choice and it has a cost worth knowing: a persistently malformed flag turns every evaluation of
+   * it into a network round trip. The warning log and the metadata stamp exist so that this is
+   * diagnosable rather than invisible.
+   * @param response - the raw engine response
+   * @param flagKey - the flag being evaluated
+   * @param evaluateRemotely - performs the typed remote call
+   * @returns the remote result, or undefined to let the original in-process error stand
+   */
+  private async fallbackToRemote<T>(
+    response: EvaluationResponse,
+    flagKey: string,
+    evaluateRemotely: (evaluator: RemoteEvaluator) => Promise<ResolutionDetails<T>>,
+  ): Promise<ResolutionDetails<T> | undefined> {
+    if (!response.errorCode || !FALLBACK_ENGINE_ERROR_CODES.includes(response.errorCode)) {
+      return undefined;
+    }
+
+    this.logger?.warn(
+      `In-process evaluation of flag '${flagKey}' failed with ${response.errorCode}; falling back to remote evaluation: ${response.errorDetails}`,
+    );
+
+    // A WASM trap has already discarded the instance by the time we get here, so the rebuild
+    // happens on the next evaluation. Nothing is retried locally in between, as §16 requires.
+    this.fallbackEvaluator ??= new RemoteEvaluator(this.options, this.logger);
+
+    try {
+      const remote = await evaluateRemotely(this.fallbackEvaluator);
+      return {
+        ...remote,
+        flagMetadata: { ...remote.flagMetadata, [EVALUATED_REMOTELY_KEY]: true },
+      };
+    } catch (error) {
+      // The in-process failure is the root cause, so it is what the caller sees. Returning
+      // undefined lets the original response continue to `handleError` unchanged.
+      this.logger?.error(`Remote fallback for flag '${flagKey}' also failed`, error);
+      return undefined;
+    }
+  }
+
   private handleError(response: EvaluationResponse, flagKey: string): void {
     switch (response.errorCode) {
       case '':

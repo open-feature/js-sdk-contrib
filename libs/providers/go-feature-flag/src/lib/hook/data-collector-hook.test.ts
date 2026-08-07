@@ -107,6 +107,50 @@ describe('DataCollectorHook', () => {
     });
   });
 
+  describe('remote fallback results', () => {
+    const contextFor = (): HookContext<boolean> => ({
+      flagKey: 'test-flag',
+      defaultValue: false,
+      context: { targetingKey: 'user-1' },
+      flagValueType: 'boolean',
+      clientMetadata: { providerMetadata: { name: 'test' } },
+      providerMetadata: { name: 'test' },
+      logger: mockLogger,
+      hookData: new MapHookData(),
+    });
+
+    const detailsWith = (flagMetadata: FlagMetadata): EvaluationDetails<boolean> => ({
+      flagKey: 'test-flag',
+      value: true,
+      variant: 'on',
+      reason: 'TARGETING_MATCH',
+      flagMetadata,
+    });
+
+    beforeEach(() => {
+      mockEvaluator.isFlagTrackable.mockReturnValue(true);
+    });
+
+    it('should not record an evaluation the relay proxy already answered', async () => {
+      await hook.after(contextFor(), detailsWith({ gofeatureflag_evaluated_remotely: true }));
+
+      // The relay proxy records the evaluations it answers, so exporting here would double-count.
+      expect(mockEventPublisher.addEvent).not.toHaveBeenCalled();
+    });
+
+    it('should still record a locally evaluated flag', async () => {
+      await hook.after(contextFor(), detailsWith({}));
+
+      expect(mockEventPublisher.addEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not read a non-true value as a fallback marker', async () => {
+      await hook.after(contextFor(), detailsWith({ gofeatureflag_evaluated_remotely: false }));
+
+      expect(mockEventPublisher.addEvent).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('disableDataCollection', () => {
     /** The hook context both stages take; the stages only read `flagKey` before the gate. */
     const contextFor = (): HookContext<boolean> => ({
