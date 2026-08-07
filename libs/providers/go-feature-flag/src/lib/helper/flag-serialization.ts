@@ -1,6 +1,23 @@
 import type { Flag } from '../model';
 
 /**
+ * Copies a flag map into a null-prototype object so it is safe to look up by an arbitrary key.
+ *
+ * A flag map is decoded with JSON.parse and therefore inherits from Object.prototype, so looking up
+ * a flag named after one of its members - `toString`, `constructor`, `valueOf` - returns the
+ * inherited member instead of undefined. The caller then treats a flag that does not exist as
+ * present and hands it to the evaluation engine, rather than reporting FLAG_NOT_FOUND.
+ *
+ * A flag genuinely named `__proto__` survives: on a null-prototype target there is no setter to
+ * intercept the assignment, so it is copied as an ordinary own property.
+ * @param flags - the flag configurations returned by the relay proxy
+ * @returns the same flags in an object with no prototype
+ */
+export function toFlagLookup(flags: Record<string, Flag>): Record<string, Flag> {
+  return Object.assign(Object.create(null), flags);
+}
+
+/**
  * Produces a per-flag serialization that changes whenever that flag's configuration changes.
  *
  * Each flag is deliberately treated as opaque: it is serialized whole rather than inspected, so a
