@@ -103,6 +103,43 @@ describe('InProcessEvaluator', () => {
     });
   });
 
+  describe('flag keys that collide with Object.prototype', () => {
+    // A flag map is decoded with JSON.parse and so inherits from Object.prototype. Looking a flag up
+    // by one of those member names must not resolve to the inherited member.
+    const inheritedNames = ['toString', 'constructor', 'valueOf', 'hasOwnProperty'];
+
+    it.each(inheritedNames)('should report FLAG_NOT_FOUND for a flag named %s', async (flagKey) => {
+      await evaluator.initialize();
+
+      await expect(evaluator.evaluateBoolean(flagKey, false, { user: 'test' })).rejects.toThrow(FlagNotFoundError);
+    });
+
+    it.each(inheritedNames)('should not invoke the engine for a flag named %s', async (flagKey) => {
+      await evaluator.initialize();
+      const engine = (EvaluateWasm as unknown as jest.Mock).mock.results.at(-1)?.value;
+
+      await expect(evaluator.evaluateBoolean(flagKey, false, { user: 'test' })).rejects.toThrow(FlagNotFoundError);
+
+      expect(engine.evaluate).not.toHaveBeenCalled();
+    });
+
+    it('should still evaluate a flag genuinely named __proto__', async () => {
+      mockApi.retrieveFlagConfiguration.mockResolvedValue({
+        flags: JSON.parse('{"__proto__":{"trackEvents":true,"defaultRule":{"variation":"on"}}}'),
+        evaluationContextEnrichment: {},
+        etag: 'test-etag',
+        lastUpdated: new Date(),
+      } as FlagConfigResponse);
+      await evaluator.initialize();
+
+      // Copying onto a null-prototype target keeps __proto__ as an ordinary own property.
+      await expect(evaluator.evaluateBoolean('__proto__', false, { user: 'test' })).resolves.toEqual({
+        value: true,
+        reason: 'TARGETING_MATCH',
+      });
+    });
+  });
+
   describe('isFlagTrackable', () => {
     it('should return true for existing flag', async () => {
       await evaluator.initialize();

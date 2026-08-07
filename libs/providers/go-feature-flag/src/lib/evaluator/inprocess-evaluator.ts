@@ -24,7 +24,7 @@ import { NOT_MODIFIED } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
 import { ImpossibleToRetrieveConfigurationException } from '../exception';
 import { DEFAULT_POLLING_INTERVAL_MS, STALE_AFTER_CONSECUTIVE_FAILURES } from '../helper/constants';
-import { diffFlagSerializations, serializeFlags } from '../helper/flag-serialization';
+import { diffFlagSerializations, serializeFlags, toFlagLookup } from '../helper/flag-serialization';
 
 enum ConfigurationState {
   INITIALIZED = 'initialized',
@@ -51,7 +51,8 @@ export class InProcessEvaluator implements IEvaluator {
   // Configuration state
   private etag?: string;
   private lastUpdate: Date = new Date(0);
-  private flags: Record<string, Flag> = {};
+  /** Null-prototype so that a flag key can never resolve to an inherited Object.prototype member. */
+  private flags: Record<string, Flag> = toFlagLookup({});
   private evaluationContextEnrichment: Record<string, JsonValue> = {};
   private periodicRunner?: ReturnType<typeof setTimeout>;
   /** Refresh currently in flight, so that shutdown and re-initialization can join it. */
@@ -385,7 +386,7 @@ export class InProcessEvaluator implements IEvaluator {
 
       this.etag = flagConfigResponse.etag;
       this.lastUpdate = respLastUpdated;
-      this.flags = flagConfigResponse.flags;
+      this.flags = toFlagLookup(flagConfigResponse.flags);
       this.evaluationContextEnrichment = flagConfigResponse.evaluationContextEnrichment || {};
 
       if (flagsChanged.length === 0) {
