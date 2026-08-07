@@ -7,6 +7,7 @@ import {
   OpenFeatureEventEmitter,
   ProviderNotReadyError,
   ServerProviderEvents,
+  TypeMismatchError,
 } from '@openfeature/server-sdk';
 import { EvaluationType, NOT_MODIFIED } from '../model';
 import type { Flag, FlagConfigResponse } from '../model';
@@ -100,6 +101,129 @@ describe('InProcessEvaluator', () => {
       await expect(evaluator.evaluateBoolean('non-existent-flag', false, { user: 'test' })).rejects.toThrow(
         FlagNotFoundError,
       );
+    });
+  });
+
+  describe('null evaluation results', () => {
+    /** The engine instance most recently constructed by the evaluator under test. */
+    const engine = () => (EvaluateWasm as unknown as jest.Mock).mock.results.at(-1)?.value;
+
+    /**
+     * A successful evaluation that produced no value, in the shape the engine actually emits for it.
+     *
+     * The engine reaches this state through exactly one path: GetVariationValue returns nil when the
+     * selected variation's configured value is JSON null, or when a rule names a variation absent
+     * from `variations`. That path reports the *selected variation's name*, the real reason, and no
+     * error code — so handleError, which runs first, never intercepts it.
+     *
+     * The variant is deliberately not `SdkDefault`. That sentinel belongs to the engine, which sets
+     * it itself on every path where it serves the SDK default (disabled, targeting-key missing,
+     * scheduled-rollout error, type mismatch). The provider must pass the variant through rather
+     * than synthesise it, or the name of the misconfigured variation is lost.
+     */
+    const noValue = {
+      value: null,
+      reason: 'STATIC',
+      variationType: 'null_variation',
+      metadata: { description: 'a flag with no value' },
+      trackEvents: true,
+    };
+
+    beforeEach(async () => {
+      await evaluator.initialize();
+      engine().evaluate.mockResolvedValue(noValue);
+    });
+
+    it('should return the caller default from the boolean resolver', async () => {
+      await expect(evaluator.evaluateBoolean('test-flag', true, { user: 'test' })).resolves.toEqual({
+        value: true,
+        reason: 'STATIC',
+        variant: 'null_variation',
+        flagMetadata: { description: 'a flag with no value' },
+      });
+    });
+
+    it('should return the caller default from the string resolver', async () => {
+      await expect(evaluator.evaluateString('test-flag', 'fallback', { user: 'test' })).resolves.toMatchObject({
+        value: 'fallback',
+        reason: 'STATIC',
+        variant: 'null_variation',
+      });
+    });
+
+    it('should return the caller default from the number resolver', async () => {
+      await expect(evaluator.evaluateNumber('test-flag', 42, { user: 'test' })).resolves.toMatchObject({
+        value: 42,
+        reason: 'STATIC',
+        variant: 'null_variation',
+      });
+    });
+
+    it('should return the caller default from the object resolver', async () => {
+      await expect(evaluator.evaluateObject('test-flag', { a: 1 }, { user: 'test' })).resolves.toMatchObject({
+        value: { a: 1 },
+        reason: 'STATIC',
+        variant: 'null_variation',
+      });
+    });
+
+    it('should report the engine variant, not SdkDefault, for a null variation', async () => {
+      // Naming the variation is what tells an operator which one is misconfigured, so the provider
+      // must not overwrite it with SdkDefault just because the value it serves is the caller's.
+      engine().evaluate.mockResolvedValue({
+        value: null,
+        reason: 'TARGETING_MATCH',
+        variationType: 'varB',
+        trackEvents: true,
+      });
+
+      await expect(evaluator.evaluateString('test-flag', 'fallback', {})).resolves.toMatchObject({
+        value: 'fallback',
+        reason: 'TARGETING_MATCH',
+        variant: 'varB',
+      });
+    });
+
+    it('should pass through SdkDefault when the engine is the one serving the default', async () => {
+      // The disabled path sets variationType itself, so preserving the variant is what makes
+      // GOFF-EVAL-008 hold — the provider needs no special case of its own.
+      engine().evaluate.mockResolvedValue({
+        value: null,
+        reason: 'DISABLED',
+        variationType: 'SdkDefault',
+        trackEvents: true,
+      });
+
+      await expect(evaluator.evaluateBoolean('test-flag', true, {})).resolves.toMatchObject({
+        value: true,
+        reason: 'DISABLED',
+        variant: 'SdkDefault',
+      });
+    });
+
+    it('should not return the language zero value', async () => {
+      // false, '' and 0 are what a naive "return the zero value" implementation would produce.
+      await expect(evaluator.evaluateBoolean('test-flag', true, {})).resolves.toMatchObject({ value: true });
+      await expect(evaluator.evaluateString('test-flag', 'fallback', {})).resolves.toMatchObject({
+        value: 'fallback',
+      });
+      await expect(evaluator.evaluateNumber('test-flag', 42, {})).resolves.toMatchObject({ value: 42 });
+    });
+
+    it('should treat an absent value the same as an explicit null', async () => {
+      engine().evaluate.mockResolvedValue({ reason: 'STATIC', variationType: 'null_variation', trackEvents: true });
+
+      await expect(evaluator.evaluateBoolean('test-flag', true, {})).resolves.toMatchObject({
+        value: true,
+        reason: 'STATIC',
+        variant: 'null_variation',
+      });
+    });
+
+    it('should still report a type mismatch for a genuinely wrong type', async () => {
+      engine().evaluate.mockResolvedValue({ value: 'a string', reason: 'STATIC', trackEvents: true });
+
+      await expect(evaluator.evaluateBoolean('test-flag', false, {})).rejects.toThrow(TypeMismatchError);
     });
   });
 

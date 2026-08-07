@@ -194,6 +194,13 @@ export class InProcessEvaluator implements IEvaluator {
     const response = await this.genericEvaluate(flagKey, defaultValue, evaluationContext);
     this.handleError(response, flagKey);
 
+    // A null result is the engine reporting "no value", not a type error. The caller's default is
+    // returned while the engine's reason, variant and metadata are preserved, since those are what
+    // explain why there is no value.
+    if (this.hasNoValue(response)) {
+      return this.prepareResponse(response, flagKey, defaultValue);
+    }
+
     if (typeof response.value === 'boolean') {
       return this.prepareResponse(response, flagKey, response.value);
     }
@@ -215,6 +222,13 @@ export class InProcessEvaluator implements IEvaluator {
   ): Promise<ResolutionDetails<string>> {
     const response = await this.genericEvaluate(flagKey, defaultValue, evaluationContext);
     this.handleError(response, flagKey);
+
+    // A null result is the engine reporting "no value", not a type error. The caller's default is
+    // returned while the engine's reason, variant and metadata are preserved, since those are what
+    // explain why there is no value.
+    if (this.hasNoValue(response)) {
+      return this.prepareResponse(response, flagKey, defaultValue);
+    }
 
     if (typeof response.value === 'string') {
       return this.prepareResponse(response, flagKey, response.value);
@@ -238,6 +252,13 @@ export class InProcessEvaluator implements IEvaluator {
     const response = await this.genericEvaluate(flagKey, defaultValue, evaluationContext);
     this.handleError(response, flagKey);
 
+    // A null result is the engine reporting "no value", not a type error. The caller's default is
+    // returned while the engine's reason, variant and metadata are preserved, since those are what
+    // explain why there is no value.
+    if (this.hasNoValue(response)) {
+      return this.prepareResponse(response, flagKey, defaultValue);
+    }
+
     if (typeof response.value === 'number') {
       return this.prepareResponse(response, flagKey, response.value);
     }
@@ -260,11 +281,17 @@ export class InProcessEvaluator implements IEvaluator {
     const response = await this.genericEvaluate(flagKey, defaultValue, evaluationContext);
     this.handleError(response, flagKey);
 
-    if (response.value !== null && response.value !== undefined) {
-      if (typeof response.value === 'object' || Array.isArray(response.value)) {
-        return this.prepareResponse(response, flagKey, response.value as T);
-      }
+    // A null result is the engine reporting "no value", not a type error. The caller's default is
+    // returned while the engine's reason, variant and metadata are preserved, since those are what
+    // explain why there is no value.
+    if (this.hasNoValue(response)) {
+      return this.prepareResponse(response, flagKey, defaultValue);
     }
+
+    if (typeof response.value === 'object' || Array.isArray(response.value)) {
+      return this.prepareResponse(response, flagKey, response.value as T);
+    }
+
     throw new TypeMismatchError(`Flag ${flagKey} had unexpected type, expected object.`);
   }
 
@@ -437,6 +464,19 @@ export class InProcessEvaluator implements IEvaluator {
       default:
         throw new GeneralError(response.errorDetails || `Evaluation error: ${response.errorCode}`);
     }
+  }
+
+  /**
+   * Reports whether the engine returned no value for a flag.
+   *
+   * This is only reached for an evaluation the engine considered successful, since handleError has
+   * already thrown for anything carrying an error code. A flag whose resolved variation is JSON
+   * null therefore lands here, and is a value-less result rather than a type mismatch.
+   * @param response - Response of the evaluation.
+   * @returns True when the engine produced no value.
+   */
+  private hasNoValue(response: EvaluationResponse): boolean {
+    return response.value === null || response.value === undefined;
   }
 
   /**
