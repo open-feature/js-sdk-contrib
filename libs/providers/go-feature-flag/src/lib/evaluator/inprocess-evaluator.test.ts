@@ -5,10 +5,12 @@ import {
   FlagNotFoundError,
   type Logger,
   OpenFeatureEventEmitter,
+  ParseError,
   ProviderNotReadyError,
   ServerProviderEvents,
   TypeMismatchError,
 } from '@openfeature/server-sdk';
+import type { EvaluationContextValue } from '@openfeature/server-sdk';
 import { EvaluationType, NOT_MODIFIED } from '../model';
 import type { Flag, FlagConfigResponse } from '../model';
 import { EvaluateWasm } from '../wasm/evaluate-wasm';
@@ -317,6 +319,212 @@ describe('InProcessEvaluator', () => {
       await expect(evaluator.evaluateBoolean('no-such-flag', false, { user: 'test' })).rejects.not.toThrow(
         FlagNotFoundError,
       );
+    });
+  });
+
+  describe('remote fallback', () => {
+    /** Makes the engine return a raw error code, as it does for a trap or a malformed flag. */
+    const engineReturns = (errorCode: string) => {
+      (evaluator as unknown as { evaluationEngine: { evaluate: jest.Mock } }).evaluationEngine.evaluate = jest
+        .fn()
+        .mockResolvedValue({ value: null, reason: 'ERROR', errorCode, errorDetails: 'engine said no' });
+    };
+
+    /** Replaces the lazily-built fallback evaluator, and reports how it was used. */
+    const stubRemote = (result: unknown, shouldReject = false) => {
+      const evaluateBoolean = shouldReject
+        ? jest.fn().mockRejectedValue(new Error('relay proxy unreachable'))
+        : jest.fn().mockResolvedValue(result);
+      (evaluator as unknown as { fallbackEvaluator: unknown }).fallbackEvaluator = {
+        evaluateBoolean,
+      };
+      return evaluateBoolean;
+    };
+
+    beforeEach(async () => {
+      await evaluator.initialize();
+    });
+
+    it.each(['PARSE_ERROR', 'GENERAL'])('should fall back to remote on raw engine code %s', async (code) => {
+      engineReturns(code);
+      const remote = stubRemote({ value: true, reason: 'TARGETING_MATCH', variant: 'on', flagMetadata: {} });
+
+      const result = await evaluator.evaluateBoolean('test-flag', false, { targetingKey: 'user-1' });
+
+      expect(remote).toHaveBeenCalledWith('test-flag', false, { targetingKey: 'user-1' });
+      expect(result.value).toBe(true);
+    });
+
+    it.each(['FLAG_CONFIG', 'TYPE_MISMATCH', 'TARGETING_KEY_MISSING', 'FLAG_NOT_FOUND'])(
+      'should not fall back on raw engine code %s',
+      async (code) => {
+        engineReturns(code);
+        const remote = stubRemote({ value: true, reason: 'TARGETING_MATCH', variant: 'on', flagMetadata: {} });
+
+        await expect(evaluator.evaluateBoolean('test-flag', false)).rejects.toThrow();
+
+        // FLAG_CONFIG especially: a deterministic misconfiguration the relay proxy would reproduce
+        // identically, so a fallback buys a round trip and the same answer.
+        expect(remote).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should stamp the result as evaluated remotely', async () => {
+      engineReturns('PARSE_ERROR');
+      stubRemote({ value: true, reason: 'TARGETING_MATCH', variant: 'on', flagMetadata: { version: '1.0' } });
+
+      const result = await evaluator.evaluateBoolean('test-flag', false);
+
+      // Preserved alongside the relay proxy's own metadata, not instead of it.
+      expect(result.flagMetadata).toEqual({ version: '1.0', gofeatureflag_evaluated_remotely: true });
+    });
+
+    it('should log every fallback at warning level', async () => {
+      engineReturns('GENERAL');
+      stubRemote({ value: true, reason: 'TARGETING_MATCH', variant: 'on', flagMetadata: {} });
+
+      await evaluator.evaluateBoolean('test-flag', false);
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('falling back to remote'));
+    });
+
+    it('should fall back on every occurrence, with no circuit breaker', async () => {
+      engineReturns('PARSE_ERROR');
+      const remote = stubRemote({ value: true, reason: 'TARGETING_MATCH', variant: 'on', flagMetadata: {} });
+
+      await evaluator.evaluateBoolean('test-flag', false);
+      await evaluator.evaluateBoolean('test-flag', false);
+      await evaluator.evaluateBoolean('test-flag', false);
+
+      // The specification's choice, and the reason the warning above exists: a persistently
+      // malformed flag turns every evaluation into a network round trip.
+      expect(remote).toHaveBeenCalledTimes(3);
+    });
+
+    it('should return the original in-process error when the remote call also fails', async () => {
+      engineReturns('PARSE_ERROR');
+      stubRemote(undefined, true);
+
+      // The in-process failure is the root cause, so it is what the caller sees.
+      await expect(evaluator.evaluateBoolean('test-flag', false)).rejects.toThrow(ParseError);
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('also failed'), expect.any(Error));
+    });
+
+    /**
+     * Builds an evaluator running the real WASM binary, with the relay proxy stood up at the
+     * network boundary. Nothing between the flag configuration and the OFREP request is replaced,
+     * so a guard breach travels the whole path the way it would in production.
+     *
+     * Every flag here resolves to `disable` locally, so a value of `true` can only have come from
+     * the relay proxy - the assertion discriminates rather than merely observing a `true`.
+     */
+    const realEngineEvaluator = (flags: Record<string, unknown>) => {
+      const fetchImplementation = jest
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ key: 'guarded-flag', value: true, reason: 'TARGETING_MATCH', variant: 'enable' }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      const guardBreachingApi = {
+        retrieveFlagConfiguration: jest.fn().mockResolvedValue({
+          flags,
+          evaluationContextEnrichment: {},
+          etag: 'guard-etag',
+          lastUpdated: new Date(),
+        }),
+      } as unknown as jest.Mocked<GoFeatureFlagApi>;
+
+      const { EvaluateWasm: RealEvaluateWasm } = jest.requireActual('../wasm/evaluate-wasm');
+      const guarded = new InProcessEvaluator(
+        { ...mockOptions, fetchImplementation },
+        guardBreachingApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      // Swapped in before initialize(), so the real module is the one that gets instantiated.
+      (guarded as unknown as { evaluationEngine: unknown }).evaluationEngine = new RealEvaluateWasm();
+
+      return { guarded, fetchImplementation };
+    };
+
+    /** Asserts the answer came from the relay proxy rather than from the embedded engine. */
+    const expectAnsweredRemotely = (result: { value: boolean; flagMetadata?: Record<string, unknown> }) => {
+      expect(result.value).toBe(true);
+      expect(result.flagMetadata?.['gofeatureflag_evaluated_remotely']).toBe(true);
+    };
+
+    it('should fall back when a targeting list breaches the real engine guard', async () => {
+      // §10.1 caps a nikunjy `[...]` list at 1,000 items, and the 0.2.4 binary returns a structured
+      // PARSE_ERROR rather than trapping. §10.1 says in terms that §16 is meant to turn that into a
+      // remote evaluation - "the relay proxy evaluates on a full stack and has no equivalent limit".
+      const oversizedList = Array.from({ length: 1500 }, (_, index) => `"v${index}"`).join(',');
+      const { guarded, fetchImplementation } = realEngineEvaluator({
+        'guarded-flag': {
+          variations: { enable: true, disable: false },
+          targeting: [{ name: 'oversized', query: `targetingKey in [${oversizedList}]`, variation: 'enable' }],
+          defaultRule: { variation: 'disable' },
+        },
+      });
+
+      try {
+        await guarded.initialize();
+
+        const result = await guarded.evaluateBoolean('guarded-flag', false, { targetingKey: 'random-key' });
+
+        expectAnsweredRemotely(result);
+        expect(fetchImplementation).toHaveBeenCalledTimes(1);
+        expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('PARSE_ERROR'));
+      } finally {
+        await guarded.dispose();
+      }
+    });
+
+    it('should fall back when the evaluation context is nested too deeply', async () => {
+      // The other half of the guard table: §10.1 caps input JSON at 128 levels. This breach comes
+      // from the *caller's context* rather than from the flag configuration, which is the case the
+      // section describes - "a context the embedded engine cannot handle still resolves correctly".
+      let deeplyNested: EvaluationContextValue = { leaf: true };
+      for (let level = 0; level < 200; level++) {
+        deeplyNested = { child: deeplyNested };
+      }
+
+      const { guarded, fetchImplementation } = realEngineEvaluator({
+        'guarded-flag': {
+          variations: { enable: true, disable: false },
+          defaultRule: { variation: 'disable' },
+        },
+      });
+
+      try {
+        await guarded.initialize();
+
+        const result = await guarded.evaluateBoolean('guarded-flag', false, {
+          targetingKey: 'random-key',
+          deep: deeplyNested,
+        });
+
+        // The flag itself is trivial and resolves locally to `disable`; only the depth of the
+        // context makes the engine give up, so a `true` here is the relay proxy answering.
+        expectAnsweredRemotely(result);
+        expect(fetchImplementation).toHaveBeenCalledTimes(1);
+        expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('PARSE_ERROR'));
+      } finally {
+        await guarded.dispose();
+      }
+    });
+
+    it('should build the fallback evaluator from the provider options', () => {
+      // GOFF-FALLBACK-009: authentication and timeout apply identically because the fallback is
+      // constructed from the very same options object, not from a parallel set of fields.
+      const held = (evaluator as unknown as { options: GoFeatureFlagProviderOptions }).options;
+
+      expect(held).toBe(mockOptions);
+    });
+
+    it('should not build a fallback evaluator until one is needed', () => {
+      expect((evaluator as unknown as { fallbackEvaluator?: unknown }).fallbackEvaluator).toBeUndefined();
     });
   });
 

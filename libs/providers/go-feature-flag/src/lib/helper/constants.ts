@@ -55,6 +55,25 @@ export const STALE_AFTER_CONSECUTIVE_FAILURES = 3;
 export const DEFAULT_TARGETING_KEY = 'undefined-targetingKey';
 
 /**
+ * Flag-metadata key marking a result the relay proxy produced after in-process evaluation failed.
+ *
+ * It serves two purposes at once, which is why it is a wire-visible key rather than an internal
+ * flag: it tells the caller the answer did not come from the embedded engine, and it is the only
+ * signal the data-collector hook has that the relay proxy already recorded this evaluation.
+ */
+export const EVALUATED_REMOTELY_KEY = 'gofeatureflag_evaluated_remotely';
+
+/**
+ * Raw engine error codes that hand the evaluation to the relay proxy.
+ *
+ * Read *before* the code is mapped onto the SDK's error enumeration, because the mapping is lossy:
+ * several engine codes collapse onto `GENERAL` there. `FLAG_CONFIG` is deliberately absent - it is
+ * a deterministic misconfiguration the relay proxy would reproduce identically, so a fallback would
+ * buy a round trip and the same answer.
+ */
+export const FALLBACK_ENGINE_ERROR_CODES: readonly string[] = ['PARSE_ERROR', 'GENERAL'];
+
+/**
  * Evaluation-context key of the GO Feature Flag reserved namespace.
  * It is shared: the provider owns `exporterMetadata`, the caller owns `flagList` and
  * `currentDateTime`.

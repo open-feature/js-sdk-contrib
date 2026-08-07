@@ -4,7 +4,7 @@ import type { EventPublisher } from '../service/event-publisher';
 import type { FeatureEvent } from '../model';
 import { EvaluatorNotFoundException, EventPublisherNotFoundException } from '../exception';
 import { getContextKind } from '../helper/event-util';
-import { DEFAULT_TARGETING_KEY } from '../helper/constants';
+import { DEFAULT_TARGETING_KEY, EVALUATED_REMOTELY_KEY } from '../helper/constants';
 
 /**
  * Reads the flag version out of the resolution metadata.
@@ -93,6 +93,12 @@ export class DataCollectorHook implements Hook {
   ): Promise<void> {
     if (!this.shouldCollect(context.flagKey)) {
       // Data collection is off, or the flag is not trackable.
+      return;
+    }
+
+    // The relay proxy records the evaluations it answers, so exporting one here would double-count
+    // it. The metadata stamp is the only signal this hook has that a fallback occurred.
+    if (details.flagMetadata?.[EVALUATED_REMOTELY_KEY] === true) {
       return;
     }
 
