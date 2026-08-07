@@ -1,5 +1,7 @@
-import { ErrorCode, OpenFeature, ProviderStatus, ServerProviderEvents } from '@openfeature/server-sdk';
+import { ErrorCode, MapHookData, OpenFeature, ProviderStatus, ServerProviderEvents } from '@openfeature/server-sdk';
 import { GoFeatureFlagProvider } from './go-feature-flag-provider';
+import { DataCollectorHook, EnrichEvaluationContextHook } from './hook';
+import { ExporterMetadata } from './model';
 import fetchMock from 'jest-fetch-mock';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -44,6 +46,49 @@ describe('GoFeatureFlagProvider', () => {
 
     // Clean up OpenFeature
     await OpenFeature.close();
+  });
+
+  describe('hook registration', () => {
+    it('should register the enrichment hook ahead of the data collector hook', () => {
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'https://gofeatureflag.org',
+        exporterMetadata: new ExporterMetadata().add('version', '1.0.0'),
+      });
+
+      // The SDK runs provider `before` stages in array order and `after`/`error`/`finally` in
+      // reverse, so the reversed registration inverted every after-stage relative to the spec.
+      expect(provider.hooks).toHaveLength(2);
+      expect(provider.hooks[0]).toBeInstanceOf(EnrichEvaluationContextHook);
+      expect(provider.hooks[1]).toBeInstanceOf(DataCollectorHook);
+    });
+
+    it('should register the enrichment hook when no exporterMetadata is configured', () => {
+      const provider = new GoFeatureFlagProvider({ endpoint: 'https://gofeatureflag.org' });
+
+      // The default configuration is the common one. Gating on `exporterMetadata` meant the
+      // reserved `gofeatureflag` namespace was never attached there.
+      expect(provider.hooks).toHaveLength(2);
+      expect(provider.hooks[0]).toBeInstanceOf(EnrichEvaluationContextHook);
+      expect(provider.hooks[1]).toBeInstanceOf(DataCollectorHook);
+    });
+
+    it('should still enrich the context when no exporterMetadata is configured', async () => {
+      const provider = new GoFeatureFlagProvider({ endpoint: 'https://gofeatureflag.org' });
+      const enrichmentHook = provider.hooks[0] as EnrichEvaluationContextHook;
+
+      const enriched = await enrichmentHook.before({
+        flagKey: 'test-flag',
+        defaultValue: false,
+        context: { targetingKey: 'user-1' },
+        flagValueType: 'boolean',
+        clientMetadata: { providerMetadata: { name: 'test' } },
+        providerMetadata: { name: 'test' },
+        logger: console,
+        hookData: new MapHookData(),
+      });
+
+      expect(enriched['gofeatureflag']).toEqual({ exporterMetadata: {} });
+    });
   });
 
   describe('Constructor', () => {
