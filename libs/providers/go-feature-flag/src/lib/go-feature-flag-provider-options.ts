@@ -40,6 +40,16 @@ export interface GoFeatureFlagProviderOptions {
   flagChangePollingIntervalMs?: number;
 
   /**
+   * Restricts the configuration this provider retrieves to the named flags.
+   *
+   * A service using a handful of flags from a configuration of several thousand otherwise
+   * downloads and holds all of them on every poll. Leave unset — or empty — to retrieve
+   * everything. In-process evaluation only; remote evaluation resolves one flag per request.
+   * @default all flags
+   */
+  evaluationFlagList?: string[];
+
+  /**
    * The interval for flushing data collection events in milliseconds.
    * @default 60000
    */

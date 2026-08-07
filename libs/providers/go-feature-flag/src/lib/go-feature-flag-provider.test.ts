@@ -111,6 +111,23 @@ describe('GoFeatureFlagProvider', () => {
       ).toThrow('dataCollectorBaseURL must be a valid URL (http or https)');
     });
 
+    it('should not share the caller collections after construction', () => {
+      const callerFlagList = ['flagA'];
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'https://gofeatureflag.org',
+        evaluationFlagList: callerFlagList,
+      });
+
+      // The options spread is shallow, so without an explicit copy a caller who kept editing their
+      // own objects would keep changing the provider's configuration after it was built.
+      callerFlagList.push('flagB');
+
+      const held = provider as unknown as {
+        options: { headers: Record<string, string>; evaluationFlagList: string[] };
+      };
+      expect(held.options.evaluationFlagList).toEqual(['flagA']);
+    });
+
     it('should accept a frozen options object', () => {
       const frozenOptions = Object.freeze({ endpoint: 'https://gofeatureflag.org/' });
 

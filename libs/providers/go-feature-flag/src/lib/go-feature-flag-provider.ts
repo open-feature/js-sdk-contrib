@@ -17,7 +17,8 @@ import { DataCollectorHook, EnrichEvaluationContextHook } from './hook';
 import { EventPublisher } from './service/event-publisher';
 import { getContextKind } from './helper/event-util';
 import { DEFAULT_TARGETING_KEY } from './helper/constants';
-import { stripTrailingSlashes, validateUrlOption } from './helper/validate-url';
+import { validateUrlOption } from './helper/validate-url';
+import { normalizeOptions } from './helper/normalize-options';
 import { EvaluationType, type TrackingEvent } from './model';
 import { InvalidOptionsException, UnauthorizedException } from './exception';
 import { RemoteEvaluator } from './evaluator/remote-evaluator';
@@ -42,19 +43,7 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
 
   constructor(options: GoFeatureFlagProviderOptions, logger?: Logger) {
     this.validateInputOptions(options);
-    // Normalisation operates on a copy. Writing the trimmed endpoint back through the caller's
-    // reference meant a caller who built one options object, constructed two providers from it, or
-    // read `options.endpoint` afterwards saw their own input silently rewritten - and under
-    // `Object.freeze` the assignment threw, turning normalisation into a construction failure.
-    this.options = { ...options };
-    this.options.endpoint = stripTrailingSlashes(this.options.endpoint);
-    if (this.options.dataCollectorBaseURL !== undefined) {
-      this.options.dataCollectorBaseURL = stripTrailingSlashes(this.options.dataCollectorBaseURL);
-    }
-    // The spread is shallow, so `headers` would otherwise still be the caller's own object.
-    if (options.headers !== undefined) {
-      this.options.headers = { ...options.headers };
-    }
+    this.options = normalizeOptions(options);
     this.logger = logger;
     // Everything downstream takes the normalised copy. The old code got away with passing the
     // caller's object because it had already mutated it in place.

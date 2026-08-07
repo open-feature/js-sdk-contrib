@@ -320,6 +320,65 @@ describe('InProcessEvaluator', () => {
     });
   });
 
+  describe('evaluationFlagList', () => {
+    /** Initializes an evaluator with the given list and returns the `flags` argument it sent. */
+    const flagsSentFor = async (evaluationFlagList?: string[]): Promise<string[] | undefined> => {
+      const scoped = new InProcessEvaluator(
+        { ...mockOptions, evaluationFlagList },
+        mockApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      try {
+        await scoped.initialize();
+      } finally {
+        await scoped.dispose();
+      }
+      return mockApi.retrieveFlagConfiguration.mock.calls[0][1];
+    };
+
+    it('should request only the configured flags', async () => {
+      // A service using three flags out of several thousand otherwise downloads all of them on
+      // every poll.
+      await expect(flagsSentFor(['flagA', 'flagB'])).resolves.toEqual(['flagA', 'flagB']);
+    });
+
+    it('should request everything when the option is unset', async () => {
+      await expect(flagsSentFor(undefined)).resolves.toBeUndefined();
+    });
+
+    it('should treat an empty list as unset', async () => {
+      // The relay proxy reads an empty `flags` array as "send everything", so normalising here
+      // keeps the two spellings of that intent from diverging later.
+      await expect(flagsSentFor([])).resolves.toBeUndefined();
+    });
+
+    it('should keep sending the list on subsequent refreshes', async () => {
+      jest.useFakeTimers();
+      const scoped = new InProcessEvaluator(
+        { ...mockOptions, evaluationFlagList: ['flagA'] },
+        mockApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      try {
+        await scoped.initialize();
+        await jest.advanceTimersByTimeAsync(mockOptions.flagChangePollingIntervalMs as number);
+
+        // Guards the guard: without a second call the assertion below would pass vacuously.
+        expect(mockApi.retrieveFlagConfiguration.mock.calls.length).toBeGreaterThan(1);
+        // The list is not an initialization-only concern; a poll that dropped it would silently
+        // pull the whole configuration back.
+        for (const call of mockApi.retrieveFlagConfiguration.mock.calls) {
+          expect(call[1]).toEqual(['flagA']);
+        }
+      } finally {
+        await scoped.dispose();
+        jest.useRealTimers();
+      }
+    });
+  });
+
   describe('polling', () => {
     let pollingEvaluator: InProcessEvaluator;
 
