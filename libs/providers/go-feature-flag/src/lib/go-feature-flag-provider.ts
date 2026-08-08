@@ -151,7 +151,7 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
   private getEvaluator(options: GoFeatureFlagProviderOptions, api: GoFeatureFlagApi, logger?: Logger): IEvaluator {
     switch (options.evaluationType) {
       case EvaluationType.Remote:
-        return new RemoteEvaluator(options, logger);
+        return new RemoteEvaluator(options, { logger, eventChannel: this.events });
       default:
         return new InProcessEvaluator(options, api, this.events, logger);
     }

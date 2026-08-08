@@ -72,29 +72,29 @@ VERDICT: NON-CONFORMANT — 3 Critical, 29 Major, 10 Minor
          (97 PASS, 35 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`), Step 19 (`CFG-005`, `CFG-001`, `AUTH-004`), Step 19b (`AUTH-004` re-based on a GOFF-native option; `AUTH-001` **opened** by decision D6), Step 20 (`CFG-006`, `CFG-007`), Step 21 (`CFG-008`), Step 22 (`FALLBACK-001`…`-009`), Step 23 (`META-001`, `META-002`), Step 24 (`IP-011`), Step 25 (`COLL-013`). Remaining: 7.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`), Step 19 (`CFG-005`, `CFG-001`, `AUTH-004`), Step 19b (`AUTH-004` re-based on a GOFF-native option; `AUTH-001` **opened** by decision D6), Step 20 (`CFG-006`, `CFG-007`), Step 21 (`CFG-008`), Step 22 (`FALLBACK-001`…`-009`), Step 23 (`META-001`, `META-002`), Step 24 (`IP-011`), Step 25 (`COLL-013`), Step 26 (`EVT-001`). Remaining: 6.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |     132 |
-| FAIL         |       5 |
+| PASS         |     133 |
+| FAIL         |       4 |
 | PARTIAL      |       2 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, both `PARTIAL` results count as non-conformance**, giving 7 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, both `PARTIAL` results count as non-conformance**, giving 6 unmet requirements.
 
 ### 1.2 Failures by severity
 
 | Severity  |  FAIL | PARTIAL | Total |
 | --------- | ----: | ------: | ----: |
 | Critical  |     0 |       1 | **1** |
-| Major     |     3 |       1 | **4** |
+| Major     |     2 |       1 | **3** |
 | Minor     |     2 |       0 | **2** |
-| **Total** | **5** |   **2** | **7** |
+| **Total** | **4** |   **2** | **6** |
 
 ### 1.3 Counts by area
 
@@ -104,7 +104,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-META` (§2)      |       3 |       3 |     0 |       0 |     0 |
 | `GOFF-CFG` (§3)       |      10 |      10 |     0 |       0 |     0 |
 | `GOFF-LIFE` (§4)      |       7 |       7 |     0 |       0 |     0 |
-| `GOFF-EVT` (§5)       |       8 |       7 |     1 |       0 |     0 |
+| `GOFF-EVT` (§5)       |       8 |       8 |     0 |       0 |     0 |
 | `GOFF-EVAL` (§6)      |      11 |       8 |     0 |       2 |     1 |
 | `GOFF-CTX` (§7)       |       9 |       9 |     0 |       0 |     0 |
 | `GOFF-REM` (§8)       |       6 |       6 |     0 |       0 |     0 |
@@ -117,7 +117,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |       3 |     1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |       9 |     0 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |       0 |     0 |       0 |     7 |
-| **Total**             | **147** | **132** | **5** |   **2** | **8** |
+| **Total**             | **147** | **133** | **4** |   **2** | **8** |
 
 ### 1.4 Headline
 
@@ -162,7 +162,7 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-LIFE-005`     | Major    | Core       | PASS        | `gff/src/lib/service/api.ts:149-150, 160`                                                                                                                                                                                                                       | The shutdown flush is bounded by the configured request timeout via `AbortController`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `GOFF-LIFE-006`     | Critical | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:259-269`                                                                                                                                                                                                          | Reports `PROVIDER_NOT_READY`, and the readiness check still precedes the flag lookup so `FLAG_NOT_FOUND` is never used for an unloaded configuration. _Fixed — Step 4._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `GOFF-LIFE-007`     | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:296-297`                                                                                                                                                                                                          | _Accidental_: single-threaded event loop; `flags` swapped by reference, no guard held across I/O.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `GOFF-EVT-001`      | Major    | Core       | **FAIL**    | `gff/src/lib/go-feature-flag-provider.ts:132-134`; `gff/src/lib/evaluator/remote-evaluator.ts` (whole file)                                                                                                                                                     | The event emitter is passed only to the in-process evaluator; remote mode emits nothing.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `GOFF-EVT-001`      | Major    | Core       | **PASS**    | `gff/src/lib/go-feature-flag-provider.ts:157`; `gff/src/lib/evaluator/remote-evaluator.ts:158-168, 172-203`                                                                                                                                                     | Both modes receive the emitter and report health and recovery; each reports the condition its mode can actually reach — `Stale` in-process, `Error` remote. `ConfigurationChanged` is inapplicable to remote mode, not absent — see M15.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `GOFF-EVT-002`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:300-303`                                                                                                                                                                                                          | Emitted when the poll yields a different `ETag`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `GOFF-EVT-003`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:300`                                                                                                                                                                                                              | `!firstLoad` guard suppresses the initial load.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `GOFF-EVT-004`      | Major    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:34-68, 396-410`                                                                                                                                                                                                   | Emission is decided by comparing per-flag serializations of the decoded configuration, not the `ETag`, so a server that omits `ETag` no longer makes every poll look like a change. The event carries `flagsChanged` listing exactly the flags added, removed or modified. Each flag is serialized whole rather than inspected, keeping it opaque per `GOFF-IP-016`. _Fixed — Step 7._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -839,7 +839,26 @@ The identity test on `anonymous` is correct — boolean `false`, absent and non-
 
 ---
 
-#### M15 — `GOFF-EVT-001` · Provider events are emitted in in-process mode only
+#### ✅ M15 — `GOFF-EVT-001` · **RESOLVED in Step 26**
+
+_`getEvaluator` now passes `this.events` to both branches (`go-feature-flag-provider.ts:157`), and `RemoteEvaluator` reports its health on every evaluation (`remote-evaluator.ts:158-168, 172-203`): the first failure emits `Error`, the next success emits `Ready`, and each is emitted once per episode._
+
+_**`ERROR`, not `STALE`, and on the first failure rather than a threshold — decided by the maintainer, and it follows from what the two modes hold.** Staleness means the provider is still serving a last-known-good snapshot that is ageing; that is exactly why the in-process path absorbs two failures before saying anything, since it keeps answering correctly throughout. Remote mode caches nothing. A relay proxy it cannot reach is not a provider serving older data, it is a provider that cannot evaluate at all — so `STALE` describes a condition that cannot arise here, and waiting for a second failure would only delay a signal the application needs immediately. A test asserts `Stale` is never emitted from this path, so a later change that reaches for it fails rather than passing quietly._
+
+_The status is recoverable, not fatal: the SDK short-circuits evaluations only in `NOT_READY` and `FATAL` (§0.2), so calls keep arriving and the next success returns the provider to `READY` unattended._
+
+_**What counts as a failure, and why.** The delegate already draws the line this needs. A failure the server described — `FLAG_NOT_FOUND`, `TYPE_MISMATCH`, `TARGETING_KEY_MISSING` — comes back as resolution details carrying an `errorCode`; a failure to obtain any answer at all — network, timeout, `401`, `429`, unparseable body — is thrown (`ofrep-core/src/lib/api/ofrep-api.ts:211-232`). Only the second kind says anything about the health of the relay proxy, so only the second kind is counted. A flag that does not exist is not a broken provider, and reporting the whole provider in error over one missing key would be a worse defect than the one being fixed._
+
+_The emitted payload carries the underlying cause. A transport failure reaches this code wrapped in an `OFREPApiFetchError` whose own message is the constant `"The OFREP request failed."`, so the wrapper is unwrapped before reporting — otherwise a handler is told the provider broke and nothing about why._
+
+_**The emitter is optional.** The §16 fallback builds a `RemoteEvaluator` inside the in-process evaluator (`inprocess-evaluator.ts:544`) and passes none, so a fallback cannot report the provider broken for a relay proxy the in-process path is not depending on — that path already reports its own health from the polling loop._
+
+_**`PROVIDER_CONFIGURATION_CHANGED` is recorded as inapplicable rather than unimplemented.** Remote mode holds no configuration: every evaluation is a round trip, there is nothing cached to change and no poll to detect a change on. `GOFF-EVT-002`/`-003`/`-004` constrain a configuration this mode does not have, so there is no event to withhold and nothing a consumer can observe in one mode but not the other. This is the reading the plan flagged as its lowest-confidence point; it is recorded explicitly here rather than left implicit in a PASS._
+
+_**One asymmetry this step does not close, recorded so it is not mistaken for covered:** `GOFF-EVT-007` puts the provider in `FATAL` on a `401`/`403` during initialization, but `RemoteEvaluator.initialize` contacts nothing (`remote-evaluator.ts:253-256`), so remote mode cannot reach `FATAL` at start-up — bad credentials surface on the first evaluation instead. That is a §4 lifecycle question rather than a §5 event-parity one, and closing it means adding a start-up probe request that remote mode does not otherwise make. Not in scope for this step._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "Provider events **MUST** be emitted identically in both evaluation modes. A capability present in one mode and silently absent in the other is a defect."
 
@@ -848,6 +867,10 @@ The identity test on `anonymous` is correct — boolean `false`, absent and non-
 **Consequence:** An application that registers a `PROVIDER_CONFIGURATION_CHANGED` handler and works in in-process mode goes silent when switched to remote — with no error and no log line. Switching evaluation modes is presented as a configuration choice but silently changes the provider's observable event contract.
 
 **Smallest fix:** Pass the emitter to `RemoteEvaluator` and drive configuration-changed events from the OFREP bulk/SSE path, or document the gap explicitly if remote mode is intended to be event-free — the specification requires the former.
+
+---
+
+</details>
 
 ---
 
