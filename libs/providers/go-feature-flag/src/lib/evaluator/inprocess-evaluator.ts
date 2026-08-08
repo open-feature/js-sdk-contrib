@@ -76,6 +76,15 @@ export class InProcessEvaluator implements IEvaluator {
   private lastUpdate: Date = new Date(0);
   /** Null-prototype so that a flag key can never resolve to an inherited Object.prototype member. */
   private flags: Record<string, Flag> = toFlagLookup({});
+  /**
+   * Serialization of the configuration currently served, assigned wherever `flags` is.
+   *
+   * Kept rather than recomputed on each poll: the configuration being served is the one already
+   * serialized when it was accepted, and re-serializing it doubles the JSON work per poll for a
+   * result that cannot have changed - on precisely the large configurations `evaluationFlagList`
+   * exists to keep small.
+   */
+  private flagSerializations: Record<string, string> = serializeFlags({});
   private evaluationContextEnrichment: Record<string, JsonValue> = {};
   private periodicRunner?: ReturnType<typeof setTimeout>;
   /** Refresh currently in flight, so that shutdown and re-initialization can join it. */
@@ -469,7 +478,7 @@ export class InProcessEvaluator implements IEvaluator {
 
       // Which flags changed is decided on content, not on the ETag. A relay proxy or an
       // intermediary that omits ETag would otherwise make every single poll look like a change.
-      const previousFlagSerializations = serializeFlags(this.flags);
+      const previousFlagSerializations = this.flagSerializations;
       const nextFlagSerializations = serializeFlags(flagConfigResponse.flags);
       const previousEnrichmentSerialization = JSON.stringify(this.evaluationContextEnrichment);
       const nextEnrichmentSerialization = JSON.stringify(flagConfigResponse.evaluationContextEnrichment ?? {});
@@ -484,6 +493,7 @@ export class InProcessEvaluator implements IEvaluator {
       this.etag = flagConfigResponse.etag;
       this.lastUpdate = respLastUpdated;
       this.flags = toFlagLookup(flagConfigResponse.flags);
+      this.flagSerializations = nextFlagSerializations;
       this.evaluationContextEnrichment = flagConfigResponse.evaluationContextEnrichment || {};
 
       if (flagsChanged.length === 0) {
