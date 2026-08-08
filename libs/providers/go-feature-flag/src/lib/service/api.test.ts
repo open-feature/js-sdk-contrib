@@ -342,6 +342,25 @@ describe('GoFeatureFlagApi', () => {
       await expect(api.retrieveFlagConfiguration()).rejects.toThrow(ImpossibleToRetrieveConfigurationException);
     });
 
+    it.each([
+      ['an array', '{"flags":[]}'],
+      ['a populated array', '{"flags":[{"key":"my-flag"}]}'],
+      ['a string', '{"flags":"oops"}'],
+      ['a number', '{"flags":42}'],
+      ['a boolean', '{"flags":true}'],
+    ])('should treat a 200 with %s as a flag map as a failed refresh', async (_label, body) => {
+      const api = new GoFeatureFlagApi(baseOptions);
+      mockFetch.setResponse(
+        'http://localhost:8080/v1/flag/configuration',
+        new MockResponse(200, body, { etag: '"newer-etag"' }),
+      );
+
+      // Not just a type check: `Object.entries` reads an array or a number as an empty
+      // configuration and a string as one flag per character, and the caller would then store that
+      // and advance the ETag - making the bogus configuration permanent from the next 304 on.
+      await expect(api.retrieveFlagConfiguration()).rejects.toThrow(ImpossibleToRetrieveConfigurationException);
+    });
+
     it('should accept a 200 with an explicitly empty flag map', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
       mockFetch.setResponse(
