@@ -44,13 +44,16 @@ describe('GoFeatureFlagProvider', () => {
 
   afterEach(async () => {
     testClientName = '';
+
+    // Closed before the mocks are reset, and the order is what makes this file order-independent:
+    // shutting a provider down flushes whatever its publisher still holds, so resetting first left
+    // that POST recorded against the *next* test - which then saw a collector call it never made.
+    await OpenFeature.close();
+
     jest.clearAllMocks();
     jest.restoreAllMocks();
     jest.useRealTimers();
     fetchMock.resetMocks();
-
-    // Clean up OpenFeature
-    await OpenFeature.close();
   });
 
   describe('options hygiene', () => {
@@ -551,7 +554,7 @@ describe('GoFeatureFlagProvider', () => {
             endpoint: 'https://gofeatureflag.org',
             maxPendingEvents: 0,
           }),
-      ).toThrow('maxPendingEvents must be greater than zero');
+      ).toThrow('maxPendingEvents must be a finite number greater than zero');
     });
 
     it('should throw InvalidOptionsException when maxPendingEvents is negative', () => {
@@ -568,7 +571,24 @@ describe('GoFeatureFlagProvider', () => {
             endpoint: 'https://gofeatureflag.org',
             maxPendingEvents: -100,
           }),
-      ).toThrow('maxPendingEvents must be greater than zero');
+      ).toThrow('maxPendingEvents must be a finite number greater than zero');
+    });
+
+    it.each([
+      ['Infinity', Number.POSITIVE_INFINITY],
+      ['-Infinity', Number.NEGATIVE_INFINITY],
+      ['NaN', Number.NaN],
+    ])('should throw InvalidOptionsException when maxPendingEvents is %s', (_label, value) => {
+      // Infinity is the one that matters: it is greater than zero, so a bare sign check let it
+      // through and the buffer cap became Infinity - never trimming, which is exactly the
+      // unbounded growth during a collector outage the cap was added to stop.
+      expect(
+        () =>
+          new GoFeatureFlagProvider({
+            endpoint: 'https://gofeatureflag.org',
+            maxPendingEvents: value,
+          }),
+      ).toThrow(InvalidOptionsException);
     });
 
     it('should accept valid maxPendingEvents', () => {
@@ -1412,19 +1432,15 @@ describe('GoFeatureFlagProvider', () => {
       });
 
       await OpenFeature.setProviderAndWait('track-events-data-collection-disabled', provider);
-      await provider.initialize();
       const client = OpenFeature.getClient('track-events-data-collection-disabled');
 
       client.track('testEvent', { targetingKey: 'testTargetingKey' }, { metric: 42 });
 
       jest.advanceTimersByTime(100);
 
-      // Asserted on the tracking events rather than on the call count: an earlier test in this file
-      // leaks a provider whose publisher flushes a feature event when the timers advance here.
-      const trackingEventsSent = fetchMock.mock.calls
-        .filter((call) => call[0] === 'http://localhost:1031/v1/data/collector')
-        .flatMap((call) => JSON.parse(call[1]?.body as string).events as { kind: string }[])
-        .filter((event) => event.kind === 'tracking');
+      const trackingEventsSent = fetchMock.mock.calls.filter(
+        (call) => call[0] === 'http://localhost:1031/v1/data/collector',
+      );
 
       // The option was declared and documented but never read, so a caller who disabled collection
       // - for a privacy requirement, or because they run no collector - still posted every event.
@@ -1451,7 +1467,6 @@ describe('GoFeatureFlagProvider', () => {
       });
 
       await OpenFeature.setProviderAndWait('track-events-with-context-and-details', provider);
-      await provider.initialize();
       const client = OpenFeature.getClient('track-events-with-context-and-details');
 
       client.track(
@@ -1644,7 +1659,6 @@ describe('GoFeatureFlagProvider', () => {
       });
 
       await OpenFeature.setProviderAndWait('track-events-with-context-and-details', provider);
-      await provider.initialize();
       const client = OpenFeature.getClient('track-events-with-context-and-details');
 
       client.track(

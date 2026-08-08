@@ -149,8 +149,11 @@ describe('RemoteEvaluator', () => {
       await evaluate({});
 
       // The delegate sets Content-Type itself and builds headers with `new Headers([...])`, which
-      // appends on a duplicate name - so sending our own produced a comma-joined value.
-      expect(capturedHeaders['content-type']).toBe('application/json; charset=utf-8');
+      // appends on a duplicate name - so sending our own produced a comma-joined value. Asserted as
+      // "one JSON media type" rather than on the exact string: the charset suffix belongs to the
+      // delegate, and pinning it would fail this test for a reason that is not duplication.
+      expect(capturedHeaders['content-type']).not.toContain(',');
+      expect(capturedHeaders['content-type']).toMatch(/^application\/json\b/);
     });
   });
 
