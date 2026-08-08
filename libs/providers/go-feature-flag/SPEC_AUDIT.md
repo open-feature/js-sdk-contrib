@@ -72,36 +72,36 @@ VERDICT: NON-CONFORMANT — 3 Critical, 29 Major, 10 Minor
          (97 PASS, 35 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`), Step 19 (`CFG-005`, `CFG-001`, `AUTH-004`), Step 19b (`AUTH-004` re-based on a GOFF-native option; `AUTH-001` **opened** by decision D6), Step 20 (`CFG-006`, `CFG-007`), Step 21 (`CFG-008`), Step 22 (`FALLBACK-001`…`-009`). Remaining: 11.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`), Step 19 (`CFG-005`, `CFG-001`, `AUTH-004`), Step 19b (`AUTH-004` re-based on a GOFF-native option; `AUTH-001` **opened** by decision D6), Step 20 (`CFG-006`, `CFG-007`), Step 21 (`CFG-008`), Step 22 (`FALLBACK-001`…`-009`), Step 23 (`META-001`, `META-002`). Remaining: 9.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |     128 |
-| FAIL         |       8 |
+| PASS         |     130 |
+| FAIL         |       6 |
 | PARTIAL      |       3 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 3 `PARTIAL` results count as non-conformance**, giving 11 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 3 `PARTIAL` results count as non-conformance**, giving 9 unmet requirements.
 
 ### 1.2 Failures by severity
 
-| Severity  |  FAIL | PARTIAL |  Total |
-| --------- | ----: | ------: | -----: |
-| Critical  |     0 |       1 |  **1** |
-| Major     |     3 |       2 |  **5** |
-| Minor     |     5 |       0 |  **5** |
-| **Total** | **8** |   **3** | **11** |
+| Severity  |  FAIL | PARTIAL | Total |
+| --------- | ----: | ------: | ----: |
+| Critical  |     0 |       1 | **1** |
+| Major     |     3 |       2 | **5** |
+| Minor     |     3 |       0 | **3** |
+| **Total** | **6** |   **3** | **9** |
 
 ### 1.3 Counts by area
 
 | Area                  |   Total |    PASS |  FAIL | PARTIAL |   N/A |
 | --------------------- | ------: | ------: | ----: | ------: | ----: |
 | `GOFF-ENG` (§1.6)     |       3 |       2 |     1 |       0 |     0 |
-| `GOFF-META` (§2)      |       3 |       1 |     2 |       0 |     0 |
+| `GOFF-META` (§2)      |       3 |       3 |     0 |       0 |     0 |
 | `GOFF-CFG` (§3)       |      10 |      10 |     0 |       0 |     0 |
 | `GOFF-LIFE` (§4)      |       7 |       7 |     0 |       0 |     0 |
 | `GOFF-EVT` (§5)       |       8 |       7 |     1 |       0 |     0 |
@@ -117,7 +117,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |       3 |     1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |       9 |     0 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |       0 |     0 |       0 |     7 |
-| **Total**             | **147** | **128** | **8** |   **3** | **8** |
+| **Total**             | **147** | **130** | **6** |   **3** | **8** |
 
 ### 1.4 Headline
 
@@ -142,8 +142,8 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-ENG-001`      | Critical | WASM       | PASS        | `gff/scripts/copy-latest-wasm.js:11`; submodule gitlink `76bf27bab805b2fdc564a0f8557c03d1af414d70`                                                                                                                                                              | Pin declares `0.2.4` and resolves: `nx copy-wasm` exits 0 and the copied binary is byte-identical (sha256 `c051989c…`) to `gofeatureflag-evaluation_0.2.4.wasm`. _Fixed — Step 0._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `GOFF-ENG-002`      | Major    | Core       | PASS        | `gff/scripts/copy-latest-wasm.js:11`, `gff/project.json:20-27`                                                                                                                                                                                                  | Single machine-readable constant, consumed by the `copy-wasm` target.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `GOFF-ENG-003`      | Minor    | Core       | **FAIL**    | `gff/README.md` (whole file), `gff/package.json`                                                                                                                                                                                                                | No statement of the targeted specification version anywhere.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `GOFF-META-001`     | Minor    | Core       | **FAIL**    | `gff/src/lib/go-feature-flag-provider.ts:25-27`                                                                                                                                                                                                                 | Name is `"GoFeatureFlagProvider"`, not `"GO Feature Flag Provider"`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `GOFF-META-002`     | Minor    | Core       | **FAIL**    | `gff/src/lib/go-feature-flag-provider.ts:26`                                                                                                                                                                                                                    | Derived by reflection: `GoFeatureFlagProvider.name`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `GOFF-META-001`     | Minor    | Core       | **PASS**    | `gff/src/lib/go-feature-flag-provider.ts:28`                                                                                                                                                                                                                    | Name is the literal `'GO Feature Flag Provider'`, exactly as required.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `GOFF-META-002`     | Minor    | Core       | **PASS**    | `gff/src/lib/go-feature-flag-provider.ts:28`                                                                                                                                                                                                                    | A literal constant; the `GoFeatureFlagProvider.name` reflection is gone.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `GOFF-META-003`     | Minor    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:302`; SDK `core@1.9.1 dist/cjs/index.js:781`                                                                                                                                                                      | Provider emits no name of its own; the SDK stamps `metadata.name`, so they are equal by construction.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `GOFF-CFG-001`      | Major    | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:201-215`; `gff/src/lib/go-feature-flag-provider-options.ts:74-88`                                                                                                                                                      | Required and URL-validated in both modes; the options union no longer exempts remote. _Fixed — Step 19 (breaking)._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `GOFF-CFG-002`      | Major    | Core       | PASS        | `gff/src/lib/go-feature-flag-provider.ts:130-135`                                                                                                                                                                                                               | `switch` default branch returns `InProcessEvaluator`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -1263,7 +1263,12 @@ The type restriction is correct and matches the specification exactly, but it is
 
 ---
 
-#### m1 — `GOFF-META-001` · Metadata name is `GoFeatureFlagProvider`
+#### ✅ m1 — `GOFF-META-001` · **RESOLVED in Step 23**
+
+_`go-feature-flag-provider.ts:28` is now the literal `'GO Feature Flag Provider'`. The pinning assertion at `go-feature-flag-provider.test.ts:246` was updated with the fix rather than before it, per §3.5. Breaking for anyone keying on the old name — hence `feat(go-feature-flag)!:` and the 2.0.0 bump (decision D2). Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The provider metadata name **MUST** be exactly `GO Feature Flag Provider`."
 
@@ -1275,7 +1280,16 @@ The type restriction is correct and matches the specification exactly, but it is
 
 ---
 
-#### m2 — `GOFF-META-002` · The name is derived by runtime reflection
+</details>
+
+---
+
+#### ✅ m2 — `GOFF-META-002` · **RESOLVED in Step 23**
+
+_The same literal closes this one. A new test asserts `metadata.name !== GoFeatureFlagProvider.name`, which is the property the requirement actually constrains — it fails if anyone reintroduces the reflection, where an equality check on the literal alone would not. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The metadata name **MUST** be a literal constant. It **MUST NOT** be derived by runtime reflection on a class or type name, which is unstable under minification and obfuscation."
 
@@ -1284,6 +1298,10 @@ The type restriction is correct and matches the specification exactly, but it is
 **Consequence:** The value changes under a minifier that mangles class names — a bundled consumer can see `metadata.name` become `"e"` or `"t"`. The package ships CJS and ESM builds (`project.json:61`) that downstream bundlers routinely minify, so this is reachable in practice, and the failure is silent.
 
 **Smallest fix:** Same as m1 — the string literal fixes both.
+
+---
+
+</details>
 
 ---
 
@@ -1459,7 +1477,7 @@ A green suite pinning a defect raises the cost of remediation and indicates the 
 
 | Test                                                                                                           | Assertion                                                                                                                                                                                                                                                | Requirement it pins                                                                                                                                   |
 | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/lib/go-feature-flag-provider.test.ts:50-55` — _"should validate metadata name"_                           | `expect(provider.metadata.name).toBe('GoFeatureFlagProvider')`                                                                                                                                                                                           | `GOFF-META-001`, `GOFF-META-002` (**m1**, **m2**)                                                                                                     |
+| `src/lib/go-feature-flag-provider.test.ts:50-55` — _"should validate metadata name"_                           | `expect(provider.metadata.name).toBe('GoFeatureFlagProvider')`                                                                                                                                                                                           | `GOFF-META-001`, `GOFF-META-002` (**m1**, **m2**) — ✅ **updated in Step 23**; a second test now asserts the name is _not_ the reflected class name   |
 | `src/lib/hook/enrich-evaluation-context-hook.test.ts:84-110` — _"should merge metadata with existing context"_ | Seeds `gofeatureflag: { existing: 'value' }`, then asserts `result['gofeatureflag']` **equals** `metadata.asObject()` — i.e. asserts the sibling key is destroyed. The comment on line 108 states the intent: _"should override existing gofeatureflag"_ | `GOFF-CTX-006`, `GOFF-CTX-007` (**C9**, **M11**) — ✅ **replaced in Step 9** by tests asserting the caller's `flagList` and `currentDateTime` survive |
 | `src/lib/service/api.test.ts` — _"should handle 304 response without flags and context"_                       | Asserted a `304` returns a normal result object with `flags: {}` and the echoed `etag` — the "empty response object" shape `GOFF-IP-007` explicitly forbids                                                                                              | `GOFF-IP-007`, `GOFF-IP-015` (**C4**) — ✅ **replaced in Step 1** by `"should return the NOT_MODIFIED sentinel on a 304 response"`                    |
 | `src/lib/go-feature-flag-provider.test.ts` — _"Should error if flag configuration endpoint return a 401"_      | Asserted the rejection is an `UnauthorizedException`, i.e. a plain error carrying no `code`, which is exactly what kept the provider out of `FATAL`                                                                                                      | `GOFF-EVT-007` (**C8**) — ✅ **replaced in Step 5** by a test asserting `ProviderStatus.FATAL`                                                        |

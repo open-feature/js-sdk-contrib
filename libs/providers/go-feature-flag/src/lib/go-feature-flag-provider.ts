@@ -25,7 +25,7 @@ import { RemoteEvaluator } from './evaluator/remote-evaluator';
 
 export class GoFeatureFlagProvider implements Provider, Tracking {
   metadata = {
-    name: GoFeatureFlagProvider.name,
+    name: 'GO Feature Flag Provider',
   };
 
   readonly runsOn = 'server';
