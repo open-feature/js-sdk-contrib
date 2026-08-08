@@ -41,6 +41,8 @@ export class EvaluateWasm {
   private wasmExports: WebAssembly.Exports | null = null;
   /** Replaced on each instantiation: a Go runtime is bound to the instance it was started with. */
   private go: Go;
+  /** The instantiation currently in flight, shared by every concurrent caller of initialize(). */
+  private initialization: Promise<void> | null = null;
   private readonly logger?: Logger;
   private readonly wasmBinaryPath?: string;
   private readonly encoder: TextEncoder;
@@ -59,7 +61,12 @@ export class EvaluateWasm {
 
   /**
    * Initializes the WASM module.
-   * In a real implementation, this would load the WASM binary and instantiate it.
+   *
+   * Concurrent callers share one instantiation. `evaluate` initializes lazily, so any number of
+   * evaluations can arrive here together - most readily right after a fault, because
+   * discardInstance() clears the instance and every in-flight evaluation then rebuilds it. Left
+   * unserialized, each of them instantiates its own module and only the last one survives, which
+   * leaks the rest.
    */
   public async initialize(): Promise<void> {
     // Already holding a live instance. Instantiating a second one would abandon the first without
@@ -69,6 +76,25 @@ export class EvaluateWasm {
       return;
     }
 
+    // Latecomers await the instantiation already running rather than starting another. Cleared in
+    // the finally below whether it succeeded or failed, so a failed load can be retried.
+    if (this.initialization) {
+      return this.initialization;
+    }
+
+    this.initialization = this.instantiate();
+    try {
+      await this.initialization;
+    } finally {
+      this.initialization = null;
+    }
+  }
+
+  /**
+   * Builds one WASM instance and stores it. Never call this directly - go through initialize(),
+   * which is what guarantees only one of these runs at a time.
+   */
+  private async instantiate(): Promise<void> {
     try {
       // Load the WASM binary
       const wasmBuffer = await this.loadWasmBinary();
@@ -76,9 +102,11 @@ export class EvaluateWasm {
       // Instantiate the WebAssembly module
       // A fresh runtime per instantiation. The Go runtime holds references into the instance it was
       // started with, so reusing one across a rebuild would point the new module at the old memory.
-      this.go = new Go();
+      // Kept local until the instance it belongs to is ready: assigning `this.go` before the await
+      // would publish a runtime that is not yet bound to anything.
+      const go = new Go();
 
-      const wasm = await WebAssembly.instantiate(wasmBuffer, this.go.importObject);
+      const wasm = await WebAssembly.instantiate(wasmBuffer, go.importObject);
       const exports = wasm.instance.exports;
 
       // Checked before the runtime is started and before anything is stored. Storing first and
@@ -91,9 +119,10 @@ export class EvaluateWasm {
       }
 
       // Run the Go runtime
-      this.go.run(wasm.instance);
+      go.run(wasm.instance);
 
-      // Store the instance and exports
+      // Store the instance, its runtime and its exports together: they only make sense as a set.
+      this.go = go;
       this.wasmExports = exports;
       this.wasmMemory = exports['memory'] as WebAssembly.Memory;
     } catch (error) {
