@@ -27,6 +27,7 @@ import {
   DEFAULT_POLLING_INTERVAL_MS,
   EVALUATED_REMOTELY_KEY,
   FALLBACK_ENGINE_ERROR_CODES,
+  POLLING_JITTER_RATIO,
   STALE_AFTER_CONSECUTIVE_FAILURES,
 } from '../helper/constants';
 import { RemoteEvaluator } from './remote-evaluator';
@@ -126,12 +127,25 @@ export class InProcessEvaluator implements IEvaluator {
       this.stale = false;
       // Polling is always on: a provider that only ever reads the configuration once serves its
       // start-up snapshot for the lifetime of the process, and never learns about a flag change.
-      this.periodicRunner = setTimeout(() => this.poll(), this.pollingIntervalMs);
+      this.periodicRunner = setTimeout(() => this.poll(), this.nextPollDelayMs());
     } catch (error) {
       this.logger?.error('Failed to initialize evaluator:', error);
       this.configurationState = ConfigurationState.ERROR;
       throw error;
     }
+  }
+
+  /**
+   * Delay before the next refresh: the configured interval, jittered by ±{@link POLLING_JITTER_RATIO}.
+   *
+   * A fleet restarted together would otherwise poll on exactly the same phase forever, turning what
+   * should be a steady trickle of requests against the relay proxy into a spike every interval,
+   * proportional to the fleet size. Jittering every delay — the first one included, since a rolling
+   * restart is what aligns the replicas in the first place — spreads them apart and keeps them apart.
+   */
+  private nextPollDelayMs(): number {
+    const spread = 1 - POLLING_JITTER_RATIO + Math.random() * 2 * POLLING_JITTER_RATIO;
+    return Math.round(this.pollingIntervalMs * spread);
   }
 
   /**
@@ -149,7 +163,7 @@ export class InProcessEvaluator implements IEvaluator {
       .finally(() => {
         if (this.periodicRunner) {
           // check if polling is still active
-          this.periodicRunner = setTimeout(() => this.poll(), this.pollingIntervalMs);
+          this.periodicRunner = setTimeout(() => this.poll(), this.nextPollDelayMs());
         }
       });
   }

@@ -72,20 +72,20 @@ VERDICT: NON-CONFORMANT — 3 Critical, 29 Major, 10 Minor
          (97 PASS, 35 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`), Step 19 (`CFG-005`, `CFG-001`, `AUTH-004`), Step 19b (`AUTH-004` re-based on a GOFF-native option; `AUTH-001` **opened** by decision D6), Step 20 (`CFG-006`, `CFG-007`), Step 21 (`CFG-008`), Step 22 (`FALLBACK-001`…`-009`), Step 23 (`META-001`, `META-002`). Remaining: 9.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`), Step 19 (`CFG-005`, `CFG-001`, `AUTH-004`), Step 19b (`AUTH-004` re-based on a GOFF-native option; `AUTH-001` **opened** by decision D6), Step 20 (`CFG-006`, `CFG-007`), Step 21 (`CFG-008`), Step 22 (`FALLBACK-001`…`-009`), Step 23 (`META-001`, `META-002`), Step 24 (`IP-011`). Remaining: 8.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |     130 |
-| FAIL         |       6 |
+| PASS         |     131 |
+| FAIL         |       5 |
 | PARTIAL      |       3 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 3 `PARTIAL` results count as non-conformance**, giving 9 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 3 `PARTIAL` results count as non-conformance**, giving 8 unmet requirements.
 
 ### 1.2 Failures by severity
 
@@ -93,8 +93,8 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | --------- | ----: | ------: | ----: |
 | Critical  |     0 |       1 | **1** |
 | Major     |     3 |       2 | **5** |
-| Minor     |     3 |       0 | **3** |
-| **Total** | **6** |   **3** | **9** |
+| Minor     |     2 |       0 | **2** |
+| **Total** | **5** |   **3** | **8** |
 
 ### 1.3 Counts by area
 
@@ -108,7 +108,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-EVAL` (§6)      |      11 |       8 |     0 |       2 |     1 |
 | `GOFF-CTX` (§7)       |       9 |       9 |     0 |       0 |     0 |
 | `GOFF-REM` (§8)       |       6 |       6 |     0 |       0 |     0 |
-| `GOFF-IP` (§9)        |      17 |      16 |     1 |       0 |     0 |
+| `GOFF-IP` (§9)        |      17 |      17 |     0 |       0 |     0 |
 | `GOFF-WASM` (§10)     |      13 |      12 |     1 |       0 |     0 |
 | `GOFF-ERR` (§11)      |       6 |       6 |     0 |       0 |     0 |
 | `GOFF-HOOK` (§12)     |       6 |       6 |     0 |       0 |     0 |
@@ -117,7 +117,7 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |       3 |     1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |       9 |     0 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |       0 |     0 |       0 |     7 |
-| **Total**             | **147** | **130** | **6** |   **3** | **8** |
+| **Total**             | **147** | **131** | **5** |   **3** | **8** |
 
 ### 1.4 Headline
 
@@ -207,7 +207,7 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-IP-008`       | Critical | In-process | PASS        | `gff/src/lib/service/api.ts:226-231`                                                                                                                                                                                                                            | A `JSON.parse` failure now throws `ImpossibleToRetrieveConfigurationException`, which `loadConfiguration` propagates as a failed refresh. _Fixed — Step 1._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `GOFF-IP-009`       | Critical | In-process | PASS        | `gff/src/lib/service/api.ts:235-239`                                                                                                                                                                                                                            | A null or absent flag map throws rather than degrading to `{}`. An explicitly empty map is still accepted as a valid configuration. _Fixed — Step 1._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `GOFF-IP-010`       | Major    | In-process | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:93-100`                                                                                                                                                                                                           | `.catch(...).finally(reschedule)` keeps polling alive through errors.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `GOFF-IP-011`       | Minor    | In-process | **FAIL**    | `gff/src/lib/evaluator/inprocess-evaluator.ts:98`                                                                                                                                                                                                               | Fixed interval; no jitter (searched `src/` for `jitter`, `random`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `GOFF-IP-011`       | Minor    | In-process | **PASS**    | `gff/src/lib/evaluator/inprocess-evaluator.ts:146-149`, applied at `:130` and `:166`; `gff/src/lib/helper/constants.ts:61`                                                                                                                                      | Every delay is drawn from ±10% of the configured interval — the first one included.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `GOFF-IP-012`       | Major    | In-process | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:55, 389`; `gff/src/lib/helper/flag-serialization.ts:3-19`                                                                                                                                                         | A missing flag returns `FLAG_NOT_FOUND` before the engine is touched. The flag map is stored null-prototype, so a key naming an `Object.prototype` member cannot resolve to the inherited member. **Originally recorded PASS in error** — the original audit checked the `!flag` guard but not the prototype chain behind the lookup. _Corrected and fixed — Step 7b._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `GOFF-IP-013`       | Critical | In-process | PASS        | `gff/src/lib/wasm/evaluate-wasm.ts:256-263`                                                                                                                                                                                                                     | Every throw becomes `{errorCode: 'GENERAL', reason: 'ERROR'}`; the SDK then returns the caller default.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `GOFF-IP-014`       | Major    | In-process | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:252-260`                                                                                                                                                                                                          | Input carries `flagKey`, `flag`, `evalContext` and `flagContext{defaultSdkValue, evaluationContextEnrichment}`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -1344,7 +1344,14 @@ Covered in full under **M10**; listed here because the specification numbers it 
 
 ---
 
-#### m6 — `GOFF-IP-011` · No polling jitter
+#### ✅ m6 — `GOFF-IP-011` · **RESOLVED in Step 24**
+
+_`nextPollDelayMs()` (`inprocess-evaluator.ts:146-149`) draws each delay from ±`POLLING_JITTER_RATIO` of the configured interval, and both scheduling sites use it — `:130` in `initialize` and `:166` in `poll`'s reschedule. Jittering the first delay matters as much as the reschedules: a rolling restart is what aligns the replicas in the first place, so a provider that jittered only reschedules would still spike on the first poll._
+
+_Testing note: jitter made every `advanceTimersByTime(interval)` in the suite a coin flip. `Math.random` is now seeded to `0.5` in the two affected suites' `beforeEach` — the midpoint of the window, which yields exactly the configured interval and leaves the existing assertions meaningful — and four new tests drive the ends of the window explicitly, one of them over real draws to confirm the ±10% bound holds across the distribution and that the delays genuinely vary. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The provider **SHOULD** apply jitter to the polling interval so that a restarted fleet does not poll in lockstep."
 
@@ -1353,6 +1360,10 @@ Covered in full under **M10**; listed here because the specification numbers it 
 **Consequence:** After a fleet-wide rolling restart, every replica polls `/v1/flag/configuration` on the same phase, producing a periodic spike against the relay proxy proportional to the fleet size.
 
 **Smallest fix:** Multiply the interval by a small random factor (e.g. `interval * (0.9 + Math.random() * 0.2)`) at `:98`.
+
+---
+
+</details>
 
 ---
 
