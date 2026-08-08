@@ -22,6 +22,12 @@ export function toFlagLookup(flags: Record<string, Flag>): Record<string, Flag> 
  *
  * Each flag is deliberately treated as opaque: it is serialized whole rather than inspected, so a
  * flag gaining a field the provider knows nothing about still counts as a change.
+ *
+ * `JSON.stringify` preserves property order, so two renderings of the same flag that differ only
+ * in the order of their keys compare as a change. That holds today because the relay proxy sorts
+ * map keys and emits struct fields in declaration order, but that guarantee lives in the producer
+ * rather than here: a different producer, or an intermediary that reorders, would show up as
+ * spurious ConfigurationChanged events rather than as a bug in this file.
  * @param flags - the flag configurations returned by the relay proxy
  * @returns a serialization per flag key, in a null-prototype record
  */

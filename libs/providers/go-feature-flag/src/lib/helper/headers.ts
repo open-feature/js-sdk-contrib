@@ -30,17 +30,19 @@ export function buildRequestHeaders(
   const reserved = new Set(RESERVED_HEADERS.map((name) => name.toLowerCase()));
   const ownedNames = new Set(Object.keys(owned).map((name) => name.toLowerCase()));
 
-  const merged: Record<string, string> = {};
+  // Null-prototype, for the same reason as `serializeFlags`: on a plain object literal an
+  // assignment to `__proto__` hits the inherited setter and is discarded, so a caller header by
+  // that name would go missing rather than be sent. The spread below copies the entries into an
+  // ordinary object, so the return type and every call site are unchanged.
+  const merged: Record<string, string> = Object.create(null);
   for (const name of Object.keys(custom)) {
     const lowered = name.toLowerCase();
     if (reserved.has(lowered) || ownedNames.has(lowered)) {
       continue;
     }
-    // `hasOwn` rather than a truthiness or `!== undefined` check: an empty string is a legal
-    // header value and must not read as absent.
-    if (Object.hasOwn(custom, name)) {
-      merged[name] = custom[name];
-    }
+    // No emptiness check: an empty string is a legal header value, and `Object.keys` already
+    // yields own enumerable names only, so there is nothing further to filter.
+    merged[name] = custom[name];
   }
 
   return { ...merged, ...owned };
