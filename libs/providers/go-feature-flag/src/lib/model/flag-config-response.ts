@@ -25,3 +25,24 @@ export interface FlagConfigResponse {
    */
   lastUpdated?: Date;
 }
+
+/**
+ * Sentinel returned by the API layer instead of a {@link FlagConfigResponse} when the relay proxy
+ * answers `304 Not Modified`.
+ *
+ * The 304 path must be structurally incapable of carrying a configuration body. Representing it as
+ * a response object with empty `flags` makes it indistinguishable from a successful refresh that
+ * happened to return nothing, and the caller then overwrites the live configuration with an empty
+ * map — silently dropping every flag. A distinct value makes that mistake unrepresentable.
+ */
+export const NOT_MODIFIED = Symbol('flag-configuration-not-modified');
+
+/**
+ * Type of the {@link NOT_MODIFIED} sentinel.
+ */
+export type NotModified = typeof NOT_MODIFIED;
+
+/**
+ * Result of a flag-configuration fetch: either a full configuration, or "nothing changed".
+ */
+export type FlagConfigurationResult = FlagConfigResponse | NotModified;

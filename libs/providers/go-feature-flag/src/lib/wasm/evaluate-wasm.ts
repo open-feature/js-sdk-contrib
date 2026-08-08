@@ -7,6 +7,31 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
+ * The exports the host requires from the module. `memory` belongs here as much as the three
+ * functions: every read and write goes through it, so an instance without it cannot evaluate.
+ */
+const REQUIRED_WASM_EXPORTS = ['memory', 'malloc', 'free', 'evaluate'] as const;
+
+/** Selects the low 32 bits of a 64-bit value. Kept as a BigInt so masking never leaves that domain. */
+const LOW_32_BITS = (BigInt(1) << BigInt(32)) - BigInt(1);
+
+/**
+ * Unpacks the `i64` returned by `evaluate` into the output pointer and its length.
+ *
+ * Both halves are masked *before* the conversion to `Number`. Converting first and masking with `&`
+ * coerces the operand to a **signed** 32-bit integer, so a pointer at or above `0x80000000` (2 GiB)
+ * comes back negative and indexes outside the linear memory.
+ * @param packed - the packed result: pointer in the high 32 bits, length in the low 32 bits
+ * @returns the pointer and length, both non-negative across the whole 32-bit range
+ */
+export function unpackEvaluateResult(packed: bigint): { ptr: number; length: number } {
+  return {
+    ptr: Number((packed >> BigInt(32)) & LOW_32_BITS),
+    length: Number(packed & LOW_32_BITS),
+  };
+}
+
+/**
  * EvaluationWasm is a class that represents the evaluation of a feature flag
  * it calls an external WASM module to evaluate the feature flag.
  */
@@ -14,7 +39,10 @@ export class EvaluateWasm {
   private readonly WASM_MODULE_PATH = path.join('wasm-module', 'gofeatureflag-evaluation.wasm');
   private wasmMemory: WebAssembly.Memory | null = null;
   private wasmExports: WebAssembly.Exports | null = null;
-  private readonly go: Go;
+  /** Replaced on each instantiation: a Go runtime is bound to the instance it was started with. */
+  private go: Go;
+  /** The instantiation currently in flight, shared by every concurrent caller of initialize(). */
+  private initialization: Promise<void> | null = null;
   private readonly logger?: Logger;
   private readonly wasmBinaryPath?: string;
   private readonly encoder: TextEncoder;
@@ -33,29 +61,70 @@ export class EvaluateWasm {
 
   /**
    * Initializes the WASM module.
-   * In a real implementation, this would load the WASM binary and instantiate it.
+   *
+   * Concurrent callers share one instantiation. `evaluate` initializes lazily, so any number of
+   * evaluations can arrive here together - most readily right after a fault, because
+   * discardInstance() clears the instance and every in-flight evaluation then rebuilds it. Left
+   * unserialized, each of them instantiates its own module and only the last one survives, which
+   * leaks the rest.
    */
   public async initialize(): Promise<void> {
+    // Already holding a live instance. Instantiating a second one would abandon the first without
+    // disposing it, leaking its linear memory and its Go runtime for the lifetime of the process.
+    // dispose() clears these fields, so a deliberate rebuild still goes through.
+    if (this.wasmExports && this.wasmMemory) {
+      return;
+    }
+
+    // Latecomers await the instantiation already running rather than starting another. Cleared in
+    // the finally below whether it succeeded or failed, so a failed load can be retried.
+    if (this.initialization) {
+      return this.initialization;
+    }
+
+    this.initialization = this.instantiate();
+    try {
+      await this.initialization;
+    } finally {
+      this.initialization = null;
+    }
+  }
+
+  /**
+   * Builds one WASM instance and stores it. Never call this directly - go through initialize(),
+   * which is what guarantees only one of these runs at a time.
+   */
+  private async instantiate(): Promise<void> {
     try {
       // Load the WASM binary
       const wasmBuffer = await this.loadWasmBinary();
 
       // Instantiate the WebAssembly module
-      const wasm = await WebAssembly.instantiate(wasmBuffer, this.go.importObject);
+      // A fresh runtime per instantiation. The Go runtime holds references into the instance it was
+      // started with, so reusing one across a rebuild would point the new module at the old memory.
+      // Kept local until the instance it belongs to is ready: assigning `this.go` before the await
+      // would publish a runtime that is not yet bound to anything.
+      const go = new Go();
+
+      const wasm = await WebAssembly.instantiate(wasmBuffer, go.importObject);
+      const exports = wasm.instance.exports;
+
+      // Checked before the runtime is started and before anything is stored. Storing first and
+      // checking after leaves `wasmExports` set with `wasmMemory` undefined, which `evaluate` reads
+      // as "not initialized" - so it would re-instantiate the module on every call instead of
+      // failing, and surface the absence much later as "WASM memory not available".
+      const missing = REQUIRED_WASM_EXPORTS.filter((name) => !exports[name]);
+      if (missing.length > 0) {
+        throw new WasmFunctionNotFoundException(missing.join(', '));
+      }
 
       // Run the Go runtime
-      this.go.run(wasm.instance);
+      go.run(wasm.instance);
 
-      // Store the instance and exports
-      this.wasmExports = wasm.instance.exports;
-
-      // Get the required exports
-      this.wasmMemory = this.wasmExports['memory'] as WebAssembly.Memory;
-
-      // Verify required functions exist
-      if (!this.wasmExports['malloc'] || !this.wasmExports['free'] || !this.wasmExports['evaluate']) {
-        throw new WasmFunctionNotFoundException('Required WASM functions not found');
-      }
+      // Store the instance, its runtime and its exports together: they only make sense as a set.
+      this.go = go;
+      this.wasmExports = exports;
+      this.wasmMemory = exports['memory'] as WebAssembly.Memory;
     } catch (error) {
       if (error instanceof WasmNotLoadedException || error instanceof WasmFunctionNotFoundException) {
         throw error;
@@ -230,29 +299,27 @@ export class EvaluateWasm {
       // Serialize the input to JSON
       const wasmInputSerialized = this.encoder.encode(JSON.stringify(wasmInput));
 
-      // Copy input to WASM memory
-      const inputPtr = this.copyToMemory(wasmInputSerialized);
+      // malloc and evaluate both run guest code, so a fault in either leaves the instance poisoned.
+      const inputPtr = this.callGuest(() => this.copyToMemory(wasmInputSerialized));
+      const evaluateRes = this.callGuest(() => this.callWasmEvaluate(inputPtr, wasmInputSerialized.length));
 
+      // Read the output before any further call into the instance. The output buffer belongs to the
+      // module's garbage collector and is pinned only until the next call - and free is such a call,
+      // so freeing first would be a use-after-free that returns reclaimed memory intermittently.
+      let resAsString: string;
       try {
-        // Call the WASM evaluate function
-        const evaluateRes = this.callWasmEvaluate(inputPtr, wasmInputSerialized.length);
-
-        // Read the result from WASM memory
-        const resAsString = this.readFromMemory(evaluateRes);
-
-        // Deserialize the response
-        const goffResp = JSON.parse(resAsString) as EvaluationResponse;
-
-        if (!goffResp) {
-          throw new WasmInvalidResultException('Deserialization of EvaluationResponse failed.');
-        }
-        return goffResp;
+        resAsString = this.readFromMemory(evaluateRes);
       } finally {
-        // Free the allocated memory
-        if (inputPtr !== 0) {
-          this.callWasmFree(inputPtr);
-        }
+        // Reached only when evaluate returned rather than trapped, so the instance is healthy and
+        // the input allocation must be released whether or not the output could be read.
+        this.callGuest(() => this.callWasmFree(inputPtr));
       }
+
+      const goffResp = JSON.parse(resAsString) as EvaluationResponse;
+      if (!goffResp) {
+        throw new WasmInvalidResultException('Deserialization of EvaluationResponse failed.');
+      }
+      return goffResp;
     } catch (error) {
       // Return error response if WASM evaluation fails
       return {
@@ -261,6 +328,36 @@ export class EvaluateWasm {
         errorDetails: error instanceof Error ? error.message : 'Unknown error',
       } as EvaluationResponse;
     }
+  }
+
+  /**
+   * Runs a call into the WASM instance, discarding the instance if it faults.
+   *
+   * A trap does not unwind the module's shadow-stack pointer, so a trapped instance is permanently
+   * poisoned: reusing it yields non-deterministic results and faults inside malloc at wrapped
+   * addresses. Discarding here is what makes the next evaluation rebuild instead.
+   * @param call - the call into the instance
+   * @returns whatever the call returns
+   * @throws the original fault, after the instance has been discarded
+   */
+  private callGuest<T>(call: () => T): T {
+    try {
+      return call();
+    } catch (error) {
+      // Deliberately nothing else is run on the instance on the way out - not even free. Running
+      // further guest code faults again and replaces the original error with that second fault.
+      this.discardInstance();
+      throw error;
+    }
+  }
+
+  /**
+   * Drops the current instance so that the next evaluation builds a fresh one.
+   */
+  private discardInstance(): void {
+    this.logger?.warn('Discarding the WASM instance after a fault; the next evaluation will rebuild it');
+    this.wasmMemory = null;
+    this.wasmExports = null;
   }
 
   /**
@@ -358,11 +455,7 @@ export class EvaluateWasm {
    * @throws WasmInvalidResultException - If for any reasons we have an issue calling the wasm module.
    */
   private readFromMemory(evaluateRes: bigint): string {
-    // In the .NET implementation, the result is packed as:
-    // Higher 32 bits for pointer, lower 32 bits for length
-    const MASK = BigInt(2 ** 32) - BigInt(1);
-    const ptr = Number(evaluateRes >> BigInt(32)) & 0xffffffff; // Higher 32 bits for a pointer
-    const outputStringLength = Number(evaluateRes & MASK); // Lower 32 bits for length
+    const { ptr, length: outputStringLength } = unpackEvaluateResult(evaluateRes);
 
     if (ptr === 0 || outputStringLength === 0) {
       throw new WasmInvalidResultException('Output string pointer or length is invalid.');
@@ -373,6 +466,16 @@ export class EvaluateWasm {
     }
 
     const buffer = new Uint8Array(this.wasmMemory.buffer);
+
+    // Out-of-range indices on a typed array read as `undefined`, which stores as 0 - so without
+    // this the caller gets a run of NUL bytes and an opaque JSON parse error instead of the real
+    // fault. The bound is re-read here because a call into the guest can have grown the memory.
+    if (ptr + outputStringLength > buffer.length) {
+      throw new WasmInvalidResultException(
+        `Output string [${ptr}, ${ptr + outputStringLength}) falls outside the WASM memory of ${buffer.length} bytes.`,
+      );
+    }
+
     const bytes = new Uint8Array(outputStringLength);
 
     for (let i = 0; i < outputStringLength; i++) {
