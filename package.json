@@ -106,7 +106,7 @@
     "jsonc-eslint-parser": "^2.1.0",
     "lint-staged": "^16.4.0",
     "msw": "2.10.3",
-    "nx": "22.7.1",
+    "nx": "22.7.7",
     "prettier": "^3.8.1",
     "testcontainers": "^11.0.0",
     "ts-jest": "29.4.9",
