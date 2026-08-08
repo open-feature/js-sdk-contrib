@@ -10,10 +10,14 @@ This provider supports both **in-process** and **remote** evaluation modes, offe
 - **Real-time Configuration Updates**: Automatic polling for flag configuration changes
 - **Comprehensive Data Collection**: Built-in event tracking and analytics
 - **Flexible Context Support**: Rich evaluation context with targeting rules
-- **Caching**: Intelligent caching with automatic cache invalidation
-- **Error Handling**: Robust error handling with fallback mechanisms
+- **Remote Fallback**: In-process evaluation falls back to the relay proxy when the local engine cannot answer
 - **TypeScript Support**: Full TypeScript support with type safety
-- **OpenFeature Compliance**: Full compliance with OpenFeature specification
+
+## Specification 📋
+
+This provider targets **GO Feature Flag Provider Specification 1.0**, and evaluates in-process with
+**WASM evaluation module `0.2.4`** (embedding engine `modules/core v0.7.2`). The pinned module
+version lives in `scripts/copy-latest-wasm.js`.
 
 ## Installation 📦
 
@@ -115,8 +119,8 @@ new GoFeatureFlagProvider({
 
 #### InProcess Evaluation
 
-- **Performance**: Fastest evaluation with local caching
-- **Network**: Minimal network calls, only for configuration updates and tracking
+- **Performance**: Fastest evaluation — flags are evaluated locally, against the configuration held in memory
+- **Network**: Minimal network calls, only for configuration polling, data collection, and the fallback below
 - **Use Case**: High-performance applications, real-time evaluation
 
 #### Remote Evaluation
@@ -124,6 +128,33 @@ new GoFeatureFlagProvider({
 - **Performance**: Network-dependent evaluation
 - **Network**: Each evaluation requires a network call, works well with side-cars or in the edge
 - **Use Case**: Centralized control
+
+#### Remote Fallback
+
+When in-process evaluation cannot produce a result — the local engine reports a parse or general
+error — the provider evaluates that single flag against the relay proxy instead of returning an
+error to the caller, using the same endpoint, credentials and timeout. Flags resolved this way carry
+`gofeatureflag_evaluated_remotely: true` in their metadata and are excluded from data collection, so
+the relay proxy records them once rather than twice.
+
+### Provider Events
+
+Both evaluation modes report health through the OpenFeature event emitter, each signalling the
+condition its mode can reach:
+
+| Mode       | Event                            | When                                                                               |
+| ---------- | -------------------------------- | ---------------------------------------------------------------------------------- |
+| In-process | `PROVIDER_CONFIGURATION_CHANGED` | A poll returns a configuration whose content differs; names the flags that changed |
+| In-process | `PROVIDER_STALE`                 | Three consecutive polls fail. The last known-good configuration keeps being served |
+| In-process | `PROVIDER_READY`                 | A poll succeeds after the provider went stale                                      |
+| Remote     | `PROVIDER_ERROR`                 | The relay proxy could not answer an evaluation. Reported on the first failure      |
+| Remote     | `PROVIDER_READY`                 | An evaluation succeeds again                                                       |
+
+Remote mode holds no configuration of its own, so it emits neither `PROVIDER_CONFIGURATION_CHANGED`
+— there is nothing cached to change — nor `PROVIDER_STALE`, which describes a last known-good
+snapshot ageing. A relay proxy it cannot reach means it cannot evaluate at all, which is why the
+first failure is reported immediately rather than after a threshold. Both states are recoverable:
+evaluations keep reaching the provider and the next success restores `PROVIDER_READY`.
 
 ## Advanced Usage 🔧
 
