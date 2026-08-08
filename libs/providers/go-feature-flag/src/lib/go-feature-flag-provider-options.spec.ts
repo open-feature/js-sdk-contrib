@@ -22,12 +22,14 @@ describe('GoFeatureFlagProviderOptions', () => {
     });
 
     it('should require endpoint for evaluation type remote', () => {
+      // The requirement is a compile-time one, so it is asserted at compile time: remote mode used
+      // to be exempt from it, with OFREP_ENDPOINT free to supply the endpoint instead.
+      // @ts-expect-error endpoint is mandatory in every evaluation mode
       const options: GoFeatureFlagProviderOptions = {
-        endpoint: 'https://api.example.com',
         evaluationType: EvaluationType.Remote,
       };
 
-      expect(options.endpoint).toBe('https://api.example.com');
+      expect(options.evaluationType).toBe(EvaluationType.Remote);
     });
 
     it('should allow all base options with endpoint', () => {

@@ -424,7 +424,10 @@ describe('InProcessEvaluator', () => {
      * Every flag here resolves to `disable` locally, so a value of `true` can only have come from
      * the relay proxy - the assertion discriminates rather than merely observing a `true`.
      */
-    const realEngineEvaluator = (flags: Record<string, unknown>) => {
+    const realEngineEvaluator = (
+      flags: Record<string, unknown>,
+      extraOptions: Partial<GoFeatureFlagProviderOptions> = {},
+    ) => {
       const fetchImplementation = jest
         .fn()
         .mockResolvedValue(
@@ -444,7 +447,7 @@ describe('InProcessEvaluator', () => {
 
       const { EvaluateWasm: RealEvaluateWasm } = jest.requireActual('../wasm/evaluate-wasm');
       const guarded = new InProcessEvaluator(
-        { ...mockOptions, fetchImplementation },
+        { ...mockOptions, fetchImplementation, ...extraOptions },
         guardBreachingApi,
         new OpenFeatureEventEmitter(),
         mockLogger,
@@ -521,12 +524,43 @@ describe('InProcessEvaluator', () => {
       }
     });
 
-    it('should build the fallback evaluator from the provider options', () => {
-      // GOFF-FALLBACK-009: authentication and timeout apply identically because the fallback is
-      // constructed from the very same options object, not from a parallel set of fields.
-      const held = (evaluator as unknown as { options: GoFeatureFlagProviderOptions }).options;
+    it('should authenticate the fallback evaluation like any other remote call', async () => {
+      // GOFF-FALLBACK-009: authentication applies identically on the fallback path. Asserted on the
+      // request that actually leaves rather than on the options object the evaluator holds - the
+      // requirement is about what reaches the relay proxy, and a defensive copy of the options
+      // somewhere in between must not read as a breach of it.
+      const { guarded, fetchImplementation } = realEngineEvaluator(
+        {
+          'guarded-flag': {
+            variations: { enable: true, disable: false },
+            defaultRule: { variation: 'disable' },
+          },
+        },
+        { endpoint: 'https://relay.example.com', apiKey: 'fallback-key', headers: { 'X-Tenant': 'acme' } },
+      );
 
-      expect(held).toBe(mockOptions);
+      let deeplyNested: EvaluationContextValue = { leaf: true };
+      for (let level = 0; level < 200; level++) {
+        deeplyNested = { child: deeplyNested };
+      }
+
+      try {
+        await guarded.initialize();
+
+        const result = await guarded.evaluateBoolean('guarded-flag', false, {
+          targetingKey: 'random-key',
+          deep: deeplyNested,
+        });
+
+        expectAnsweredRemotely(result);
+        // The delegate calls fetch with a single Request rather than a (url, init) pair.
+        const sent = fetchImplementation.mock.calls[0][0] as Request;
+        expect(sent.url).toContain('https://relay.example.com');
+        expect(sent.headers.get('X-API-Key')).toBe('fallback-key');
+        expect(sent.headers.get('X-Tenant')).toBe('acme');
+      } finally {
+        await guarded.dispose();
+      }
     });
 
     it('should not build a fallback evaluator until one is needed', () => {
