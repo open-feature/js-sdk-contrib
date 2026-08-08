@@ -77,6 +77,45 @@ describe('EvaluateWasm', () => {
       expect(result.value).toBe(true);
       expect(result.errorCode).toBeFalsy();
     });
+
+    it('should instantiate once for concurrent initialize calls', async () => {
+      await Promise.all([engine.initialize(), engine.initialize(), engine.initialize()]);
+
+      // Nothing is stored until `WebAssembly.instantiate` resolves, so without a shared
+      // initialization each caller passes the "already initialized" guard and builds its own
+      // module. Only the last one is kept; the others leak.
+      expect(instantiateSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should evaluate correctly on every concurrent evaluation that triggers initialization', async () => {
+      // `evaluate` initializes lazily, so this is how the race is actually reached in production -
+      // most readily right after a fault, which discards the instance while evaluations are in
+      // flight. A caller left holding a Go runtime bound to a module another caller replaced
+      // evaluates against the wrong linear memory.
+      const results = await Promise.all([
+        engine.evaluate(sampleInput),
+        engine.evaluate(sampleInput),
+        engine.evaluate(sampleInput),
+      ]);
+
+      expect(instantiateSpy).toHaveBeenCalledTimes(1);
+      for (const result of results) {
+        expect(result.value).toBe(true);
+        expect(result.errorCode).toBeFalsy();
+      }
+    });
+
+    it('should allow a retry after a failed initialization', async () => {
+      instantiateSpy.mockRejectedValueOnce(new Error('boom'));
+      await expect(engine.initialize()).rejects.toThrow();
+
+      // The shared promise must be cleared on failure too, or the first failure would be replayed
+      // to every later caller for the lifetime of the process.
+      await engine.initialize();
+
+      const result = await engine.evaluate(sampleInput);
+      expect(result.value).toBe(true);
+    });
   });
 
   describe('export validation', () => {
