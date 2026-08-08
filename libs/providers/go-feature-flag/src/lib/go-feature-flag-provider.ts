@@ -216,8 +216,14 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
       throw new InvalidOptionsException('dataFlushInterval must be greater than zero');
     }
 
-    if (options.maxPendingEvents !== undefined && options.maxPendingEvents <= 0) {
-      throw new InvalidOptionsException('maxPendingEvents must be greater than zero');
+    // Finiteness is checked as well as the sign, and it is the whole point of the option rather
+    // than pedantry: `Infinity > 0`, so it would pass a bare sign check and then make the buffer
+    // cap `Infinity` - the unbounded growth during a collector outage that the cap exists to stop.
+    if (
+      options.maxPendingEvents !== undefined &&
+      (!Number.isFinite(options.maxPendingEvents) || options.maxPendingEvents <= 0)
+    ) {
+      throw new InvalidOptionsException('maxPendingEvents must be a finite number greater than zero');
     }
   }
 }
