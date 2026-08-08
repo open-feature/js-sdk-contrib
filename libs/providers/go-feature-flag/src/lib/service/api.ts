@@ -241,9 +241,15 @@ export class GoFeatureFlagApi {
       );
     }
 
-    // An absent or null flag map tells us nothing about the flags, so we keep what we already have.
-    // An explicitly empty map is a legitimate configuration and is accepted as one.
-    if (goffResp?.flags === undefined || goffResp.flags === null) {
+    // Anything that is not a JSON object tells us nothing about the flags, so we keep what we
+    // already have. An explicitly empty map is a legitimate configuration and is accepted as one.
+    //
+    // An array or a scalar has to be rejected here rather than passed on: downstream reads the map
+    // with `Object.entries`, which turns `[]` and `42` into an empty configuration and `"oops"`
+    // into one flag per character. Either way the caller would store that as the live
+    // configuration and advance the ETag, which is the permanent-empty-state failure above.
+    const flags = goffResp?.flags;
+    if (typeof flags !== 'object' || flags === null || Array.isArray(flags)) {
       throw new ImpossibleToRetrieveConfigurationException(
         'retrieve flag configuration error: the response contains no flag configuration',
       );
@@ -252,8 +258,8 @@ export class GoFeatureFlagApi {
     return {
       etag: etagHeader,
       lastUpdated,
-      flags: goffResp.flags,
-      evaluationContextEnrichment: goffResp.evaluationContextEnrichment || {},
+      flags,
+      evaluationContextEnrichment: goffResp?.evaluationContextEnrichment || {},
     };
   }
 }
