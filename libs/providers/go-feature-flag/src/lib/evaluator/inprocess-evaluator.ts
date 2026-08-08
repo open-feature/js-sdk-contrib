@@ -541,7 +541,7 @@ export class InProcessEvaluator implements IEvaluator {
 
     // A WASM trap has already discarded the instance by the time we get here, so the rebuild
     // happens on the next evaluation. Nothing is retried locally in between, as §16 requires.
-    this.fallbackEvaluator ??= new RemoteEvaluator(this.options, this.logger);
+    this.fallbackEvaluator ??= new RemoteEvaluator(this.options, { logger: this.logger });
 
     try {
       const remote = await evaluateRemotely(this.fallbackEvaluator);
