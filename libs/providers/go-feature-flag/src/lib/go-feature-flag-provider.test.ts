@@ -243,7 +243,15 @@ describe('GoFeatureFlagProvider', () => {
         endpoint: 'https://gofeatureflag.org',
         evaluationType: EvaluationType.Remote,
       });
-      expect(provider.metadata.name).toBe('GoFeatureFlagProvider');
+      expect(provider.metadata.name).toBe('GO Feature Flag Provider');
+    });
+
+    it('should not derive the metadata name from the class name', () => {
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'https://gofeatureflag.org',
+        evaluationType: EvaluationType.Remote,
+      });
+      expect(provider.metadata.name).not.toBe(GoFeatureFlagProvider.name);
     });
 
     it('should throw InvalidOptionsException when options is null', () => {
