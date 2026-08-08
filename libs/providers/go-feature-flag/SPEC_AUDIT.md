@@ -72,20 +72,20 @@ VERDICT: NON-CONFORMANT — 3 Critical, 29 Major, 10 Minor
          (97 PASS, 35 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`), Step 19 (`CFG-005`, `CFG-001`, `AUTH-004`), Step 19b (`AUTH-004` re-based on a GOFF-native option; `AUTH-001` **opened** by decision D6), Step 20 (`CFG-006`, `CFG-007`), Step 21 (`CFG-008`), Step 22 (`FALLBACK-001`…`-009`), Step 23 (`META-001`, `META-002`), Step 24 (`IP-011`), Step 25 (`COLL-013`), Step 26 (`EVT-001`). Remaining: 6.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`), Step 19 (`CFG-005`, `CFG-001`, `AUTH-004`), Step 19b (`AUTH-004` re-based on a GOFF-native option; `AUTH-001` **opened** by decision D6), Step 20 (`CFG-006`, `CFG-007`), Step 21 (`CFG-008`), Step 22 (`FALLBACK-001`…`-009`), Step 23 (`META-001`, `META-002`), Step 24 (`IP-011`), Step 25 (`COLL-013`), Step 26 (`EVT-001`), Step 27 (`ENG-003`). Remaining: 5.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |     133 |
-| FAIL         |       4 |
+| PASS         |     134 |
+| FAIL         |       3 |
 | PARTIAL      |       2 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, both `PARTIAL` results count as non-conformance**, giving 6 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, both `PARTIAL` results count as non-conformance**, giving 5 unmet requirements.
 
 ### 1.2 Failures by severity
 
@@ -93,14 +93,14 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | --------- | ----: | ------: | ----: |
 | Critical  |     0 |       1 | **1** |
 | Major     |     2 |       1 | **3** |
-| Minor     |     2 |       0 | **2** |
-| **Total** | **4** |   **2** | **6** |
+| Minor     |     1 |       0 | **1** |
+| **Total** | **3** |   **2** | **5** |
 
 ### 1.3 Counts by area
 
 | Area                  |   Total |    PASS |  FAIL | PARTIAL |   N/A |
 | --------------------- | ------: | ------: | ----: | ------: | ----: |
-| `GOFF-ENG` (§1.6)     |       3 |       2 |     1 |       0 |     0 |
+| `GOFF-ENG` (§1.6)     |       3 |       3 |     0 |       0 |     0 |
 | `GOFF-META` (§2)      |       3 |       3 |     0 |       0 |     0 |
 | `GOFF-CFG` (§3)       |      10 |      10 |     0 |       0 |     0 |
 | `GOFF-LIFE` (§4)      |       7 |       7 |     0 |       0 |     0 |
@@ -117,19 +117,23 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-AUTH` (§15)     |       4 |       3 |     1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |       9 |     0 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |       0 |     0 |       0 |     7 |
-| **Total**             | **147** | **133** | **4** |   **2** | **8** |
+| **Total**             | **147** | **134** | **3** |   **2** | **8** |
 
 ### 1.4 Headline
 
-Five clusters account for most of the risk:
+**All 28 planned remediation steps have landed.** Of the 59 requirements the original audit found unmet, 54 are closed. The five that remain are not defects awaiting a fix — each is a decision, a cross-package change, or a deliberate deferral:
 
-1. **The flag map can be silently wiped, permanently.** Four distinct refresh paths — a `304` without an `ETag`, an unparseable `200`, a `200` with a null flag map, and the `ETag` write-back — each replace the live configuration with `{}` while advancing the validator, making the empty state permanent (**GOFF-IP-007/-008/-009/-015**). Separately, the engine pin now names the correct `0.2.4` but the `wasm-releases` submodule cannot supply it, so `copy-wasm` — a `dependsOn` of both `test` and `package` — exits 1 (**GOFF-ENG-001**, one commit from resolved).
-2. **Polling is off unless the user asks for it.** `flagChangePollingIntervalMs` has no default in code despite being documented as `120000`, so an in-process provider serves its start-up snapshot forever (**GOFF-IP-006**).
-3. **No remote fallback exists at all.** The whole of §16 is unimplemented (9 failures, per §C.1 vacuous-satisfaction inheritance). §10.1 routes a guard breach to `PARSE_ERROR` precisely so §16 can turn it into a correct remote answer; with §16 absent, that breach is a hard error to the caller instead.
-4. **The `gofeatureflag` reserved namespace is destroyed on every evaluation**, taking caller-supplied `flagList` and `currentDateTime` with it, and the exporter metadata is written to a key the server does not read (**GOFF-CTX-006/-007**).
-5. **The data-collector envelope is unattributable and the buffer is unbounded** — no `provider`/`openfeature` keys (**GOFF-COLL-011/-012**) and no cap on retained events (**GOFF-COLL-019**).
+| ID              | Sev      | Status  | What it needs                                                                                                                                                                                                                            |
+| --------------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GOFF-EVAL-006` | Critical | PARTIAL | **Cross-package.** In-process closed in Step 8; the remote half is a defect in `libs/shared/ofrep-core` (`isDefined` treats JSON `null` as defined), needing its own PR and release — see **X1**.                                        |
+| `GOFF-EVAL-009` | Major    | PARTIAL | **Cross-package.** In-process preserves structured flag metadata; the delegate filters it to primitives — see **X2** and Open Question 3.                                                                                                |
+| `GOFF-WASM-009` | Major    | FAIL    | **Deferred by decision D3.** `SHOULD`-level, no correctness impact: `WASM-007` holds because Node's event loop already serialises the `malloc → evaluate → read → free` sequence, so a pool buys throughput only under `worker_threads`. |
+| `GOFF-AUTH-001` | Major    | FAIL    | **Open by decision D6.** The provider sends `X-API-Key`, which a conformant relay proxy accepts and resolves first; the requirement names `Authorization: Bearer`. One line to change if the decision is revisited — see **m10b**.       |
+| `GOFF-COLL-012` | Minor    | FAIL    | **Awaiting a decision.** `provider` is `nodejs`; the requirement enumerates nine language identifiers and the one for this language is `javascript`. Either change the constant or amend the specification — see **M13**.                |
 
-Two systemic defects sit underneath: `disableDataCollection` is declared, documented and never read (**GOFF-CFG-009/-010, GOFF-HOOK-006, GOFF-TRACK-003**), and a WebAssembly trap neither discards the poisoned instance nor skips `free` (**GOFF-WASM-008/-012/-013**).
+The original headline named five clusters of risk. All five are closed: the flag map can no longer be wiped by a `304`, an unparseable body or a null map (**IP-007/-008/-009/-015**, Step 1); polling is on by default and jittered (**IP-006**, **IP-011**, Steps 2 and 24); §16 remote fallback is implemented in full (**FALLBACK-001**…**-009**, Step 22); the reserved `gofeatureflag` namespace is merged rather than overwritten (**CTX-006/-007**, Step 9); and the data-collector envelope is attributable with a bounded buffer (**COLL-011**, **COLL-019**, Steps 12 and 15). The two systemic defects underneath are closed too — `disableDataCollection` is honoured on every telemetry path (Step 14), and a WebAssembly trap now discards the poisoned instance instead of calling `free` on it (Step 10).
+
+Two further items are recorded but score no requirement row: remote mode cannot reach `FATAL` on bad credentials at start-up, because its `initialize` contacts nothing (see **M15**); and Appendix B fixture divergence was not checked, being outside the declared evidence scope (Open Question 5).
 
 ---
 
@@ -141,7 +145,7 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | ------------------- | -------- | ---------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GOFF-ENG-001`      | Critical | WASM       | PASS        | `gff/scripts/copy-latest-wasm.js:11`; submodule gitlink `76bf27bab805b2fdc564a0f8557c03d1af414d70`                                                                                                                                                              | Pin declares `0.2.4` and resolves: `nx copy-wasm` exits 0 and the copied binary is byte-identical (sha256 `c051989c…`) to `gofeatureflag-evaluation_0.2.4.wasm`. _Fixed — Step 0._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `GOFF-ENG-002`      | Major    | Core       | PASS        | `gff/scripts/copy-latest-wasm.js:11`, `gff/project.json:20-27`                                                                                                                                                                                                  | Single machine-readable constant, consumed by the `copy-wasm` target.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `GOFF-ENG-003`      | Minor    | Core       | **FAIL**    | `gff/README.md` (whole file), `gff/package.json`                                                                                                                                                                                                                | No statement of the targeted specification version anywhere.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `GOFF-ENG-003`      | Minor    | Core       | **PASS**    | `gff/README.md:16-21` ("Specification")                                                                                                                                                                                                                         | Names the targeted specification version, the WASM module and the engine core it embeds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `GOFF-META-001`     | Minor    | Core       | **PASS**    | `gff/src/lib/go-feature-flag-provider.ts:28`                                                                                                                                                                                                                    | Name is the literal `'GO Feature Flag Provider'`, exactly as required.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `GOFF-META-002`     | Minor    | Core       | **PASS**    | `gff/src/lib/go-feature-flag-provider.ts:28`                                                                                                                                                                                                                    | A literal constant; the `GoFeatureFlagProvider.name` reflection is gone.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `GOFF-META-003`     | Minor    | Core       | PASS        | `gff/src/lib/evaluator/inprocess-evaluator.ts:302`; SDK `core@1.9.1 dist/cjs/index.js:781`                                                                                                                                                                      | Provider emits no name of its own; the SDK stamps `metadata.name`, so they are equal by construction.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -697,7 +701,12 @@ _`enforceCap` (`event-publisher.ts:102-110`) trims the buffer to `2 × maxPendin
 
 ---
 
-#### M1 — `GOFF-FALLBACK-001` · Remote fallback is entirely unimplemented
+#### ✅ M1 — `GOFF-FALLBACK-001` · **RESOLVED in Step 22**
+
+_The fallback exists: `genericEvaluate` hands the evaluation to a lazily built `RemoteEvaluator` on a raw engine `PARSE_ERROR` or `GENERAL`, reusing the same options object so the authentication and timeout are identical by construction. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "When in-process evaluation returns raw engine code `PARSE_ERROR` or `GENERAL`, the provider **MUST** retry the evaluation remotely via OFREP and return the remote result."
 
@@ -709,7 +718,16 @@ _`enforceCap` (`event-publisher.ts:102-110`) trims the buffer to `2 × maxPendin
 
 ---
 
-#### M2–M9 — `GOFF-FALLBACK-002` … `-009` · Inherited from M1
+</details>
+
+---
+
+#### ✅ M2–M9 — `GOFF-FALLBACK-002` … `-009` · **RESOLVED in Step 22**
+
+_Closed with M1: the trigger is read before the error code is mapped, `FLAG_CONFIG` never falls back, there is no circuit breaker, a remote failure returns the original in-process result, and a fallback result is stamped `gofeatureflag_evaluated_remotely` so the data-collector hook skips it. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 Per §C.1 ("Vacuous satisfaction"), a requirement whose precondition cannot occur because the governing capability is absent inherits that capability's verdict. All eight remaining §16 requirements therefore report **FAIL**, not PASS:
 
@@ -725,6 +743,10 @@ Per §C.1 ("Vacuous satisfaction"), a requirement whose precondition cannot occu
 | `-009` | Auth and timeout apply identically to the fallback request                         | No request is made.                                  |
 
 All eight are fixed by M1 alone; each then needs its specific behaviour verified rather than a separate change.
+
+---
+
+</details>
 
 ---
 
@@ -1341,13 +1363,26 @@ _The same literal closes this one. A new test asserts `metadata.name !== GoFeatu
 
 ---
 
-#### m3 — `GOFF-ENG-003` · No statement of the targeted specification version
+#### ✅ m3 — `GOFF-ENG-003` · **RESOLVED in Step 27**
+
+_A "Specification" section (`README.md:16-20`) names the targeted specification version, the pinned WASM module and the engine core it embeds, with a pointer to where the pin lives — so the `GOFF-ENG-001`/`-002` declaration is discoverable from the front page rather than only from a build script._
+
+_The same step removed the two claims §3.4 recorded as contradicting the code. **D4** — "Caching: Intelligent caching with automatic cache invalidation" — is gone from the feature list, and so is a second instance the original audit missed: "Performance: Fastest evaluation with local caching" under *InProcess Evaluation*, which advertised the same non-existent cache further down the page. Holding the polled configuration in memory is not a cache; nothing is keyed, expired or invalidated. **D5** — "Error Handling: Robust error handling with fallback mechanisms" — became true in Step 22 and is now stated concretely rather than as a slogan: what triggers the fallback, that it reuses the same endpoint, credentials and timeout, and that fallback results are excluded from data collection. The inaccurate "Full compliance with OpenFeature specification" line is replaced by the Specification section, which makes a claim that can actually be checked._
+
+_The options table was swept against `go-feature-flag-provider-options.ts` and needed no change — all fourteen options are documented, and Steps 2 and 18–21 had already brought the defaults into line. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "The provider **SHOULD** document which specification version it targets."
 
 **Code:** Searched `README.md` (229 lines) and `package.json` — neither mentions a specification version. The closest claim is `README.md:16`, "OpenFeature Compliance: Full compliance with OpenFeature specification", which refers to a different document and, given this report, is not accurate about this one either.
 
 **Smallest fix:** Add a line to `README.md` naming the targeted GO Feature Flag Provider Specification version.
+
+---
+
+</details>
 
 ---
 
@@ -1374,9 +1409,18 @@ _An empty list is normalised to `undefined`. The relay proxy already reads an em
 
 ---
 
-#### m5 — `GOFF-CFG-010` · A vestigial option is left inert
+#### ✅ m5 — `GOFF-CFG-010` · **RESOLVED in Step 14**
+
+_`disableDataCollection` is read on every telemetry path — both hook stages and `track`. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 Covered in full under **M10**; listed here because the specification numbers it separately and rates it Minor.
+
+---
+
+</details>
 
 ---
 
@@ -1498,15 +1542,15 @@ _The case-insensitivity is load-bearing rather than tidy: a `Record` holds `X-AP
 
 The specification requires these to be reported in their own right, and §C.3 makes source authoritative over documentation.
 
-| #   | Documentation claim                                                                                                                                     | Contradicting code                                                                                                                                            | Reported as                                                         |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| D1  | `README.md:80` — `flagChangePollingIntervalMs` default `120000`                                                                                         | `src/lib/evaluator/inprocess-evaluator.ts:79-81` applies no default; polling is disabled when the option is unset                                             | `GOFF-CFG-009` (declared option not honoured) — see **C3**, **M25** |
-| D2  | ✅ **Resolved in Step 18** — `README.md:81`, `src/lib/go-feature-flag-provider-options.ts:20` and `src/lib/helper/constants.ts:22` all now read `60000` | —                                                                                                                                                             | `GOFF-CFG-003` — see **M25**                                        |
-| D3  | `README.md:83, 135` — `disableDataCollection` "Disable data collection entirely"                                                                        | Never read in `src/`                                                                                                                                          | `GOFF-CFG-009` — see **M10**                                        |
-| D4  | `README.md:13` — "**Caching**: Intelligent caching with automatic cache invalidation"                                                                   | No cache exists anywhere in `src/` (§0.1)                                                                                                                     | Minor finding, no requirement identifier                            |
-| D5  | `README.md:14` — "**Error Handling**: Robust error handling with fallback mechanisms"                                                                   | No fallback path exists; §16 is entirely unimplemented (**M1**)                                                                                               | Minor finding, no requirement identifier                            |
-| D6  | ✅ **Resolved in Step 19** — the comment is deleted and `endpoint` is required in both modes                                                            | —                                                                                                                                                             | `GOFF-CFG-005` — see **C2**                                         |
-| D7  | `scripts/README.md:22` — "`TARGET_WASM_VERSION`: The explicit version to use (e.g., `'v1.45.6'`)"                                                       | `scripts/copy-latest-wasm.js:11` uses the `0.2.x` WASM-module scheme, not the `v1.x` relay-proxy scheme; the documented example would not resolve to any file | Minor finding, no requirement identifier                            |
+| #   | Documentation claim                                                                                                                                                   | Contradicting code                                                                                                                                            | Reported as                                                         |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| D1  | `README.md:80` — `flagChangePollingIntervalMs` default `120000`                                                                                                       | `src/lib/evaluator/inprocess-evaluator.ts:79-81` applies no default; polling is disabled when the option is unset                                             | `GOFF-CFG-009` (declared option not honoured) — see **C3**, **M25** |
+| D2  | ✅ **Resolved in Step 18** — `README.md:81`, `src/lib/go-feature-flag-provider-options.ts:20` and `src/lib/helper/constants.ts:22` all now read `60000`               | —                                                                                                                                                             | `GOFF-CFG-003` — see **M25**                                        |
+| D3  | `README.md:83, 135` — `disableDataCollection` "Disable data collection entirely"                                                                                      | Never read in `src/`                                                                                                                                          | `GOFF-CFG-009` — see **M10**                                        |
+| D4  | ✅ **Resolved in Step 27** — the claim is deleted, along with a second instance the original audit missed at `README.md:122`, "Fastest evaluation with local caching" | —                                                                                                                                                             | Minor finding, no requirement identifier                            |
+| D5  | ✅ **Resolved in Steps 22 and 27** — the fallback now exists, and the README states what triggers it rather than sloganising                                          | —                                                                                                                                                             | Minor finding, no requirement identifier                            |
+| D6  | ✅ **Resolved in Step 19** — the comment is deleted and `endpoint` is required in both modes                                                                          | —                                                                                                                                                             | `GOFF-CFG-005` — see **C2**                                         |
+| D7  | `scripts/README.md:22` — "`TARGET_WASM_VERSION`: The explicit version to use (e.g., `'v1.45.6'`)"                                                                     | `scripts/copy-latest-wasm.js:11` uses the `0.2.x` WASM-module scheme, not the `v1.x` relay-proxy scheme; the documented example would not resolve to any file | Minor finding, no requirement identifier                            |
 
 D4 and D5 are the more consequential pair: both advertise capabilities the package does not have, in the feature list a prospective user reads first.
 
