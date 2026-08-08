@@ -7,8 +7,9 @@ import { stripTrailingSlashes } from './validate-url';
  * Writing through the caller's reference meant a caller who built one options object, constructed
  * two providers from it, or read `options.endpoint` afterwards saw their own input silently
  * rewritten - and under `Object.freeze` the assignment threw, turning normalisation into a
- * construction failure. The spread is also shallow, so nested collections have to be copied
- * explicitly or a later edit of the caller's object still changes the provider.
+ * construction failure. The spread is also shallow, so every nested collection - `headers`,
+ * `evaluationFlagList`, `exporterMetadata` - has to be copied explicitly, or a later edit of the
+ * caller's object still changes the provider.
  *
  * @param options - validated options supplied to the provider constructor
  * @returns an independent copy ready for downstream use
@@ -24,6 +25,12 @@ export function normalizeOptions(options: GoFeatureFlagProviderOptions): GoFeatu
   }
   if (options.evaluationFlagList !== undefined) {
     normalised.evaluationFlagList = [...options.evaluationFlagList];
+  }
+  if (options.exporterMetadata !== undefined) {
+    // Copied for the same reason as the two above, and it is the one that leaks the furthest:
+    // `asObject()` is read at publish time, so a caller holding the original could still call
+    // `add` after construction and change what every later event exports.
+    normalised.exporterMetadata = options.exporterMetadata.clone();
   }
   return normalised;
 }

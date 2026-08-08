@@ -60,6 +60,22 @@ export class ExporterMetadata {
   }
 
   /**
+   * Returns an independent copy holding the same entries.
+   *
+   * The provider takes one at construction so that the instance it exports from is its own. The
+   * caller keeps a reference to what they passed, and {@link asObject} is read at publish time
+   * rather than at construction, so without this an {@link add} made afterwards - or a wholly
+   * unrelated second provider built from the same object - would change what this one exports.
+   * @returns a copy that no longer shares state with this instance
+   */
+  clone(): ExporterMetadata {
+    const copy = new ExporterMetadata();
+    // The values came through `add`, so they are already known to be exportable.
+    copy.metadata = { ...this.metadata };
+    return copy;
+  }
+
+  /**
    * Return the metadata as an immutable object, including the reserved keys.
    *
    * `provider` and `openfeature` are always present, whether or not anything was added, so every
