@@ -35,12 +35,17 @@ describe('GoFeatureFlagProvider', () => {
     testClientName = expect.getState().currentTestName ?? 'my-test';
     await OpenFeature.close();
     jest.useFakeTimers();
+    // Polling delays are jittered, so the tests below that advance by exactly one interval would
+    // otherwise fire only about half the time. 0.5 is the midpoint of the jitter window and yields
+    // the configured interval exactly.
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
     fetchMock.enableMocks();
   });
 
   afterEach(async () => {
     testClientName = '';
     jest.clearAllMocks();
+    jest.restoreAllMocks();
     jest.useRealTimers();
     fetchMock.resetMocks();
 

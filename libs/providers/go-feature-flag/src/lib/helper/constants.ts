@@ -52,6 +52,13 @@ export const DEFAULT_POLLING_INTERVAL_MS = 120000;
  */
 export const STALE_AFTER_CONSECUTIVE_FAILURES = 3;
 
+/**
+ * Fraction by which each polling delay is randomly stretched or shortened, so that a fleet
+ * restarted together does not poll the relay proxy in lockstep. `0.1` spreads each delay over
+ * ±10% of the configured interval.
+ */
+export const POLLING_JITTER_RATIO = 0.1;
+
 export const DEFAULT_TARGETING_KEY = 'undefined-targetingKey';
 
 /**

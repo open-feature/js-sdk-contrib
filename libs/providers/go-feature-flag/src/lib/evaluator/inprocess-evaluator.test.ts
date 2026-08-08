@@ -37,6 +37,11 @@ describe('InProcessEvaluator', () => {
   let mockLogger: jest.Mocked<Logger>;
 
   beforeEach(() => {
+    // Polling delays are jittered, so an unseeded clock would make every `advanceTimersByTime` in
+    // this file a coin flip. 0.5 is the midpoint of the jitter window and yields exactly the
+    // configured interval; the jitter tests below drive the ends of the window explicitly.
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
     mockApi = {
       retrieveFlagConfiguration: jest.fn().mockResolvedValue({
         flags: {
@@ -75,6 +80,7 @@ describe('InProcessEvaluator', () => {
     // Every initialize() schedules a refresh, so a test that initializes without disposing leaves a
     // live timer holding the event loop open.
     await evaluator.dispose();
+    jest.restoreAllMocks();
   });
 
   describe('initialize', () => {
@@ -712,6 +718,98 @@ describe('InProcessEvaluator', () => {
       await jest.advanceTimersByTimeAsync(DEFAULT_POLLING_INTERVAL_MS * 2);
 
       expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(1);
+    });
+
+    describe('jitter', () => {
+      const INTERVAL_MS = 10000;
+
+      /**
+       * Initializes an evaluator on a fixed random draw and returns how long the next refresh
+       * actually waited, by advancing one millisecond at a time until it fires.
+       */
+      const measureDelay = async (randomDraw: number): Promise<number> => {
+        (Math.random as jest.Mock).mockReturnValue(randomDraw);
+        pollingEvaluator = new InProcessEvaluator(
+          { ...optionsWithoutInterval, flagChangePollingIntervalMs: INTERVAL_MS },
+          mockApi,
+          new OpenFeatureEventEmitter(),
+          mockLogger,
+        );
+        await pollingEvaluator.initialize();
+        mockApi.retrieveFlagConfiguration.mockClear();
+
+        for (let elapsed = 1; elapsed <= INTERVAL_MS * 2; elapsed++) {
+          await jest.advanceTimersByTimeAsync(1);
+          if (mockApi.retrieveFlagConfiguration.mock.calls.length > 0) {
+            return elapsed;
+          }
+        }
+        throw new Error('the scheduled refresh never fired');
+      };
+
+      it('should shorten the delay on the low end of the draw', async () => {
+        // A fleet restarted together polls in lockstep forever without this, turning a steady
+        // trickle of requests against the relay proxy into a spike every interval.
+        expect(await measureDelay(0)).toBe(9000);
+      });
+
+      it('should lengthen the delay on the high end of the draw', async () => {
+        expect(await measureDelay(0.999999)).toBe(11000);
+      });
+
+      it('should jitter the reschedule as well as the first delay', async () => {
+        // measureDelay covers the timer initialize() installs; this covers the one poll() installs
+        // in its finally. Jittering only the first would let the fleet drift back into lockstep,
+        // and jittering only the reschedule would leave the poll after a rolling restart aligned.
+        expect(await measureDelay(0)).toBe(9000);
+
+        mockApi.retrieveFlagConfiguration.mockClear();
+        for (let elapsed = 1; elapsed <= INTERVAL_MS * 2; elapsed++) {
+          await jest.advanceTimersByTimeAsync(1);
+          if (mockApi.retrieveFlagConfiguration.mock.calls.length > 0) {
+            expect(elapsed).toBe(9000);
+            return;
+          }
+        }
+        throw new Error('the rescheduled refresh never fired');
+      });
+
+      it('should keep every delay within ten percent of the configured interval', async () => {
+        // Real draws, not the seeded midpoint: the bound has to hold across the whole distribution.
+        (Math.random as jest.Mock).mockRestore();
+
+        const delays: number[] = [];
+        const realSetTimeout = globalThis.setTimeout;
+        const timeoutSpy = jest.spyOn(globalThis, 'setTimeout').mockImplementation(((
+          handler: TimerHandler,
+          timeout?: number,
+          ...rest: unknown[]
+        ) => {
+          delays.push(timeout ?? 0);
+          return (realSetTimeout as any)(handler, timeout, ...rest);
+        }) as unknown as typeof globalThis.setTimeout);
+
+        try {
+          pollingEvaluator = new InProcessEvaluator(
+            { ...optionsWithoutInterval, flagChangePollingIntervalMs: INTERVAL_MS },
+            mockApi,
+            new OpenFeatureEventEmitter(),
+            mockLogger,
+          );
+          await pollingEvaluator.initialize();
+          await jest.advanceTimersByTimeAsync(INTERVAL_MS * 1.1 * 20);
+        } finally {
+          timeoutSpy.mockRestore();
+        }
+
+        expect(delays.length).toBeGreaterThanOrEqual(20);
+        for (const delay of delays) {
+          expect(delay).toBeGreaterThanOrEqual(INTERVAL_MS * 0.9);
+          expect(delay).toBeLessThanOrEqual(INTERVAL_MS * 1.1);
+        }
+        // A constant delay would satisfy the bound too, so check the draws actually vary.
+        expect(new Set(delays).size).toBeGreaterThan(1);
+      });
     });
   });
 
