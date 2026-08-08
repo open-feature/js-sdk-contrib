@@ -194,6 +194,14 @@ const provider = new GoFeatureFlagProvider({
 });
 ```
 
+The metadata is a **flat JSON object**: values are a string, a boolean, or a number — integers and
+floats alike. Anything that would nest it or that JSON cannot render — an object, an array, `null`,
+`NaN`, `Infinity` — throws `InvalidOptionsException` from `add`, rather than reaching the collector
+as a value it cannot store.
+
+`provider` and `openfeature` are reserved: they are always present and a value supplied for either is
+ignored, so events stay attributable to this SDK and language.
+
 ## Flag Types Supported 🎯
 
 The provider supports all OpenFeature flag types:

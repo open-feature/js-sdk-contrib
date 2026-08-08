@@ -1,4 +1,5 @@
 import { ExporterMetadata } from './exporter-metadata';
+import { InvalidOptionsException } from '../exception';
 
 /**
  * Pinned as literals rather than imported from `constants`: these two keys are a wire contract
@@ -112,6 +113,101 @@ describe('ExporterMetadata', () => {
 
       expect(result).toEqual({
         zeroKey: 0,
+        ...RESERVED,
+      });
+    });
+  });
+
+  describe('value validation', () => {
+    /**
+     * The parameter type already rejects these for a TypeScript caller, so the casts are what a
+     * JavaScript consumer - or a TypeScript one holding an `any` - reaches this code with. Without
+     * a runtime check the value is serialised into the `meta` envelope and rejected or silently
+     * mangled by the collector, with nothing reported on this side.
+     */
+    const rejected: [string, unknown][] = [
+      ['an object', { nested: 'value' }],
+      ['an array', ['a', 'b']],
+      ['null', null],
+      ['undefined', undefined],
+      ['a function', () => 'nope'],
+      ['a symbol', Symbol('nope')],
+      ['a bigint', BigInt(1)],
+      // typeof calls these three numbers, but JSON.stringify renders all of them as null - exactly
+      // the silent mangling the requirement exists to prevent.
+      ['NaN', NaN],
+      ['Infinity', Infinity],
+      ['-Infinity', -Infinity],
+    ];
+
+    it.each(rejected)('should reject %s', (_label, value) => {
+      expect(() => exporterMetadata.add('bad', value as string)).toThrow(InvalidOptionsException);
+    });
+
+    it('should name the offending key and value in the message', () => {
+      expect(() => exporterMetadata.add('app', NaN)).toThrow(
+        'exporterMetadata value for "app" must be a string, a boolean or a number (integer or float), got NaN',
+      );
+    });
+
+    it.each([
+      ['a positive float', 3.14],
+      ['a negative float', -0.5],
+      ['a float in exponent notation', 1.5e-7],
+      ['a very large float', 1.7976931348623157e308],
+      ['a float that is integral', 30.0],
+      ['a negative integer', -42],
+      ['the largest safe integer', Number.MAX_SAFE_INTEGER],
+    ])('should accept %s', (_label, value) => {
+      // The envelope draws no integer/float distinction - both are JSON numbers - so the guard must
+      // not either. `Number.isFinite` is what admits them; `Number.isInteger` would not.
+      exporterMetadata.add('num', value);
+
+      expect(exporterMetadata.asObject()).toEqual({ num: value, ...RESERVED });
+    });
+
+    it('should not retain a rejected value', () => {
+      expect(() => exporterMetadata.add('bad', {} as unknown as string)).toThrow(InvalidOptionsException);
+
+      // Rejecting and then exporting it anyway would leave the caller with a diagnostic and the
+      // collector with the broken value.
+      expect(exporterMetadata.asObject()).toEqual(RESERVED);
+    });
+
+    it('should keep accepting valid values after a rejection', () => {
+      expect(() => exporterMetadata.add('bad', null as unknown as string)).toThrow(InvalidOptionsException);
+      exporterMetadata.add('good', 'value');
+
+      expect(exporterMetadata.asObject()).toEqual({ good: 'value', ...RESERVED });
+    });
+
+    it('should produce a flat JSON object that survives serialisation unchanged', () => {
+      exporterMetadata.add('app', 'my-app').add('rate', 3.14).add('count', 42).add('enabled', true);
+
+      const envelope = exporterMetadata.asObject();
+
+      // The point of rejecting objects and arrays is that the envelope stays one level deep, and
+      // the point of rejecting NaN and the infinities is that nothing changes value on the wire.
+      expect(JSON.parse(JSON.stringify(envelope))).toEqual(envelope);
+      for (const value of Object.values(envelope)) {
+        expect(['string', 'boolean', 'number']).toContain(typeof value);
+      }
+    });
+
+    it('should accept the boundary values the type allows', () => {
+      // Empty string, false and 0 are falsy; a truthiness-based guard would reject all three.
+      exporterMetadata.add('emptyString', '');
+      exporterMetadata.add('false', false);
+      exporterMetadata.add('zero', 0);
+      exporterMetadata.add('negative', -1);
+      exporterMetadata.add('float', 3.14);
+
+      expect(exporterMetadata.asObject()).toEqual({
+        emptyString: '',
+        false: false,
+        zero: 0,
+        negative: -1,
+        float: 3.14,
         ...RESERVED,
       });
     });

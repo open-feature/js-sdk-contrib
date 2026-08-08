@@ -72,29 +72,29 @@ VERDICT: NON-CONFORMANT — 3 Critical, 29 Major, 10 Minor
          (97 PASS, 35 FAIL, 7 PARTIAL, 8 N/A, 0 UNVERIFIABLE — 147 total)
 ```
 
-> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`), Step 19 (`CFG-005`, `CFG-001`, `AUTH-004`), Step 19b (`AUTH-004` re-based on a GOFF-native option; `AUTH-001` **opened** by decision D6), Step 20 (`CFG-006`, `CFG-007`), Step 21 (`CFG-008`), Step 22 (`FALLBACK-001`…`-009`), Step 23 (`META-001`, `META-002`), Step 24 (`IP-011`). Remaining: 8.**
+> **Remediation in progress.** Counts below track the live working tree, not the original audit. Baseline was 80 PASS / 53 FAIL / 6 PARTIAL / 8 N/A = 59 unmet. **Closed so far: 12 (plus `IP-012` corrected and re-fixed in Step 7b) — Step 0 (`ENG-001`), Step 1 (`IP-007`, `IP-008`, `IP-009`, `IP-015`), Step 2 (`IP-006`; `CFG-003` reduced to PARTIAL), Step 3 (`LIFE-002`), Step 4 (`LIFE-006`), Step 5 (`EVT-007`), Step 6 (`EVT-005`, `EVT-006`), Step 7 (`EVT-004`), Step 7b (`IP-012`, re-opened then fixed), Step 8 (`EVAL-006` in-process half — now PARTIAL, remote half is X1). Step 9 (`CTX-006`, `CTX-007`), Step 10 (`WASM-008`, `WASM-012`, `WASM-013`), Step 11 (`WASM-001`, `WASM-004`), Step 12 (`COLL-016`, `COLL-018`, `COLL-019`), Step 13 (`HOOK-001`, `HOOK-003`), Step 15 (`COLL-011` only — `COLL-012` remains open on the `provider` value, see M13; pulled forward), Step 14 (`CFG-009`, `CFG-010`, `HOOK-006`, `TRACK-003`), Step 16 (`COLL-005`), Step 17 (`COLL-009`, `COLL-010`), Step 18 (`CFG-003`, `CFG-004`), Step 19 (`CFG-005`, `CFG-001`, `AUTH-004`), Step 19b (`AUTH-004` re-based on a GOFF-native option; `AUTH-001` **opened** by decision D6), Step 20 (`CFG-006`, `CFG-007`), Step 21 (`CFG-008`), Step 22 (`FALLBACK-001`…`-009`), Step 23 (`META-001`, `META-002`), Step 24 (`IP-011`), Step 25 (`COLL-013`). Remaining: 7.**
 
 ### 1.1 Counts by verdict
 
 | Verdict      |   Count |
 | ------------ | ------: |
-| PASS         |     131 |
+| PASS         |     132 |
 | FAIL         |       5 |
-| PARTIAL      |       3 |
+| PARTIAL      |       2 |
 | N/A          |       8 |
 | UNVERIFIABLE |       0 |
 | **Total**    | **147** |
 
-Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, all 3 `PARTIAL` results count as non-conformance**, giving 8 unmet requirements.
+Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This audit additionally uses `PARTIAL` where a requirement holds on one code path and breaks on another, because collapsing those to a bare `FAIL` would hide which half works. **For the purposes of the single verdict line, both `PARTIAL` results count as non-conformance**, giving 7 unmet requirements.
 
 ### 1.2 Failures by severity
 
 | Severity  |  FAIL | PARTIAL | Total |
 | --------- | ----: | ------: | ----: |
 | Critical  |     0 |       1 | **1** |
-| Major     |     3 |       2 | **5** |
+| Major     |     3 |       1 | **4** |
 | Minor     |     2 |       0 | **2** |
-| **Total** | **5** |   **3** | **8** |
+| **Total** | **5** |   **2** | **7** |
 
 ### 1.3 Counts by area
 
@@ -112,12 +112,12 @@ Appendix C.1 of the specification recognises only `PASS`, `FAIL` and `N/A`. This
 | `GOFF-WASM` (§10)     |      13 |      12 |     1 |       0 |     0 |
 | `GOFF-ERR` (§11)      |       6 |       6 |     0 |       0 |     0 |
 | `GOFF-HOOK` (§12)     |       6 |       6 |     0 |       0 |     0 |
-| `GOFF-COLL` (§13)     |      23 |      21 |     1 |       1 |     0 |
+| `GOFF-COLL` (§13)     |      23 |      22 |     1 |       0 |     0 |
 | `GOFF-TRACK` (§14)    |       5 |       5 |     0 |       0 |     0 |
 | `GOFF-AUTH` (§15)     |       4 |       3 |     1 |       0 |     0 |
 | `GOFF-FALLBACK` (§16) |       9 |       9 |     0 |       0 |     0 |
 | `GOFF-CACHE` (§17)    |       7 |       0 |     0 |       0 |     7 |
-| **Total**             | **147** | **131** | **5** |   **3** | **8** |
+| **Total**             | **147** | **132** | **5** |   **2** | **8** |
 
 ### 1.4 Headline
 
@@ -250,7 +250,7 @@ Paths are relative to the repository root. `gff/` abbreviates `libs/providers/go
 | `GOFF-COLL-010`     | Minor    | Core       | PASS        | `gff/src/lib/model/feature-event.ts:59`; `gff/src/lib/hook/data-collector-hook.ts:111, 145`                                                                                                                                                                     | `source` is a required field on `FeatureEvent`, set to `INPROCESS` by both stages — unconditionally correct because the remote evaluator reports every flag as untrackable. `SERVER` is excluded from the union, since the specification reserves it for the relay proxy. _Fixed — Step 17._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `GOFF-COLL-011`     | Major    | Core       | PASS        | `gff/src/lib/helper/constants.ts:52-55`; `gff/src/lib/model/exporter-metadata.ts:29`                                                                                                                                                                            | `asObject()` always appends `provider` and `openfeature: true`, so the `meta` envelope carries them whether or not the caller configured metadata. Seeded in `ExporterMetadata` rather than in the envelope so the evaluation-context copy the enrichment hook writes carries them too. _Fixed — Step 15._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `GOFF-COLL-012`     | Minor    | Core       | **FAIL**    | `gff/src/lib/helper/constants.ts:53`                                                                                                                                                                                                                            | The key now exists and cannot be shadowed, but its value is `nodejs`, which is not one of the nine identifiers the requirement enumerates (`javascript` is the one for this language). Set deliberately by the maintainer during Step 15 — see finding M13. _Open: awaiting a decision._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `GOFF-COLL-013`     | Major    | Core       | **PARTIAL** | `gff/src/lib/model/exporter-metadata.ts:12-15`                                                                                                                                                                                                                  | Types are constrained at compile time only; `add()` performs no runtime validation and nothing is rejected at construction.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `GOFF-COLL-013`     | Major    | Core       | **PASS**    | `gff/src/lib/model/exporter-metadata.ts:11-12, 52-58`                                                                                                                                                                                                           | `add()` accepts JSON scalars — string, boolean, integer and float — and rejects the rest with `InvalidOptionsException` where the value enters.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `GOFF-COLL-014`     | Major    | Core       | PASS        | `gff/src/lib/service/event-publisher.ts:59-65, 89-97, 71-82`                                                                                                                                                                                                    | Interval, `maxPendingEvents` threshold and shutdown all flush.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `GOFF-COLL-015`     | Minor    | Core       | PASS        | `gff/src/lib/service/event-publisher.ts:60, 107-109`                                                                                                                                                                                                            | _Accidental_: `runPublisher` does call `publishEvents` on start, but the empty-buffer guard returns before any HTTP call.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `GOFF-COLL-016`     | Major    | Core       | PASS        | `gff/src/lib/service/event-publisher.ts:23, 138-140, 149-153`                                                                                                                                                                                                   | `publishEvents` returns early while `inFlight` is set, and the handle is assigned before the first suspension point so a threshold flush cannot slip past it. `stop` joins it before the final flush. _Fixed — Step 12._                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -1238,7 +1238,16 @@ The length is computed entirely in BigInt and is correct. The pointer is not: Ja
 
 ---
 
-#### M34 — `GOFF-COLL-013` (PARTIAL) · `exporterMetadata` values are validated at compile time only
+#### ✅ M34 — `GOFF-COLL-013` · **RESOLVED in Step 25**
+
+_`add()` now checks the value where it enters (`exporter-metadata.ts:52-58`) and throws `InvalidOptionsException` naming the key and what arrived. "Construction time" is read as the point the metadata object is built — `add` is the only way in, so guarding it leaves no path to an invalid envelope._
+
+_The accepted set is the JSON scalars: string, boolean, and number covering **both** the requirement's "integer" and "floating-point" — JavaScript draws no distinction between them and neither does the envelope, so the guard is `Number.isFinite`, never `Number.isInteger`. What is rejected is what would nest the envelope (objects, arrays) or what JSON cannot render (`null`, `undefined`, `NaN`, the infinities). The last three the plan did not call out: `typeof` classes them as `number`, so a `typeof`-only guard would admit them, and `JSON.stringify` renders each as `null` — precisely the silent mangling this requirement exists to prevent._
+
+_Twenty-two new tests, including a table of float shapes (negative, exponent notation, integral-valued, `MAX_SAFE_INTEGER`), a row asserting empty string, `false` and `0` still pass — a truthiness-based guard would reject all three — and one asserting the envelope survives a JSON round trip unchanged with every value a scalar, which is the flat-object property stated end to end. Original finding retained below._
+
+<details>
+<summary>Original finding</summary>
 
 **Spec:** "`exporterMetadata` values **MUST** be restricted to string, boolean, integer or floating-point, and an invalid value **MUST** be rejected at construction time."
 
@@ -1256,6 +1265,10 @@ The type restriction is correct and matches the specification exactly, but it is
 **Consequence:** A TypeScript consumer is protected. A JavaScript consumer, or any TypeScript caller passing an `any`, can insert an object or array; it is serialised into the `meta` envelope at `src/lib/service/api.ts:134` and rejected — or silently mangled — by the relay proxy, with no diagnostic on the client side.
 
 **Smallest fix:** Add a runtime `typeof` guard in `add` throwing `InvalidOptionsException` for anything outside `string | boolean | number`.
+
+---
+
+</details>
 
 ---
 
