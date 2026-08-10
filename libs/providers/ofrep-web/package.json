@@ -14,7 +14,7 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/web-sdk": "^1.4.0"
+    "@openfeature/web-sdk": "^1.10.0"
   },
   "dependencies": {
     "@openfeature/ofrep-core": "^2.3.0"
