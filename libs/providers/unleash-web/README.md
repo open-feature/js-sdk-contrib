@@ -206,9 +206,7 @@ import { type ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { OpenFeatureModule } from '@openfeature/angular-sdk';
 
 export const appConfig: ApplicationConfig = {
-  providers: [
-    importProvidersFrom(OpenFeatureModule.forRoot({ provider, context: initialContext })),
-  ],
+  providers: [importProvidersFrom(OpenFeatureModule.forRoot({ provider, context: initialContext }))],
 };
 ```
 
