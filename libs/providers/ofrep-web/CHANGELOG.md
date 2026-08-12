@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.3](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.2...ofrep-web-provider-v0.4.3) (2026-08-10)
+
+
+### 🐛 Bug Fixes
+
+* **ofrep-web:** reconnect SSE when polling is disabled via a negative pollInterval ([#1597](https://github.com/open-feature/js-sdk-contrib/issues/1597)) ([9750615](https://github.com/open-feature/js-sdk-contrib/commit/9750615d3846b689f0c5837f29fca6da3abf4c2d))
+
+
+### ✨ New Features
+
+* **ofrep-web:** ADR-0009 domain-aware cache key + domainScoped ([#1569](https://github.com/open-feature/js-sdk-contrib/issues/1569)) ([73f02d3](https://github.com/open-feature/js-sdk-contrib/commit/73f02d333c272ec2aaffac4152b6575dc5ab8b02))
+
 ## [0.4.2](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.1...ofrep-web-provider-v0.4.2) (2026-07-27)
 
 
