@@ -90,7 +90,7 @@ export const buildRetryPolicy = (
   const maxBackoff = retryBackoffMaxMs ?? 120000;
 
   const retryPolicy = {
-    maxAttempts: 3,
+    maxAttempts: 4,
     initialBackoff: `${Math.round(initialBackoff / 1000).toFixed(2)}s`,
     maxBackoff: `${Math.round(maxBackoff / 1000).toFixed(2)}s`,
     backoffMultiplier: 2,

@@ -32,7 +32,10 @@ export interface State {
     selector?: string;
   };
   options: Record<string, unknown>;
-  events: Event[];
+  // events not yet consumed by a positive assertion; drained as they are matched
+  assertedEvents: Event[];
+  // complete log of every event emitted, used for "never fired" assertions
+  allEvents: Event[];
   flag?: Flag;
 }
 

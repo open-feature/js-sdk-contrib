@@ -77,7 +77,7 @@ describe('buildRetryPolicy', () => {
     expect(result.methodConfig[0]).toEqual({
       name: [{ service: 'service.A' }, { service: 'service.B' }],
       retryPolicy: {
-        maxAttempts: 3,
+        maxAttempts: 4,
         initialBackoff: '2.00s',
         maxBackoff: '60.00s',
         backoffMultiplier: 2,
