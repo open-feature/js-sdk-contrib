@@ -17,6 +17,28 @@ export enum Capability {
   /** Provider emits lifecycle events at all — at minimum `PROVIDER_READY`. */
   Events = '@events',
 
+  /**
+   * Provider performs an initialisation that reaches its backend, with an observable outcome.
+   *
+   * This is deliberately not `@events`, and the distinction is load-bearing in both directions.
+   *
+   * A stateless provider — OFREP, or anything evaluating over a request-scoped call — cannot declare
+   * `@events`, yet it may still have a real initialisation whose success or failure is worth
+   * asserting. Gating the readiness scenarios on `@events` locked those providers out of scenarios
+   * that were never about events.
+   *
+   * The reverse case is worse, because it goes green. Every SDK synthesises `PROVIDER_READY` for a
+   * provider with no initialisation step, so a provider that declares `@events` but does nothing on
+   * startup **passes the readiness scenario vacuously** — a `NoOpProvider` passes it identically,
+   * having demonstrated nothing at all. A conformance suite whose scenarios can be satisfied without
+   * exercising the behaviour they name is the failure mode this whole library exists to avoid.
+   *
+   * Declaring this therefore asserts something stronger than "events arrive": that initialisation
+   * genuinely contacts the backend, and that both of its terminal outcomes — READY against a healthy
+   * one, ERROR against an unreachable one — are observable.
+   */
+  Lifecycle = '@lifecycle',
+
   /** Provider enters `STALE` and emits `PROVIDER_STALE` when it loses its backend. */
   Stale = '@stale',
 
