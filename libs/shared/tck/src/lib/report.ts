@@ -232,23 +232,52 @@ export class ConformanceRecorder {
     return report;
   }
 
+  /**
+   * Rolls the scenario outcomes up into a per-capability summary.
+   *
+   * A capability is reported as passed only when something actually demonstrated it. Two ways of
+   * getting a green result for a question nobody asked are excluded here, and both were reachable:
+   *
+   *   - `@targeting` is reserved. It is in the vocabulary and no scenario carries the tag, because
+   *     asserting that an evaluation context reached the backend needs an echo operation the control
+   *     API does not have. A provider declaring it was reported as passed.
+   *   - every scenario carrying a capability can be skipped for a *different* one. Both scenarios in
+   *     `events.feature` carry `@events` as well as `@stale` or `@configuration-change`, so a
+   *     provider declaring `@events` but neither of the others was reported as passing `@events`
+   *     while nothing ran at all.
+   *
+   * Both are the vacuous pass the capability vocabulary exists to eliminate, arriving through the
+   * report rather than through the suite, so a capability counts as exercised only by a scenario
+   * that actually ran. One with nothing to show is omitted: the four outcomes in the schema are
+   * about what the provider did, and "this run demonstrated nothing" is a fact about the run.
+   */
   private buildCapabilities(scenarios: readonly ScenarioResult[]): Record<string, CapabilityResult> {
-    // A capability is only reported as passed when everything gating on it actually passed.
-    const failed = new Set<Capability>();
+    const exercised = new Map<Capability, number>();
+    const failed = new Map<Capability, number>();
+
     for (const scenario of scenarios) {
-      if (scenario.outcome !== 'failed') {
+      // A skipped scenario does not exercise anything, whatever tags it carries.
+      if (scenario.outcome !== 'passed' && scenario.outcome !== 'failed') {
         continue;
       }
+
       for (const tag of scenario.tags ?? []) {
         const capability = capabilityForTag(tag);
-        if (capability) {
-          failed.add(capability);
+        if (!capability) {
+          continue;
+        }
+        exercised.set(capability, (exercised.get(capability) ?? 0) + 1);
+        if (scenario.outcome === 'failed') {
+          failed.set(capability, (failed.get(capability) ?? 0) + 1);
         }
       }
     }
 
     const capabilities: Record<string, CapabilityResult> = {};
     for (const capability of ALL_CAPABILITIES) {
+      const ran = exercised.get(capability) ?? 0;
+      const broke = failed.get(capability) ?? 0;
+
       if (this.context.notApplicable.has(capability)) {
         capabilities[capability] = {
           state: 'not-applicable',
@@ -264,8 +293,17 @@ export class ConformanceRecorder {
             `not declared by this provider's configuration; the ${capability} scenarios were ` +
             `skipped and did not contribute to this result`,
         };
-      } else if (failed.has(capability)) {
-        capabilities[capability] = { state: 'failed' };
+      } else if (ran === 0) {
+        // Declared, and no scenario in this run demonstrated it. Saying nothing is the only honest
+        // answer, and a consumer sees the tag is absent rather than a pass it cannot rely on.
+        continue;
+      } else if (broke > 0) {
+        capabilities[capability] = {
+          state: 'failed',
+          reason:
+            `${broke} of ${ran} scenarios carrying ${capability} failed; the per-scenario results ` +
+            `say which, and why`,
+        };
       } else {
         capabilities[capability] = { state: 'passed' };
       }
