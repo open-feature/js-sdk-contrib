@@ -1,0 +1,28 @@
+# Backend stack for the OpenFeature Provider Conformance Suite, run against the OFREP provider.
+#
+# OFREP is a protocol rather than a product, so any conformant server would do. flagd-testbed is
+# used because it is the reference backend for the suite's control API -- its launchpad is where
+# `openapi/control-api.yaml` was derived from -- and because flagd already serves OFREP on 8016,
+# which this image exposes. The OFREP suite is therefore driven by exactly the same control API,
+# against exactly the same image, as the flagd one.
+#
+# Two services' worth of the testbed's own compose file are deliberately absent. There is no Envoy
+# proxy: it exists to serve flagd's gRPC transport-level e2e cases and is pure startup cost for an
+# HTTP protocol. And there is no /flags volume: the launchpad writes the configuration it is asked
+# for into the container's own /flags from the rawflags baked into the image, so a bind mount buys
+# nothing and costs isolation.
+#
+# Note there are no host port bindings. The suite requires dynamically mapped ports and discovers
+# them after startup.
+#
+# The image tag is pinned here rather than read from the flagd-core submodule's version.txt, which
+# is what this adoption used to do. Every capability the suite declares rests on a run against this
+# exact image, so a bump is a deliberate act with a result to record rather than something a
+# dependency update does silently -- and it means this adoption no longer needs the submodule at
+# all. v3.10.1 is what the submodule pins today.
+services:
+  backend:
+    image: ghcr.io/open-feature/flagd-testbed:v3.10.1
+    ports:
+      - 8016 # flagd's OFREP endpoint, which the provider under test talks to
+      - 8080 # launchpad control API
