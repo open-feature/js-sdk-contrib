@@ -2,8 +2,9 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { autoBindSteps, loadFeatures } from 'jest-cucumber';
 import { OpenFeature } from '@openfeature/server-sdk';
-import { ALL_CAPABILITIES, Capability, capabilityForTag } from './capability';
+import { ALL_CAPABILITIES, Capability } from './capability';
 import type { TckOptions } from './options';
+import { planScenarios, scenarioRunner } from './scenarioRunner';
 import { TckState } from './state';
 import { eventSteps } from './steps/eventSteps';
 import { flagSteps } from './steps/flagSteps';
@@ -109,6 +110,20 @@ export function runProviderTck(options: TckOptions): void {
 
   const state = new TckState(options);
 
+  // Undeclared capabilities are excluded here, which marks their scenarios `skippedViaTagFilter`.
+  // jest-cucumber turns that into `test.skip`, so they are reported as SKIPPED rather than quietly
+  // omitted -- which is the whole point. The reason travels in the scenario name, because Jest has
+  // nowhere else to put it.
+  const tagFilter = undeclared.length ? undeclared.map((capability) => `not ${capability}`).join(' and ') : undefined;
+
+  // jest-cucumber owns the test and test.skip calls and accepts a runner to make them through, so
+  // the harness supplies one per feature. That is the only seam that reaches a Scenario Outline's
+  // example rows: `scenarioNameTemplate` never does.
+  const features = loadFeatures(FEATURES_GLOB, { tagFilter });
+  for (const parsed of features) {
+    parsed.options.runner = scenarioRunner(parsed.title, planScenarios(parsed, declared));
+  }
+
   describe(`provider-tck [${options.name}]`, () => {
     beforeAll(() => {
       // eslint-disable-next-line no-console
@@ -134,25 +149,6 @@ export function runProviderTck(options: TckOptions): void {
       await OpenFeature.clearProviders();
     });
 
-    autoBindSteps(
-      loadFeatures(FEATURES_GLOB, {
-        // Undeclared capabilities are excluded here, which marks their scenarios
-        // `skippedViaTagFilter`. jest-cucumber turns that into `test.skip`, so they are reported as
-        // SKIPPED rather than quietly omitted -- which is the whole point. The reason travels in the
-        // scenario name below, because Jest has nowhere else to put it.
-        tagFilter: undeclared.length ? undeclared.map((capability) => `not ${capability}`).join(' and ') : undefined,
-        scenarioNameTemplate: ({ scenarioTitle, scenarioTags, featureTags }) => {
-          const missing = [...scenarioTags, ...featureTags]
-            .map(capabilityForTag)
-            .filter((capability): capability is Capability => capability !== undefined)
-            .filter((capability) => !declared.has(capability));
-
-          return missing.length
-            ? `${scenarioTitle} — SKIPPED: provider does not declare ${missing.join(' ')}`
-            : scenarioTitle;
-        },
-      }),
-      [providerSteps(state), flagSteps(state), eventSteps(state)],
-    );
+    autoBindSteps(features, [providerSteps(state), flagSteps(state), eventSteps(state)]);
   });
 }
