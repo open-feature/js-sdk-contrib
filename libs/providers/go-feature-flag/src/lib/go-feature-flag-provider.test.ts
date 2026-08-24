@@ -1,5 +1,7 @@
-import { ErrorCode, OpenFeature, ServerProviderEvents } from '@openfeature/server-sdk';
+import { ErrorCode, MapHookData, OpenFeature, ProviderStatus, ServerProviderEvents } from '@openfeature/server-sdk';
 import { GoFeatureFlagProvider } from './go-feature-flag-provider';
+import { DataCollectorHook, EnrichEvaluationContextHook } from './hook';
+import { ExporterMetadata } from './model';
 import fetchMock from 'jest-fetch-mock';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -7,8 +9,8 @@ import { HTTP_HEADER_LAST_MODIFIED } from './helper/constants';
 import { EvaluationType } from './model';
 import {
   FlagConfigurationEndpointNotFoundException,
+  ImpossibleToRetrieveConfigurationException,
   InvalidOptionsException,
-  UnauthorizedException,
 } from './exception';
 
 const DefaultEvaluationContext = {
@@ -33,17 +35,214 @@ describe('GoFeatureFlagProvider', () => {
     testClientName = expect.getState().currentTestName ?? 'my-test';
     await OpenFeature.close();
     jest.useFakeTimers();
+    // Polling delays are jittered, so the tests below that advance by exactly one interval would
+    // otherwise fire only about half the time. 0.5 is the midpoint of the jitter window and yields
+    // the configured interval exactly.
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
     fetchMock.enableMocks();
   });
 
   afterEach(async () => {
     testClientName = '';
+
+    // Closed before the mocks are reset, and the order is what makes this file order-independent:
+    // shutting a provider down flushes whatever its publisher still holds, so resetting first left
+    // that POST recorded against the *next* test - which then saw a collector call it never made.
+    await OpenFeature.close();
+
     jest.clearAllMocks();
+    jest.restoreAllMocks();
     jest.useRealTimers();
     fetchMock.resetMocks();
+  });
 
-    // Clean up OpenFeature
-    await OpenFeature.close();
+  describe('options hygiene', () => {
+    it('should not rewrite the caller options object', () => {
+      const callerOptions = { endpoint: 'https://gofeatureflag.org///' };
+
+      new GoFeatureFlagProvider(callerOptions);
+
+      // The endpoint was normalised through the caller's own reference, so a caller who built one
+      // options object and constructed two providers from it saw their input silently rewritten.
+      expect(callerOptions.endpoint).toBe('https://gofeatureflag.org///');
+    });
+
+    it('should still normalise the endpoint it uses', () => {
+      const provider = new GoFeatureFlagProvider({ endpoint: 'https://gofeatureflag.org///' });
+
+      // Copying without redirecting the downstream consumers would have left them on the
+      // un-normalised endpoint - the old code got away with passing the caller's object because it
+      // had already mutated it in place.
+      expect((provider as unknown as { options: { endpoint: string } }).options.endpoint).toBe(
+        'https://gofeatureflag.org',
+      );
+    });
+
+    it('should build outbound URLs from the normalised endpoint', async () => {
+      fetchMock.mockResponse(JSON.stringify({ flags: {} }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const provider = new GoFeatureFlagProvider({ endpoint: 'http://localhost:1031///' });
+      await provider.initialize();
+
+      // Copying the options without redirecting GoFeatureFlagApi, the evaluator and the publisher
+      // onto the copy would leave them on the caller's un-normalised endpoint - the old code got
+      // away with passing the caller's object only because it had mutated it in place first.
+      expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1031/v1/flag/configuration');
+
+      await provider.onClose();
+    });
+
+    it('should normalise a trailing slash on dataCollectorBaseURL', () => {
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'https://gofeatureflag.org',
+        dataCollectorBaseURL: 'https://collector.example.com///',
+      });
+
+      // Without this the collector URL would carry a doubled slash before /v1/data/collector.
+      expect((provider as unknown as { options: { dataCollectorBaseURL: string } }).options.dataCollectorBaseURL).toBe(
+        'https://collector.example.com',
+      );
+    });
+
+    it('should reject a malformed dataCollectorBaseURL at construction', () => {
+      // It replaces the whole base, so a malformed value would otherwise surface much later as a
+      // failed flush rather than as a configuration error.
+      expect(
+        () =>
+          new GoFeatureFlagProvider({
+            endpoint: 'https://gofeatureflag.org',
+            dataCollectorBaseURL: 'not-a-url',
+          }),
+      ).toThrow('dataCollectorBaseURL must be a valid URL (http or https)');
+    });
+
+    it('should not share the caller collections after construction', () => {
+      const callerFlagList = ['flagA'];
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'https://gofeatureflag.org',
+        evaluationFlagList: callerFlagList,
+      });
+
+      // The options spread is shallow, so without an explicit copy a caller who kept editing their
+      // own objects would keep changing the provider's configuration after it was built.
+      callerFlagList.push('flagB');
+
+      const held = provider as unknown as {
+        options: { headers: Record<string, string>; evaluationFlagList: string[] };
+      };
+      expect(held.options.evaluationFlagList).toEqual(['flagA']);
+    });
+
+    it('should accept a frozen options object', () => {
+      const frozenOptions = Object.freeze({ endpoint: 'https://gofeatureflag.org/' });
+
+      // In strict mode the write through the caller's reference threw, turning a normalisation
+      // detail into a construction failure.
+      expect(() => new GoFeatureFlagProvider(frozenOptions)).not.toThrow();
+    });
+
+    it('should let two providers share one options object', () => {
+      const shared = { endpoint: 'https://gofeatureflag.org/' };
+
+      const first = new GoFeatureFlagProvider(shared);
+      const second = new GoFeatureFlagProvider(shared);
+
+      const endpointOf = (p: GoFeatureFlagProvider) =>
+        (p as unknown as { options: { endpoint: string } }).options.endpoint;
+      expect(endpointOf(first)).toBe('https://gofeatureflag.org');
+      expect(endpointOf(second)).toBe('https://gofeatureflag.org');
+      expect(shared.endpoint).toBe('https://gofeatureflag.org/');
+    });
+  });
+
+  describe('hook registration', () => {
+    it('should register the enrichment hook ahead of the data collector hook', () => {
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'https://gofeatureflag.org',
+        exporterMetadata: new ExporterMetadata().add('version', '1.0.0'),
+      });
+
+      // The SDK runs provider `before` stages in array order and `after`/`error`/`finally` in
+      // reverse, so the reversed registration inverted every after-stage relative to the spec.
+      expect(provider.hooks).toHaveLength(2);
+      expect(provider.hooks[0]).toBeInstanceOf(EnrichEvaluationContextHook);
+      expect(provider.hooks[1]).toBeInstanceOf(DataCollectorHook);
+    });
+
+    it('should register the enrichment hook when no exporterMetadata is configured', () => {
+      const provider = new GoFeatureFlagProvider({ endpoint: 'https://gofeatureflag.org' });
+
+      // The default configuration is the common one. Gating on `exporterMetadata` meant the
+      // reserved `gofeatureflag` namespace was never attached there.
+      expect(provider.hooks).toHaveLength(2);
+      expect(provider.hooks[0]).toBeInstanceOf(EnrichEvaluationContextHook);
+      expect(provider.hooks[1]).toBeInstanceOf(DataCollectorHook);
+    });
+
+    /** Drives the registered data collector hook and reports whether it published anything. */
+    const collectorPublishesFor = async (disableDataCollection?: boolean): Promise<boolean> => {
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'https://gofeatureflag.org',
+        disableDataCollection,
+      });
+      const internals = provider as unknown as {
+        eventPublisher: { addEvent: (event: unknown) => void };
+        evaluator: { isFlagTrackable: (flagKey: string) => boolean };
+      };
+      const addEvent = jest.spyOn(internals.eventPublisher, 'addEvent').mockImplementation(() => undefined);
+      // Trackable on purpose, so the only thing that can suppress the event is the option.
+      jest.spyOn(internals.evaluator, 'isFlagTrackable').mockReturnValue(true);
+
+      await (provider.hooks[1] as DataCollectorHook).after(
+        {
+          flagKey: 'test-flag',
+          defaultValue: false,
+          context: { targetingKey: 'user-1' },
+          flagValueType: 'boolean',
+          clientMetadata: { providerMetadata: { name: 'test' } },
+          providerMetadata: { name: 'test' },
+          logger: console,
+          hookData: new MapHookData(),
+        },
+        { flagKey: 'test-flag', value: true, variant: 'on', reason: 'TARGETING_MATCH', flagMetadata: {} },
+      );
+
+      return addEvent.mock.calls.length > 0;
+    };
+
+    it('should wire disableDataCollection into the data collector hook', async () => {
+      // The hook honouring the option is worth nothing if the provider never passes it down.
+      await expect(collectorPublishesFor(true)).resolves.toBe(false);
+    });
+
+    it('should still collect when disableDataCollection is not set', async () => {
+      await expect(collectorPublishesFor(undefined)).resolves.toBe(true);
+    });
+
+    it('should still enrich the context when no exporterMetadata is configured', async () => {
+      const provider = new GoFeatureFlagProvider({ endpoint: 'https://gofeatureflag.org' });
+      const enrichmentHook = provider.hooks[0] as EnrichEvaluationContextHook;
+
+      const enriched = await enrichmentHook.before({
+        flagKey: 'test-flag',
+        defaultValue: false,
+        context: { targetingKey: 'user-1' },
+        flagValueType: 'boolean',
+        clientMetadata: { providerMetadata: { name: 'test' } },
+        providerMetadata: { name: 'test' },
+        logger: console,
+        hookData: new MapHookData(),
+      });
+
+      // The reserved keys are what make the unconditional registration worth anything: with no
+      // caller metadata the hook still has the SDK identity to contribute.
+      expect(enriched['gofeatureflag']).toEqual({
+        exporterMetadata: { provider: 'nodejs', openfeature: true },
+      });
+    });
   });
 
   describe('Constructor', () => {
@@ -52,7 +251,15 @@ describe('GoFeatureFlagProvider', () => {
         endpoint: 'https://gofeatureflag.org',
         evaluationType: EvaluationType.Remote,
       });
-      expect(provider.metadata.name).toBe('GoFeatureFlagProvider');
+      expect(provider.metadata.name).toBe('GO Feature Flag Provider');
+    });
+
+    it('should not derive the metadata name from the class name', () => {
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'https://gofeatureflag.org',
+        evaluationType: EvaluationType.Remote,
+      });
+      expect(provider.metadata.name).not.toBe(GoFeatureFlagProvider.name);
     });
 
     it('should throw InvalidOptionsException when options is null', () => {
@@ -65,26 +272,42 @@ describe('GoFeatureFlagProvider', () => {
       expect(() => new GoFeatureFlagProvider(undefined as any)).toThrow('No options provided');
     });
 
-    it('should not throw InvalidOptionsException when EvaluationType is Remote', () => {
+    it('should require an endpoint in remote mode', () => {
+      // Previously exempted, so a missing endpoint was an invitation to OFREP_ENDPOINT rather than
+      // a configuration error, and a malformed one surfaced late as the delegate's generic Error.
       expect(
         () =>
           new GoFeatureFlagProvider({
             evaluationType: EvaluationType.Remote,
-          }),
-      ).toThrow('The given OFREP URL "" is not a valid URL.');
+          } as any),
+      ).toThrow('endpoint is a mandatory field when initializing the provider');
     });
 
-    it('should not throw exception when EvaluationType is Remote and env variable is set', () => {
-      process.env['OFREP_ENDPOINT'] = 'https://api.example.com';
-
+    it('should reject a malformed endpoint in remote mode', () => {
       expect(
         () =>
           new GoFeatureFlagProvider({
+            endpoint: 'not-a-url',
             evaluationType: EvaluationType.Remote,
           }),
-      ).not.toThrow();
+      ).toThrow('endpoint must be a valid URL (http or https)');
+    });
 
-      delete process.env['OFREP_ENDPOINT'];
+    it('should ignore OFREP_ENDPOINT in remote mode', () => {
+      process.env['OFREP_ENDPOINT'] = 'https://api.example.com';
+
+      try {
+        // The environment must not be able to supply what the caller did not. This test asserted
+        // the opposite before - that construction succeeded on the strength of the env var alone.
+        expect(
+          () =>
+            new GoFeatureFlagProvider({
+              evaluationType: EvaluationType.Remote,
+            } as any),
+        ).toThrow('endpoint is a mandatory field when initializing the provider');
+      } finally {
+        delete process.env['OFREP_ENDPOINT'];
+      }
     });
 
     it('should throw InvalidOptionsException when endpoint is null', () => {
@@ -331,7 +554,7 @@ describe('GoFeatureFlagProvider', () => {
             endpoint: 'https://gofeatureflag.org',
             maxPendingEvents: 0,
           }),
-      ).toThrow('maxPendingEvents must be greater than zero');
+      ).toThrow('maxPendingEvents must be a finite number greater than zero');
     });
 
     it('should throw InvalidOptionsException when maxPendingEvents is negative', () => {
@@ -348,7 +571,24 @@ describe('GoFeatureFlagProvider', () => {
             endpoint: 'https://gofeatureflag.org',
             maxPendingEvents: -100,
           }),
-      ).toThrow('maxPendingEvents must be greater than zero');
+      ).toThrow('maxPendingEvents must be a finite number greater than zero');
+    });
+
+    it.each([
+      ['Infinity', Number.POSITIVE_INFINITY],
+      ['-Infinity', Number.NEGATIVE_INFINITY],
+      ['NaN', Number.NaN],
+    ])('should throw InvalidOptionsException when maxPendingEvents is %s', (_label, value) => {
+      // Infinity is the one that matters: it is greater than zero, so a bare sign check let it
+      // through and the buffer cap became Infinity - never trimming, which is exactly the
+      // unbounded growth during a collector outage the cap was added to stop.
+      expect(
+        () =>
+          new GoFeatureFlagProvider({
+            endpoint: 'https://gofeatureflag.org',
+            maxPendingEvents: value,
+          }),
+      ).toThrow(InvalidOptionsException);
     });
 
     it('should accept valid maxPendingEvents', () => {
@@ -989,7 +1229,7 @@ describe('GoFeatureFlagProvider', () => {
     it('Should change evaluation details if config has changed', async () => {
       jest.useRealTimers();
       let callCount = 0;
-      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async (request) => {
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         callCount++;
         if (callCount <= 1) {
           return {
@@ -1052,11 +1292,11 @@ describe('GoFeatureFlagProvider', () => {
       }
     });
 
-    it('Should error if flag configuration endpoint return a 403', async () => {
+    it.each([401, 403])('Should become PROVIDER_FATAL if flag configuration endpoint returns a %i', async (status) => {
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         return {
           body: '{}',
-          status: 403,
+          status,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -1067,19 +1307,20 @@ describe('GoFeatureFlagProvider', () => {
         endpoint: 'http://localhost:1031',
         flagChangePollingIntervalMs: 100,
       });
-      try {
-        await OpenFeature.setProviderAndWait(testClientName, provider);
-        expect(true).toBe(false); // if we reach this line, the test should fail
-      } catch (error) {
-        expect(error).toBeInstanceOf(UnauthorizedException);
-      }
+
+      // Rejected credentials are terminal: the SDK only reaches FATAL when the rejection carries
+      // the PROVIDER_FATAL code, and only in FATAL does it stop letting evaluations through.
+      await expect(OpenFeature.setProviderAndWait(testClientName, provider)).rejects.toMatchObject({
+        code: ErrorCode.PROVIDER_FATAL,
+      });
+      expect(OpenFeature.getClient(testClientName).providerStatus).toBe(ProviderStatus.FATAL);
     });
 
-    it('Should error if flag configuration endpoint return a 401', async () => {
+    it('Should stay recoverable if flag configuration endpoint returns a 500', async () => {
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         return {
           body: '{}',
-          status: 401,
+          status: 500,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -1090,12 +1331,13 @@ describe('GoFeatureFlagProvider', () => {
         endpoint: 'http://localhost:1031',
         flagChangePollingIntervalMs: 100,
       });
-      try {
-        await OpenFeature.setProviderAndWait(testClientName, provider);
-        expect(true).toBe(false); // if we reach this line, the test should fail
-      } catch (error) {
-        expect(error).toBeInstanceOf(UnauthorizedException);
-      }
+
+      // Anything that is not an authentication failure must leave the provider able to recover
+      // unattended once the relay proxy is reachable again.
+      await expect(OpenFeature.setProviderAndWait(testClientName, provider)).rejects.toBeInstanceOf(
+        ImpossibleToRetrieveConfigurationException,
+      );
+      expect(OpenFeature.getClient(testClientName).providerStatus).toBe(ProviderStatus.ERROR);
     });
 
     it('Should apply a scheduled rollout step', async () => {
@@ -1169,6 +1411,42 @@ describe('GoFeatureFlagProvider', () => {
   });
 
   describe('Track method', () => {
+    it('should not send tracking events when data collection is disabled', async () => {
+      jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
+      fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/data\/collector/, async () => {
+        return {
+          body: JSON.stringify({}),
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
+      });
+
+      const provider = new GoFeatureFlagProvider({
+        endpoint: 'http://localhost:1031',
+        evaluationType: EvaluationType.Remote,
+        dataFlushInterval: 100,
+        maxPendingEvents: 1,
+        disableDataCollection: true,
+      });
+
+      await OpenFeature.setProviderAndWait('track-events-data-collection-disabled', provider);
+      const client = OpenFeature.getClient('track-events-data-collection-disabled');
+
+      client.track('testEvent', { targetingKey: 'testTargetingKey' }, { metric: 42 });
+
+      jest.advanceTimersByTime(100);
+
+      const trackingEventsSent = fetchMock.mock.calls.filter(
+        (call) => call[0] === 'http://localhost:1031/v1/data/collector',
+      );
+
+      // The option was declared and documented but never read, so a caller who disabled collection
+      // - for a privacy requirement, or because they run no collector - still posted every event.
+      expect(trackingEventsSent).toHaveLength(0);
+    });
+
     it('should track events with context and details', async () => {
       jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/data\/collector/, async () => {
@@ -1189,7 +1467,6 @@ describe('GoFeatureFlagProvider', () => {
       });
 
       await OpenFeature.setProviderAndWait('track-events-with-context-and-details', provider);
-      await provider.initialize();
       const client = OpenFeature.getClient('track-events-with-context-and-details');
 
       client.track(
@@ -1211,7 +1488,7 @@ describe('GoFeatureFlagProvider', () => {
       expect(lastCall[0]).toBe('http://localhost:1031/v1/data/collector');
 
       const want = {
-        meta: {},
+        meta: { provider: 'nodejs', openfeature: true },
         events: [
           {
             kind: 'tracking',
@@ -1248,7 +1525,7 @@ describe('GoFeatureFlagProvider', () => {
 
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         return {
-          body: JSON.stringify({}),
+          body: JSON.stringify({ flags: {} }),
           status: 200,
           headers: {
             'Content-Type': 'application/json',
@@ -1270,7 +1547,7 @@ describe('GoFeatureFlagProvider', () => {
       jest.advanceTimersByTime(110);
 
       const want = {
-        meta: {},
+        meta: { provider: 'nodejs', openfeature: true },
         events: [
           {
             kind: 'tracking',
@@ -1309,7 +1586,7 @@ describe('GoFeatureFlagProvider', () => {
 
       fetchMock.mockIf(/^http:\/\/localhost:1031\/v1\/flag\/configuration/, async () => {
         return {
-          body: JSON.stringify({}),
+          body: JSON.stringify({ flags: {} }),
           status: 200,
           headers: {
             'Content-Type': 'application/json',
@@ -1334,7 +1611,7 @@ describe('GoFeatureFlagProvider', () => {
       jest.advanceTimersByTime(150);
 
       const want = {
-        meta: {},
+        meta: { provider: 'nodejs', openfeature: true },
         events: [
           {
             kind: 'tracking',
@@ -1382,7 +1659,6 @@ describe('GoFeatureFlagProvider', () => {
       });
 
       await OpenFeature.setProviderAndWait('track-events-with-context-and-details', provider);
-      await provider.initialize();
       const client = OpenFeature.getClient('track-events-with-context-and-details');
 
       client.track(
@@ -1422,7 +1698,7 @@ describe('GoFeatureFlagProvider', () => {
       jest.advanceTimersByTime(100);
 
       const want = {
-        meta: {},
+        meta: { provider: 'nodejs', openfeature: true },
         events: [
           {
             kind: 'tracking',

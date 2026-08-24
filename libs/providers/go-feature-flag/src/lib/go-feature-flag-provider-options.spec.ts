@@ -21,12 +21,15 @@ describe('GoFeatureFlagProviderOptions', () => {
       expect(options.endpoint).toBe('https://api.example.com');
     });
 
-    it('should allow omitting endpoint for evaluation type remote', () => {
+    it('should require endpoint for evaluation type remote', () => {
+      // The requirement is a compile-time one, so it is asserted at compile time: remote mode used
+      // to be exempt from it, with OFREP_ENDPOINT free to supply the endpoint instead.
+      // @ts-expect-error endpoint is mandatory in every evaluation mode
       const options: GoFeatureFlagProviderOptions = {
         evaluationType: EvaluationType.Remote,
       };
 
-      expect(options.endpoint).toBeUndefined();
+      expect(options.evaluationType).toBe(EvaluationType.Remote);
     });
 
     it('should allow all base options with endpoint', () => {
@@ -38,10 +41,12 @@ describe('GoFeatureFlagProviderOptions', () => {
         maxPendingEvents: 5000,
         disableDataCollection: true,
         apiKey: 'test-key',
+        headers: { 'X-Api-Gateway-Key': 'gateway-secret' },
       };
 
       expect(options.endpoint).toBe('https://api.example.com');
       expect(options.timeout).toBe(5000);
+      expect(options.headers).toEqual({ 'X-Api-Gateway-Key': 'gateway-secret' });
       expect(options.flagChangePollingIntervalMs).toBe(30000);
       expect(options.dataFlushInterval).toBe(60000);
       expect(options.maxPendingEvents).toBe(5000);
@@ -49,15 +54,16 @@ describe('GoFeatureFlagProviderOptions', () => {
       expect(options.apiKey).toBe('test-key');
     });
 
-    it('should allow all base options without endpoint when evaluation type is remote', () => {
+    it('should allow all base options when evaluation type is remote', () => {
       const options: GoFeatureFlagProviderOptions = {
+        endpoint: 'https://api.example.com',
         timeout: 5000,
         flagChangePollingIntervalMs: 30000,
         disableDataCollection: false,
         evaluationType: EvaluationType.Remote,
       };
 
-      expect(options.endpoint).toBeUndefined();
+      expect(options.endpoint).toBe('https://api.example.com');
       expect(options.timeout).toBe(5000);
       expect(options.flagChangePollingIntervalMs).toBe(30000);
       expect(options.disableDataCollection).toBe(false);
