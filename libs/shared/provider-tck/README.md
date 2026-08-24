@@ -345,7 +345,26 @@ the normative contract for those providers, and it is what makes a conformance c
 another language's TCK drives the same endpoints against the same stack and must get the same
 answers.
 
-Two of its requirements are easy to get wrong:
+`HttpControl` is the client for it, and it implements both `BackendControl` and `ConnectionControl`
+over the global `fetch`, so it adds no dependency. It takes a thunk for the base URL because the
+control service's host port is mapped dynamically and does not exist until the stack is up, whereas
+`runProviderTck` has to be called at module load:
+
+```ts
+const container = MyComposeStack.build();
+beforeAll(() => container.start());
+afterAll(() => container.stop());
+
+const control = new HttpControl({ baseUrl: () => `http://${container.getControlUrl()}` });
+```
+
+It prefers `POST /reset` for scenario isolation and falls back to `POST /start?config=default` on a
+`404` or `501`, caching that decision once per suite. The fallback is the normal path rather than an
+edge case — flagd-testbed's launchpad, the reference implementation, serves only `/start`,
+`/restart`, `/stop` and `/change`. After a disconnect it always uses `/start`, because `/reset`
+restores flag state and is not specified to start a stopped backend.
+
+Two of the API's requirements are easy to get wrong:
 
 - **Containers are never stopped or restarted mid-suite.** Unavailability is simulated *inside* the
   running stack. Container orchestrators assign host ports dynamically and cannot reliably preserve
@@ -377,6 +396,7 @@ the same reason as the other two: there is no backend for initialisation to reac
 | `extensionSuite.spec.ts` | the same provider, plus `fixtures/extension-features` | reference adoption for a vendor with scenarios of its own, and the proof they share one lifecycle with the canonical set |
 | `multiProvider.spec.ts` | `MultiProvider` wrapping one child | delegation must be transparent |
 | `inProcessControl.spec.ts` | `InProcessControl` | pins what the Gherkin cannot assert about itself |
+| `httpControl.spec.ts` | `HttpControl` | pins the control-API request sequence, without a container |
 
 `multiProvider.spec.ts` wraps exactly one child deliberately. That is the interesting configuration
 rather than a degenerate one: the correct answer is precisely what the in-memory suite already
@@ -421,7 +441,6 @@ by every language's TCK.
 
 ## Known gaps
 
-- **No HTTP control client yet** — it arrives with the first containerised adopter.
 - **Evaluation context passthrough is unverifiable** without an echo operation on the control API.
 - Caching, hooks and flag metadata are not covered.
 
