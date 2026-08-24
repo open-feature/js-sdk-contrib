@@ -10,3 +10,9 @@ CHANGELOG.md
 package-lock.json
 
 .nx/self-healing
+
+# Conformance artifacts vendored from open-feature/spec. They are consumed byte for byte by every
+# language's provider TCK, so reformatting them here would fork the definition of conformance.
+libs/shared/provider-tck/features/
+libs/shared/provider-tck/flags/
+libs/shared/provider-tck/openapi/
