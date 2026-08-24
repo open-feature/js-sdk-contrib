@@ -662,6 +662,21 @@ Three fields are worth reading carefully:
 `BackendControl`, so adding it broke no existing implementation; a control that omits it omits the
 field, which claims nothing either way.
 
+**`capabilities` is a summary of the optional contract, not a verdict.** Scenarios carrying no
+capability tag are mandatory and roll up into nothing, so a provider can fail a mandatory scenario
+while every entry there reads `passed`. A consumer deciding whether a provider conforms reads
+`scenarios`.
+
+A declared capability that **nothing in the run demonstrated is omitted** rather than reported as
+passed. Two ways of getting a green result for a question nobody asked are excluded that way:
+`@targeting` is reserved, so no scenario carries it at all; and every scenario carrying a capability
+can be skipped for a *different* one — both scenarios in `events.feature` carry `@events` as well as
+`@stale` or `@configuration-change`, so a provider declaring only `@events` has nothing that ran to
+show for it. Omitting is preferred to a fifth outcome: the four in the schema are about what the
+provider did, and "this run demonstrated nothing" is a fact about the run. An *undeclared*
+capability is still reported as `not-declared`, because that is a fact about the provider and a gap
+has to stay visible.
+
 ## Controlling the backend
 
 `BackendControl` is the single seam between the scenarios and whatever manipulates the backend. Step
