@@ -11,6 +11,7 @@ const config: Config = {
   },
   moduleNameMapper: {
     '@openfeature/flagd-core': ['<rootDir>/../../../../shared/flagd-core/src'],
+    '@openfeature/provider-tck': ['<rootDir>/../../../../shared/provider-tck/src'],
     '(.+)\\.js$': '$1',
   },
   verbose: true,
