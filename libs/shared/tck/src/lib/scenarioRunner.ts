@@ -1,6 +1,7 @@
 import type { IJestLike, loadFeature } from 'jest-cucumber';
 import type { Capability } from './capability';
 import { capabilityForTag } from './capability';
+import type { ExampleTable } from './examples';
 import type { ConformanceRecorder, ScenarioIdentity } from './report';
 
 /** What `loadFeature` hands back. jest-cucumber does not export the type, so it is derived. */
@@ -9,8 +10,25 @@ type ParsedScenario = ParsedFeature['scenarios'][number];
 
 /** One scenario, as the harness expects jest-cucumber to define it. */
 export interface PlannedScenario {
+  /**
+   * The scenario name as the feature file writes it. Every row of a Scenario Outline shares it, and
+   * an outline's placeholders are left unsubstituted.
+   *
+   * This is what the report records, and it is deliberately not {@link title}: the expanded title is
+   * jest-cucumber's, and Go's and Python's runners produce different strings for the same row.
+   */
+  name: string;
   /** The title jest-cucumber defines the scenario under; an outline example carries its expanded title. */
   title: string;
+  /**
+   * The Examples row this scenario came from, keyed by column header, or absent for a scenario that
+   * is not an outline example.
+   *
+   * Together with the feature and the name it identifies the scenario. Nothing else does: eleven
+   * rows of `errors.feature`'s type-mismatch matrix share one name, and a report that cannot say
+   * which of them failed is ambiguous exactly where it matters most.
+   */
+  example?: Record<string, string>;
   /** Scenario tags and feature tags together, which is what gates the scenario. */
   tags: string[];
   /**
@@ -47,10 +65,15 @@ export interface FeaturePlan {
  * each step, so a change in jest-cucumber's behaviour surfaces as a loud failure rather than a wrong
  * report.
  */
-export function planFeature(feature: string, parsed: ParsedFeature, declared: ReadonlySet<Capability>): FeaturePlan {
+export function planFeature(
+  feature: string,
+  parsed: ParsedFeature,
+  examples: readonly ExampleTable[],
+  declared: ReadonlySet<Capability>,
+): FeaturePlan {
   const scenarios: PlannedScenario[] = [];
 
-  const plan = (scenario: ParsedScenario): void => {
+  const plan = (scenario: ParsedScenario, name: string, example?: Record<string, string>): void => {
     const tags = Array.from(new Set([...scenario.tags, ...parsed.tags]));
     const missing: Capability[] = [];
 
@@ -63,13 +86,28 @@ export function planFeature(feature: string, parsed: ParsedFeature, declared: Re
       }
     }
 
-    scenarios.push({ title: scenario.title, tags, missing });
+    scenarios.push({ name, title: scenario.title, ...(example ? { example } : {}), tags, missing });
   };
 
-  parsed.scenarios.forEach(plan);
-  for (const outline of parsed.scenarioOutlines) {
-    outline.scenarios.forEach(plan);
-  }
+  parsed.scenarios.forEach((scenario) => plan(scenario, scenario.title));
+
+  parsed.scenarioOutlines.forEach((outline, position) => {
+    // The Examples tables are read from the same file by the same parser, so they arrive in the same
+    // order as jest-cucumber's expansion. Pairing them positionally is only sound while that holds,
+    // so it is checked rather than assumed: a wrong example is worse than none, because it reads as
+    // a fact about a row that did not run.
+    const table = examples[position];
+    if (table?.outline !== outline.title || table.rows.length !== outline.scenarios.length) {
+      throw new Error(
+        `tck: ${feature}.feature: the Examples rows read for outline ${position} ` +
+          `("${table?.outline ?? 'none'}", ${table?.rows.length ?? 0} rows) do not line up with ` +
+          `jest-cucumber's expansion of "${outline.title}" (${outline.scenarios.length} scenarios). ` +
+          `The report identifies an outline scenario by its example row, so it cannot be built.`,
+      );
+    }
+
+    outline.scenarios.forEach((scenario, row) => plan(scenario, outline.title, table.rows[row]));
+  });
 
   return { feature, title: parsed.title, scenarios };
 }
@@ -188,7 +226,12 @@ export function scenarioRunner(plan: FeaturePlan, recorder: ConformanceRecorder)
 
 /** Names the scenario an outcome belongs to, in the terms the report records it under. */
 function identify(plan: FeaturePlan, scenario: PlannedScenario): ScenarioIdentity {
-  return { feature: plan.feature, name: scenario.title, tags: scenario.tags };
+  return {
+    feature: plan.feature,
+    name: scenario.name,
+    ...(scenario.example ? { example: scenario.example } : {}),
+    tags: scenario.tags,
+  };
 }
 
 /**

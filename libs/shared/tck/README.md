@@ -621,7 +621,7 @@ is registered when it is *defined*, so one Jest never finished — a timeout, or
 appears, as a failure that says so. **A report from a filtered run is partial by construction; do
 not publish one.**
 
-Two fields are worth reading carefully:
+Three fields are worth reading carefully:
 
 - **`provider.name` is what the provider reports through its own metadata**, not the suite name. The
   suite name is chosen to read well in a failure message — `flagd-rpc` — which makes it the
@@ -635,6 +635,28 @@ Two fields are worth reading carefully:
   by unrelated edits elsewhere in the specification, so two runs that executed identical artifacts
   report the same value even when pinned to different commits — and it is checkable, since
   `git rev-parse <specRevision>:specification/assets/provider-tck` must reproduce it.
+- **`scenarios[].example`** carries the `Examples` row a Scenario Outline scenario came from, keyed
+  by column header, and is omitted for anything else. `name` is the scenario name as the feature
+  file writes it, placeholders and all, so every row of an outline shares it — the eleven rows of
+  `errors.feature`'s type-mismatch matrix produce eleven entries with the same `feature` and `name`,
+  and only `example` tells them apart:
+
+  ```json
+  { "key": "boolean-flag", "requested": "Integer", "default": "1" }
+  ```
+
+  It is a field rather than a naming convention because the parameters *are* the identity and they
+  come from the feature file rather than from any runner. Mandating a mangled name instead would put
+  a separator, an ordering and an escaping rule into normative text that four languages have to
+  reproduce byte for byte, and drift there is invisible until two reports quietly fail to line up —
+  which had already happened, with one implementation emitting the bare scenario name for all eleven
+  rows, another its runner's example id and this one jest-cucumber's expanded title. Values are the
+  cell contents verbatim, as strings, because Gherkin has no types: `1` stays `"1"`.
+
+  jest-cucumber substitutes each row into the outline and keeps only the result, so the `Examples`
+  tables are read from the feature file separately, with the same Gherkin parser
+  ([`src/lib/examples.ts`](./src/lib/examples.ts)). The two parses are checked against each other
+  before the run; if they disagree the suite fails rather than reporting a row it cannot identify.
 
 `backend.controlApi` reports how the backend was driven. It is an optional member of
 `BackendControl`, so adding it broke no existing implementation; a control that omits it omits the
