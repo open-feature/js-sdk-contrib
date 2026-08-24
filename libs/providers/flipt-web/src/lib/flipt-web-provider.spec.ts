@@ -48,6 +48,18 @@ describe('FliptWebProvider', () => {
       expect(value).toHaveProperty('value', 'variant1');
       expect(value).toHaveProperty('reason', 'TARGETING_MATCH');
     });
+
+    it('should return the default variant served by Flipt when no rule matches', () => {
+      const value = provider.resolveStringEvaluation('flag_default_variant', 'default', { targetingKey: '1234' });
+      expect(value).toHaveProperty('value', 'variant_default');
+      expect(value).toHaveProperty('reason', 'DEFAULT');
+    });
+
+    it('should return the application default when no rule matches and no default variant is set', () => {
+      const value = provider.resolveStringEvaluation('flag_string', 'default', { targetingKey: '1234', fizz: 'bar' });
+      expect(value).toHaveProperty('value', 'default');
+      expect(value).toHaveProperty('reason', 'DEFAULT');
+    });
   });
 
   describe('method resolveNumberEvaluation', () => {
@@ -93,6 +105,12 @@ describe('FliptWebProvider', () => {
       );
       expect(value).toHaveProperty('value', { foo: 'bar' });
       expect(value).toHaveProperty('reason', 'TARGETING_MATCH');
+    });
+
+    it('should return the default variant attachment served by Flipt when no rule matches', () => {
+      const value = provider.resolveObjectEvaluation('flag_default_variant', {}, { targetingKey: '1234' });
+      expect(value).toHaveProperty('value', { foo: 'bar' });
+      expect(value).toHaveProperty('reason', 'DEFAULT');
     });
   });
 
