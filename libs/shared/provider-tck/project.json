@@ -13,6 +13,14 @@
       },
       "dependsOn": ["build"]
     },
+    "pullSpec": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["git submodule update --init spec"],
+        "cwd": "libs/shared/provider-tck",
+        "parallel": false
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"]
@@ -20,6 +28,7 @@
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/libs/shared/provider-tck"],
+      "dependsOn": ["pullSpec"],
       "options": {
         "jestConfig": "libs/shared/provider-tck/jest.config.ts"
       }
@@ -27,6 +36,7 @@
     "package": {
       "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
+      "dependsOn": ["pullSpec"],
       "options": {
         "project": "libs/shared/provider-tck/package.json",
         "outputPath": "dist/libs/shared/provider-tck",
@@ -50,17 +60,17 @@
           },
           {
             "glob": "**/*",
-            "input": "./libs/shared/provider-tck/features",
+            "input": "./libs/shared/provider-tck/spec/specification/assets/provider-tck/gherkin",
             "output": "./features"
           },
           {
             "glob": "**/*",
-            "input": "./libs/shared/provider-tck/flags",
+            "input": "./libs/shared/provider-tck/spec/specification/assets/provider-tck/flags",
             "output": "./flags"
           },
           {
             "glob": "**/*",
-            "input": "./libs/shared/provider-tck/openapi",
+            "input": "./libs/shared/provider-tck/spec/specification/assets/provider-tck/openapi",
             "output": "./openapi"
           }
         ]

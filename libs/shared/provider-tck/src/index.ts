@@ -9,11 +9,15 @@
  *
  * See the README for the adoption guide.
  *
- * NOTE ON THE SOURCE OF TRUTH: the files under `features/`, `flags/` and `openapi/` are NOT owned by
- * this repository. They are copies of the language-agnostic conformance artifacts defined in
- * open-feature/spec under `specification/assets/provider-tck/`. Changes belong there and are copied
- * here — editing them locally forks the definition of conformance, which is the one thing this suite
- * exists to prevent. See https://github.com/open-feature/spec/issues/417.
+ * NOTE ON THE SOURCE OF TRUTH: the feature files, canonical flag set and control-API document are
+ * NOT owned by this repository. They are the language-agnostic conformance artifacts defined in
+ * open-feature/spec under `specification/assets/provider-tck/`, consumed here through a git
+ * submodule and never copied — a copy would be a second place for conformance to drift. Changes
+ * belong upstream; editing them locally forks the definition of conformance, which is the one thing
+ * this suite exists to prevent. See https://github.com/open-feature/spec/issues/417.
+ *
+ * Adopters need none of that: the artifacts are packaged into the published library, so consuming
+ * the TCK from npm requires no submodule and no particular repository layout.
  */
 
 export { ALL_CAPABILITIES, Capability, capabilityForTag } from './lib/capability';
