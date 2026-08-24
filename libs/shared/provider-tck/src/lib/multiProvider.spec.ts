@@ -1,21 +1,24 @@
-import { MultiProvider } from '@openfeature/multi-provider';
+import { MultiProvider } from '@openfeature/server-sdk';
 import { Capability } from './capability';
 import { InProcessControl } from './inProcessControl';
 import { runProviderTck } from './runProviderTck';
 
 /**
- * NOT CURRENTLY RUN -- excluded via `testPathIgnorePatterns` in this project's jest.config.ts.
+ * NOT CURRENTLY RUN -- excluded via `testPathIgnorePatterns` in this project's jest.config.ts,
+ * because the SDK's MultiProvider does not pass it. It fails 16 of 29 scenarios, every one of them
+ * from a single root cause: the multi-provider replaces the child's error code with `GENERAL`
+ * (15x TYPE_MISMATCH, 1x FLAG_NOT_FOUND). The information is not lost so much as thrown away --
+ * `collectProviderErrors` builds an `ErrorWithCode` carrying the child's real code, and
+ * `constructAggregateError` then wraps it in an `AggregateError extends GeneralError`, so the code
+ * survives only inside `originalErrors[].error.code`, which nothing reads.
  *
- * This suite fails 24 of 29 scenarios, and the failures are real. `MultiProvider` keys the
- * evaluation context by object identity, so an ordinary context-free evaluation returns the code
- * default with `GENERAL`; and it flattens `TYPE_MISMATCH` to `GENERAL`. Both are tracked in
- * https://github.com/open-feature/js-sdk-contrib/issues/1609.
+ * Everything else passes, which is the useful half of the result: evaluation, variants, reasons and
+ * configuration-change events all survive delegation intact.
  *
- * It is excluded rather than deleted so that a defect in another library does not block the
- * conformance suite's own adoption, and so that this file is the regression test for #1609 --
- * re-enabling it is a one-line change once the provider is fixed.
+ * This is kept, not deleted, because it is the regression test -- re-enabling it is deleting one
+ * line of jest.config.ts.
  *
- * Runs the conformance suite against the multi-provider wrapping exactly one child.
+ * Runs the conformance suite against the SDK's multi-provider wrapping exactly one child.
  *
  * A provider that delegates is still a provider, and delegation is where the contract is easiest to
  * drop on the floor: a variant that does not survive the hop, a reason rewritten to `DEFAULT`, an
@@ -26,6 +29,13 @@ import { runProviderTck } from './runProviderTck';
  *
  * That framing is why this belongs here rather than in the multi-provider's own tests: it is not a
  * test of aggregation across several backends, it is a test that delegation is transparent.
+ *
+ * The subject is deliberately `@openfeature/server-sdk`'s MultiProvider and not this repository's
+ * `@openfeature/multi-provider`, which is deprecated in favour of it. Conformance-testing a package
+ * nobody should adopt would prove little, and the same choice is made in the other languages: Go
+ * tests `go-sdk/openfeature/multi` and Java tests `dev.openfeature.sdk.multiprovider`, both of whose
+ * contrib equivalents are likewise deprecated. Python has no multi-provider in either place and so
+ * has no such suite.
  *
  * The equivalent Java suite has to leave ConfigurationChange undeclared, because Java's
  * MultiProvider never subscribes to its children and swallows their events

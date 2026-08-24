@@ -67,7 +67,7 @@
     "@nx/web": "22.7.8",
     "@nx/workspace": "22.7.8",
     "@openfeature/core": "^1.9.1",
-    "@openfeature/server-sdk": "^1.19.0",
+    "@openfeature/server-sdk": "^1.23.0",
     "@openfeature/web-sdk": "^1.10.0",
     "@opentelemetry/context-async-hooks": "^2.1.0",
     "@opentelemetry/sdk-logs": "^0.205.0",
