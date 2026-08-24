@@ -7,8 +7,11 @@ import type { InMemoryProvider } from '@openfeature/server-sdk';
  * `FlagConfiguration` in its type definitions but does not re-export it from the package entry
  * point, so importing it directly is a TS2459. Deriving it keeps this in lockstep with whatever the
  * SDK actually accepts.
+ *
+ * `NonNullable` is load-bearing: the constructor parameter is optional, so the bare
+ * `ConstructorParameters<...>[0]` includes `undefined` and every use of the type inherits it.
  */
-export type FlagConfiguration = ConstructorParameters<typeof InMemoryProvider>[0];
+export type FlagConfiguration = NonNullable<ConstructorParameters<typeof InMemoryProvider>[0]>;
 
 /** The flag {@link BackendControl.changeFlag} mutates. */
 export const CHANGING_FLAG_KEY = 'changing-flag';
