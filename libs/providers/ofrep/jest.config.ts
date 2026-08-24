@@ -7,5 +7,7 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   testEnvironment: 'node',
+  // ignore e2e path
+  testPathIgnorePatterns: ['/e2e/'],
   coverageDirectory: '../../../coverage/libs/providers/ofrep',
 };
