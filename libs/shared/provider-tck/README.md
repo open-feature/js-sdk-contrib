@@ -80,6 +80,13 @@ worse than no suite at all:
 That works because jest-cucumber marks tag-filtered scenarios `skippedViaTagFilter` and turns them
 into `test.skip` rather than omitting them, so they stay visible in the report.
 
+The reason is composed by the harness rather than by jest-cucumber's `scenarioNameTemplate`, which
+does not reach far enough: the template is applied to a Scenario Outline's own title, and each
+example row is then defined under its *expanded* title instead, so a skipped example row showed no
+reason at all — four rows of `errors.feature` whenever `@object` is undeclared. jest-cucumber accepts
+the `describe`/`test` pair it calls, so the harness supplies one and names the skip at the point the
+call is made. See [`src/lib/scenarioRunner.ts`](./src/lib/scenarioRunner.ts).
+
 | Capability | Tag | Meaning |
 | --- | --- | --- |
 | `Capability.Events` | `@events` | emits lifecycle events at all |
