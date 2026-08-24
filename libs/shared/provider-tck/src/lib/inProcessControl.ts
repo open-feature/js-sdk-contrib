@@ -24,6 +24,10 @@ import { CHANGING_BASELINE, CHANGING_CHANGED, canonicalFlagSet } from './flags';
  * `@stale` scenarios as passed. A suite using it leaves {@link Capability.Stale} and
  * {@link Capability.UnavailableInit} undeclared, and those scenarios are reported as skipped.
  *
+ * {@link Capability.Lifecycle} goes undeclared for the neighbouring reason: with no backend, there
+ * is no initialisation to reach one. The SDK synthesises `PROVIDER_READY` for such a provider, so
+ * declaring it would report the readiness scenario as passed without anything having been proved.
+ *
  * ## Ownership of the provider
  *
  * This class both seeds the flags and creates the provider that serves them, because in-process they

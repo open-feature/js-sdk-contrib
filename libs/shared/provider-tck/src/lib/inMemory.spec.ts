@@ -38,6 +38,10 @@ runProviderTck({
    *   float-flag as an Integer is therefore indistinguishable from asking for it as a Float, and no
    *   provider in this language can satisfy that scenario. This is a language property, not a bug —
    *   see the README.
+   * - Lifecycle is omitted because there is no backend to reach. InMemoryProvider has no
+   *   initialisation step, so the SDK synthesises PROVIDER_READY for it and the readiness scenario
+   *   would pass without demonstrating anything — a NoOpProvider passes it identically. It was
+   *   passing vacuously while lifecycle.feature was gated by @events; now the skip says so.
    * - Targeting and Caching are omitted because no scenario carries their tags yet.
    *
    * ConfigurationChange *is* declared, and that is worth stating plainly: the JS in-memory provider
