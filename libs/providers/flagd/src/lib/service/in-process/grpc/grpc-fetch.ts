@@ -50,9 +50,9 @@ export class GrpcFetch implements DataFetch {
     syncServiceClient?: FlagSyncServiceClient,
     logger?: Logger,
   ) {
-    const { host, port, tls, socketPath, certPath, selector } = config;
+    const { host, port, tls, socketPath, certPath, clientCertPath, clientKeyPath, selector } = config;
     const clientOptions = buildClientOptions(config);
-    const channelCredentials = createChannelCredentials(tls, certPath);
+    const channelCredentials = createChannelCredentials(tls, certPath, clientCertPath, clientKeyPath);
 
     this._syncClient = syncServiceClient
       ? syncServiceClient
