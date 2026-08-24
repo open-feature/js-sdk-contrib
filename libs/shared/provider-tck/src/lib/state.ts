@@ -3,6 +3,15 @@ import type { TckOptions } from './options';
 import type { FlagType } from './values';
 
 /**
+ * The payload the server SDK hands an event handler.
+ *
+ * `EventDetails` defaults to *both* the server and the web event unions, which is wider than
+ * anything this suite can ever see: it runs on the server SDK, so pinning the parameter keeps the
+ * recorder's type honest about what it holds.
+ */
+export type ServerEventDetails = EventDetails<ServerProviderEvents>;
+
+/**
  * Captures the events of one type, in order, so a scenario can consume them one at a time.
  *
  * Consuming rather than merely observing is what makes the stale scenario work: it awaits a
@@ -11,19 +20,23 @@ import type { FlagType } from './values';
  * assertion as satisfied by the first event.
  */
 export class EventRecorder {
-  private readonly queue: EventDetails[] = [];
+  // The SDK types the payload as optional, so an entry may be `undefined`. It is still queued
+  // rather than dropped: an event that arrives without details has still arrived, and every
+  // "should have been executed" assertion is about arrival. Dropping it would turn a delivered
+  // event into a timeout, which is the most misleading failure this class could produce.
+  private readonly queue: (ServerEventDetails | undefined)[] = [];
 
   /** The most recently consumed event, which the payload assertions inspect. */
-  last: EventDetails | undefined;
+  last: ServerEventDetails | undefined;
 
   constructor(readonly eventName: string) {}
 
-  record(details: EventDetails): void {
+  record(details: ServerEventDetails | undefined): void {
     this.queue.push(details);
   }
 
   /** Consumes the next event of this recorder's type, waiting up to `timeoutMs`. */
-  async next(timeoutMs: number): Promise<EventDetails> {
+  async next(timeoutMs: number): Promise<ServerEventDetails | undefined> {
     const deadline = Date.now() + timeoutMs;
 
     while (this.queue.length === 0) {
@@ -37,7 +50,7 @@ export class EventRecorder {
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
 
-    const details = this.queue.shift() as EventDetails;
+    const details = this.queue.shift();
     this.last = details;
     return details;
   }
