@@ -1,7 +1,6 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, extname, join } from 'node:path';
-import { loadFeature } from 'jest-cucumber';
+import { join } from 'node:path';
 import { ALL_CAPABILITIES, Capability } from './capability';
 import type { BackendControl } from './control';
 import { planFeature } from './scenarioRunner';
@@ -13,7 +12,7 @@ import {
   reportFileName,
   writeConformanceReport,
 } from './report';
-import { FEATURES_GLOB } from './runProviderTck';
+import { loadTckFeatures } from './runProviderTck';
 
 const control: BackendControl = {
   description: 'a control that exists only to be named in a report',
@@ -147,19 +146,12 @@ describe('the conformance report', () => {
 
 describe('scenario accounting', () => {
   /** The canonical features, planned as the harness plans them. */
-  const plans = readdirSync(dirname(FEATURES_GLOB))
-    .filter((entry) => extname(entry) === '.feature')
-    .sort()
-    .map((entry) =>
-      planFeature(
-        basename(entry, '.feature'),
-        loadFeature(join(dirname(FEATURES_GLOB), entry)),
-        new Set([Capability.Events, Capability.ConfigurationChange, Capability.Object]),
-      ),
-    );
+  const plans = loadTckFeatures(undefined).map(({ feature, parsed, examples }) =>
+    planFeature(feature, parsed, examples, new Set([Capability.Events, Capability.ConfigurationChange, Capability.Object])),
+  );
 
   const planned = plans.flatMap((plan) =>
-    plan.scenarios.map(({ title }) => ({ feature: plan.feature, name: title })),
+    plan.scenarios.map(({ name, example }) => ({ feature: plan.feature, name, example })),
   );
 
   it('plans one entry for every scenario in the canonical features, examples included', () => {
@@ -176,8 +168,8 @@ describe('scenario accounting', () => {
     const recorder = recorderFor([Capability.Events, Capability.ConfigurationChange, Capability.Object]);
 
     for (const plan of plans) {
-      for (const { title, tags, missing } of plan.scenarios) {
-        const identity = { feature: plan.feature, name: title, tags };
+      for (const { name, example, tags, missing } of plan.scenarios) {
+        const identity = { feature: plan.feature, name, example, tags };
         if (missing.length) {
           recorder.skipped(identity, missing);
         } else {
@@ -213,6 +205,103 @@ describe('scenario accounting', () => {
     expect(coverageProblems(planned.slice(1), planned)).toEqual([
       `${planned[0].feature}.feature: ${planned[0].name}: expected 1 outcome(s), recorded 0`,
     ]);
+  });
+
+  it('catches one dropped example row rather than letting its siblings cover for it', () => {
+    // The reason the accounting is keyed on the example and not only on the name. Eleven rows share
+    // the name 'Requesting the wrong type returns the code default'; keyed on the name alone,
+    // dropping one and duplicating another would tally as eleven expected and eleven recorded.
+    const matrix = planned.filter((entry) => entry.name === 'Requesting the wrong type returns the code default');
+    expect(matrix).toHaveLength(11);
+
+    const swapped = planned.filter((entry) => entry !== matrix[0]).concat(matrix[1]);
+
+    expect(coverageProblems(swapped, planned)).toEqual([
+      'errors.feature: Requesting the wrong type returns the code default ' +
+        '[key=string-flag requested=Boolean default=false]: expected 1 outcome(s), recorded 0',
+      'errors.feature: Requesting the wrong type returns the code default ' +
+        '[key=string-flag requested=Integer default=1]: expected 1 outcome(s), recorded 2',
+    ]);
+  });
+});
+
+describe('identifying a scenario in the report', () => {
+  const canonical = loadTckFeatures(undefined);
+
+  const reportOf = (declared: Capability[]) => {
+    const recorder = recorderFor(declared);
+    const plans = canonical.map(({ feature, parsed, examples }) =>
+      planFeature(feature, parsed, examples, new Set(declared)),
+    );
+
+    for (const plan of plans) {
+      for (const { name, example, tags, missing } of plan.scenarios) {
+        const identity = { feature: plan.feature, name, example, tags };
+        if (missing.length) {
+          recorder.skipped(identity, missing);
+        } else {
+          recorder.started(identity)({ durationMs: 0 });
+        }
+      }
+    }
+    return recorder.build();
+  };
+
+  it('identifies every scenario uniquely by feature, name and example', () => {
+    // The property the format depends on. Feature and name alone do not have it: eleven rows of one
+    // outline share both, and a consumer keying on them keeps whichever row it saw last.
+    const { scenarios } = reportOf([...ALL_CAPABILITIES]);
+    const keys = scenarios.map((result) =>
+      JSON.stringify([result.feature, result.name, Object.entries(result.example ?? {})]),
+    );
+
+    expect(scenarios.length).toBeGreaterThan(0);
+    expect(new Set(keys).size).toBe(scenarios.length);
+  });
+
+  it('records the example verbatim, as strings, on every row of an outline', () => {
+    const matrix = reportOf([...ALL_CAPABILITIES]).scenarios.filter(
+      (result) => result.name === 'Requesting the wrong type returns the code default',
+    );
+
+    // Feature-file order: the report sorts by feature and name, and rows sharing both keep the order
+    // they were recorded in, which is the order the Examples blocks are written in.
+    expect(matrix.map((result) => result.example)).toEqual([
+      { key: 'string-flag', requested: 'Boolean', default: 'false' },
+      { key: 'string-flag', requested: 'Integer', default: '1' },
+      { key: 'string-flag', requested: 'Float', default: '0.1' },
+      { key: 'wrong-flag', requested: 'Boolean', default: 'false' },
+      { key: 'boolean-flag', requested: 'String', default: 'fallback' },
+      { key: 'boolean-flag', requested: 'Integer', default: '1' },
+      { key: 'boolean-flag', requested: 'Float', default: '0.1' },
+      { key: 'integer-flag', requested: 'Boolean', default: 'false' },
+      { key: 'integer-flag', requested: 'String', default: 'fallback' },
+      { key: 'float-flag', requested: 'Boolean', default: 'false' },
+      { key: 'float-flag', requested: 'String', default: 'fallback' },
+    ]);
+  });
+
+  it('omits the example for a scenario that is not an outline row', () => {
+    const plain = reportOf([...ALL_CAPABILITIES]).scenarios.filter(
+      (result) => result.name === 'An unknown flag key returns the code default',
+    );
+
+    expect(plain).toHaveLength(1);
+    expect(plain[0]).not.toHaveProperty('example');
+  });
+
+  it('carries the example on a capability-skipped row', () => {
+    // A skipped row is still a row, and the schema requires the reason with it.
+    const skipped = reportOf(
+      [...ALL_CAPABILITIES].filter((capability) => capability !== Capability.Object),
+    ).scenarios.filter((result) => result.name === 'Requesting a structured flag as a scalar returns the code default');
+
+    expect(skipped).toHaveLength(4);
+    for (const result of skipped) {
+      expect(result.outcome).toBe('not-declared');
+      expect(result.reason).toContain('@object');
+      expect(Object.keys(result.example ?? {})).toEqual(['requested', 'default']);
+    }
   });
 });
 

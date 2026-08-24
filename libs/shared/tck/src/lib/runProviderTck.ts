@@ -4,6 +4,8 @@ import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import { OpenFeature } from '@openfeature/server-sdk';
 import { resolveAssetDir } from './assets';
 import { expiredReservations } from './capability';
+import type { ExampleTable } from './examples';
+import { readExampleTables } from './examples';
 import { featureFiles, resolveExtensionFeatures } from './extensions';
 import type { TckOptions } from './options';
 import { eventTimeout, readyTimeout, resolveCapabilities } from './options';
@@ -19,10 +21,17 @@ import { registerSuiteUnderTest } from './underTest';
 /** The glob matching the canonical feature files packaged with this library. */
 export const FEATURES_GLOB = join(resolveAssetDir('features'), '*.feature');
 
-/** One feature file: its bare name, jest-cucumber's parse, and where it came from. */
+/** One feature file: its bare name, jest-cucumber's parse, its Examples rows, and where it came from. */
 export interface TckFeature {
   feature: string;
   parsed: ReturnType<typeof loadFeature>;
+  /**
+   * The file's Examples tables, which jest-cucumber discards during expansion.
+   *
+   * Read from the same file by the same parser, so they arrive in the order jest-cucumber expanded
+   * the outlines in -- which is what lets an outline scenario be identified by the row it came from.
+   */
+  examples: ExampleTable[];
   /**
    * Whether this file is part of the canonical conformance set.
    *
@@ -36,7 +45,8 @@ export interface TckFeature {
  * The canonical feature files, loaded one at a time rather than through the glob.
  *
  * Per file, because a feature's bare name is what identifies the feature a scenario belongs to, and
- * `loadFeatures` does not say which file it parsed which feature from.
+ * `loadFeatures` does not say which file it parsed which feature from. Reading the directory itself
+ * also gives the path each file's Examples tables are read from.
  */
 export function loadTckFeatures(tagFilter: string | undefined): TckFeature[] {
   const dir = resolveAssetDir('features');
@@ -44,6 +54,7 @@ export function loadTckFeatures(tagFilter: string | undefined): TckFeature[] {
   return featureFiles(dir).map((path) => ({
     feature: basename(path, '.feature'),
     parsed: loadFeature(path, { tagFilter }),
+    examples: readExampleTables(path),
     canonical: true,
   }));
 }
@@ -69,6 +80,7 @@ export function loadExtensionFeatures(paths: readonly string[], tagFilter: strin
   return resolveExtensionFeatures(paths, canonicalDir, canonicalNames).map(({ feature, path }) => ({
     feature,
     parsed: loadFeature(path, { tagFilter }),
+    examples: readExampleTables(path),
     canonical: false,
   }));
 }
@@ -156,7 +168,9 @@ export function runProviderTck(options: TckOptions): void {
     ...loadExtensionFeatures(asList(options.extensionFeatures), tagFilter),
   ];
 
-  const plans: FeaturePlan[] = features.map(({ feature, parsed }) => planFeature(feature, parsed, declared));
+  const plans: FeaturePlan[] = features.map(({ feature, parsed, examples }) =>
+    planFeature(feature, parsed, examples, declared),
+  );
 
   // Which capabilities are reserved is recorded here but decided upstream, so it is checked against
   // the features that actually ran rather than trusted. A reservation whose scenario has since been
@@ -240,7 +254,7 @@ export function runProviderTck(options: TckOptions): void {
       // scenario, so the accounting is verified here rather than assumed -- in every run, not only
       // when a report is being written.
       const planned = plans.flatMap((plan) =>
-        plan.scenarios.map(({ title }) => ({ feature: plan.feature, name: title })),
+        plan.scenarios.map(({ name, example }) => ({ feature: plan.feature, name, example })),
       );
       const problems = coverageProblems(recorder.results, planned);
       if (problems.length) {
