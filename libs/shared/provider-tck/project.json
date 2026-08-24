@@ -1,0 +1,70 @@
+{
+  "name": "provider-tck",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/provider-tck/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run publish-if-not-exists",
+        "cwd": "dist/libs/shared/provider-tck"
+      },
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/shared/provider-tck"],
+      "options": {
+        "jestConfig": "libs/shared/provider-tck/jest.config.ts"
+      }
+    },
+    "package": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "project": "libs/shared/provider-tck/package.json",
+        "outputPath": "dist/libs/shared/provider-tck",
+        "entryFile": "libs/shared/provider-tck/src/index.ts",
+        "tsConfig": "libs/shared/provider-tck/tsconfig.lib.json",
+        "compiler": "tsc",
+        "generateExportsField": true,
+        "umdName": "provider-tck",
+        "external": "all",
+        "format": ["cjs", "esm"],
+        "assets": [
+          {
+            "glob": "LICENSE",
+            "input": "./",
+            "output": "./"
+          },
+          {
+            "glob": "README.md",
+            "input": "./libs/shared/provider-tck",
+            "output": "./"
+          },
+          {
+            "glob": "**/*",
+            "input": "./libs/shared/provider-tck/features",
+            "output": "./features"
+          },
+          {
+            "glob": "**/*",
+            "input": "./libs/shared/provider-tck/flags",
+            "output": "./flags"
+          },
+          {
+            "glob": "**/*",
+            "input": "./libs/shared/provider-tck/openapi",
+            "output": "./openapi"
+          }
+        ]
+      }
+    }
+  }
+}
