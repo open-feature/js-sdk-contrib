@@ -1,0 +1,256 @@
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, dirname, extname, join } from 'node:path';
+import { loadFeature } from 'jest-cucumber';
+import { ALL_CAPABILITIES, Capability } from './capability';
+import type { BackendControl } from './control';
+import { planFeature } from './scenarioRunner';
+import type { ScenarioIdentity } from './report';
+import {
+  ConformanceRecorder,
+  REPORT_DIR_ENV,
+  coverageProblems,
+  reportFileName,
+  writeConformanceReport,
+} from './report';
+import { FEATURES_GLOB } from './runProviderTck';
+
+const control: BackendControl = {
+  description: 'a control that exists only to be named in a report',
+  controlApi: 'in-process',
+  prepareScenario: async () => undefined,
+  changeFlag: async () => undefined,
+};
+
+const recorderFor = (declared: Capability[], notApplicable: Capability[] = []) =>
+  new ConformanceRecorder({
+    suiteName: 'unit',
+    control,
+    declared: new Set(declared),
+    notApplicable: new Set(notApplicable),
+    observedProviderName: () => 'observed-provider',
+  });
+
+const scenario = (name: string, tags: string[] = []): ScenarioIdentity => ({ feature: 'events', name, tags });
+
+describe('the conformance report', () => {
+  it('never reports a capability-skipped scenario as passed', () => {
+    // The rule Appendix F exists to enforce, and the one a runner's own summary is most likely to
+    // get wrong: godog counts a capability skip in its passed tally.
+    const recorder = recorderFor([Capability.Events]);
+    recorder.skipped(scenario('Losing the backend makes the provider stale', ['@stale']), [Capability.Stale]);
+
+    const [result] = recorder.build().scenarios;
+
+    expect(result.outcome).toBe('not-declared');
+    expect(result.reason).toContain('@stale');
+  });
+
+  it('distinguishes not-applicable from not-declared', () => {
+    // JavaScript is the language that forces the distinction: @strict-numeric-typing is
+    // unsatisfiable because there is no integer type, so calling it 'not-declared' would report
+    // every JavaScript provider as missing something none of them can have.
+    const recorder = recorderFor([Capability.Events], [Capability.StrictNumericTyping]);
+    recorder.skipped(scenario('A float flag is not silently narrowed', ['@strict-numeric-typing']), [
+      Capability.StrictNumericTyping,
+    ]);
+    recorder.skipped(scenario('Losing the backend', ['@stale']), [Capability.Stale]);
+
+    const report = recorder.build();
+    const outcomes = Object.fromEntries(report.scenarios.map((result) => [result.name, result.outcome]));
+
+    expect(outcomes['A float flag is not silently narrowed']).toBe('not-applicable');
+    expect(outcomes['Losing the backend']).toBe('not-declared');
+    expect(report.capabilities[Capability.StrictNumericTyping]).toEqual({
+      state: 'not-applicable',
+      reason: expect.stringContaining('not applicable'),
+    });
+    expect(report.capabilities[Capability.Stale]).toEqual({
+      state: 'not-declared',
+      reason: expect.stringContaining('not declared'),
+    });
+  });
+
+  it('prefers not-declared when a scenario is gated by both', () => {
+    // A provider must not be able to hide a gap behind an inapplicable tag that happens to sit on
+    // the same scenario.
+    const recorder = recorderFor([], [Capability.StrictNumericTyping]);
+    recorder.skipped(scenario('gated twice', ['@strict-numeric-typing', '@stale']), [
+      Capability.StrictNumericTyping,
+      Capability.Stale,
+    ]);
+
+    expect(recorder.build().scenarios[0].outcome).toBe('not-declared');
+  });
+
+  it('reports a declared capability as failed when a scenario gating on it failed', () => {
+    const recorder = recorderFor([Capability.Events, Capability.Object]);
+    recorder.started(scenario('a passing one', ['@object']))({ durationMs: 1 });
+    recorder.started(scenario('a failing one', ['@events']))({ durationMs: 2, error: new Error('boom') });
+
+    const report = recorder.build();
+
+    expect(report.capabilities[Capability.Events]).toEqual({ state: 'failed' });
+    expect(report.capabilities[Capability.Object]).toEqual({ state: 'passed' });
+    expect(report.scenarios.find((result) => result.name === 'a failing one')?.reason).toBe('boom');
+  });
+
+  it('reports a scenario that never finished as failed rather than passed', () => {
+    // A Jest timeout kills the test body, so the completion callback never runs. The record exists
+    // from the moment the scenario is defined precisely so this cannot become a silent omission.
+    const recorder = recorderFor([Capability.Events]);
+    recorder.started(scenario('interrupted', ['@events']));
+
+    const [result] = recorder.build().scenarios;
+
+    expect(result.outcome).toBe('failed');
+    expect(result.reason).toContain('never reported an outcome');
+  });
+
+  it('names the provider as the provider names itself and the suite as the configuration', () => {
+    const report = recorderFor([]).build();
+
+    expect(report.provider.name).toBe('observed-provider');
+    expect(report.provider.configuration).toBe('unit');
+    expect(report.provider.language).toBe('javascript');
+  });
+
+  it('falls back to the suite name when no scenario ever registered a provider', () => {
+    const recorder = new ConformanceRecorder({
+      suiteName: 'unit',
+      control,
+      declared: new Set(),
+      notApplicable: new Set(),
+    });
+
+    expect(recorder.build().provider.name).toBe('unit');
+  });
+
+  it('identifies itself, the SDK and the artifacts it ran', () => {
+    const { tck, sdk, backend } = recorderFor([]).build();
+
+    expect(tck.implementation).toBe('js-sdk-contrib/libs/shared/tck');
+    expect(tck.version).not.toBe('unknown');
+    expect(tck.specRevision).toMatch(/^[0-9a-f]{40}$/);
+    expect(tck.assetsTree).toMatch(/^[0-9a-f]{40}$/);
+    expect(sdk.name).toBe('@openfeature/server-sdk');
+    expect(sdk.version).toMatch(/^\d+\.\d+\.\d+/);
+    expect(backend?.controlApi).toBe('in-process');
+  });
+
+  it('gives every capability an outcome', () => {
+    expect(Object.keys(recorderFor([Capability.Events]).build().capabilities).sort()).toEqual(
+      [...ALL_CAPABILITIES].sort(),
+    );
+  });
+});
+
+describe('scenario accounting', () => {
+  /** The canonical features, planned as the harness plans them. */
+  const plans = readdirSync(dirname(FEATURES_GLOB))
+    .filter((entry) => extname(entry) === '.feature')
+    .sort()
+    .map((entry) =>
+      planFeature(
+        basename(entry, '.feature'),
+        loadFeature(join(dirname(FEATURES_GLOB), entry)),
+        new Set([Capability.Events, Capability.ConfigurationChange, Capability.Object]),
+      ),
+    );
+
+  const planned = plans.flatMap((plan) =>
+    plan.scenarios.map(({ title }) => ({ feature: plan.feature, name: title })),
+  );
+
+  it('plans one entry for every scenario in the canonical features, examples included', () => {
+    // Counted from the feature files rather than hard-coded per feature, so adding a scenario
+    // upstream does not silently go unplanned.
+    const expected = plans.reduce((total, plan) => total + plan.scenarios.length, 0);
+
+    expect(planned).toHaveLength(expected);
+    expect(expected).toBeGreaterThan(0);
+    expect(plans.map((plan) => plan.feature)).toEqual(['errors', 'evaluation', 'events', 'lifecycle', 'metadata']);
+  });
+
+  it('accounts for every planned scenario exactly once', () => {
+    const recorder = recorderFor([Capability.Events, Capability.ConfigurationChange, Capability.Object]);
+
+    for (const plan of plans) {
+      for (const { title, tags, missing } of plan.scenarios) {
+        const identity = { feature: plan.feature, name: title, tags };
+        if (missing.length) {
+          recorder.skipped(identity, missing);
+        } else {
+          recorder.started(identity)({ durationMs: 0 });
+        }
+      }
+    }
+
+    const report = recorder.build();
+
+    expect(coverageProblems(report.scenarios, planned)).toEqual([]);
+    expect(report.scenarios).toHaveLength(planned.length);
+    // Nothing gated by an undeclared capability may show up as passed.
+    for (const result of report.scenarios) {
+      const gated = (result.tags ?? []).some(
+        (tag) => tag === '@stale' || tag === '@lifecycle' || tag === '@unavailable',
+      );
+      if (gated) {
+        expect(result.outcome).toBe('not-declared');
+      }
+    }
+  });
+
+  it('catches a scenario recorded twice, which is how a skip becomes a pass', () => {
+    const duplicated = [...planned, planned[0]];
+
+    expect(coverageProblems(duplicated, planned)).toEqual([
+      `${planned[0].feature}.feature: ${planned[0].name}: expected 1 outcome(s), recorded 2`,
+    ]);
+  });
+
+  it('catches a scenario that was never recorded', () => {
+    expect(coverageProblems(planned.slice(1), planned)).toEqual([
+      `${planned[0].feature}.feature: ${planned[0].name}: expected 1 outcome(s), recorded 0`,
+    ]);
+  });
+});
+
+describe('writing the report', () => {
+  const previous = process.env[REPORT_DIR_ENV];
+
+  afterEach(() => {
+    if (previous === undefined) {
+      delete process.env[REPORT_DIR_ENV];
+    } else {
+      process.env[REPORT_DIR_ENV] = previous;
+    }
+  });
+
+  it('writes nothing when the environment variable is unset, which is not an error', () => {
+    delete process.env[REPORT_DIR_ENV];
+
+    expect(writeConformanceReport(recorderFor([]), 'in-memory')).toBeUndefined();
+  });
+
+  it('writes one file per suite, named after the suite', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'tck-report-'));
+    process.env[REPORT_DIR_ENV] = dir;
+
+    try {
+      const path = writeConformanceReport(recorderFor([Capability.Events]), 'flagd/rpc');
+
+      expect(path).toBe(join(dir, 'flagd-rpc.json'));
+      expect(JSON.parse(readFileSync(path as string, 'utf8')).schemaVersion).toBe('1');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps a suite name from escaping the directory it was given', () => {
+    // Suite names are chosen to read well in failure messages, not to be path-safe.
+    expect(reportFileName('flagd/rpc')).toBe('flagd-rpc.json');
+    expect(reportFileName('../../etc/passwd')).toBe('etc-passwd.json');
+    expect(reportFileName('///')).toBe('report.json');
+  });
+});

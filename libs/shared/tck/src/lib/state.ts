@@ -135,6 +135,16 @@ export class TckState {
   hasMemory = false;
   readonly recorders = new Map<ServerProviderEvents, EventRecorder>();
 
+  /**
+   * What the provider called itself, observed from the last scenario that registered one.
+   *
+   * Deliberately outlives {@link reset}: it identifies the subject of the whole suite rather than
+   * anything about one scenario, and the conformance report needs it after the last scenario has
+   * finished. A suite in which every scenario was skipped never observes one, which is why the
+   * report falls back to the suite name rather than emitting an empty string.
+   */
+  providerName: string | undefined;
+
   constructor(readonly options: TckOptions) {}
 
   reset(): void {
