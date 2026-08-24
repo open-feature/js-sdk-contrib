@@ -45,9 +45,13 @@ writing test infrastructure, that is a defect here rather than something for you
 Every scenario becomes a Jest test, so `-t` selects one and failures name a scenario.
 
 The feature files, canonical flag set and control-API document are **packaged with the library** and
-located relative to this module rather than to the working directory, so **you need no git submodule
-and no particular repository layout**. The same code path works whether you consume the library from
-inside this workspace or from npm.
+located relative to this module rather than to the working directory, so **adopting the TCK requires
+no git submodule and no particular repository layout** — `npm install` is the whole setup. The same
+code path works whether you consume the library from npm or from inside this workspace.
+
+Contributors to this repository *do* need the submodule, because in-tree the artifacts are read
+straight out of [open-feature/spec][spec] rather than copied. See [Where the artifacts come
+from](#where-the-artifacts-come-from).
 
 > **One suite per file.** jest-cucumber accumulates step definitions in module state, so two
 > `runProviderTck` calls in the same file would register the vocabulary twice and every step would
@@ -114,9 +118,10 @@ definitions never talk to a backend directly, which is why the same Gherkin runs
 containerised backend and against a provider manipulated in-process.
 
 **If your provider talks to a backend, drive it over the HTTP control API** in
-[`openapi/control-api.yaml`](./openapi/control-api.yaml). That API is the normative contract for
-those providers, and it is what makes a conformance claim portable: another language's TCK drives
-the same endpoints against the same stack and must get the same answers.
+[`control-api.yaml`](./spec/specification/assets/provider-tck/openapi/control-api.yaml). That API is
+the normative contract for those providers, and it is what makes a conformance claim portable:
+another language's TCK drives the same endpoints against the same stack and must get the same
+answers.
 
 Two of its requirements are easy to get wrong:
 
@@ -165,10 +170,33 @@ The Go and Python SDKs' in-memory providers cannot update their flag set or emit
 `putConfiguration` and emits the event, so this TCK needs no wrapper class and the in-memory suite
 declares `ConfigurationChange` directly. It is the reference behaviour the other two should grow.
 
+## Where the artifacts come from
+
+The feature files, the canonical flag set and the control-API document are **not owned by this
+repository**. They are the language-agnostic artifacts under `specification/assets/provider-tck/` in
+[open-feature/spec][spec], consumed here through a git submodule at `spec/` and **never copied**: a
+copy would be a second place for the definition of conformance to drift, which is the one thing this
+suite exists to prevent. Changes to them belong upstream.
+
+The two audiences are deliberately different:
+
+- **Adopters need no submodule.** `nx package` copies the artifacts out of the submodule and into
+  the published library, so an `npm install` of `@openfeature/provider-tck` is self-contained.
+- **Contributors do.** Working on the TCK in this repository means the assets are read straight out
+  of the submodule, so a checkout without it cannot load any feature file:
+
+  ```sh
+  git submodule update --init libs/shared/provider-tck/spec
+  ```
+
+  `nx test provider-tck` and `nx package provider-tck` depend on the `pullSpec` target, which runs
+  that for you. CI checks out with `submodules: recursive`.
+
+Prettier is pointed away from `spec/` so it never rewrites artifacts that are consumed byte for byte
+by every language's TCK.
+
 ## Known gaps
 
-- **The assets are vendored, not submoduled.** `features/`, `flags/` and `openapi/` are copies of
-  `specification/assets/provider-tck/` in [open-feature/spec][spec]. Changes belong there.
 - **No HTTP control client yet** — it arrives with the first containerised adopter.
 - **Evaluation context passthrough is unverifiable** without an echo operation on the control API.
 - Caching, hooks and flag metadata are not covered.
