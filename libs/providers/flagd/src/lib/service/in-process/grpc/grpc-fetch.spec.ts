@@ -24,6 +24,7 @@ const setSyncContext = jest.fn();
 
 let onDataCallback: (data: SyncFlagsResponse) => void = () => ({});
 let onErrorCallback: (err: Error) => void = () => ({});
+let onEndCallback: () => void = () => ({});
 
 const serviceMock: FlagSyncServiceClient = {
   getChannel: jest.fn(() => {
@@ -34,11 +35,13 @@ const serviceMock: FlagSyncServiceClient = {
   }),
   syncFlags: jest.fn(() => {
     return {
-      on: jest.fn((event: 'data' | 'error', callback: (data: SyncFlagsResponse | Error) => void) => {
+      on: jest.fn((event: 'data' | 'error' | 'end', callback: (data: SyncFlagsResponse | Error) => void) => {
         if (event === 'data') {
           onDataCallback = callback;
         } else if (event === 'error') {
           onErrorCallback = callback;
+        } else if (event === 'end') {
+          onEndCallback = callback as () => void;
         }
         return {};
       }),
@@ -163,6 +166,71 @@ describe('grpc fetch', () => {
     dataCallback.mockReturnValue(['test']);
 
     // First connection
+    onDataCallback({ flagConfiguration: initFlagConfig });
+  });
+
+  it('should reconnect when stream ends gracefully (server-side OK close)', (done) => {
+    const initFlagConfig = '{"flags":{}}';
+    const reconnectFlagConfig =
+      '{"flags":{"test":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"}}}';
+
+    const fetch = new GrpcFetch(cfg, jest.fn(), serviceMock);
+    fetch
+      .connect(dataCallback, reconnectCallback, changedCallback, disconnectCallback)
+      .then(() => {
+        try {
+          // Server closes the stream gracefully (HTTP/2 END_STREAM with OK status)
+          onEndCallback();
+          // No throttle on graceful close — setTimeout delay is 0
+          jest.runAllTimers();
+          // Reconnect fires a new syncFlags call; simulate the first data on the new stream
+          onDataCallback({ flagConfiguration: reconnectFlagConfig });
+
+          expect(disconnectCallback).toHaveBeenCalledTimes(1);
+          expect(reconnectCallback).toHaveBeenCalledTimes(1);
+          // Old stream must be cleaned up before the new one is opened
+          expect(removeAllListeners).toHaveBeenCalledTimes(1);
+          expect(cancel).toHaveBeenCalledTimes(1);
+          expect(destroy).toHaveBeenCalledTimes(1);
+          done();
+        } catch (err) {
+          done(err);
+        }
+      })
+      .catch((err) => done(err));
+
+    dataCallback.mockReturnValue([]);
+    onDataCallback({ flagConfiguration: initFlagConfig });
+  });
+
+  it('should not double-reconnect on non-OK stream close (end then error)', (done) => {
+    const initFlagConfig = '{"flags":{}}';
+    const reconnectFlagConfig =
+      '{"flags":{"test":{"state":"ENABLED","variants":{"on":true,"off":false},"defaultVariant":"on"}}}';
+
+    const fetch = new GrpcFetch(cfg, jest.fn(), serviceMock);
+    fetch
+      .connect(dataCallback, reconnectCallback, changedCallback, disconnectCallback)
+      .then(() => {
+        try {
+          // grpc-js emits 'end' then 'error' when the server closes with a non-OK status
+          onEndCallback();
+          onErrorCallback(new Error('non-OK status'));
+
+          jest.runAllTimers();
+          onDataCallback({ flagConfiguration: reconnectFlagConfig });
+
+          // Only one reconnect cycle despite both handlers firing
+          expect(disconnectCallback).toHaveBeenCalledTimes(1);
+          expect(reconnectCallback).toHaveBeenCalledTimes(1);
+          done();
+        } catch (err) {
+          done(err);
+        }
+      })
+      .catch((err) => done(err));
+
+    dataCallback.mockReturnValue([]);
     onDataCallback({ flagConfiguration: initFlagConfig });
   });
 
