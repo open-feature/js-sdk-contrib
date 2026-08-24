@@ -1,0 +1,8 @@
+# These artifacts are consumed byte for byte by every language's provider TCK. Normalise to LF so a
+# checkout on Windows does not produce different bytes than one on Linux.
+#
+# Mirrors specification/assets/provider-tck/.gitattributes in open-feature/spec, which is where
+# these files come from.
+features/*.feature text eol=lf
+flags/*.json       text eol=lf
+openapi/*.yaml     text eol=lf

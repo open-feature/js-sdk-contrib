@@ -8,7 +8,9 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default",
-      "extra-files": ["src/lib/traces/tracing-hooks.ts"]
+      "extra-files": [
+        "src/lib/traces/tracing-hooks.ts"
+      ]
     },
     "libs/providers/go-feature-flag": {
       "release-type": "node",
@@ -65,7 +67,9 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default",
-      "extra-files": ["src/lib/launchdarkly-client-provider.ts"]
+      "extra-files": [
+        "src/lib/launchdarkly-client-provider.ts"
+      ]
     },
     "libs/providers/go-feature-flag-web": {
       "release-type": "node",
@@ -82,6 +86,13 @@
       "versioning": "default"
     },
     "libs/shared/ofrep-core": {
+      "release-type": "node",
+      "prerelease": false,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "versioning": "default"
+    },
+    "libs/shared/provider-tck": {
       "release-type": "node",
       "prerelease": false,
       "bump-minor-pre-major": true,
@@ -197,11 +208,11 @@
   "changelog-sections": [
     {
       "type": "fix",
-      "section": "🐛 Bug Fixes"
+      "section": "\ud83d\udc1b Bug Fixes"
     },
     {
       "type": "feat",
-      "section": "✨ New Features"
+      "section": "\u2728 New Features"
     }
   ],
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
