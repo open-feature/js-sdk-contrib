@@ -4,6 +4,17 @@ import { InProcessControl } from './inProcessControl';
 import { runProviderTck } from './runProviderTck';
 
 /**
+ * NOT CURRENTLY RUN -- excluded via `testPathIgnorePatterns` in this project's jest.config.ts.
+ *
+ * This suite fails 24 of 29 scenarios, and the failures are real. `MultiProvider` keys the
+ * evaluation context by object identity, so an ordinary context-free evaluation returns the code
+ * default with `GENERAL`; and it flattens `TYPE_MISMATCH` to `GENERAL`. Both are tracked in
+ * https://github.com/open-feature/js-sdk-contrib/issues/1609.
+ *
+ * It is excluded rather than deleted so that a defect in another library does not block the
+ * conformance suite's own adoption, and so that this file is the regression test for #1609 --
+ * re-enabling it is a one-line change once the provider is fixed.
+ *
  * Runs the conformance suite against the multi-provider wrapping exactly one child.
  *
  * A provider that delegates is still a provider, and delegation is where the contract is easiest to
