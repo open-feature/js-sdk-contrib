@@ -19,3 +19,6 @@
 [submodule "libs/providers/go-feature-flag/wasm-releases"]
 	path = libs/providers/go-feature-flag/wasm-releases
 	url = https://github.com/go-feature-flag/wasm-releases.git
+[submodule "libs/shared/provider-tck/spec"]
+	path = libs/shared/provider-tck/spec
+	url = https://github.com/open-feature/spec
