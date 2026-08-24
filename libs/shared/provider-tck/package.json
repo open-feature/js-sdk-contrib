@@ -1,0 +1,18 @@
+{
+  "name": "@openfeature/provider-tck",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-feature/js-sdk-contrib.git",
+    "directory": "libs/shared/provider-tck"
+  },
+  "license": "Apache-2.0",
+  "scripts": {
+    "publish-if-not-exists": "cp $NPM_CONFIG_USERCONFIG .npmrc && if [ \"$(npm show $npm_package_name@$npm_package_version version)\" = \"$(npm run current-version -s)\" ]; then echo 'already published, skipping'; else npm publish --access public; fi",
+    "current-version": "echo $npm_package_version"
+  },
+  "peerDependencies": {
+    "@openfeature/server-sdk": "^1.17.0",
+    "jest-cucumber": "^4.4.0"
+  }
+}
