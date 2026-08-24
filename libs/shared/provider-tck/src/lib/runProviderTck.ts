@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { autoBindSteps, loadFeatures } from 'jest-cucumber';
 import { OpenFeature } from '@openfeature/server-sdk';
 import { ALL_CAPABILITIES, Capability, capabilityForTag } from './capability';
@@ -8,20 +10,51 @@ import { flagSteps } from './steps/flagSteps';
 import { providerSteps } from './steps/providerSteps';
 
 /**
- * The glob matching the canonical feature files.
+ * Locates a directory of packaged assets, resolved from this module rather than from the working
+ * directory.
  *
- * Workspace-relative, matching `getGherkinTestPath` in `@openfeature/flagd-core`: Nx runs Jest from
- * the workspace root, and this is the established way a shared library in this repo hands its
- * Gherkin to a consuming suite. It does mean the path is only correct for consumers inside this
- * workspace — see the README's known gaps.
+ * The assets ship *inside* the library so that adopting the TCK never requires a git submodule or a
+ * particular repository layout. That rules out a workspace-relative path: it would resolve against
+ * whatever directory the test runner happened to start in, which is the workspace root here and
+ * something else entirely for anyone consuming the published package.
+ *
+ * Two layouts have to work, so both are tried in order:
+ *
+ *   - `<pkg>/features` — the published package, where the rollup `assets` globs place them next to
+ *     the bundle;
+ *   - `<pkg>/../features` — this repository, where the entry point compiles from `src/lib` and the
+ *     assets sit at the library root.
  */
-export const FEATURES_GLOB = 'libs/shared/provider-tck/features/*.feature';
+function resolveAssetDir(name: string): string {
+  const candidates = [
+    join(__dirname, name),
+    join(__dirname, '..', name),
+    join(__dirname, '..', '..', name),
+  ];
+
+  const found = candidates.find((candidate) => existsSync(candidate));
+  if (!found) {
+    throw new Error(
+      `provider-tck: could not locate its packaged '${name}' directory. Looked in:
+` +
+        candidates.map((candidate) => `  ${candidate}`).join('
+') +
+        `
+The conformance assets ship inside this package; if they are missing, the package was ` +
+        `built without its asset globs.`,
+    );
+  }
+  return found;
+}
+
+/** The glob matching the canonical feature files packaged with this library. */
+export const FEATURES_GLOB = join(resolveAssetDir('features'), '*.feature');
 
 /** The canonical flag set, as raw JSON, for a suite that seeds a backend from it. */
-export const CANONICAL_FLAGS_PATH = 'libs/shared/provider-tck/flags/canonical-flags.json';
+export const CANONICAL_FLAGS_PATH = join(resolveAssetDir('flags'), 'canonical-flags.json');
 
 /** The OpenAPI document a containerised backend under test must implement. */
-export const CONTROL_API_PATH = 'libs/shared/provider-tck/openapi/control-api.yaml';
+export const CONTROL_API_PATH = join(resolveAssetDir('openapi'), 'control-api.yaml');
 
 /**
  * Runs the OpenFeature Provider Conformance Suite against the provider described by `options`.
