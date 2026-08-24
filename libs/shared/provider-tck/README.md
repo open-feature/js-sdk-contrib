@@ -44,6 +44,11 @@ writing test infrastructure, that is a defect here rather than something for you
 
 Every scenario becomes a Jest test, so `-t` selects one and failures name a scenario.
 
+The feature files, canonical flag set and control-API document are **packaged with the library** and
+located relative to this module rather than to the working directory, so **you need no git submodule
+and no particular repository layout**. The same code path works whether you consume the library from
+inside this workspace or from npm.
+
 > **One suite per file.** jest-cucumber accumulates step definitions in module state, so two
 > `runProviderTck` calls in the same file would register the vocabulary twice and every step would
 > report as ambiguous. Two resolvers means two spec files.
@@ -162,10 +167,6 @@ declares `ConfigurationChange` directly. It is the reference behaviour the other
 
 ## Known gaps
 
-- **The features are read from a workspace-relative path**, matching `getGherkinTestPath` in
-  `@openfeature/flagd-core`. That works for consumers inside this Nx workspace, which is every
-  current adopter, but an external npm consumer would need the packaged copy instead. Worth
-  revisiting when one exists.
 - **The assets are vendored, not submoduled.** `features/`, `flags/` and `openapi/` are copies of
   `specification/assets/provider-tck/` in [open-feature/spec][spec]. Changes belong there.
 - **No HTTP control client yet** — it arrives with the first containerised adopter.
