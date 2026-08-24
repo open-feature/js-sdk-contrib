@@ -83,6 +83,7 @@ into `test.skip` rather than omitting them, so they stay visible in the report.
 | Capability | Tag | Meaning |
 | --- | --- | --- |
 | `Capability.Events` | `@events` | emits lifecycle events at all |
+| `Capability.Lifecycle` | `@lifecycle` | performs an initialisation that reaches its backend, with an observable outcome — **see below** |
 | `Capability.Stale` | `@stale` | enters `STALE` and emits `PROVIDER_STALE` on backend loss |
 | `Capability.ConfigurationChange` | `@configuration-change` | detects configuration changes and emits `PROVIDER_CONFIGURATION_CHANGED` |
 | `Capability.Object` | `@object` | supports structured flag values |
@@ -93,6 +94,20 @@ into `test.skip` rather than omitting them, so they stay visible in the report.
 
 Untagged scenarios are mandatory and always run. `capabilities` defaults to everything — narrow it
 rather than widening it.
+
+### `@lifecycle` is not `@events`
+
+Provider initialisation used to be gated by `@events`, which was wrong in both directions.
+
+A stateless provider — OFREP, or anything evaluating over a request-scoped call — cannot declare
+`@events`, yet it may well have a real initialisation whose outcome is worth asserting. It was
+locked out of scenarios that were never about events.
+
+The reverse case is worse, because it goes green. **Every SDK synthesises `PROVIDER_READY` for a
+provider with no initialisation step**, so a provider that declares `@events` but does nothing on
+startup passes the readiness scenario without demonstrating anything — a `NoOpProvider` passes it
+identically. Declare `@lifecycle` only if initialisation genuinely contacts your backend and both
+terminal outcomes are observable: READY against a healthy backend, ERROR against an unreachable one.
 
 ## The one place JavaScript cannot answer the shared question
 
@@ -143,8 +158,9 @@ test-only admin client, a shared database handle, a hook inside the provider —
 passes while proving nothing.
 
 Connection-dependent scenarios have no meaning without a connection, so a backend-less control simply
-does not implement `ConnectionControl`, leaves `Stale` and `UnavailableInit` undeclared, and those
-scenarios are skipped with their reason.
+does not implement `ConnectionControl`, leaves `Stale`, `UnavailableInit` and `Lifecycle`
+undeclared, and those scenarios are skipped with their reason. `Lifecycle` belongs in that list for
+the same reason as the other two: there is no backend for initialisation to reach.
 
 ## The self-tests
 
