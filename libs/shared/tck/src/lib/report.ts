@@ -43,7 +43,22 @@ export type Outcome = 'passed' | 'failed' | 'not-declared' | 'not-applicable';
 export interface ScenarioResult {
   /** The feature file, without extension: `errors`. */
   feature: string;
+  /** The scenario name as the feature file writes it; every row of a Scenario Outline shares it. */
   name: string;
+  /**
+   * The Examples row this entry came from, keyed by column header, for a scenario originating from a
+   * Scenario Outline. Omitted otherwise.
+   *
+   * It is a field rather than a naming convention because the parameters *are* the identity and they
+   * come from the feature file rather than from any runner. Mandating a mangled name instead would
+   * put a separator, an ordering and an escaping rule into normative text that four languages must
+   * reproduce byte for byte -- and the three implementations had already diverged on exactly that
+   * point, emitting the bare name, a pytest id and jest-cucumber's expanded title for the same row.
+   *
+   * Values are the cell contents verbatim, as strings, because Gherkin has no types: `1` stays
+   * `"1"`.
+   */
+  example?: Record<string, string>;
   tags?: string[];
   outcome: Outcome;
   /** For a skip, why it was skipped. For a failure, what failed. */
@@ -91,6 +106,8 @@ export interface ConformanceReport {
 export interface ScenarioIdentity {
   feature: string;
   name: string;
+  /** The Examples row, for an outline scenario. Feature and name alone do not identify one. */
+  example?: Record<string, string>;
   tags: readonly string[];
 }
 
@@ -288,6 +305,7 @@ export class ConformanceRecorder {
 export interface ScenarioKey {
   feature: string;
   name: string;
+  example?: Record<string, string>;
 }
 
 /**
@@ -299,13 +317,17 @@ export interface ScenarioKey {
  * passed -- is the bug that bit the Go implementation. Neither is a hypothetical, so the invariant
  * is checked at the end of every run rather than only in a test.
  *
- * Scenario Outline examples routinely share a name, so this compares tallies rather than sets.
+ * A scenario is keyed by feature, name and example together. Every row of a Scenario Outline shares
+ * one name, so keying on the name alone would let eleven rows of the type-mismatch matrix cancel out
+ * against each other: ten recorded and one dropped would tally as ten expected and ten recorded for
+ * a name seen eleven times. Tallies are still compared rather than sets, so that a duplicate is
+ * reported as a duplicate rather than silently absorbed.
  */
 export function coverageProblems(recorded: readonly ScenarioKey[], planned: readonly ScenarioKey[]): string[] {
   const tally = (scenarios: readonly ScenarioKey[]): Map<string, number> => {
     const counts = new Map<string, number>();
     for (const scenario of scenarios) {
-      const key = `${scenario.feature}.feature: ${scenario.name}`;
+      const key = scenarioKey(scenario);
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     return counts;
@@ -330,10 +352,27 @@ export function coverageProblems(recorded: readonly ScenarioKey[], planned: read
   return problems.sort();
 }
 
-function identify(scenario: ScenarioIdentity): Pick<ScenarioResult, 'feature' | 'name' | 'tags'> {
+/**
+ * A scenario's identity as one printable string.
+ *
+ * The example is rendered in Examples-column order rather than sorted, so the key reads like the row
+ * in the feature file.
+ */
+function scenarioKey(scenario: ScenarioKey): string {
+  const example = scenario.example
+    ? ` [${Object.entries(scenario.example)
+        .map(([column, value]) => `${column}=${value}`)
+        .join(' ')}]`
+    : '';
+
+  return `${scenario.feature}.feature: ${scenario.name}${example}`;
+}
+
+function identify(scenario: ScenarioIdentity): Pick<ScenarioResult, 'feature' | 'name' | 'example' | 'tags'> {
   return {
     feature: scenario.feature,
     name: scenario.name,
+    ...(scenario.example ? { example: { ...scenario.example } } : {}),
     ...(scenario.tags.length ? { tags: [...scenario.tags] } : {}),
   };
 }
