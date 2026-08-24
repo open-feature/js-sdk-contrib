@@ -89,9 +89,27 @@ describe('the conformance report', () => {
 
     const report = recorder.build();
 
-    expect(report.capabilities[Capability.Events]).toEqual({ state: 'failed' });
+    // The schema requires a reason for any outcome other than passed, and this is the branch no
+    // passing suite reaches: every self-test suite passes, so nothing that runs end to end builds a
+    // failed capability entry. It is driven with synthetic records for that reason.
+    expect(report.capabilities[Capability.Events]).toEqual({
+      state: 'failed',
+      reason: expect.stringContaining('1 of 1'),
+    });
     expect(report.capabilities[Capability.Object]).toEqual({ state: 'passed' });
     expect(report.scenarios.find((result) => result.name === 'a failing one')?.reason).toBe('boom');
+  });
+
+  it('gives every capability it does report a reason unless it passed', () => {
+    const recorder = recorderFor([Capability.Events, Capability.Object], [Capability.StrictNumericTyping]);
+    recorder.started(scenario('a failing one', ['@events']))({ durationMs: 1, error: new Error('boom') });
+    recorder.started(scenario('a passing one', ['@object']))({ durationMs: 1 });
+
+    for (const [tag, result] of Object.entries(recorder.build().capabilities)) {
+      if (result.state !== 'passed') {
+        expect(`${tag}: ${result.reason ?? ''}`).not.toBe(`${tag}: `);
+      }
+    }
   });
 
   it('reports a scenario that never finished as failed rather than passed', () => {
@@ -137,10 +155,56 @@ describe('the conformance report', () => {
     expect(backend?.controlApi).toBe('in-process');
   });
 
-  it('gives every capability an outcome', () => {
-    expect(Object.keys(recorderFor([Capability.Events]).build().capabilities).sort()).toEqual(
-      [...ALL_CAPABILITIES].sort(),
-    );
+  it('reports every capability the run had something to say about', () => {
+    // Everything undeclared is reported as such; the one declared capability here is omitted only
+    // because nothing exercised it, which the next tests are about.
+    const recorder = recorderFor([Capability.Events]);
+    recorder.started(scenario('a passing one', ['@events']))({ durationMs: 1 });
+
+    expect(Object.keys(recorder.build().capabilities).sort()).toEqual([...ALL_CAPABILITIES].sort());
+  });
+
+  it('omits a declared capability that no scenario in the suite carries', () => {
+    // @targeting is reserved: it is in the vocabulary and no scenario carries the tag, because
+    // asserting that an evaluation context reached the backend needs an echo operation the control
+    // API does not have. Reporting it as passed would be a green result for a claim nothing
+    // examined -- the vacuous pass the capability vocabulary exists to eliminate, arriving through
+    // the report instead of through the suite. Omitting it says the suite asked no question.
+    const recorder = recorderFor([Capability.Events, Capability.Targeting]);
+    recorder.started(scenario('a passing one', ['@events']))({ durationMs: 1 });
+
+    const { capabilities } = recorder.build();
+
+    expect(capabilities).not.toHaveProperty(Capability.Targeting);
+    expect(capabilities[Capability.Events]).toEqual({ state: 'passed' });
+  });
+
+  it('omits a declared capability whose every scenario was skipped for another one', () => {
+    // The same vacuous pass by a different route. Both scenarios in events.feature carry @events as
+    // well as @stale or @configuration-change, so a provider declaring @events and neither of the
+    // others has nothing that ran to show for it. Counting tag presence rather than execution
+    // reported that as passed.
+    const recorder = recorderFor([Capability.Events]);
+    recorder.skipped(scenario('a configuration change is applied', ['@events', '@configuration-change']), [
+      Capability.ConfigurationChange,
+    ]);
+    recorder.skipped(scenario('losing the backend', ['@events', '@stale']), [Capability.Stale]);
+
+    const { capabilities } = recorder.build();
+
+    expect(capabilities).not.toHaveProperty(Capability.Events);
+    expect(capabilities[Capability.Stale].state).toBe('not-declared');
+  });
+
+  it('still reports a capability the provider does not declare, so a gap stays visible', () => {
+    // Omission is only ever for a declared capability. An undeclared one is a fact about the
+    // provider and has to be stated.
+    const capabilities = recorderFor([]).build().capabilities;
+
+    expect(capabilities[Capability.Targeting]).toEqual({
+      state: 'not-declared',
+      reason: expect.stringContaining('not declared'),
+    });
   });
 });
 
