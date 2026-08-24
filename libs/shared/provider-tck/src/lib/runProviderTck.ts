@@ -35,12 +35,9 @@ function resolveAssetDir(name: string): string {
   const found = candidates.find((candidate) => existsSync(candidate));
   if (!found) {
     throw new Error(
-      `provider-tck: could not locate its packaged '${name}' directory. Looked in:
-` +
-        candidates.map((candidate) => `  ${candidate}`).join('
-') +
-        `
-The conformance assets ship inside this package; if they are missing, the package was ` +
+      `provider-tck: could not locate its packaged '${name}' directory. ` +
+        `Looked in: ${candidates.join(', ')}. ` +
+        `The conformance assets ship inside this package; if they are missing, it was ` +
         `built without its asset globs.`,
     );
   }
