@@ -1,5 +1,6 @@
 import type { StepDefinitions } from 'jest-cucumber';
 import { ProviderStatus, ServerProviderEvents } from '@openfeature/server-sdk';
+import type { EventDetails } from '@openfeature/server-sdk';
 import { asConnectionControl, unsupportedControl } from '../control';
 import { eventTimeout } from '../options';
 import { EventRecorder } from '../state';
@@ -73,12 +74,18 @@ export const eventSteps =
 
       if (!recorder.last) {
         throw new Error(
-          'no configuration-change event has been consumed in this scenario: a "the change event ' +
-            'handler should have been executed" step must come first',
+          'no configuration-change event carrying a payload has been consumed in this scenario: a ' +
+            '"the change event handler should have been executed" step must come first, and the ' +
+            'event must arrive with details',
         );
       }
 
-      const changed = recorder.last.flagsChanged ?? [];
+      // `flagsChanged` is declared only on the configuration-change payload, so on the union of all
+      // event payloads it resolves through their `Record<string, unknown>` index signature and
+      // widens to `unknown`. Narrowing to the change payload restores `string[] | undefined`, and it
+      // is sound because this recorder is by construction the change recorder.
+      const changeDetails = recorder.last as EventDetails<ServerProviderEvents.ConfigurationChanged>;
+      const changed = changeDetails.flagsChanged ?? [];
       if (changed.includes(flag.key)) {
         return;
       }
