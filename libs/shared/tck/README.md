@@ -588,6 +588,57 @@ Install it in the adopting project — `npm i -D testcontainers` — if you use 
 `runProviderTck` remains the path for a provider with no backend, which supplies its own
 `BackendControl`. Compose is an additional path, and now the default one, for a provider that talks
 to something.
+## Conformance reports
+
+Set `PROVIDER_TCK_REPORT_DIR` and each suite writes a machine-readable report of its run to
+`<dir>/<name>.json`, conforming to the [report schema][report-schema] in the specification.
+
+```console
+$ PROVIDER_TCK_REPORT_DIR=./reports npx jest
+$ jq '.scenarios | group_by(.outcome) | map({(.[0].outcome): length}) | add' reports/in-memory.json
+{
+  "passed": 24,
+  "not-declared": 4,
+  "not-applicable": 1
+}
+```
+
+It is an environment variable rather than a `TckOptions` field so that emitting a report is a
+property of the *run* and not of the code: CI sets it, a developer running the suite locally does
+not, and no adopter changes a line to publish one. Unset means no report, which is not an error.
+Several suites in one run each write their own file, so flagd's two resolvers do not collide.
+
+**Every scenario appears exactly once**, whatever its outcome. That is what makes Appendix F's rule
+— a scenario skipped for an undeclared capability is reported as skipped and *never* as passed —
+checkable by a consumer rather than dependent on the runner's summary being trustworthy. The
+harness checks the accounting itself at the end of every run, report or no report, and fails the
+suite if a scenario is missing or recorded twice.
+
+Outcomes are recorded where the decision is made rather than scraped back out of a Jest reporter:
+jest-cucumber accepts the `describe`/`test` pair it calls, so the harness wraps them and records a
+skip at the point it is chosen and a pass or failure at the point the test body settles. A scenario
+is registered when it is *defined*, so one Jest never finished — a timeout, or a `-t` filter — still
+appears, as a failure that says so. **A report from a filtered run is partial by construction; do
+not publish one.**
+
+Two fields are worth reading carefully:
+
+- **`provider.name` is what the provider reports through its own metadata**, not the suite name. The
+  suite name is chosen to read well in a failure message — `flagd-rpc` — which makes it the
+  *configuration*, and it is reported as such. One provider with two materially different modes
+  produces two reports that are not interchangeable.
+- **`tck.specRevision` and `tck.assetsTree`** come from
+  [`src/lib/revision.ts`](./src/lib/revision.ts), which
+  [`scripts/write-revision.js`](./scripts/write-revision.js) generates from the submodule. They are
+  captured at build time because the submodule is not part of the published npm package. The tree
+  hash is carried as well as the commit because it identifies the artifacts alone: it is unchanged
+  by unrelated edits elsewhere in the specification, so two runs that executed identical artifacts
+  report the same value even when pinned to different commits — and it is checkable, since
+  `git rev-parse <specRevision>:specification/assets/provider-tck` must reproduce it.
+
+`backend.controlApi` reports how the backend was driven. It is an optional member of
+`BackendControl`, so adding it broke no existing implementation; a control that omits it omits the
+field, which claims nothing either way.
 
 ## Controlling the backend
 
@@ -789,6 +840,12 @@ The two audiences are deliberately different:
   `nx test tck` and `nx package tck` depend on the `pullSpec` target, which runs
   that for you. CI checks out with `submodules: recursive`.
 
+`pullSpec` also regenerates [`src/lib/revision.ts`](./src/lib/revision.ts) from the submodule, so
+the revision a conformance report names is refreshed by the same command that checks the artifacts
+out. That file is committed, because a plain `jest` invocation does not go through Nx and a source
+tree without git should still compile; if git or the submodule is unavailable the generator says so
+and leaves the committed values alone rather than overwriting them with a guess.
+
 Prettier is pointed away from `spec/` so it never rewrites artifacts that are consumed byte for byte
 by every language's TCK.
 
@@ -821,6 +878,7 @@ by every language's TCK.
 [appendix-a]: https://github.com/open-feature/spec/blob/main/specification/appendix-a-included-utilities.md
 [flagd-testbed]: https://github.com/open-feature/flagd-testbed
 [coercion-adr]: https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/numeric-coercion.md
+[report-schema]: https://github.com/open-feature/spec/blob/main/specification/assets/provider-tck/report/conformance-report.schema.json
 [appendix-f]: https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md
 [spec]: https://github.com/open-feature/spec
 [tracking]: https://github.com/open-feature/spec/issues/417

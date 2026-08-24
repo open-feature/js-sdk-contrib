@@ -1,13 +1,13 @@
 import { loadFeatures, parseFeature } from 'jest-cucumber';
 import { Capability } from './capability';
-import { planScenarios, skipDisplayName } from './scenarioRunner';
+import { planFeature, skipDisplayName } from './scenarioRunner';
 import { FEATURES_GLOB } from './runProviderTck';
 
 /** The canonical features, with `@object` deliberately undeclared so its scenarios are gated. */
 const features = loadFeatures(FEATURES_GLOB);
 
 const plansWithout = (...declared: Capability[]) =>
-  features.flatMap((parsed) => planScenarios(parsed, new Set(declared)));
+  features.flatMap((parsed) => planFeature('synthetic', parsed, new Set(declared)).scenarios);
 
 describe('the capability gate', () => {
   it('names every skipped scenario with the reason it was skipped', () => {
@@ -78,7 +78,7 @@ describe('the capability gate', () => {
       ].join('\n'),
     );
 
-    const planned = planScenarios(parsed, new Set([Capability.Events]));
+    const planned = planFeature('mixed', parsed, new Set([Capability.Events])).scenarios;
 
     expect(planned.map((scenario) => [scenario.title, scenario.missing])).toEqual([
       ['a plain flag', []],
@@ -91,7 +91,7 @@ describe('the capability gate', () => {
     // Feature files are discovered from the asset directory rather than enumerated, so a file
     // arriving upstream is picked up without a wiring change here. This pins that it was: a
     // feature the harness quietly failed to load would be the one kind of gap nothing else reports.
-    expect(features.map((parsed) => parsed.title).sort()).toEqual([
+    expect(features.map(({ parsed }) => parsed.title).sort()).toEqual([
       'Provider error handling',
       'Provider events',
       'Provider flag evaluation',

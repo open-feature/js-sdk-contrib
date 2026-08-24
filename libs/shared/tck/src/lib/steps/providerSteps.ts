@@ -27,6 +27,10 @@ export const providerSteps =
       state.provider = provider;
 
       const domain = domainFor(state.options);
+      // The conformance report names the provider as the provider names itself, not as the suite
+      // names it. Recorded before registration so that a provider whose initialisation fails is
+      // still identified.
+      state.providerName = provider.metadata?.name || state.providerName;
 
       try {
         await withTimeout(
@@ -56,6 +60,7 @@ export const providerSteps =
       const provider = await state.options.newUnavailableProvider();
       state.provider = provider;
       const domain = domainFor(state.options);
+      state.providerName = provider.metadata?.name || state.providerName;
 
       // Registration is expected to reject, because the provider cannot reach anything. That is not
       // a failure: what the contract requires is an observable error state, which the scenario

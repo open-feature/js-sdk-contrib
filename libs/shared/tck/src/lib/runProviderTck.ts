@@ -7,7 +7,9 @@ import { expiredReservations } from './capability';
 import { featureFiles, resolveExtensionFeatures } from './extensions';
 import type { TckOptions } from './options';
 import { eventTimeout, readyTimeout, resolveCapabilities } from './options';
-import { planScenarios, scenarioRunner } from './scenarioRunner';
+import { ConformanceRecorder, coverageProblems, writeConformanceReport } from './report';
+import type { FeaturePlan } from './scenarioRunner';
+import { planFeature, scenarioRunner } from './scenarioRunner';
 import { TckState } from './state';
 import { eventSteps } from './steps/eventSteps';
 import { flagSteps } from './steps/flagSteps';
@@ -133,6 +135,14 @@ export function runProviderTck(options: TckOptions): void {
   // reporting every step as ambiguous.
   registerSuiteUnderTest(state);
 
+  const recorder = new ConformanceRecorder({
+    suiteName: options.name,
+    control: options.control,
+    declared,
+    notApplicable: new Set(notApplicable.keys()),
+    observedProviderName: () => state.providerName,
+  });
+
   // Undeclared capabilities are excluded here, which marks their scenarios `skippedViaTagFilter`.
   // jest-cucumber turns that into `test.skip`, so they are reported as SKIPPED rather than quietly
   // omitted -- which is the whole point. The reason travels in the scenario name, because Jest has
@@ -146,10 +156,7 @@ export function runProviderTck(options: TckOptions): void {
     ...loadExtensionFeatures(asList(options.extensionFeatures), tagFilter),
   ];
 
-  // jest-cucumber owns the test and test.skip calls and accepts a runner to make them through, so
-  // the harness supplies one per feature. That is the only seam that reaches a Scenario Outline's
-  // example rows: `scenarioNameTemplate` never does.
-  const plans = features.map(({ parsed }) => planScenarios(parsed, declared));
+  const plans: FeaturePlan[] = features.map(({ feature, parsed }) => planFeature(feature, parsed, declared));
 
   // Which capabilities are reserved is recorded here but decided upstream, so it is checked against
   // the features that actually ran rather than trusted. A reservation whose scenario has since been
@@ -157,7 +164,9 @@ export function runProviderTck(options: TckOptions): void {
   // and just as quiet. Only the canonical set can expire a reservation: an adopter's own feature
   // reaching for a reserved tag is a mistake in that file, not news about the specification.
   const expired = expiredReservations(
-    plans.flatMap((plan, position) => (features[position].canonical ? plan.flatMap((scenario) => scenario.tags) : [])),
+    plans.flatMap((plan, position) =>
+      features[position].canonical ? plan.scenarios.flatMap((scenario) => scenario.tags) : [],
+    ),
   );
   if (expired.length) {
     throw new Error(
@@ -168,8 +177,12 @@ export function runProviderTck(options: TckOptions): void {
     );
   }
 
+  // jest-cucumber owns the test and test.skip calls, and accepts a runner to make them through, so
+  // the harness supplies one per feature. Recording the outcome there means it is captured where the
+  // decision is made rather than scraped back out of a reporter afterwards, and it is the only seam
+  // that reaches a Scenario Outline's example rows.
   features.forEach(({ parsed }, position) => {
-    parsed.options.runner = scenarioRunner(parsed.title, plans[position]);
+    parsed.options.runner = scenarioRunner(plans[position], recorder);
   });
 
   const extensions = features.filter(({ canonical }) => !canonical).map(({ feature }) => feature);
@@ -220,5 +233,28 @@ export function runProviderTck(options: TckOptions): void {
       features.map(({ parsed }) => parsed),
       [providerSteps(state), flagSteps(state), eventSteps(state), ...asList<StepDefinitions>(options.extensionSteps)],
     );
+
+    afterAll(() => {
+      // Appendix F's rule is that a scenario skipped for an undeclared capability is reported as
+      // skipped and never as passed. That is only checkable if the report accounts for every
+      // scenario, so the accounting is verified here rather than assumed -- in every run, not only
+      // when a report is being written.
+      const planned = plans.flatMap((plan) =>
+        plan.scenarios.map(({ title }) => ({ feature: plan.feature, name: title })),
+      );
+      const problems = coverageProblems(recorder.results, planned);
+      if (problems.length) {
+        throw new Error(
+          `tck [${options.name}]: the conformance report does not account for every ` +
+            `scenario exactly once, so it cannot be trusted:\n  ${problems.join('\n  ')}`,
+        );
+      }
+
+      const path = writeConformanceReport(recorder, options.name);
+      if (path) {
+        // eslint-disable-next-line no-console
+        console.log(`tck [${options.name}]: conformance report written to ${path}`);
+      }
+    });
   });
 }

@@ -45,5 +45,8 @@ export type { HttpControlOptions } from './lib/httpControl';
 export { InProcessControl } from './lib/inProcessControl';
 export { DEFAULT_EVENT_TIMEOUT_MS, DEFAULT_READY_TIMEOUT_MS, domainFor } from './lib/options';
 export type { ProviderFactory, TckOptions } from './lib/options';
+export { REPORT_DIR_ENV } from './lib/report';
+export type { CapabilityResult, ConformanceReport, Outcome, ScenarioResult } from './lib/report';
+export { ASSETS_TREE, SPEC_REVISION } from './lib/revision';
 export { CANONICAL_FLAGS_PATH, CONTROL_API_PATH, FEATURES_GLOB, runProviderTck } from './lib/runProviderTck';
 export { clientUnderTest, providerUnderTest } from './lib/underTest';
