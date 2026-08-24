@@ -1,4 +1,14 @@
-import type { FlagConfiguration } from '@openfeature/server-sdk';
+import type { InMemoryProvider } from '@openfeature/server-sdk';
+
+/**
+ * The in-memory provider's flag configuration.
+ *
+ * Derived from the constructor rather than imported: `@openfeature/server-sdk` declares
+ * `FlagConfiguration` in its type definitions but does not re-export it from the package entry
+ * point, so importing it directly is a TS2459. Deriving it keeps this in lockstep with whatever the
+ * SDK actually accepts.
+ */
+export type FlagConfiguration = ConstructorParameters<typeof InMemoryProvider>[0];
 
 /** The flag {@link BackendControl.changeFlag} mutates. */
 export const CHANGING_FLAG_KEY = 'changing-flag';

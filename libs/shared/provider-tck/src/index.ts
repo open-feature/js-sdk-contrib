@@ -20,6 +20,7 @@ export { ALL_CAPABILITIES, Capability, capabilityForTag } from './lib/capability
 export { asConnectionControl, unsupportedControl } from './lib/control';
 export type { BackendControl, ConnectionControl } from './lib/control';
 export { CHANGING_BASELINE, CHANGING_CHANGED, CHANGING_FLAG_KEY, canonicalFlagSet } from './lib/flags';
+export type { FlagConfiguration } from './lib/flags';
 export { InProcessControl } from './lib/inProcessControl';
 export { DEFAULT_EVENT_TIMEOUT_MS, DEFAULT_READY_TIMEOUT_MS, domainFor } from './lib/options';
 export type { ProviderFactory, TckOptions } from './lib/options';
