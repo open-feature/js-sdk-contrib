@@ -8,9 +8,7 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default",
-      "extra-files": [
-        "src/lib/traces/tracing-hooks.ts"
-      ]
+      "extra-files": ["src/lib/traces/tracing-hooks.ts"]
     },
     "libs/providers/go-feature-flag": {
       "release-type": "node",
@@ -67,9 +65,7 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default",
-      "extra-files": [
-        "src/lib/launchdarkly-client-provider.ts"
-      ]
+      "extra-files": ["src/lib/launchdarkly-client-provider.ts"]
     },
     "libs/providers/go-feature-flag-web": {
       "release-type": "node",
@@ -208,11 +204,11 @@
   "changelog-sections": [
     {
       "type": "fix",
-      "section": "\ud83d\udc1b Bug Fixes"
+      "section": "🐛 Bug Fixes"
     },
     {
       "type": "feat",
-      "section": "\u2728 New Features"
+      "section": "✨ New Features"
     }
   ],
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
