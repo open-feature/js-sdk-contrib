@@ -17,10 +17,16 @@ export const typeFactory = (
   switch (type) {
     case 'string':
       return value !== null && typeof value !== 'undefined' ? `${value}` : value;
-    case 'number':
-      return typeof value === 'number' ? value : parseFloat(value as string) || value;
+    case 'number': {
+      if (typeof value === 'number') return value;
+      if (typeof value === 'string' && value.trim() !== '') {
+        const parsed = Number(value);
+        if (!Number.isNaN(parsed)) return parsed;
+      }
+      return value;
+    }
     case 'boolean':
-      return typeof value === 'boolean' ? value : false;
+      return value;
     case 'object':
       if (typeof value === 'string') {
         try {

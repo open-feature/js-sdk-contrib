@@ -19,7 +19,8 @@ export const configSteps: Steps = (state: State) => {
     beforeEach(() => {
       state.options = {};
       state.config = undefined;
-      state.events = [];
+      state.assertedEvents = [];
+      state.allEvents = [];
       Object.keys(process.env)
         .filter((key) => !Object.prototype.hasOwnProperty.call(originalEnv, key))
         .forEach((key) => delete process.env[key]);

@@ -42,6 +42,7 @@ import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import type { FlagCache, MetadataCache } from './model/in-memory-cache';
 import type { CacheMode, OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
 import { DEFAULT_CACHE_TTL_SECONDS } from './model/ofrep-web-provider-options';
+import { defaultCacheKeyGenerator, deriveAuthCredential } from './store/cache-key';
 import { Storage } from './store/storage';
 import { SseManager } from './sse-manager';
 
@@ -52,6 +53,7 @@ export class OFREPWebProvider implements Provider {
     name: 'OpenFeature Remote Evaluation Protocol Web Provider',
   };
   readonly runsOn = 'client';
+  readonly domainScoped = true;
   readonly events = new OpenFeatureEventEmitter();
   readonly hooks?: Hook[] | undefined;
 
@@ -66,7 +68,7 @@ export class OFREPWebProvider implements Provider {
   private _isUsingCache: boolean;
   private _context: EvaluationContext | undefined;
   private _pollingIntervalId?: number;
-  private _storage: Storage;
+  private _storage?: Storage;
   private _cacheMode: CacheMode;
   private _cacheTTL: number;
   private _contextRevision = 0;
@@ -85,7 +87,6 @@ export class OFREPWebProvider implements Provider {
     this._pollingInterval = this._options.pollInterval ?? this.DEFAULT_POLL_INTERVAL;
     this._cacheMode = this._options.cacheMode ?? 'local-cache-first';
     this._cacheTTL = this._options.cacheTTL ?? DEFAULT_CACHE_TTL_SECONDS;
-    this._storage = new Storage(this._cacheMode, this._options.cacheKeyPrefix, logger);
     this._isUsingCache = false;
   }
 
@@ -99,9 +100,18 @@ export class OFREPWebProvider implements Provider {
   /**
    * Initialize the provider, it will evaluate the flags and start the polling if it is not disabled.
    * @param context - the context to use for the evaluation
+   * @param domain - the bound OpenFeature domain, if any
    */
-  async initialize(context?: EvaluationContext | undefined): Promise<void> {
+  async initialize(context?: EvaluationContext | undefined, domain?: string): Promise<void> {
     try {
+      this._storage = new Storage(
+        this._cacheMode,
+        this._options.baseUrl,
+        () => deriveAuthCredential(this._options),
+        domain ?? '',
+        this._options.cacheKeyGenerator ?? defaultCacheKeyGenerator,
+        this._logger,
+      );
       this._context = context;
 
       let result: EvaluateFlagsResponse | undefined;
@@ -178,7 +188,7 @@ export class OFREPWebProvider implements Provider {
     try {
       if (oldContext?.targetingKey !== newContext?.targetingKey) {
         this._etag = null;
-        void this._storage.clear(oldContext?.targetingKey ?? '');
+        void this._storage?.clear(oldContext);
       }
       this._context = newContext;
 
@@ -236,6 +246,7 @@ export class OFREPWebProvider implements Provider {
     }
     this._sseManager?.dispose();
     this._sseManager = undefined;
+    this._storage = undefined;
     this._ofrepAPI.close();
     return Promise.resolve();
   }
@@ -262,7 +273,7 @@ export class OFREPWebProvider implements Provider {
         throw error;
       }
       // Transient / server errors (5xx, network failures, timeouts) — try the persisted cache as a fallback.
-      const cached = await this._storage.retrieve(context?.targetingKey ?? '', this._cacheTTL);
+      const cached = await this._storage?.retrieve(context ?? {}, this._cacheTTL);
       if (!cached) {
         throw error; // No usable cache — propagate the original error.
       }
@@ -341,13 +352,7 @@ export class OFREPWebProvider implements Provider {
       this._flagSetMetadataCache = toFlagMetadata(
         typeof bulkSuccessResp.metadata === 'object' ? bulkSuccessResp.metadata : {},
       );
-      await this._storage.store(
-        context?.targetingKey ?? '',
-        newCache,
-        newEtag,
-        this._flagSetMetadataCache,
-        this._eventStreams,
-      );
+      await this._storage?.store(context ?? {}, newCache, newEtag, this._flagSetMetadataCache, this._eventStreams);
       this._etag = newEtag;
       this._isUsingCache = false;
       return {
@@ -492,6 +497,9 @@ export class OFREPWebProvider implements Provider {
           this._options.inactivityDelaySec,
           this._logger,
           this._options.baseUrl,
+          // Leave EventSource implementation as the default; only tests inject a mock
+          undefined,
+          this._options.sseEventParser,
         );
       }
       this._sseManager.connect(result.eventStreams);
@@ -547,9 +555,10 @@ export class OFREPWebProvider implements Provider {
       return;
     }
 
-    // Polling is disabled — retry SSE with exponential backoff (1 s → 2 s → 4 s … capped at 60 s)
+    // Polling is disabled — retry SSE with exponential backoff (1 s → 2 s → 4 s … capped at 60 s).
+    // Any non-positive pollInterval means polling is disabled, so treat negatives the same as 0.
     const changeDetection = this._options.changeDetection ?? 'sse';
-    if (this._pollingInterval === 0 && changeDetection !== 'none') {
+    if (this._pollingInterval <= 0 && changeDetection !== 'none') {
       const delayMs = Math.min(1_000 * Math.pow(2, this._sseRetryCount), 60_000);
       this._sseRetryCount++;
       this._logger?.info(`SSE error — polling disabled, retrying SSE in ${delayMs}ms (attempt ${this._sseRetryCount})`);
@@ -617,7 +626,7 @@ export class OFREPWebProvider implements Provider {
   }
 
   private async _tryLoadFlagsFromCache(context?: EvaluationContext | undefined): Promise<boolean> {
-    const cached = await this._storage.retrieve(context?.targetingKey ?? '', this._cacheTTL);
+    const cached = await this._storage?.retrieve(context ?? {}, this._cacheTTL);
     if (cached) {
       this._isUsingCache = true;
       this._flagCache = cached.flags;

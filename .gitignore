@@ -53,3 +53,4 @@ yalc.lock
 .verdaccio
 
 .claude/worktrees
+.worktrees/

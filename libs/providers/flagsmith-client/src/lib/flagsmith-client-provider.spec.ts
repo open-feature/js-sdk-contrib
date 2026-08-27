@@ -6,15 +6,21 @@ import {
   defaultStateWithoutEnvironment,
   exampleBooleanFlag,
   exampleBooleanFlagName,
+  exampleDisabledFlagName,
   exampleFloatFlagName,
   exampleJSONFlagName,
   exampleNumericFlagName,
   exampleStringFlagName,
+  exampleVariantFlag,
+  exampleVariantFlagName,
+  exampleFlagsmithResponse,
   getFetchErrorMock,
+  getFetchMock,
   CACHE_KEY,
 } from './flagsmith.mocks';
 import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
-import { createFlagsmithInstance } from 'flagsmith';
+import { createFlagsmithInstance } from '@flagsmith/flagsmith';
+import { EXPOSURE_TRACKING_EVENT } from './tracking';
 
 const logger = {
   error: jest.fn(),
@@ -294,6 +300,81 @@ describe('FlagsmithProvider', () => {
       expect(details.reason).toEqual('DEFAULT');
     });
   });
+  describe('resolution details', () => {
+    const setup = async (targetingKey?: string) => {
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({ ...config, logger });
+      if (targetingKey) await OpenFeature.setContext({ targetingKey });
+      await OpenFeature.setProviderAndWait(provider);
+      return OpenFeature.getClient();
+    };
+
+    it('populates variant and experiment metadata for multivariate flags', async () => {
+      const client = await setup();
+      const details = client.getStringDetails(exampleVariantFlagName, 'fallback');
+      expect(details.value).toBe('treatment-value');
+      expect(details.variant).toBe('treatment');
+      expect(details.flagMetadata).toEqual({
+        enabled: true,
+        featureId: 6,
+        'experiment.arm': 'treatment',
+        'experiment.active': true,
+        'experiment.unit': 'user',
+      });
+    });
+
+    it('populates base metadata without experiment keys for plain flags', async () => {
+      const client = await setup();
+      const details = client.getStringDetails(exampleStringFlagName, 'fallback');
+      expect(details.variant).toBeUndefined();
+      expect(details.flagMetadata).toEqual({ enabled: true, featureId: 2 });
+    });
+
+    it('reports DEFAULT with the default value for missing flags', async () => {
+      const client = await setup();
+      const details = client.getStringDetails('missing_flag', 'fallback');
+      expect(details.value).toBe('fallback');
+      expect(details.reason).toBe('DEFAULT');
+    });
+
+    it('honors the boolean defaultValue for missing flags', async () => {
+      const client = await setup();
+      const details = client.getBooleanDetails('missing_flag', true);
+      expect(details.value).toBe(true);
+      expect(details.reason).toBe('DEFAULT');
+    });
+
+    it('reports DISABLED but keeps the configured value for disabled flags', async () => {
+      const client = await setup();
+      const details = client.getStringDetails(exampleDisabledFlagName, 'fallback');
+      expect(details.value).toBe('disabled-value');
+      expect(details.reason).toBe('DISABLED');
+      expect(details.flagMetadata).toEqual({ enabled: false, featureId: 7 });
+    });
+
+    it('reports STATIC for anonymous server-sourced evaluations', async () => {
+      const client = await setup();
+      expect(client.getStringDetails(exampleStringFlagName, 'fallback').reason).toBe('STATIC');
+    });
+
+    it('reports TARGETING_MATCH for identified server-sourced evaluations', async () => {
+      const client = await setup('test-user');
+      expect(client.getStringDetails(exampleStringFlagName, 'fallback').reason).toBe('TARGETING_MATCH');
+    });
+
+    it('reports DEFAULT for flags served from defaultFlags', async () => {
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({
+        ...config,
+        logger,
+        defaultFlags: defaultState.flags,
+        preventFetch: true,
+      });
+      await OpenFeature.setProviderAndWait(provider);
+      expect(OpenFeature.getClient().getStringDetails(exampleStringFlagName, 'fallback').reason).toBe('DEFAULT');
+    });
+  });
+
   describe('events', () => {
     it('should call the ready handler when initialized', async () => {
       const config = defaultConfig();
@@ -323,6 +404,30 @@ describe('FlagsmithProvider', () => {
         expect.objectContaining({ message: 'Please provide `evaluationContext.environment` with non-empty `apiKey`' }),
       );
     });
+    it('does not leak traits into event payloads', async () => {
+      const config = {
+        ...defaultConfig(),
+        fetch: getFetchMock({
+          default: exampleFlagsmithResponse,
+          'api/v1/identities': {
+            flags: exampleFlagsmithResponse,
+            traits: [{ trait_key: 'secret', trait_value: 'pii-value' }],
+          },
+        }),
+      };
+      const provider = new FlagsmithClientProvider({ ...config, logger });
+      const readyHandler = jest.fn();
+      OpenFeature.addHandler(ProviderEvents.Ready, readyHandler);
+      await OpenFeature.setContext({ targetingKey: 'test-user', traits: { secret: 'pii-value' } });
+      await OpenFeature.setProviderAndWait(provider);
+      const payloads = readyHandler.mock.calls.map(([details]) => details);
+      expect(payloads.length).toBeGreaterThan(0);
+      expect(payloads.some((payload) => payload?.metadata?.targetingKey === 'test-user')).toBe(true);
+      for (const payload of payloads) {
+        expect(JSON.stringify(payload)).not.toContain('pii-value');
+      }
+    });
+
     it('should call the stale handler when context changed', async () => {
       const config = defaultConfig();
       const provider = new FlagsmithClientProvider({ ...config });
@@ -333,6 +438,31 @@ describe('FlagsmithProvider', () => {
       await contextChange;
     });
   });
+  describe('onClose', () => {
+    it('stops listening and flushes buffered events', async () => {
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({ ...config, logger });
+      await OpenFeature.setProviderAndWait(provider);
+      const stopSpy = jest.spyOn(provider.flagsmithClient, 'stopListening').mockImplementation(() => undefined);
+      const flushSpy = jest.spyOn(provider.flagsmithClient, 'flushEvents').mockResolvedValue(undefined);
+      await provider.onClose();
+      expect(stopSpy).toHaveBeenCalledTimes(1);
+      expect(flushSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not stop a caller-provided shared instance listening', async () => {
+      const instance = createFlagsmithInstance();
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({ ...config, logger, flagsmithInstance: instance });
+      await OpenFeature.setProviderAndWait(provider);
+      const stopSpy = jest.spyOn(instance, 'stopListening').mockImplementation(() => undefined);
+      const flushSpy = jest.spyOn(instance, 'flushEvents').mockResolvedValue(undefined);
+      await provider.onClose();
+      expect(stopSpy).not.toHaveBeenCalled();
+      expect(flushSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('context', () => {
     it('should initialize without the targeting key, identify when provided and logout when not provided again', async () => {
       const targetingKey = 'test';
@@ -399,6 +529,117 @@ describe('FlagsmithProvider', () => {
       );
     });
   });
+  describe('track', () => {
+    const targetingKey = 'test-user';
+
+    const setup = async (opts: { enableEvents?: boolean; withIdentity?: boolean } = {}) => {
+      const config = defaultConfig();
+      const provider = new FlagsmithClientProvider({
+        ...config,
+        logger,
+        ...(opts.enableEvents === false ? {} : { enableEvents: true }),
+      });
+      if (opts.withIdentity !== false) await OpenFeature.setContext({ targetingKey });
+      await OpenFeature.setProviderAndWait(provider);
+      const client = provider.flagsmithClient;
+      return {
+        provider,
+        trackEvent: jest.spyOn(client, 'trackEvent').mockImplementation(() => undefined),
+        trackExposureEvent: jest.spyOn(client, 'trackExposureEvent').mockImplementation(() => undefined),
+        getExperimentFlag: jest.spyOn(client, 'getExperimentFlag').mockImplementation(() => null),
+      };
+    };
+
+    it('drops everything when events are disabled', async () => {
+      const { provider, trackEvent, trackExposureEvent } = await setup({ enableEvents: false });
+      provider.track('purchase', { targetingKey }, { value: 99.77 });
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: exampleVariantFlagName });
+      expect(trackEvent).not.toHaveBeenCalled();
+      expect(trackExposureEvent).not.toHaveBeenCalled();
+      expect(logger.debug).toHaveBeenCalled();
+    });
+
+    it('routes explicit-variant exposures to trackExposureEvent with the context identifier', async () => {
+      const { provider, trackExposureEvent } = await setup();
+      provider.track(
+        EXPOSURE_TRACKING_EVENT,
+        { targetingKey },
+        { flagKey: exampleVariantFlagName, variant: 'treatment', experiment: 'exp-1' },
+      );
+      expect(trackExposureEvent).toHaveBeenCalledWith(exampleVariantFlagName, {
+        identifier: targetingKey,
+        value: 'treatment',
+        metadata: { experiment: 'exp-1' },
+      });
+    });
+
+    it('resolves variant-less exposures and sends them with the context identifier', async () => {
+      const { provider, trackExposureEvent } = await setup();
+      provider.track(
+        EXPOSURE_TRACKING_EVENT,
+        { targetingKey },
+        { flagKey: exampleVariantFlagName, experiment: 'exp-1' },
+      );
+      expect(trackExposureEvent).toHaveBeenCalledWith(exampleVariantFlagName, {
+        identifier: targetingKey,
+        value: exampleVariantFlag.variant,
+        metadata: { experiment: 'exp-1' },
+      });
+    });
+
+    it('skips variant-less exposures for flags that are missing, disabled or not multivariate', async () => {
+      const { provider, trackExposureEvent } = await setup();
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: 'missing_flag' });
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: exampleDisabledFlagName });
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { flagKey: exampleStringFlagName });
+      expect(trackExposureEvent).not.toHaveBeenCalled();
+      expect(logger.info).toHaveBeenCalledTimes(3);
+    });
+
+    it('drops exposures without a flagKey and warns', async () => {
+      const { provider, trackExposureEvent, getExperimentFlag } = await setup();
+      provider.track(EXPOSURE_TRACKING_EVENT, { targetingKey }, { variant: 'treatment' });
+      expect(trackExposureEvent).not.toHaveBeenCalled();
+      expect(getExperimentFlag).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalled();
+    });
+
+    it('skips exposures for anonymous contexts and logs', async () => {
+      const { provider, trackExposureEvent, getExperimentFlag } = await setup({ withIdentity: false });
+      provider.track(EXPOSURE_TRACKING_EVENT, {}, { flagKey: exampleVariantFlagName, variant: 'treatment' });
+      provider.track(EXPOSURE_TRACKING_EVENT, {}, { flagKey: exampleVariantFlagName });
+      expect(trackExposureEvent).not.toHaveBeenCalled();
+      expect(getExperimentFlag).not.toHaveBeenCalled();
+      expect(logger.info).toHaveBeenCalledTimes(2);
+    });
+
+    it('warns and drops $-prefixed reserved event names', async () => {
+      const { provider, trackEvent } = await setup();
+      provider.track('$flag_exposure', { targetingKey }, { flagKey: exampleVariantFlagName });
+      expect(trackEvent).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalled();
+    });
+
+    it('warns and omits non-numeric values from plain events', async () => {
+      const { provider, trackEvent } = await setup();
+      provider.track('purchase', { targetingKey }, { value: { amount: 1 } as unknown as number, plan: 'pro' });
+      expect(trackEvent).toHaveBeenCalledWith('purchase', {
+        value: undefined,
+        metadata: { plan: 'pro' },
+      });
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('numeric'));
+    });
+
+    it('routes plain events to trackEvent with numeric value and metadata', async () => {
+      const { provider, trackEvent } = await setup();
+      provider.track('purchase', { targetingKey }, { value: 99.77, plan: 'pro' });
+      expect(trackEvent).toHaveBeenCalledWith('purchase', {
+        value: 99.77,
+        metadata: { plan: 'pro' },
+      });
+    });
+  });
+
   describe('server state', () => {
     it('should initialize with the targeting key and traits when passed to initialize', async () => {
       const targetingKey = 'test';

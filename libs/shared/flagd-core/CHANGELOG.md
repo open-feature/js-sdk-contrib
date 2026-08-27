@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v4.0.0...flagd-core-v4.0.1) (2026-08-20)
+
+
+### 🐛 Bug Fixes
+
+* correct grace-period/max-retry-backoff defaults to prevent log spam ([#1603](https://github.com/open-feature/js-sdk-contrib/issues/1603)) ([a633c51](https://github.com/open-feature/js-sdk-contrib/commit/a633c511054e858cda8fbe13c93434e199447f14))
+
 ## [4.0.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v3.0.1...flagd-core-v4.0.0) (2026-06-02)
 
 

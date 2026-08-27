@@ -33,11 +33,11 @@ export const providerSteps: Steps =
     given(/a (.*) flagd provider/, async (providerType: string) => {
       const flagdOptions: FlagdProviderOptions = {
         resolverType: state.resolverType,
-        retryGracePeriod: 2, // retryGracePeriod is related to test expectations; this must be 2
+        retryGracePeriod: 5, // must exceed no-error downtime, stay below error downtime
         // these options are optimized for test speed and stability
         deadlineMs: 15000,
         keepAliveTime: 200,
-        retryBackoffMaxMs: 1000,
+        retryBackoffMaxMs: 500,
         retryBackoffMs: 100,
 
         ...state.config,

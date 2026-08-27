@@ -199,7 +199,8 @@ describe('Configuration', () => {
       resolverType: 'in-process',
       options: {},
       config: undefined,
-      events: [],
+      assertedEvents: [],
+      allEvents: [],
     };
 
     autoBindSteps(

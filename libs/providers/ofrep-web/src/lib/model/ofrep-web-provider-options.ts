@@ -1,4 +1,6 @@
 import type { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
+import type { SseEventParser } from '../sse-manager';
+import type { CacheKeyGenerator } from '../store/cache-key';
 
 export type CacheMode = 'local-cache-first' | 'network-first' | 'disabled';
 
@@ -30,6 +32,15 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
    * If neither is set, defaults to 120 seconds.
    */
   inactivityDelaySec?: number;
+
+  /**
+   * Overrides how the raw SSE event payload is parsed into the OFREP-spec
+   * `EventStreamMessage` the provider acts on. Use this to support non-JSON
+   * wire formats or custom deserialization.
+   *
+   * Default: JSON-parses string payloads, otherwise passes the data through as-is.
+   */
+  sseEventParser?: SseEventParser;
 
   /**
    * Controls the background change-detection strategy per ADR-0008.
@@ -65,12 +76,9 @@ export type OFREPWebProviderOptions = OFREPProviderBaseOptions & {
   cacheTTL?: number;
 
   /**
-   * cacheKeyPrefix is included in the cache key hash to prevent collisions when multiple
-   * OFREP provider instances share the same storage partition (e.g. the same browser origin).
-   * When set, the cache key becomes `hash(cacheKeyPrefix + ":" + targetingKey)`.
-   *
-   * A sensible value is the OFREP base URL, a project key, or any other string that
-   * uniquely identifies this provider instance.
+   * cacheKeyGenerator returns the key material the provider hashes into `cacheKeyHash`.
+   * The default generator uses the OFREP base URL, auth credential, bound `domain`, and `targetingKey`.
+   * Customize to namespace instances, drop auth for rotating tokens, or include stable context fields.
    */
-  cacheKeyPrefix?: string;
+  cacheKeyGenerator?: CacheKeyGenerator;
 };
