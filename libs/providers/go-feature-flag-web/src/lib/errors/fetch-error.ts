@@ -10,3 +10,25 @@ export class FetchError extends Error {
     this.status = status;
   }
 }
+
+/**
+ * FetchAbortedError is a wrapper around the cancellation of a fetch() request
+ */
+export class FetchAbortedError extends Error {
+  readonly reason: string;
+  constructor(reason: string) {
+    super(`Request cancelled with reason: ${reason}`);
+    this.reason = reason;
+  }
+}
+
+/**
+ * FetchTimeoutError is a wrapper around the timeoout of a fetch() request
+ */
+export class FetchTimeoutError extends Error {
+  readonly timeoutMs: number;
+  constructor(timeoutMs: number) {
+    super(`Request timed out after ${timeoutMs}ms`);
+    this.timeoutMs = timeoutMs;
+  }
+}

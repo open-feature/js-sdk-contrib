@@ -2,16 +2,24 @@ import { GoFeatureFlagWebProvider } from './go-feature-flag-web-provider';
 import type { EvaluationContext, EvaluationDetails, JsonValue } from '@openfeature/web-sdk';
 import { ErrorCode, OpenFeature, ProviderEvents, StandardResolutionReasons } from '@openfeature/web-sdk';
 import WS from 'jest-websocket-mock';
-import TestLogger from './test-logger';
-import type { DataCollectorRequest, GOFeatureFlagWebsocketResponse, TrackingEvent } from './model';
+import { TestLogger } from '../spec-utils';
+import type {
+  DataCollectorRequest,
+  GoFeatureFlagWebProviderOptions,
+  GOFeatureFlagWebsocketResponse,
+  TrackingEvent,
+} from './model';
 import fetchMock from 'fetch-mock-jest';
+import { WebSocketFlagChangeStrategy, ServerSentEventFlagChangeStrategy } from './change-strategy';
+import { EventSourceMock } from '../spec-utils/mock';
+import { awaitableTimeout, whenAnySettle } from './utils';
 
 describe('GoFeatureFlagWebProvider', () => {
   let websocketMockServer: WS;
   const endpoint = 'http://localhost:1031/';
   const allFlagsEndpoint = `${endpoint}v1/allflags`;
   const dataCollectorEndpoint = `${endpoint}v1/data/collector`;
-  const websocketEndpoint = 'ws://localhost:1031/ws/v1/flag/change';
+  const websocketEndpoint = 'ws://localhost:1031/stream/v1/ws/flag/change';
   const defaultAllFlagResponse = {
     flags: {
       bool_flag: {
@@ -74,6 +82,7 @@ describe('GoFeatureFlagWebProvider', () => {
     valid: true,
   };
   let defaultProvider: GoFeatureFlagWebProvider;
+  let defaultProviderSse: GoFeatureFlagWebProvider;
   let defaultContext: EvaluationContext;
   const readyHandler = jest.fn();
   const errorHandler = jest.fn();
@@ -81,8 +90,35 @@ describe('GoFeatureFlagWebProvider', () => {
   const staleHandler = jest.fn();
   const logger = new TestLogger();
 
+  const builtProviders = new Set<GoFeatureFlagWebProvider>();
+
+  function newDefaultProvider(options?: Partial<GoFeatureFlagWebProviderOptions>): GoFeatureFlagWebProvider {
+    const provider = new GoFeatureFlagWebProvider(
+      Object.assign(
+        {},
+        {
+          endpoint: endpoint,
+          apiTimeout: 1000,
+          maxRetries: 1,
+          disableDataCollection: true,
+        },
+        options ?? undefined,
+      ),
+      logger,
+    );
+    builtProviders.add(provider);
+    return provider;
+  }
+
+  beforeAll(() => {
+    EventSourceMock.activate();
+  });
+
   beforeEach(async () => {
     WS.clean();
+    EventSourceMock.clean();
+    builtProviders.forEach((p) => p.onClose().catch(() => true));
+    builtProviders.clear();
     await OpenFeature.close();
     fetchMock.mockClear();
     fetchMock.mockReset();
@@ -90,11 +126,21 @@ describe('GoFeatureFlagWebProvider', () => {
     websocketMockServer = new WS(websocketEndpoint, { jsonProtocol: true });
     fetchMock.post(allFlagsEndpoint, defaultAllFlagResponse);
     fetchMock.post(dataCollectorEndpoint, 200);
+    logger.reset();
     defaultProvider = new GoFeatureFlagWebProvider(
       {
         endpoint: endpoint,
         apiTimeout: 1000,
         maxRetries: 1,
+      },
+      logger,
+    );
+    defaultProviderSse = new GoFeatureFlagWebProvider(
+      {
+        endpoint: endpoint,
+        apiTimeout: 1000,
+        maxRetries: 1,
+        mode: 'sse',
       },
       logger,
     );
@@ -104,6 +150,7 @@ describe('GoFeatureFlagWebProvider', () => {
   afterEach(async () => {
     WS.clean();
     websocketMockServer.close();
+    EventSourceMock.clean();
     await OpenFeature.close();
     OpenFeature.clearHooks();
     fetchMock.mockClear();
@@ -117,17 +164,9 @@ describe('GoFeatureFlagWebProvider', () => {
     logger.reset();
   });
 
-  function newDefaultProvider(): GoFeatureFlagWebProvider {
-    return new GoFeatureFlagWebProvider(
-      {
-        endpoint: endpoint,
-        apiTimeout: 1000,
-        maxRetries: 1,
-        disableDataCollection: true,
-      },
-      logger,
-    );
-  }
+  afterAll(() => {
+    EventSourceMock.deactivate();
+  });
 
   describe('provider metadata', () => {
     it('should be and instance of GoFeatureFlagWebProvider', () => {
@@ -157,17 +196,19 @@ describe('GoFeatureFlagWebProvider', () => {
       expect(got2.reason).toEqual(alternativeAllFlagResponse.flags.bool_flag.reason);
     });
 
-    it('should return CACHED as a reason is websocket is not connected', async () => {
+    it('should return CACHED as a reason if websocket is not connected', async () => {
       await OpenFeature.setContext(defaultContext);
       const providerName = expect.getState().currentTestName || 'test';
-      OpenFeature.setProvider(providerName, newDefaultProvider());
+      const provider = newDefaultProvider();
+      OpenFeature.setProvider(providerName, provider);
       const client = OpenFeature.getClient(providerName);
       await websocketMockServer.connected;
       // Need to wait before using the mock
       await new Promise((resolve) => setTimeout(resolve, 5));
       websocketMockServer.close();
-
+      // Need to wait before using the mock
       const got = client.getBooleanDetails('bool_flag', false);
+      expect(provider.changeStrategy.status).not.toBe('connected');
       expect(got.reason).toEqual(StandardResolutionReasons.CACHED);
     });
 
@@ -196,9 +237,9 @@ describe('GoFeatureFlagWebProvider', () => {
       client.addHandler(ProviderEvents.Stale, staleHandler);
       client.addHandler(ProviderEvents.ConfigurationChanged, configurationChangedHandler);
       // wait the event to be triggered
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await awaitableTimeout(5);
       expect(errorHandler).toHaveBeenCalled();
-      expect(logger.inMemoryLogger['error'][0]).toEqual(
+      expect(logger.inMemoryLogger['error']).toContain(
         'GoFeatureFlagWebProvider: impossible to call go-feature-flag relay proxy Error: Request failed with status code 404',
       );
     });
@@ -361,7 +402,7 @@ describe('GoFeatureFlagWebProvider', () => {
 
       // wait for the websocket to be connected to the provider.
       await websocketMockServer.connected;
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await awaitableTimeout(5);
 
       expect(readyHandler).toHaveBeenCalled();
       expect(errorHandler).not.toHaveBeenCalled();
@@ -383,7 +424,10 @@ describe('GoFeatureFlagWebProvider', () => {
       await websocketMockServer.connected;
 
       // Need to wait before using the mock
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await awaitableTimeout(5);
+
+      expect(defaultProvider.changeStrategy.status).toBe('connected');
+
       websocketMockServer.send({
         added: {
           'added-flag-1': {},
@@ -399,7 +443,7 @@ describe('GoFeatureFlagWebProvider', () => {
         },
       } as GOFeatureFlagWebsocketResponse);
       // waiting the call to the API to be successful
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await awaitableTimeout(50);
 
       expect(readyHandler).toHaveBeenCalled();
       expect(errorHandler).not.toHaveBeenCalled();
@@ -442,14 +486,282 @@ describe('GoFeatureFlagWebProvider', () => {
       await websocketMockServer.connected;
 
       // Need to wait before using the mock
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await awaitableTimeout(50);
       websocketMockServer.close();
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await awaitableTimeout(300);
 
       expect(readyHandler).toHaveBeenCalled();
       expect(errorHandler).not.toHaveBeenCalled();
       expect(configurationChangedHandler).not.toHaveBeenCalled();
       expect(staleHandler).toHaveBeenCalled();
+    });
+  });
+
+  describe('Connection mode WebSocket', () => {
+    it('should use WebSocket strategy when mode is unset', async () => {
+      const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', apiTimeout: 1000 });
+      await provider.initialize({ targetingKey: 'user-key' });
+      expect(provider.changeStrategy).toBeInstanceOf(WebSocketFlagChangeStrategy);
+    });
+
+    it('should use WebSocket strategy when mode is "ws"', async () => {
+      const provider = new GoFeatureFlagWebProvider({
+        endpoint: 'http://localhost:1031',
+        apiTimeout: 1000,
+        mode: 'ws',
+      });
+      await provider.initialize({ targetingKey: 'user-key' });
+      expect(provider.changeStrategy).toBeInstanceOf(WebSocketFlagChangeStrategy);
+    });
+
+    it('should resolve when WebSocket is open', async () => {
+      const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', apiTimeout: 1000 });
+      await provider.initialize({ targetingKey: 'user-key' });
+      await websocketMockServer.connected;
+      expect(provider.changeStrategy.status).toBe('connected');
+    });
+  });
+
+  describe('Connection mode SSE', () => {
+    it('should use SSE EventSource strategy when mode is "sse"', async () => {
+      const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', mode: 'sse' });
+      expect(provider.changeStrategy).toBeInstanceOf(ServerSentEventFlagChangeStrategy);
+    });
+
+    it('should be in connected state when SSE EventSource is open', async () => {
+      const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', mode: 'sse' });
+      const providerInit = provider.initialize({ targetingKey: 'user-key' });
+      await providerInit;
+      // Let's make the inner EventSource to connect
+      EventSourceMock.ready();
+      // Let's wait a bit of time to let the provider's change strategy to go in connected state
+      await awaitableTimeout(5);
+      expect(provider.changeStrategy.status).toBe('connected');
+    });
+
+    it('should retry connection if SSE EventSource stay in CONNECTING state', async () => {
+      const provider = new GoFeatureFlagWebProvider({
+        endpoint: 'http://localhost:1031',
+        apiTimeout: 1000,
+        mode: 'sse',
+      });
+      await provider.initialize({ targetingKey: 'user-key' });
+      // Let's wait a bit longer before checking
+      await awaitableTimeout(2000);
+      // Now we can test the behavior when the EventSource is in CONNECTING state
+      expect(provider.changeStrategy.status).not.toBe('connected');
+      expect(provider.changeStrategy.status).toBe('connecting');
+      // let's enable the connection and wait for the EventSource to connect
+      EventSourceMock.ready();
+      await awaitableTimeout(100);
+
+      expect(provider.changeStrategy.status).not.toBe('connecting');
+      expect(provider.changeStrategy.status).toBe('connected');
+    });
+
+    // SSE - Eventing
+
+    it('should call client handler with ProviderEvents.Ready when SSE EventSource is connected', async () => {
+      // await OpenFeature.setContext(defaultContext); // we deactivate this call because the context is already set, and we want to avoid calling contextChanged function
+      await OpenFeature.setProviderAndWait('test-provider', defaultProviderSse);
+      const client = OpenFeature.getClient('test-provider');
+      client.addHandler(ProviderEvents.Ready, readyHandler);
+      client.addHandler(ProviderEvents.Error, errorHandler);
+      client.addHandler(ProviderEvents.Stale, staleHandler);
+      client.addHandler(ProviderEvents.ConfigurationChanged, configurationChangedHandler);
+
+      // wait for the SSE EventSource to be connected to the provider.
+      EventSourceMock.ready();
+      await awaitableTimeout(5);
+
+      expect(readyHandler).toHaveBeenCalled();
+      expect(errorHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler).not.toHaveBeenCalled();
+      expect(staleHandler).not.toHaveBeenCalled();
+    });
+
+    it('should call client handler with ProviderEvents.ConfigurationChanged when SSE EventSource is sending update', async () => {
+      await OpenFeature.setProviderAndWait('test-provider', defaultProviderSse, defaultContext);
+      const client = OpenFeature.getClient('test-provider');
+
+      client.addHandler(ProviderEvents.Ready, readyHandler);
+      client.addHandler(ProviderEvents.Error, errorHandler);
+      client.addHandler(ProviderEvents.Stale, staleHandler);
+      client.addHandler(ProviderEvents.ConfigurationChanged, configurationChangedHandler);
+
+      // wait for the SSE EventSource to be connected to the provider.
+      EventSourceMock.ready();
+      await awaitableTimeout(500);
+
+      expect(defaultProviderSse.changeStrategy.status).toBe('connected');
+
+      EventSourceMock.send({
+        added: {
+          'added-flag-1': {},
+          'added-flag-2': {},
+        },
+        updated: {
+          'updated-flag-1': {},
+          'updated-flag-2': {},
+        },
+        deleted: {
+          'deleted-flag-1': {},
+          'deleted-flag-2': {},
+        },
+      } as GOFeatureFlagWebsocketResponse);
+      // waiting the call to the API to be successful
+      await awaitableTimeout(50);
+
+      expect(readyHandler).toHaveBeenCalled();
+      expect(errorHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler).toHaveBeenCalled();
+      expect(staleHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler.mock.calls[0][0]).toEqual({
+        clientName: 'test-provider',
+        domain: 'test-provider',
+        message: 'flag configuration have changed',
+        providerName: 'GoFeatureFlagWebProvider',
+        flagsChanged: [
+          'deleted-flag-1',
+          'deleted-flag-2',
+          'updated-flag-1',
+          'updated-flag-2',
+          'added-flag-1',
+          'added-flag-2',
+        ],
+      });
+    });
+
+    it('should call client handler with ProviderEvents.Stale when SSE EventSource is unreachable', async () => {
+      // await OpenFeature.setContext(defaultContext); // we deactivate this call because the context is already set, and we want to avoid calling contextChanged function
+      await OpenFeature.setProviderAndWait('test-provider', defaultProviderSse);
+      const client = OpenFeature.getClient('test-provider');
+      client.addHandler(ProviderEvents.Ready, readyHandler);
+      client.addHandler(ProviderEvents.Error, errorHandler);
+      client.addHandler(ProviderEvents.Stale, staleHandler);
+      client.addHandler(ProviderEvents.ConfigurationChanged, configurationChangedHandler);
+
+      // wait for the SSE EventSource to be connected to the provider.
+      EventSourceMock.ready();
+      await awaitableTimeout(5);
+      expect(defaultProviderSse.changeStrategy.status).toBe('connected');
+
+      // Let's disconnect the SSE EventSource
+      EventSourceMock.failAll();
+      await awaitableTimeout(5);
+
+      expect(defaultProviderSse.changeStrategy.status).toBe('error');
+      expect(readyHandler).toHaveBeenCalled();
+      expect(errorHandler).not.toHaveBeenCalled();
+      expect(configurationChangedHandler).not.toHaveBeenCalled();
+      expect(staleHandler).toHaveBeenCalled();
+    });
+  });
+
+  describe('Polling mode', () => {
+    it('should be disabled when pollingIntervalMs is not set', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: 100,
+        maxRetries: 1,
+      });
+      await provider.initialize({ targetingKey: 'user-key' });
+      // we close the websocket connection
+      // Need to wait before using the mock
+      await awaitableTimeout(5);
+      websocketMockServer.close();
+      await awaitableTimeout(300);
+      expect(logger.inMemoryLogger['debug']).toContain('GoFeatureFlagWebProvider: polling is disabled.');
+    });
+
+    it('should be disabled when pollingIntervalMs is set to 0', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: 100,
+        maxRetries: 1,
+        pollingIntervalMs: 0,
+      });
+      await provider.initialize({ targetingKey: 'user-key' });
+      // we close the websocket connection
+      // Need to wait before using the mock
+      await awaitableTimeout(5);
+      websocketMockServer.close();
+      await awaitableTimeout(300);
+      expect(logger.inMemoryLogger['debug']).toContain('GoFeatureFlagWebProvider: polling is disabled.');
+    });
+
+    it('should be disabled when pollingIntervalMs is set to a negative value', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: 100,
+        maxRetries: 1,
+        pollingIntervalMs: -1,
+      });
+      await provider.initialize({ targetingKey: 'user-key' });
+      // we close the websocket connection
+      // Need to wait before using the mock
+      await awaitableTimeout(5);
+      websocketMockServer.close();
+      await awaitableTimeout(300);
+      expect(logger.inMemoryLogger['debug']).toContain('GoFeatureFlagWebProvider: polling is disabled.');
+    });
+
+    it('should be enabled when pollingIntervalMs is set to a positive value', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: 100,
+        maxRetries: 1,
+        pollingIntervalMs: 1000,
+      });
+      await provider.initialize({ targetingKey: 'user-key' });
+      // we close the websocket connection
+      // Need to wait before using the mock
+      await awaitableTimeout(5);
+      websocketMockServer.close();
+      await awaitableTimeout(500);
+      expect(logger.inMemoryLogger['debug']).toContain('GoFeatureFlagWebProvider: start polling cycle.');
+    });
+
+    it('should be disabled when WebSocket is reconnected', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: 100,
+        maxRetries: 1,
+        pollingIntervalMs: 500,
+      });
+      await provider.initialize({ targetingKey: 'user-key' });
+      await awaitableTimeout(500);
+      // we reconnect the websocket
+      await websocketMockServer.connected;
+      await awaitableTimeout(1000);
+      expect(provider.changeStrategy.status).toBe('connected');
+      expect(logger.inMemoryLogger['debug']).toContain('GoFeatureFlagWebProvider: stop polling cycle.');
+    });
+
+    it('should be disabled when SSE is reconnected', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: 100,
+        maxRetries: 1,
+        mode: 'sse',
+        pollingIntervalMs: 500,
+      });
+      await provider.initialize({ targetingKey: 'user-key' });
+      await awaitableTimeout(500);
+      // we reconnect the websocket
+      EventSourceMock.ready();
+      await awaitableTimeout(1000);
+      expect(provider.changeStrategy.status).toBe('connected');
+      expect(logger.inMemoryLogger['debug']).toContain('GoFeatureFlagWebProvider: stop polling cycle.');
+    });
+
+    it('should have almost one polling cycle running', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: 100,
+        maxRetries: 1,
+        pollingIntervalMs: 500,
+      });
+      await provider.initialize({ targetingKey: 'user-key' });
+      websocketMockServer.close();
+      await awaitableTimeout(5);
+      // we try again to connect when already in error state
+      provider.changeStrategy.connect();
+      await awaitableTimeout(1000);
+      expect(logger.inMemoryLogger['debug']).toContain('GoFeatureFlagWebProvider: polling is already running.');
     });
   });
 
@@ -526,40 +838,57 @@ describe('GoFeatureFlagWebProvider', () => {
     });
 
     it('should not have two websockets open simultaneously during key rotation', async () => {
-      const p = new GoFeatureFlagWebProvider({ endpoint, apiTimeout: 1000, maxRetries: 1, apiKey: 'old-key' }, logger);
+      logger.reset();
+      const provider = newDefaultProvider({
+        apiTimeout: 1000,
+        maxRetries: 1,
+        apiKey: 'old-key',
+      });
+      // Set OpenFeature context and provider
       await OpenFeature.setContext(defaultContext);
-      await OpenFeature.setProviderAndWait('test-provider', p);
+      await OpenFeature.setProviderAndWait('test-provider', provider);
       await websocketMockServer.connected;
+      await awaitableTimeout(20);
+      // Rotate the api key
+      logger.info('TEST: rotating api key.');
+      provider.setApiKey('new-key');
+      // let's wait a bit before reconnecting
+      await awaitableTimeout(20);
 
-      p.setApiKey('new-key');
       await websocketMockServer.connected;
+      await awaitableTimeout(20);
+      websocketMockServer.server
+        .clients()
+        .forEach((e) => logger.info(`TEST: WebSocket instance => readyState: ${e.readyState}`));
 
       // Only one client should be connected at a time
       expect(websocketMockServer.server.clients().length).toBe(1);
     });
 
     it('should abort in-flight fetchAll when setApiKey is called', async () => {
-      const p = new GoFeatureFlagWebProvider({ endpoint, apiTimeout: 1000, maxRetries: 2, apiKey: 'old-key' }, logger);
+      const provider = new GoFeatureFlagWebProvider(
+        { endpoint, apiTimeout: 1000, maxRetries: 2, apiKey: 'old-key' },
+        logger,
+      );
       await OpenFeature.setContext(defaultContext);
-      await OpenFeature.setProviderAndWait('test-provider', p);
+      await OpenFeature.setProviderAndWait('test-provider', provider);
       await websocketMockServer.connected;
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await awaitableTimeout(5);
 
       // Slow down the next fetch so we can rotate the key mid-flight
-      fetchMock.post(
-        allFlagsEndpoint,
-        () => new Promise((resolve) => setTimeout(() => resolve(defaultAllFlagResponse), 200)),
-        { overwriteRoutes: true },
-      );
+      fetchMock.post(allFlagsEndpoint, () => awaitableTimeout(200).then(() => defaultAllFlagResponse), {
+        overwriteRoutes: true,
+      });
 
       // Trigger a fetch then immediately rotate the key
-      await Promise.race([
-        p.onContextChange(defaultContext, { targetingKey: 'another-user' }), // slow fetch (200ms)
-        new Promise((resolve) => setTimeout(resolve, 50)), // timer wins after 50ms
+      await whenAnySettle([
+        provider.onContextChange(defaultContext, { targetingKey: 'another-user' }), // slow fetch (200ms)
+        awaitableTimeout(50), // timer wins after 50ms
       ]);
 
       // Rotate the key
-      await p.setApiKey('new-key');
+      await provider.setApiKey('new-key');
+      await awaitableTimeout(5);
 
       // Ensure the initial fetch was cancelled.
       expect(logger.inMemoryLogger['error']).toContain('GoFeatureFlagWebProvider: fetchAll operation was aborted');
@@ -769,26 +1098,6 @@ describe('GoFeatureFlagWebProvider', () => {
     });
   });
 
-  it('should resolve when WebSocket is open', async () => {
-    const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', apiTimeout: 1000 });
-    await provider.initialize({ targetingKey: 'user-key' });
-    const websocket = new WebSocket(websocketEndpoint);
-    await websocketMockServer.connected;
-    await expect(provider.waitWebsocketFinalStatus(websocket)).resolves.toBeUndefined();
-  });
-
-  // how can I mock a websocket server to stay in CONNECTING state
-  it('should timeout if websocket stay in CONNECTING state', async () => {
-    const provider = new GoFeatureFlagWebProvider({ endpoint: 'http://localhost:1031', apiTimeout: 1000 });
-    await provider.initialize({ targetingKey: 'user-key' });
-    const websocket = new MockWebSocketConnectingState(websocketEndpoint);
-
-    // Now you can test the behavior when the WebSocket is in CONNECTING state
-    await expect(provider.waitWebsocketFinalStatus(websocket)).rejects.toBe(
-      'timeout of 1000 ms reached when initializing the websocket',
-    );
-  });
-
   it('should call the data collector with exporter metadata', async () => {
     const clientName = expect.getState().currentTestName ?? 'test-provider';
     await OpenFeature.setContext(defaultContext);
@@ -830,31 +1139,3 @@ describe('GoFeatureFlagWebProvider', () => {
     });
   });
 });
-
-class MockWebSocketConnectingState extends WebSocket {
-  constructor(url: string, protocols?: string | string[]) {
-    super(url, protocols);
-  }
-
-  get readyState() {
-    return WebSocket.CONNECTING;
-  }
-
-  set onopen(_: { (this: WebSocket, event: Event): void; (): void }) {
-    // Do nothing to prevent setting the onopen handler
-  }
-
-  set onclose(_: { (): Promise<void>; (): void }) {
-    // Do nothing to prevent setting the onclose handler
-  }
-
-  addEventListener(
-    type: string,
-    listener: EventListenerOrEventListenerObject,
-    options?: boolean | AddEventListenerOptions,
-  ): void {
-    if (type !== 'open' && type !== 'close') {
-      super.addEventListener(type, listener, options);
-    }
-  }
-}
