@@ -36,6 +36,30 @@ const initOptions: InitOptions = {
 OpenFeature.setProvider(new GrowthbookProvider(gbClientOptions, initOptions));
 ```
 
+## Evaluation context
+
+GrowthBook buckets users on the `id` attribute. The provider maps OpenFeature's
+`targetingKey` onto `id` for you, so a standard evaluation context works:
+
+```typescript
+await client.getBooleanValue('my-flag', false, { targetingKey: 'user-123' });
+```
+
+If you set an `id` attribute explicitly it takes precedence over `targetingKey`.
+All attributes — the targeting key included, under its own `targetingKey` name —
+pass through to GrowthBook unchanged, so existing rules that reference
+`targetingKey` directly keep matching.
+
+## Tracking
+
+OpenFeature tracking events are forwarded to GrowthBook via `logEvent`. The
+evaluation context becomes the GrowthBook user context, so the event is
+attributed to the same user your flags are bucketed for.
+
+```typescript
+client.track('purchase', { targetingKey: 'user-123' }, { value: 42 });
+```
+
 ## Building
 
 Run `nx package providers-growthbook` to build the library.
