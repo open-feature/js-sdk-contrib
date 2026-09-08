@@ -1,9 +1,8 @@
 # Optimizely Edge Provider
 
-This package adapts the Optimizely Feature Experimentation JavaScript SDK's
-Universal entry point to OpenFeature in Web API-based server runtimes such as
-Next.js Edge and Cloudflare Workers (including Hono applications deployed to
-Workers).
+Use this provider to evaluate Optimizely Feature Experimentation flags through
+OpenFeature in Web API-based server runtimes such as Next.js Edge and
+Cloudflare Workers, including Hono applications deployed to Workers.
 
 It is separate from the Node.js and browser providers so an edge bundle never
 resolves Optimizely's Node or `XMLHttpRequest` implementation by accident.
@@ -17,8 +16,8 @@ npm install @openfeature/optimizely-edge-provider @openfeature/web-sdk @optimize
 The OpenFeature JavaScript server SDK is Node.js-specific. Edge applications
 therefore use the synchronous, Web API-compatible OpenFeature web SDK with this
 provider. React client components should continue to use
-`@openfeature/optimizely-web-provider`; Node.js
-server code should use [`@openfeature/optimizely-provider`](../optimizely/README.md).
+`@openfeature/optimizely-web-provider`; Node.js server code should use
+`@openfeature/optimizely-provider`.
 
 ## Universal client setup
 
