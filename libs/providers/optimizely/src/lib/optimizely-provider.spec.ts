@@ -11,7 +11,7 @@ const logger: Logger = {
   debug: jest.fn(),
 };
 
-describe('OptimizelyProvider lifecycle and side effects', () => {
+describe('OptimizelyProvider', () => {
   it('shares concurrent initialization and cleans up when close races readiness', async () => {
     let resolveReady!: () => void;
     const ready = new Promise<void>((resolve) => {
