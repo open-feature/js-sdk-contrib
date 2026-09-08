@@ -27,6 +27,12 @@
         "jestConfig": "{projectRoot}/jest.config.cts"
       }
     },
+    "test-smoke": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "{projectRoot}/jest.smoke.config.cts"
+      }
+    },
     "package": {
       "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],

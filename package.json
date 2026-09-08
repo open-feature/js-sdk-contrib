@@ -10,7 +10,7 @@
     "generate-hook": "nx generate open-feature hook",
     "generate-provider": "nx generate open-feature provider",
     "test": "nx run-many --all --target=test --skip-nx-cache --exclude=js-sdk-contrib",
-    "test:optimizely:smoke": "node --env-file-if-exists=.env ./node_modules/nx/dist/bin/nx.js test optimizely --skip-nx-cache --runInBand --no-watchman --testPathPatterns=optimizely-provider.smoke.spec.ts",
+    "test:optimizely:smoke": "node --env-file-if-exists=.env ./node_modules/nx/dist/bin/nx.js run optimizely:test-smoke --skip-nx-cache --runInBand --no-watchman",
     "e2e": "nx run-many --all --target=e2e --skip-nx-cache --output-style=stream --parallel=false --exclude=js-sdk-contrib",
     "lint": "nx run-many --all --target=lint --skip-nx-cache --exclude=js-sdk-contrib",
     "lint:fix": "nx run-many --all --target=lint --skip-nx-cache --fix --exclude=js-sdk-contrib",
