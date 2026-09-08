@@ -20,6 +20,30 @@
     "lint": {
       "executor": "@nx/eslint:lint"
     },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "{projectRoot}/jest.config.cts"
+      },
+      "dependsOn": [
+        {
+          "target": "package"
+        },
+        {
+          "target": "test-edge",
+          "params": "forward"
+        }
+      ]
+    },
+    "test-edge": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "{projectRoot}/jest.edge.config.cts",
+        "coverageProvider": "v8"
+      }
+    },
     "package": {
       "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
