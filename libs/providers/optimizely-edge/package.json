@@ -6,8 +6,6 @@
     "url": "https://github.com/open-feature/js-sdk-contrib.git",
     "directory": "libs/providers/optimizely-edge"
   },
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
   "dependencies": {
     "tslib": "^2.3.0"
   },

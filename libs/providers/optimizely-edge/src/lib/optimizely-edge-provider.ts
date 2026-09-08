@@ -39,12 +39,12 @@ const NOOP_LOGGER: Logger = {
   debug: () => undefined,
 };
 
-/** An OpenFeature provider backed by an Optimizely Universal client for edge runtimes. */
 export class OptimizelyEdgeProvider implements Provider {
   readonly metadata = {
     name: OptimizelyEdgeProvider.name,
   };
 
+  readonly runsOn = 'client';
   readonly hooks = [];
   readonly events = new OpenFeatureEventEmitter();
 
