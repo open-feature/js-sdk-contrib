@@ -66,18 +66,20 @@ boundary for those cases.
 
 ## Framework compatibility
 
-| Application surface                                     | Package and runtime                                                                  | Status                                                             |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| React client components                                 | `@openfeature/react-sdk` + `@openfeature/web-sdk` + this package in a browser bundle | Supported by the provider contract                                 |
-| Next.js client components                               | Same browser packages in the client bundle                                           | Supported; initialize behind a `'use client'` boundary             |
-| Next.js Server Components and route handlers on Node.js | `@openfeature/server-sdk` + `@openfeature/optimizely-provider`                       | Use the server package instead                                     |
-| Hono on Node.js                                         | `@openfeature/server-sdk` + `@openfeature/optimizely-provider`                       | Use the server package instead                                     |
-| Next.js Edge runtime or Cloudflare Workers              | Browser provider or Node provider                                                    | Unsupported/unverified; no framework/runtime test is provided here |
+| Application surface                                     | Package and runtime                                                                  | Status                                                 |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| React client components                                 | `@openfeature/react-sdk` + `@openfeature/web-sdk` + this package in a browser bundle | Supported by the provider contract                     |
+| Next.js client components                               | Same browser packages in the client bundle                                           | Supported; initialize behind a `'use client'` boundary |
+| Next.js Server Components and route handlers on Node.js | `@openfeature/server-sdk` + `@openfeature/optimizely-provider`                       | Use the server package instead                         |
+| Hono on Node.js                                         | `@openfeature/server-sdk` + `@openfeature/optimizely-provider`                       | Use the server package instead                         |
+| Next.js Edge runtime or Cloudflare Workers              | `@openfeature/web-sdk` + `@openfeature/optimizely-edge-provider`                     | Use the separate Universal/Edge provider               |
 
 The provider is not a Next.js or React plugin. React applications should use
 the [OpenFeature React SDK](https://openfeature.dev/docs/reference/technologies/client/react)
 and the web SDK provider registration pattern; Hono and server-side Next.js
-code should use the server package.
+code should use the server package. Next.js Edge routes and Hono applications
+on Cloudflare Workers should use the
+[`@openfeature/optimizely-edge-provider`](../optimizely-edge/README.md).
 
 ## Lifecycle, context, and tracking
 

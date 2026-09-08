@@ -6,14 +6,14 @@ This is an [OpenFeature](https://openfeature.dev/) provider for the Optimizely F
 
 The server provider is framework-agnostic: it can be registered once during application startup and used from any code that can run the Optimizely Node.js SDK.
 
-| Application surface                                           | Package and runtime                                                  | Status                                                                                                       |
-| ------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Next.js Server Components, server actions, and route handlers | `@openfeature/server-sdk` and this provider on the Node.js runtime   | Supported                                                                                                    |
-| Hono applications and route handlers                          | `@openfeature/server-sdk` and this provider with Hono's Node adapter | Supported                                                                                                    |
-| React client components                                       | `@openfeature/react-sdk` with a browser provider                     | Use the web provider; do not import this server package into a client bundle                                 |
-| Next.js Edge runtime or Cloudflare Workers                    | Edge runtime plus this provider                                      | Unsupported/unverified; use a provider and Optimizely SDK entry point explicitly documented for that runtime |
+| Application surface                                           | Package and runtime                                                  | Status                                                                                |
+| ------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Next.js Server Components, server actions, and route handlers | `@openfeature/server-sdk` and this provider on the Node.js runtime   | Supported                                                                             |
+| Hono applications and route handlers                          | `@openfeature/server-sdk` and this provider with Hono's Node adapter | Supported                                                                             |
+| React client components                                       | `@openfeature/react-sdk` with a browser provider                     | Use the web provider; do not import this server package into a client bundle          |
+| Next.js Edge runtime or Cloudflare Workers                    | `@openfeature/web-sdk` + `@openfeature/optimizely-edge-provider`     | Use the separate Universal/Edge provider; this Node.js package is not edge-compatible |
 
-The framework labels above describe the integration boundary, not framework-specific test coverage. This package does not include Next.js, Hono, or React as dependencies. For React, the OpenFeature React SDK consumes a provider registered with the web SDK; see the separate [`@openfeature/optimizely-web-provider`](../optimizely-web/README.md) package.
+The framework labels above describe the integration boundary, not framework-specific test coverage. This package does not include Next.js, Hono, or React as dependencies. For React, the OpenFeature React SDK consumes a provider registered with the web SDK; see the separate [`@openfeature/optimizely-web-provider`](../optimizely-web/README.md) package. For Next.js Edge and Hono on Cloudflare Workers, see [`@openfeature/optimizely-edge-provider`](../optimizely-edge/README.md).
 
 ## Installation
 
