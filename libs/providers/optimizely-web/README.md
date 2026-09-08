@@ -1,10 +1,8 @@
 # Optimizely Web Provider
 
-This package is the browser/client counterpart to the server-only
-[`@openfeature/optimizely-provider`](../optimizely/README.md). It is intended for
-browser applications that use the Optimizely Feature Experimentation JavaScript
-SDK and OpenFeature's web SDK. It adapts synchronous Optimizely decisions to
-OpenFeature's browser evaluation API.
+Use this provider to evaluate Optimizely Feature Experimentation flags through
+OpenFeature in browser applications. It connects the Optimizely browser client
+to the synchronous OpenFeature web SDK contract.
 
 ## Installation
 
@@ -22,7 +20,7 @@ The provider package, OpenFeature web SDK, React bindings, and Optimizely SDK
 are separate dependencies. The React SDK is a UI integration layer; it does not
 turn the server provider into a browser provider.
 
-## Intended browser setup
+## Browser setup
 
 Use the explicit browser entry point when constructing the Optimizely client so
 the bundler does not select the Node.js SDK entry point:
