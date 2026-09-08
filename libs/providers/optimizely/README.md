@@ -119,7 +119,9 @@ See Optimizely's [track event documentation](https://docs.developers.optimizely.
 
 ## Deterministic tests and local development
 
-Unit tests should use a static Optimizely datafile or a mocked client and event dispatcher. They should not require credentials or network access. Cover readiness, missing targeting keys, zero/one/multiple variables, each OpenFeature type, disabled decisions, variant and metadata mapping, one decision per evaluation, tracking, configuration changes, and client ownership on shutdown.
+No Optimizely account, SDK key, `.env` file, or network access is required to contribute to this provider. The default test target uses a committed static Optimizely datafile plus mocked clients and event dispatchers. It explicitly excludes the live smoke suite and never loads `.env`.
+
+The deterministic tests cover readiness, missing targeting keys, zero/one/multiple variables, each OpenFeature type, disabled decisions, variant and metadata mapping, one decision per evaluation, tracking, configuration changes, and client ownership on shutdown.
 
 From the repository root:
 
@@ -129,9 +131,9 @@ npx nx lint optimizely
 npx nx package optimizely
 ```
 
-## Optional live smoke test
+## Maintainer-only live smoke test
 
-For a local smoke test, copy the repository template and fill it with a Development or dedicated Staging environment SDK key:
+This check is optional and is not required for contributors or pull requests. Maintainers with access to a dedicated Optimizely test project can copy the repository template and fill it with a Development or dedicated Staging environment SDK key:
 
 ```sh
 cp libs/providers/optimizely/.env.example .env
@@ -143,7 +145,9 @@ Fill in at least one typed smoke flag, then run:
 npm run test:optimizely:smoke
 ```
 
-The command loads `.env` with Node's built-in environment-file support; do not commit `.env` or print its values. The suite skips when `OPTIMIZELY_SDK_KEY` or all smoke flag keys are absent, uses a non-PII fixed targeting key by default, and avoids sending decision or tracking events. Keep the normal test suite deterministic and credential-free, and do not run the live suite on untrusted fork pull requests.
+The command is the only repository test path that loads `.env` or contacts Optimizely. Do not commit `.env` or print its values. The suite skips when `OPTIMIZELY_SDK_KEY` or all smoke flag keys are absent, uses a non-PII fixed targeting key by default, and avoids sending decision or tracking events.
+
+If the project later automates this check, store the SDK key in a protected GitHub environment secret and the non-sensitive flag configuration in repository variables. Run it only from trusted branches or manual workflows, never for untrusted fork pull requests. Local `.env` files remain an optional reproduction mechanism rather than shared project configuration.
 
 Optimizely's [environments documentation](https://docs.developers.optimizely.com/feature-experimentation/docs/manage-environments) explains where to find an environment SDK key. An Optimizely REST/API token is not required for this provider or this smoke test.
 
