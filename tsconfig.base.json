@@ -44,6 +44,7 @@
       "@openfeature/unleash-web-provider": ["libs/providers/unleash-web/src/index.ts"],
       "@openfeature/azure-app-configuration-provider": ["libs/providers/azure-app-configuration/src/index.ts"],
       "@openfeature/optimizely-provider": ["libs/providers/optimizely/src/index.ts"],
+      "@openfeature/optimizely-edge-provider": ["libs/providers/optimizely-edge/src/index.ts"],
       "@openfeature/optimizely-web-provider": ["libs/providers/optimizely-web/src/index.ts"]
     }
   },
