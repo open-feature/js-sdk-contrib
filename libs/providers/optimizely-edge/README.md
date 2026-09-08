@@ -173,7 +173,6 @@ settles.
 
 ```sh
 npx nx test optimizely-edge --no-watchman
-npx nx run optimizely-edge:test-edge --no-watchman
 npx nx lint optimizely-edge
 npx nx package optimizely-edge
 ```

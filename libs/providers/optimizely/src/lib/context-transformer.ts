@@ -7,10 +7,6 @@ export type OptimizelyContext = {
   attributes: UserAttributes;
 };
 
-/**
- * Converts an OpenFeature evaluation context into the identity and attributes
- * required by an Optimizely user context.
- */
 export function transformContext(context: EvaluationContext, logger: Logger): OptimizelyContext {
   const targetingKey = context['targetingKey'];
   if (typeof targetingKey !== 'string' || targetingKey.trim().length === 0) {

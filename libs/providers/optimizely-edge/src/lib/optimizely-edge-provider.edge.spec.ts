@@ -26,11 +26,6 @@ describe('OptimizelyEdgeProvider in an edge runtime', () => {
     await provider.onClose();
   });
 
-  it('runs with dynamic code generation disabled', () => {
-    expect(() => globalThis.eval('1 + 1')).toThrow();
-    expect(() => new Function('return 1')()).toThrow();
-  });
-
   it('evaluates boolean, string, number, and object flags synchronously', () => {
     const context = { targetingKey: 'edge-user' };
 

@@ -39,12 +39,6 @@ const NOOP_LOGGER: Logger = {
   debug: () => undefined,
 };
 
-/**
- * An OpenFeature web provider backed by a browser-configured Optimizely client.
- *
- * The client is supplied by the application, so its datafile lifecycle and SDK
- * key never need to be represented in OpenFeature configuration.
- */
 export class OptimizelyWebProvider implements Provider {
   readonly metadata = {
     name: OptimizelyWebProvider.name,

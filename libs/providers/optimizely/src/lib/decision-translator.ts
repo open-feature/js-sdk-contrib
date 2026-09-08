@@ -4,10 +4,6 @@ import type { JsonValue, ResolutionDetails } from '@openfeature/server-sdk';
 
 export type EvaluationValueType = 'boolean' | 'string' | 'number' | 'object';
 
-/**
- * Translates an Optimizely decision to an OpenFeature resolution of the
- * requested type.
- */
 export function translateDecision<T extends JsonValue>(
   decision: OptimizelyDecision,
   valueType: EvaluationValueType,

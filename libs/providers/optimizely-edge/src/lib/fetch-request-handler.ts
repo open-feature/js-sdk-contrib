@@ -10,7 +10,6 @@ export interface FetchRequestHandlerOptions {
   schedule?: (task: Promise<unknown>) => void;
 }
 
-/** Creates an Optimizely Universal request handler backed only by Web APIs. */
 export function createFetchRequestHandler(options: FetchRequestHandlerOptions = {}): RequestHandler {
   const fetchImplementation = options.fetch ?? globalThis.fetch;
 
