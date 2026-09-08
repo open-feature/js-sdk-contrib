@@ -36,6 +36,8 @@ components:
     - markphelps
   libs/providers/optimizely:
     - dflynn15
+  libs/providers/optimizely-edge:
+    - dflynn15
   libs/providers/optimizely-web:
     - dflynn15
   libs/providers/unleash-web:
