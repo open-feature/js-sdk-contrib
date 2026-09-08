@@ -1,6 +1,6 @@
 # Optimizely Provider
 
-This is an [OpenFeature](https://openfeature.dev/) provider for the Optimizely Feature Experimentation JavaScript SDK (server-side Node.js applications). It adapts Optimizely decisions to the OpenFeature evaluation API while preserving the Optimizely variation key and decision metadata.
+Use this provider to evaluate Optimizely Feature Experimentation flags through [OpenFeature](https://openfeature.dev/) in Node.js server applications. It preserves the Optimizely variation key and decision metadata in each OpenFeature resolution.
 
 ## Framework compatibility
 
@@ -25,7 +25,7 @@ npm install @openfeature/optimizely-provider @openfeature/server-sdk @optimizely
 
 ## Setup
 
-The Optimizely SDK supports modular client construction. A typical application creates the client, passes it to the provider, and lets OpenFeature initialize the provider:
+Create and configure the Optimizely client in application code, pass it to the provider, and let OpenFeature initialize it:
 
 ```ts
 import { OpenFeature } from '@openfeature/server-sdk';
@@ -82,7 +82,7 @@ await OpenFeature.getClient().getBooleanValue('new-checkout', false, context);
 
 ## Decision and type mapping
 
-Each OpenFeature resolution performs one Optimizely `decideAsync` call. This is important because a decision may record an impression. The Optimizely `variationKey` is returned as the OpenFeature `variant`, and the `ruleKey` is exposed as evaluation metadata when available.
+Each OpenFeature resolution performs one Optimizely `decideAsync` call because that decision may record an impression. The Optimizely `variationKey` is returned as the OpenFeature `variant`, and the `ruleKey` is exposed as evaluation metadata when available.
 
 Optimizely variables are mapped using the same variable-count convention as the OpenFeature Optimizely provider for Go:
 
