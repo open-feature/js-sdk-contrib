@@ -2,18 +2,9 @@
 
 Use this provider to evaluate Optimizely Feature Experimentation flags through [OpenFeature](https://openfeature.dev/) in Node.js server applications. It preserves the Optimizely variation key and decision metadata in each OpenFeature resolution.
 
-## Framework compatibility
+## Runtime support
 
-The server provider is framework-agnostic: it can be registered once during application startup and used from any code that can run the Optimizely Node.js SDK.
-
-| Application surface                                           | Package and runtime                                                  | Status                                                                                |
-| ------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Next.js Server Components, server actions, and route handlers | `@openfeature/server-sdk` and this provider on the Node.js runtime   | Supported                                                                             |
-| Hono applications and route handlers                          | `@openfeature/server-sdk` and this provider with Hono's Node adapter | Supported                                                                             |
-| React client components                                       | `@openfeature/react-sdk` with a browser provider                     | Use the web provider; do not import this server package into a client bundle          |
-| Next.js Edge runtime or Cloudflare Workers                    | `@openfeature/web-sdk` + `@openfeature/optimizely-edge-provider`     | Use the separate Universal/Edge provider; this Node.js package is not edge-compatible |
-
-The framework labels above describe the integration boundary, not framework-specific test coverage. This package does not include Next.js, Hono, or React as dependencies. React clients require a browser-compatible provider registered with the web SDK. Edge deployments require a provider built on Optimizely's Universal entry point.
+This package is for Node.js server runtimes, including Next.js server code and Hono through its Node adapter. Do not import it into browser or Edge bundles. React clients require a browser provider registered with the OpenFeature web SDK; Edge deployments require a provider built on Optimizely's Universal entry point.
 
 ## Installation
 
@@ -130,7 +121,3 @@ npx nx test optimizely --no-watchman
 npx nx lint optimizely
 npx nx package optimizely
 ```
-
-## Contributing
-
-Run the checks above before opening a pull request. Follow the repository's [contribution guide](../../../CONTRIBUTING.md), keep the public package API documented, and use semantic commit/PR titles such as `feat(optimizely): add server provider`.
