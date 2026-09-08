@@ -72,12 +72,6 @@ boundary for those cases.
 | Hono on Node.js                                         | `@openfeature/server-sdk` + `@openfeature/optimizely-provider`                       | Use the server package instead                         |
 | Next.js Edge runtime or Cloudflare Workers              | `@openfeature/web-sdk` + `@openfeature/optimizely-edge-provider`                     | Use the separate Universal/Edge provider               |
 
-The provider is not a Next.js or React plugin. React applications should use
-the [OpenFeature React SDK](https://openfeature.dev/docs/reference/technologies/client/react)
-and the web SDK provider registration pattern; Hono and server-side Next.js
-code should use the server package. Next.js Edge routes and Hono applications
-on Cloudflare Workers should use `@openfeature/optimizely-edge-provider`.
-
 ## Lifecycle, context, and tracking
 
 The web provider initializes the browser Optimizely client before flag reads
