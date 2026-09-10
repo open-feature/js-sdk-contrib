@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { TestStepResultStatus } from '@cucumber/messages';
+import { TestStepResultStatus, version as messagesVersion } from '@cucumber/messages';
 import type { Capability } from './capability';
 import type { BackendControl } from './control';
 import type { CompleteTestCase, ConformanceMessages, Outcome } from './messages';
@@ -77,6 +77,16 @@ export interface ConformanceReport {
   };
   results: {
     format: typeof RESULTS_FORMAT;
+    /**
+     * The Cucumber Messages release the stream was produced against.
+     *
+     * Messages is versioned and the implementations pin different releases -- this one is on 24.x
+     * while the Go TCK builds against v21 and the Python one on 34.x -- so a consumer holding two
+     * reports cannot assume one schema validates both. Guessing is worse than not validating: a
+     * later schema accepts messages this producer could not have emitted, and an earlier one
+     * rejects messages that are perfectly valid.
+     */
+    formatVersion: string;
     /** Where to fetch the results: a path relative to this document. */
     location: string;
     digest?: string;
@@ -366,6 +376,10 @@ export function writeConformanceReport(recorder: ConformanceRecorder, suiteName:
   const ndjson = recorder.messages.ndjson();
   const envelope = recorder.build({
     format: RESULTS_FORMAT,
+    // Taken from the library that produced the stream rather than written down, and the same value
+    // the stream reports in its own Meta message, so the envelope and the stream cannot disagree
+    // about which release produced it.
+    formatVersion: messagesVersion,
     // Relative to the envelope, which is the sibling file it was just written next to. A path
     // rather than a URI so a published pair can be moved as a unit.
     location: resultsName,
