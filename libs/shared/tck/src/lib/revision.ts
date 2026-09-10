@@ -5,12 +5,3 @@
 
 /** The open-feature/spec commit the conformance artifacts in `spec/` were taken from. */
 export const SPEC_REVISION = 'dfa16586d91ca020ef1b3b82a7c972d833ff8f29';
-
-/**
- * The git tree object ID of `specification/assets/provider-tck` at {@link SPEC_REVISION}.
- *
- * It identifies the artifacts rather than the commit, so an unrelated change elsewhere in the
- * specification leaves it untouched, and `git rev-parse SPEC_REVISION:specification/assets/provider-tck`
- * reproduces it.
- */
-export const ASSETS_TREE = '904aa7d5fd7a856a4f92ace24355bd1987143abc';

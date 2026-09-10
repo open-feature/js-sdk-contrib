@@ -1,6 +1,19 @@
 import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
+/**
+ * The URI prefix an extension feature is named under in the results stream.
+ *
+ * A canonical feature is named by the path it has in open-feature/spec, which -- with
+ * `tck.specRevision` from the envelope -- says exactly which artifact ran. An adopter's feature has
+ * no such path, and giving it one would claim the canonical suite contains something it does not.
+ * So extension features are named under their own prefix, and that is what tells a report consumer
+ * which scenarios came from the shared suite and which the adopter added.
+ *
+ * The bare file name is enough after the prefix, because two extension features may not share one.
+ */
+export const EXTENSION_URI_PREFIX = 'extensions';
+
 /** One extension feature file, resolved and checked. */
 export interface ExtensionFeatureFile {
   /** The bare file name without extension, which is what names the feature a scenario belongs to. */
