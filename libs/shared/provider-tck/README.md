@@ -64,6 +64,56 @@ timescales — a streaming provider sees a configuration change in milliseconds,
 30 seconds may need most of a poll interval. Set it to comfortably exceed your worst-case detection
 latency, or the suite reports timeouts that are really just impatience.
 
+## Extending the suite
+
+A vendor usually has behaviour outside the shared contract — flagd's `fractional` targeting is the
+motivating example. Those scenarios cannot go in the canonical feature files, because they are not
+part of what every provider implements, but running them in a **parallel harness** means
+reimplementing the provider lifecycle, the backend reset and the report, and then watching it drift.
+
+So the suite takes them:
+
+```ts
+import { join } from 'node:path';
+import type { StepDefinitions } from 'jest-cucumber';
+
+const vendorSteps: StepDefinitions = ({ given }) => {
+  given(/^a fractional rule splitting "([^"]*)" (\d+)\/(\d+)$/, async (key, a, b) => { /* ... */ });
+};
+
+runProviderTck({
+  name: 'my-provider',
+  control,
+  newProvider: () => new MyProvider(control.address),
+  extensionFeatures: join(__dirname, 'extension-features'),
+  extensionSteps: vendorSteps,
+});
+```
+
+Both are optional, and omitting them gives exactly the run you get today. What you get by supplying
+them is one suite: the same `describe`, the same provider lifecycle, the same per-scenario backend
+reset, the same capability gate, the same report. An extension scenario uses the canonical steps
+freely and needs `extensionSteps` only for words the canonical vocabulary does not have.
+
+`extensionFeatures` takes a directory (every `.feature` file directly in it, sorted) or a single
+file, or a list of either. Paths resolve against the runner's working directory rather than your
+test file's, so pass absolute ones.
+
+Two rules are enforced rather than documented, because without them the Java prototype let a
+same-named extension file *replace* a canonical one — the suite went green having run the adopter's
+version of a canonical scenario:
+
+- an extension feature may not be named after a canonical one (`errors`, `evaluation`, `events`,
+  `lifecycle`), and belongs in a directory of its own;
+- an extension feature may not live inside the canonical asset directory.
+
+A step matcher that also matches a canonical step is rejected by jest-cucumber as ambiguous, so an
+extension cannot redefine what a canonical step means either.
+
+In the report, an extension scenario is named under the `extensions/` URI prefix while a canonical
+one keeps its path in [open-feature/spec][spec]. That is what a report consumer reads to tell them
+apart, and it is why extension scenarios do not count towards conformance.
+
 ## Capabilities
 
 Not every provider implements every optional part of the contract. Each scenario exercising an
@@ -322,6 +372,7 @@ the same reason as the other two: there is no backend for initialisation to reac
 | Suite | Subject | Why |
 | --- | --- | --- |
 | `inMemory.spec.ts` | the SDK's `InMemoryProvider` | reference adoption for a backend-less provider, and the Docker-free canary |
+| `extensionSuite.spec.ts` | the same provider, plus `fixtures/extension-features` | reference adoption for a vendor with scenarios of its own, and the proof they share one lifecycle with the canonical set |
 | `multiProvider.spec.ts` | `MultiProvider` wrapping one child | delegation must be transparent |
 | `inProcessControl.spec.ts` | `InProcessControl` | pins what the Gherkin cannot assert about itself |
 

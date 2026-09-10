@@ -1,9 +1,11 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { basename, extname, join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { basename, join } from 'node:path';
+import type { StepDefinitions } from 'jest-cucumber';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import { IdGenerator } from '@cucumber/messages';
 import { OpenFeature } from '@openfeature/server-sdk';
 import { ALL_CAPABILITIES, Capability } from './capability';
+import { EXTENSION_URI_PREFIX, featureFileNames, resolveExtensionFeatures } from './extensions';
 import type { FeatureMessages } from './messages';
 import { ConformanceMessages, readFeatureMessages } from './messages';
 import type { TckOptions } from './options';
@@ -88,11 +90,36 @@ function featureUri(feature: string): string {
   return `specification/assets/provider-tck/gherkin/${feature}.feature`;
 }
 
-/** One canonical feature file: its bare name, jest-cucumber's parse, and its Cucumber Messages. */
+/** One feature file: its bare name, jest-cucumber's parse, and its Cucumber Messages. */
 export interface TckFeature {
   feature: string;
   parsed: ReturnType<typeof loadFeature>;
   messages: FeatureMessages;
+  /**
+   * Whether this file is part of the canonical conformance set.
+   *
+   * False for a feature an adopter supplied through `extensionFeatures`. The distinction is what keeps
+   * an extension out of the canonical-coverage accounting, and it is carried into the stream by the
+   * URI the feature is named under.
+   */
+  canonical: boolean;
+}
+
+/** Reads one feature file both ways: jest-cucumber's parse, and the Gherkin compiler's messages. */
+function readFeature(
+  path: string,
+  feature: string,
+  uri: string,
+  canonical: boolean,
+  tagFilter: string | undefined,
+  nextId: IdGenerator.NewId,
+): TckFeature {
+  return {
+    feature,
+    canonical,
+    parsed: loadFeature(path, { tagFilter }),
+    messages: readFeatureMessages(uri, readFileSync(path, 'utf8'), nextId),
+  };
 }
 
 /**
@@ -111,18 +138,47 @@ export function loadTckFeatures(tagFilter: string | undefined, newId?: IdGenerat
   // them. A caller with no stream to add them to gets a private one.
   const nextId = newId ?? IdGenerator.incrementing();
 
-  return readdirSync(dir)
-    .filter((entry) => extname(entry) === '.feature')
-    .sort()
-    .map((entry) => {
-      const feature = basename(entry, '.feature');
+  return featureFileNames(dir).map((entry) => {
+    const feature = basename(entry, '.feature');
+    return readFeature(join(dir, entry), feature, featureUri(feature), true, tagFilter, nextId);
+  });
+}
 
-      return {
-        feature,
-        parsed: loadFeature(join(dir, entry), { tagFilter }),
-        messages: readFeatureMessages(featureUri(feature), readFileSync(join(dir, entry), 'utf8'), nextId),
-      };
-    });
+/**
+ * The feature files an adopter contributed, loaded the same way the canonical ones are.
+ *
+ * The same loader, the same tag filter and the same id generator, so an extension scenario is gated
+ * by the capability declaration exactly as a canonical one is and lands in the same stream. What
+ * differs is the URI it is named under and the `canonical` flag, which are how the report and the
+ * canonical-coverage check tell the two apart.
+ *
+ * `resolveExtensionFeatures` refuses anything that could be mistaken for a canonical feature before
+ * a line of it is parsed.
+ */
+export function loadExtensionFeatures(
+  paths: readonly string[],
+  tagFilter: string | undefined,
+  newId?: IdGenerator.NewId,
+): TckFeature[] {
+  if (!paths.length) {
+    return [];
+  }
+
+  const canonicalDir = resolveAssetDir('features');
+  const canonicalNames = new Set(featureFileNames(canonicalDir).map((entry) => basename(entry, '.feature')));
+  const nextId = newId ?? IdGenerator.incrementing();
+
+  return resolveExtensionFeatures(paths, canonicalDir, canonicalNames).map(({ feature, path }) =>
+    readFeature(path, feature, `${EXTENSION_URI_PREFIX}/${feature}.feature`, false, tagFilter, nextId),
+  );
+}
+
+/** Accepts an option that may be given once or several times, and always yields a list. */
+function asList<T>(value: T | readonly T[] | undefined): readonly T[] {
+  if (value === undefined) {
+    return [];
+  }
+  return Array.isArray(value) ? (value as readonly T[]) : ([value] as readonly T[]);
 }
 
 /** The canonical flag set, as raw JSON, for a suite that seeds a backend from it. */
@@ -193,7 +249,12 @@ export function runProviderTck(options: TckOptions): void {
   // Every scenario in the suite reaches the stream, including the ones the gate will skip: the tag
   // filter changes what runs, not what is compiled.
   const messages = new ConformanceMessages();
-  const features = loadTckFeatures(tagFilter, messages.newId);
+  // The canonical set first and always, then whatever the adopter added. Extensions extend the run;
+  // they never take part in producing it, so no wiring mistake can leave a canonical feature out.
+  const features = [
+    ...loadTckFeatures(tagFilter, messages.newId),
+    ...loadExtensionFeatures(asList(options.extensionFeatures), tagFilter, messages.newId),
+  ];
   features.forEach((feature) => messages.addFeature(feature.messages));
 
   const plans: FeaturePlan[] = features.map(({ feature, parsed, messages: compiled }) =>
@@ -217,13 +278,18 @@ export function runProviderTck(options: TckOptions): void {
     parsed.options.runner = scenarioRunner(plans[position], recorder, notApplicable);
   });
 
+  const extensions = features.filter(({ canonical }) => !canonical).map(({ feature }) => feature);
+
   describe(`provider-tck [${options.name}]`, () => {
     beforeAll(() => {
       // eslint-disable-next-line no-console
       console.log(
         `provider-tck [${options.name}]: backend under test is ${options.control.description}; ` +
           `declared capabilities ${[...declared].sort().join(' ') || '(none)'}` +
-          (notApplicable.size ? `; not applicable ${[...notApplicable.keys()].sort().join(' ')}` : ''),
+          (notApplicable.size ? `; not applicable ${[...notApplicable.keys()].sort().join(' ')}` : '') +
+          // Named rather than counted: a reader of the output has to be able to see that a scenario
+          // they do not recognise came from the adopter and not from the shared suite.
+          (extensions.length ? `; extension features ${extensions.sort().join(' ')}` : ''),
       );
     });
 
@@ -243,9 +309,12 @@ export function runProviderTck(options: TckOptions): void {
       await OpenFeature.clearProviders();
     });
 
+    // One call, so an extension scenario draws on the canonical vocabulary and an extension step is
+    // usable from a canonical one. jest-cucumber rejects a step text that two definitions match, so
+    // an extension step cannot quietly redefine a canonical one.
     autoBindSteps(
       features.map(({ parsed }) => parsed),
-      [providerSteps(state), flagSteps(state), eventSteps(state)],
+      [providerSteps(state), flagSteps(state), eventSteps(state), ...asList<StepDefinitions>(options.extensionSteps)],
     );
 
     afterAll(() => {
