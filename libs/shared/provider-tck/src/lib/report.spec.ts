@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { version as messagesVersion } from '@cucumber/messages';
 import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
 import type { BackendControl } from './control';
 import { ConformanceMessages } from './messages';
@@ -34,9 +35,26 @@ const recorderFor = (declared: Capability[], notApplicable = new Map<Capability,
   });
 
 /** Where the results live, as the envelope has to be told. */
-const RESULTS = { format: 'cucumber-messages' as const, location: 'unit.ndjson' };
+const RESULTS = {
+  format: 'cucumber-messages' as const,
+  // The real library version rather than a literal, so this fixture cannot drift from what
+  // the emitter actually records.
+  formatVersion: messagesVersion,
+  location: 'unit.ndjson',
+};
 
 describe('the conformance envelope', () => {
+  it('records the Cucumber Messages release the stream was produced against', () => {
+    // Messages is versioned and the four TCK implementations pin different releases, so a
+    // consumer cannot assume one schema validates every stream. The value has to come from the
+    // library that produced it -- a literal here would go on claiming an old release after a
+    // dependency bump moved the types underneath it.
+    const { results } = recorderFor([Capability.Events]).build(RESULTS);
+
+    expect(results.formatVersion).toBe(messagesVersion);
+    expect(results.formatVersion).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
   it('states the capabilities the provider declares, which the results cannot say', () => {
     // The declaration is an input to reading the results rather than a summary of them: a skipped
     // test case says the question was not put to this provider, and only the declaration says
@@ -99,6 +117,7 @@ describe('the conformance envelope', () => {
 
     expect(report.results).toEqual({
       format: 'cucumber-messages',
+      formatVersion: messagesVersion,
       location: 'unit.ndjson',
       digest: `sha256:${'0'.repeat(64)}`,
     });
@@ -229,6 +248,7 @@ describe('writing the report', () => {
       // Relative to the envelope, so the pair can be published or moved together.
       expect(envelope['results']).toEqual({
         format: 'cucumber-messages',
+        formatVersion: messagesVersion,
         location: 'flagd-rpc.ndjson',
         digest: `sha256:${createHash('sha256').update(results, 'utf8').digest('hex')}`,
       });
