@@ -1,7 +1,7 @@
 import type { IJestLike, loadFeature } from 'jest-cucumber';
 import type { Capability } from './capability';
 import { capabilityForTag } from './capability';
-import type { ExampleTable } from './examples';
+import type { PickledScenario } from './messages';
 import type { ConformanceRecorder, ScenarioIdentity } from './report';
 
 /** What `loadFeature` hands back. jest-cucumber does not export the type, so it is derived. */
@@ -21,12 +21,19 @@ export interface PlannedScenario {
   /** The title jest-cucumber defines the scenario under; an outline example carries its expanded title. */
   title: string;
   /**
+   * The pickle this scenario is, in the emitted Messages stream.
+   *
+   * This is what identifies the scenario. Nothing else does: eleven rows of `errors.feature`'s
+   * type-mismatch matrix share a name, and share their expanded title too, because the outline's
+   * title has no placeholders in it.
+   */
+  pickleId: string;
+  /**
    * The Examples row this scenario came from, keyed by column header, or absent for a scenario that
    * is not an outline example.
    *
-   * Together with the feature and the name it identifies the scenario. Nothing else does: eleven
-   * rows of `errors.feature`'s type-mismatch matrix share one name, and a report that cannot say
-   * which of them failed is ambiguous exactly where it matters most.
+   * Carried so a diagnostic can name a row the way the feature file writes it. It is not reported:
+   * the stream identifies the row by the `TableRow` its pickle points at.
    */
   example?: Record<string, string>;
   /** Scenario tags and feature tags together, which is what gates the scenario. */
@@ -64,16 +71,47 @@ export interface FeaturePlan {
  * then every example of every outline. The runner asserts the title it is handed against the plan at
  * each step, so a change in jest-cucumber's behaviour surfaces as a loud failure rather than a wrong
  * report.
+ *
+ * `compiled` is the same file's scenarios as the Gherkin compiler produced them, in that same
+ * order, and each planned scenario is bound to one of them. That binding is what puts an outcome on
+ * the right pickle in the results stream, so it is checked rather than assumed: jest-cucumber
+ * substitutes an outline row into the scenario title and so does the pickle compiler, and the two
+ * strings have to agree.
  */
 export function planFeature(
   feature: string,
   parsed: ParsedFeature,
-  examples: readonly ExampleTable[],
+  compiled: readonly PickledScenario[],
   declared: ReadonlySet<Capability>,
 ): FeaturePlan {
-  const scenarios: PlannedScenario[] = [];
+  const defined: { scenario: ParsedScenario; name: string }[] = [
+    ...parsed.scenarios.map((scenario) => ({ scenario, name: scenario.title })),
+    // An outline's rows are named by the outline, placeholders and all. The expanded title is
+    // jest-cucumber's string, and Go's and Python's runners produce different ones for the same row.
+    ...parsed.scenarioOutlines.flatMap((outline) =>
+      outline.scenarios.map((scenario) => ({ scenario, name: outline.title })),
+    ),
+  ];
 
-  const plan = (scenario: ParsedScenario, name: string, example?: Record<string, string>): void => {
+  if (defined.length !== compiled.length) {
+    throw new Error(
+      `tck: ${feature}.feature: jest-cucumber defines ${defined.length} scenarios but the ` +
+        `Gherkin compiler produced ${compiled.length}. The report identifies a scenario by its ` +
+        `pickle, so it cannot be built when the two disagree.`,
+    );
+  }
+
+  const scenarios = defined.map(({ scenario, name }, position) => {
+    const { pickle, example } = compiled[position];
+    if (pickle.name !== scenario.title) {
+      throw new Error(
+        `tck: ${feature}.feature: jest-cucumber's scenario ${position} is ` +
+          `"${scenario.title}" but the pickle at that position is "${pickle.name}". Pairing them ` +
+          `positionally is only sound while both derive from the same parse of the same file, and a ` +
+          `wrong pairing would report an outcome against a scenario that did not run.`,
+      );
+    }
+
     const tags = Array.from(new Set([...scenario.tags, ...parsed.tags]));
     const missing: Capability[] = [];
 
@@ -86,27 +124,14 @@ export function planFeature(
       }
     }
 
-    scenarios.push({ name, title: scenario.title, ...(example ? { example } : {}), tags, missing });
-  };
-
-  parsed.scenarios.forEach((scenario) => plan(scenario, scenario.title));
-
-  parsed.scenarioOutlines.forEach((outline, position) => {
-    // The Examples tables are read from the same file by the same parser, so they arrive in the same
-    // order as jest-cucumber's expansion. Pairing them positionally is only sound while that holds,
-    // so it is checked rather than assumed: a wrong example is worse than none, because it reads as
-    // a fact about a row that did not run.
-    const table = examples[position];
-    if (table?.outline !== outline.title || table.rows.length !== outline.scenarios.length) {
-      throw new Error(
-        `tck: ${feature}.feature: the Examples rows read for outline ${position} ` +
-          `("${table?.outline ?? 'none'}", ${table?.rows.length ?? 0} rows) do not line up with ` +
-          `jest-cucumber's expansion of "${outline.title}" (${outline.scenarios.length} scenarios). ` +
-          `The report identifies an outline scenario by its example row, so it cannot be built.`,
-      );
-    }
-
-    outline.scenarios.forEach((scenario, row) => plan(scenario, outline.title, table.rows[row]));
+    return {
+      name,
+      title: scenario.title,
+      pickleId: pickle.id,
+      ...(example ? { example } : {}),
+      tags,
+      missing,
+    };
   });
 
   return { feature, title: parsed.title, scenarios };
@@ -229,8 +254,8 @@ function identify(plan: FeaturePlan, scenario: PlannedScenario): ScenarioIdentit
   return {
     feature: plan.feature,
     name: scenario.name,
+    pickleId: scenario.pickleId,
     ...(scenario.example ? { example: scenario.example } : {}),
-    tags: scenario.tags,
   };
 }
 

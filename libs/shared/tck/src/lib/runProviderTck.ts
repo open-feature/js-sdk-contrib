@@ -1,12 +1,14 @@
+import { readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import type { StepDefinitions } from 'jest-cucumber';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
+import { IdGenerator } from '@cucumber/messages';
 import { OpenFeature } from '@openfeature/server-sdk';
 import { resolveAssetDir } from './assets';
 import { expiredReservations } from './capability';
-import type { ExampleTable } from './examples';
-import { readExampleTables } from './examples';
-import { featureFiles, resolveExtensionFeatures } from './extensions';
+import { EXTENSION_URI_PREFIX, featureFiles, resolveExtensionFeatures } from './extensions';
+import type { FeatureMessages } from './messages';
+import { ConformanceMessages, readFeatureMessages } from './messages';
 import type { TckOptions } from './options';
 import { eventTimeout, readyTimeout, resolveCapabilities } from './options';
 import { ConformanceRecorder, coverageProblems, writeConformanceReport } from './report';
@@ -21,24 +23,49 @@ import { registerSuiteUnderTest } from './underTest';
 /** The glob matching the canonical feature files packaged with this library. */
 export const FEATURES_GLOB = join(resolveAssetDir('features'), '*.feature');
 
-/** One feature file: its bare name, jest-cucumber's parse, its Examples rows, and where it came from. */
+/**
+ * The URI a feature file is named by in the results stream.
+ *
+ * The path the artifacts have upstream, not the path they happen to sit at on this machine: with
+ * `tck.specRevision` from the envelope it names the executed file exactly, and it is the same
+ * string wherever the suite runs. Assembled with forward slashes for the same reason -- a URI is
+ * not a filesystem path, and a Windows separator here would make two runs of identical assets
+ * report different sources.
+ */
+function featureUri(feature: string): string {
+  return `specification/assets/provider-tck/gherkin/${feature}.feature`;
+}
+
+/** One feature file: its bare name, jest-cucumber's parse, its Cucumber Messages, and where it came from. */
 export interface TckFeature {
   feature: string;
   parsed: ReturnType<typeof loadFeature>;
-  /**
-   * The file's Examples tables, which jest-cucumber discards during expansion.
-   *
-   * Read from the same file by the same parser, so they arrive in the order jest-cucumber expanded
-   * the outlines in -- which is what lets an outline scenario be identified by the row it came from.
-   */
-  examples: ExampleTable[];
+  messages: FeatureMessages;
   /**
    * Whether this file is part of the canonical conformance set.
    *
    * False for a feature an adopter supplied through {@link TckOptions.extensionFeatures}. The
-   * distinction is what keeps an extension out of anything that reads as a conformance claim.
+   * distinction is what keeps an extension out of anything that reads as a conformance claim, and it
+   * is carried into the stream by the URI the feature is named under.
    */
   canonical: boolean;
+}
+
+/** Reads one feature file both ways: jest-cucumber's parse, and the Gherkin compiler's messages. */
+function readFeature(
+  path: string,
+  feature: string,
+  uri: string,
+  canonical: boolean,
+  tagFilter: string | undefined,
+  nextId: IdGenerator.NewId,
+): TckFeature {
+  return {
+    feature,
+    canonical,
+    parsed: loadFeature(path, { tagFilter }),
+    messages: readFeatureMessages(uri, readFileSync(path, 'utf8'), nextId),
+  };
 }
 
 /**
@@ -46,43 +73,48 @@ export interface TckFeature {
  *
  * Per file, because a feature's bare name is what identifies the feature a scenario belongs to, and
  * `loadFeatures` does not say which file it parsed which feature from. Reading the directory itself
- * also gives the path each file's Examples tables are read from.
+ * also gives the source each file's `Source`, `GherkinDocument` and `Pickle` messages are compiled
+ * from -- which jest-cucumber discards during expansion.
  */
-export function loadTckFeatures(tagFilter: string | undefined): TckFeature[] {
+export function loadTckFeatures(tagFilter: string | undefined, newId?: IdGenerator.NewId): TckFeature[] {
   const dir = resolveAssetDir('features');
+  // Ids have to be unique across the features of one stream, so the generator is shared between
+  // them. A caller with no stream to add them to gets a private one.
+  const nextId = newId ?? IdGenerator.incrementing();
 
-  return featureFiles(dir).map((path) => ({
-    feature: basename(path, '.feature'),
-    parsed: loadFeature(path, { tagFilter }),
-    examples: readExampleTables(path),
-    canonical: true,
-  }));
+  return featureFiles(dir).map((path) => {
+    const feature = basename(path, '.feature');
+    return readFeature(path, feature, featureUri(feature), true, tagFilter, nextId);
+  });
 }
 
 /**
  * The feature files an adopter contributed, loaded the same way the canonical ones are.
  *
- * The same loader and the same tag filter, so an extension scenario is gated by the capability
- * declaration exactly as a canonical one is. What differs is the `canonical` flag, which is how
- * anything downstream tells an adopter's scenario from one the shared suite owns.
+ * The same loader, the same tag filter and the same id generator, so an extension scenario is gated
+ * by the capability declaration exactly as a canonical one is and lands in the same stream. What
+ * differs is the URI it is named under and the `canonical` flag, which are how the report and the
+ * canonical-coverage check tell the two apart.
  *
  * `resolveExtensionFeatures` refuses anything that could be mistaken for a canonical feature before
  * a line of it is parsed.
  */
-export function loadExtensionFeatures(paths: readonly string[], tagFilter: string | undefined): TckFeature[] {
+export function loadExtensionFeatures(
+  paths: readonly string[],
+  tagFilter: string | undefined,
+  newId?: IdGenerator.NewId,
+): TckFeature[] {
   if (!paths.length) {
     return [];
   }
 
   const canonicalDir = resolveAssetDir('features');
   const canonicalNames = new Set(featureFiles(canonicalDir).map((path) => basename(path, '.feature')));
+  const nextId = newId ?? IdGenerator.incrementing();
 
-  return resolveExtensionFeatures(paths, canonicalDir, canonicalNames).map(({ feature, path }) => ({
-    feature,
-    parsed: loadFeature(path, { tagFilter }),
-    examples: readExampleTables(path),
-    canonical: false,
-  }));
+  return resolveExtensionFeatures(paths, canonicalDir, canonicalNames).map(({ feature, path }) =>
+    readFeature(path, feature, `${EXTENSION_URI_PREFIX}/${feature}.feature`, false, tagFilter, nextId),
+  );
 }
 
 /** Accepts an option that may be given once or several times, and always yields a list. */
@@ -147,29 +179,25 @@ export function runProviderTck(options: TckOptions): void {
   // reporting every step as ambiguous.
   registerSuiteUnderTest(state);
 
-  const recorder = new ConformanceRecorder({
-    suiteName: options.name,
-    control: options.control,
-    declared,
-    notApplicable: new Set(notApplicable.keys()),
-    observedProviderName: () => state.providerName,
-  });
-
   // Undeclared capabilities are excluded here, which marks their scenarios `skippedViaTagFilter`.
   // jest-cucumber turns that into `test.skip`, so they are reported as SKIPPED rather than quietly
   // omitted -- which is the whole point. The reason travels in the scenario name, because Jest has
-  // nowhere else to put it.
+  // nowhere else to put it, and in the results stream on the skipped step's result.
   const tagFilter = undeclared.length ? undeclared.map((capability) => `not ${capability}`).join(' and ') : undefined;
 
+  // Every scenario in the suite reaches the stream, including the ones the gate will skip: the tag
+  // filter changes what runs, not what is compiled.
+  const messages = new ConformanceMessages();
   // The canonical set first and always, then whatever the adopter added. Extensions extend the run;
   // they never take part in producing it, so no wiring mistake can leave a canonical feature out.
   const features = [
-    ...loadTckFeatures(tagFilter),
-    ...loadExtensionFeatures(asList(options.extensionFeatures), tagFilter),
+    ...loadTckFeatures(tagFilter, messages.newId),
+    ...loadExtensionFeatures(asList(options.extensionFeatures), tagFilter, messages.newId),
   ];
+  features.forEach((feature) => messages.addFeature(feature.messages));
 
-  const plans: FeaturePlan[] = features.map(({ feature, parsed, examples }) =>
-    planFeature(feature, parsed, examples, declared),
+  const plans: FeaturePlan[] = features.map(({ feature, parsed, messages: compiled }) =>
+    planFeature(feature, parsed, compiled.planned, declared),
   );
 
   // Which capabilities are reserved is recorded here but decided upstream, so it is checked against
@@ -190,6 +218,15 @@ export function runProviderTck(options: TckOptions): void {
         `claim.`,
     );
   }
+
+  const recorder = new ConformanceRecorder({
+    suiteName: options.name,
+    control: options.control,
+    declared,
+    notApplicable,
+    messages,
+    observedProviderName: () => state.providerName,
+  });
 
   // jest-cucumber owns the test and test.skip calls, and accepts a runner to make them through, so
   // the harness supplies one per feature. Recording the outcome there means it is captured where the
@@ -254,7 +291,7 @@ export function runProviderTck(options: TckOptions): void {
       // scenario, so the accounting is verified here rather than assumed -- in every run, not only
       // when a report is being written.
       const planned = plans.flatMap((plan) =>
-        plan.scenarios.map(({ name, example }) => ({ feature: plan.feature, name, example })),
+        plan.scenarios.map(({ name, pickleId, example }) => ({ feature: plan.feature, name, pickleId, example })),
       );
       const problems = coverageProblems(recorder.results, planned);
       if (problems.length) {
@@ -264,10 +301,18 @@ export function runProviderTck(options: TckOptions): void {
         );
       }
 
-      const path = writeConformanceReport(recorder, options.name);
-      if (path) {
+      const written = writeConformanceReport(recorder, options.name);
+      if (written) {
+        const counts = Object.entries(recorder.statusCounts)
+          .sort()
+          .map(([status, count]) => `${status} ${count}`)
+          .join(', ');
+
         // eslint-disable-next-line no-console
-        console.log(`tck [${options.name}]: conformance report written to ${path}`);
+        console.log(
+          `tck [${options.name}]: conformance report written to ${written.report}, ` +
+            `results to ${written.results} (${counts})`,
+        );
       }
     });
   });

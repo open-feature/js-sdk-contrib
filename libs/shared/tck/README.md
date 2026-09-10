@@ -129,6 +129,10 @@ The canonical features are loaded unconditionally and first, so no extension wir
 of the run. An extension scenario carries no weight in a conformance claim: it is the adopter's own
 question, run in the adopter's own suite.
 
+In the results stream, an extension scenario is named under the `extensions/` URI prefix while a
+canonical one keeps its path in [open-feature/spec][spec]. That is what a report consumer reads to
+tell them apart, and it is why extension scenarios do not count towards conformance.
+
 ### Reaching the provider under test from a vendor step
 
 `StepDefinitions` is handed nothing but jest-cucumber's own `given`/`when`/`then`, and the provider
@@ -590,92 +594,119 @@ Install it in the adopting project — `npm i -D testcontainers` — if you use 
 to something.
 ## Conformance reports
 
-Set `PROVIDER_TCK_REPORT_DIR` and each suite writes a machine-readable report of its run to
-`<dir>/<name>.json`, conforming to the [report schema][report-schema] in the specification.
+Set `PROVIDER_TCK_REPORT_DIR` and each suite writes two files: an envelope at `<dir>/<name>.json`,
+conforming to the [report schema][report-schema] in the specification, and the results it points at
+at `<dir>/<name>.ndjson`.
+
+**The results are [Cucumber Messages][messages], not a format this project defines.** Per-scenario
+outcomes, tags, Scenario Outline row identity and the executed feature source are all specified
+there already, and specifying them again would mean a second format to version and two places for
+the same fact to disagree. The envelope carries only what Messages has no opinion about: what was
+tested, and what the provider claims.
 
 ```console
 $ PROVIDER_TCK_REPORT_DIR=./reports npx jest
-$ jq '.scenarios | group_by(.outcome) | map({(.[0].outcome): length}) | add' reports/in-memory.json
-{
-  "passed": 24,
-  "not-declared": 4,
-  "not-applicable": 1
-}
+$ jq -r 'select(.testStepFinished).testStepFinished.testStepResult.status' reports/in-memory.ndjson \
+    | sort | uniq -c
+     24 PASSED
+      5 SKIPPED
 ```
 
 It is an environment variable rather than a `TckOptions` field so that emitting a report is a
 property of the *run* and not of the code: CI sets it, a developer running the suite locally does
 not, and no adopter changes a line to publish one. Unset means no report, which is not an error.
-Several suites in one run each write their own file, so flagd's two resolvers do not collide.
+Several suites in one run each write their own pair of files, so flagd's two resolvers do not
+collide. The stream is written first and the envelope second, carrying a `sha256` digest of it, so
+an envelope never names results that are not there or have moved on.
 
-**Every scenario appears exactly once**, whatever its outcome. That is what makes Appendix F's rule
-— a scenario skipped for an undeclared capability is reported as skipped and *never* as passed —
-checkable by a consumer rather than dependent on the runner's summary being trustworthy. The
-harness checks the accounting itself at the end of every run, report or no report, and fails the
-suite if a scenario is missing or recorded twice.
+**Every scenario appears exactly once**, whatever its outcome: one `Pickle`, one `TestCase` and one
+`TestCaseStarted`/`TestStepFinished`/`TestCaseFinished`, including for every scenario the capability
+gate skipped. That is what makes Appendix F's rule — a scenario skipped for an undeclared capability
+is reported as skipped and *never* as passed — checkable by a consumer rather than dependent on the
+runner's summary being trustworthy. The harness checks the accounting itself at the end of every
+run, report or no report, and fails the suite if a scenario is missing or recorded twice.
 
-Outcomes are recorded where the decision is made rather than scraped back out of a Jest reporter:
-jest-cucumber accepts the `describe`/`test` pair it calls, so the harness wraps them and records a
-skip at the point it is chosen and a pass or failure at the point the test body settles. A scenario
-is registered when it is *defined*, so one Jest never finished — a timeout, or a `-t` filter — still
-appears, as a failure that says so. **A report from a filtered run is partial by construction; do
-not publish one.**
+### Reading the stream
 
-Three fields are worth reading carefully:
+| Question | Where the answer is |
+| --- | --- |
+| what was in the suite | one `Pickle` per scenario, one `TestCase` per pickle |
+| what the outcome was | `TestStepFinished.testStepResult.status` |
+| why it was skipped | `TestStepFinished.testStepResult.message` |
+| what tags it carried | `Pickle.tags`, `Examples`-block tags included |
+| which row of an outline | `Pickle.astNodeIds` — the second id is the `TableRow` in the `GherkinDocument` |
+| what was actually executed | `Source`, verbatim |
+
+The eleven rows of `errors.feature`'s type-mismatch matrix are the case that matters. They share a
+scenario name, and they share their *expanded* name too, because that outline's title has no
+placeholders in it — so nothing but the AST node identifies them:
+
+```console
+$ jq -r 'select(.pickle) | select(.pickle.name | test("wrong type")) | .pickle.astNodeIds | @tsv' \
+    reports/in-memory.ndjson
+25      9
+25      10
+25      11
+...
+```
+
+`25` is the `Scenario Outline`, and the second id is the row: `jq` the `GherkinDocument` for it and
+its cells come back. No separator, ordering or escaping rule has to be agreed between four
+languages for that to work, which is what a naming convention would have required.
+
+**jest-cucumber has no output layer at all** — no reporter, no JSON, nothing. The stream is
+therefore built by the harness, and two things it already did make that cheap rather than painful.
+It plans every scenario before the run, which is where the `Pickle` and `TestCase` messages come
+from; and it owns the `test`/`test.skip` calls, which is where the outcomes are recorded, at the
+point the decision is made rather than scraped back out of a reporter. `@cucumber/gherkin` compiles
+the `Source`, `GherkinDocument` and `Pickle` messages from the feature files, so no message here is
+hand-rolled and no id is invented.
+
+A scenario is registered when it is *defined*, so one Jest never finished — a timeout, or a `-t`
+filter — still appears, as a failure that says so. **A report from a filtered run is partial by
+construction; do not publish one.**
+
+**One `TestStep` per test case, not one per Gherkin step.** jest-cucumber runs a whole scenario as a
+single Jest test and reports one outcome for it; it never says which step failed. A step per Gherkin
+step would mean inventing per-step results to fill in — marking them all failed over-claims, and
+marking one of them failed picks a step at random — so the stream carries the granularity the runner
+actually has. The steps themselves are in the stream on the `Pickle`, with the outline row already
+substituted into them, and jest-cucumber's failure message names the step it was on.
+
+**A gated scenario is `SKIPPED`, whichever kind of skip it was**, with the reason on the result. The
+difference between a capability the provider declined and one that cannot hold for it at all is not
+a status, because a status a consumer has to special-case is a status something reads as a pass. It
+is in the envelope's declaration, where it belongs: it is a fact about the provider rather than
+about the run.
+
+### Reading the envelope
 
 - **`provider.name` is what the provider reports through its own metadata**, not the suite name. The
   suite name is chosen to read well in a failure message — `flagd-rpc` — which makes it the
   *configuration*, and it is reported as such. One provider with two materially different modes
   produces two reports that are not interchangeable.
-- **`tck.specRevision` and `tck.assetsTree`** come from
-  [`src/lib/revision.ts`](./src/lib/revision.ts), which
-  [`scripts/write-revision.js`](./scripts/write-revision.js) generates from the submodule. They are
-  captured at build time because the submodule is not part of the published npm package. The tree
-  hash is carried as well as the commit because it identifies the artifacts alone: it is unchanged
-  by unrelated edits elsewhere in the specification, so two runs that executed identical artifacts
-  report the same value even when pinned to different commits — and it is checkable, since
-  `git rev-parse <specRevision>:specification/assets/provider-tck` must reproduce it.
-- **`scenarios[].example`** carries the `Examples` row a Scenario Outline scenario came from, keyed
-  by column header, and is omitted for anything else. `name` is the scenario name as the feature
-  file writes it, placeholders and all, so every row of an outline shares it — the eleven rows of
-  `errors.feature`'s type-mismatch matrix produce eleven entries with the same `feature` and `name`,
-  and only `example` tells them apart:
+- **`declaration` is an input to reading the results, not a summary of them.** A skipped test case
+  says the question was not put to this provider; only the declaration says whether that is because
+  the provider declines the capability (`declared` does not list it) or because the capability
+  cannot hold for it at all (`notApplicable`, with the reason). Given the declaration and a
+  scenario's tags, the reason for any skip follows without being transported per scenario.
+- **`tck.specRevision`** comes from [`src/lib/revision.ts`](./src/lib/revision.ts), which
+  [`scripts/write-revision.js`](./scripts/write-revision.js) generates from the submodule. It is
+  captured at build time because the submodule is not part of the published npm package. Nothing
+  else about the artifacts needs asserting: the stream carries every executed feature file verbatim
+  as a `Source`, which identifies them by content, covers only what ran, and is under the digest.
+- **`backend.controlApi`** reports how the backend was driven. It is an optional member of
+  `BackendControl`, so adding it broke no existing implementation; a control that omits it omits the
+  field, which claims nothing either way.
 
-  ```json
-  { "key": "boolean-flag", "requested": "Integer", "default": "1" }
-  ```
-
-  It is a field rather than a naming convention because the parameters *are* the identity and they
-  come from the feature file rather than from any runner. Mandating a mangled name instead would put
-  a separator, an ordering and an escaping rule into normative text that four languages have to
-  reproduce byte for byte, and drift there is invisible until two reports quietly fail to line up —
-  which had already happened, with one implementation emitting the bare scenario name for all eleven
-  rows, another its runner's example id and this one jest-cucumber's expanded title. Values are the
-  cell contents verbatim, as strings, because Gherkin has no types: `1` stays `"1"`.
-
-  jest-cucumber substitutes each row into the outline and keeps only the result, so the `Examples`
-  tables are read from the feature file separately, with the same Gherkin parser
-  ([`src/lib/examples.ts`](./src/lib/examples.ts)). The two parses are checked against each other
-  before the run; if they disagree the suite fails rather than reporting a row it cannot identify.
-
-`backend.controlApi` reports how the backend was driven. It is an optional member of
-`BackendControl`, so adding it broke no existing implementation; a control that omits it omits the
-field, which claims nothing either way.
-
-**`capabilities` is a summary of the optional contract, not a verdict.** Scenarios carrying no
-capability tag are mandatory and roll up into nothing, so a provider can fail a mandatory scenario
-while every entry there reads `passed`. A consumer deciding whether a provider conforms reads
-`scenarios`.
-
-A declared capability that **nothing in the run demonstrated is omitted** rather than reported as
-passed. Two ways of getting a green result for a question nobody asked are excluded that way:
-`@targeting` is reserved, so no scenario carries it at all; and every scenario carrying a capability
+There is no per-capability verdict in the report, and that is deliberate. A roll-up is derivable
+from the declaration and the stream, and a consumer computing one should count only test cases that
+*ran*: `@targeting` is reserved and no scenario carries it, and every scenario carrying a capability
 can be skipped for a *different* one — both scenarios in `events.feature` carry `@events` as well as
-`@stale` or `@configuration-change`, so a provider declaring only `@events` has nothing that ran to
-show for it. Omitting is preferred to a fifth outcome: the four in the schema are about what the
-provider did, and "this run demonstrated nothing" is a fact about the run. An *undeclared*
-capability is still reported as `not-declared`, because that is a fact about the provider and a gap
-has to stay visible.
+`@stale` or `@configuration-change` — so counting tag presence rather than execution reports a green
+result for a question nobody asked. Nor is a capability roll-up a conformance verdict in the first
+place: scenarios carrying no capability tag are mandatory and roll up into nothing, so a provider
+can fail a mandatory scenario with every capability intact.
 
 ## Controlling the backend
 
@@ -915,6 +946,7 @@ by every language's TCK.
 [appendix-a]: https://github.com/open-feature/spec/blob/main/specification/appendix-a-included-utilities.md
 [flagd-testbed]: https://github.com/open-feature/flagd-testbed
 [coercion-adr]: https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/numeric-coercion.md
+[messages]: https://github.com/cucumber/messages
 [report-schema]: https://github.com/open-feature/spec/blob/main/specification/assets/provider-tck/report/conformance-report.schema.json
 [appendix-f]: https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md
 [spec]: https://github.com/open-feature/spec
