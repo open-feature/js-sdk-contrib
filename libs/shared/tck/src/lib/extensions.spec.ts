@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
-import { featureFiles, resolveExtensionFeatures } from './extensions';
+import { EXTENSION_URI_PREFIX, featureFiles, resolveExtensionFeatures } from './extensions';
 import { loadExtensionFeatures, loadTckFeatures } from './runProviderTck';
 
 /** The canonical feature names, read the same way the harness reads them. */
@@ -169,11 +169,19 @@ describe('loading extension features', () => {
     expect(vendor.parsed.scenarios.map(({ title }) => title)).toContain(
       'A vendor rule resolves through the provider under test',
     );
+    // How a report consumer tells an adopter's scenario from a canonical one: a canonical feature is
+    // named by its path in open-feature/spec, which an extension has no claim to.
+    for (const { pickle } of vendor.messages.planned) {
+      expect(pickle.uri).toBe(`${EXTENSION_URI_PREFIX}/vendor.feature`);
+    }
   });
 
   it('leaves every canonical feature canonical', () => {
     for (const feature of loadTckFeatures(undefined)) {
       expect(feature.canonical).toBe(true);
+      expect(feature.messages.planned[0].pickle.uri).toBe(
+        `specification/assets/provider-tck/gherkin/${feature.feature}.feature`,
+      );
     }
   });
 
