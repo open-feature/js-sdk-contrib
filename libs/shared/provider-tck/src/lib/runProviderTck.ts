@@ -9,7 +9,9 @@ import { EXTENSION_URI_PREFIX, featureFileNames, resolveExtensionFeatures } from
 import type { FeatureMessages } from './messages';
 import { ConformanceMessages, readFeatureMessages } from './messages';
 import type { TckOptions } from './options';
-import { ConformanceRecorder, coverageProblems, writeConformanceReport } from './report';
+import type { ScenarioIdentity } from './report';
+import { ConformanceRecorder, coverageProblems, unexecutedScenarios, writeConformanceReport } from './report';
+import { SPEC_REVISION } from './revision';
 import type { FeaturePlan } from './scenarioRunner';
 import { planFeature, scenarioRunner } from './scenarioRunner';
 import { TckState } from './state';
@@ -322,14 +324,39 @@ export function runProviderTck(options: TckOptions): void {
       // skipped and never as passed. That is only checkable if the report accounts for every
       // scenario, so the accounting is verified here rather than assumed -- in every run, not only
       // when a report is being written.
-      const planned = plans.flatMap((plan) =>
-        plan.scenarios.map(({ name, pickleId, example }) => ({ feature: plan.feature, name, pickleId, example })),
-      );
-      const problems = coverageProblems(recorder.results, planned);
+      const plannedIn = (wanted: boolean): ScenarioIdentity[] =>
+        plans.flatMap((plan, position) =>
+          features[position].canonical === wanted
+            ? plan.scenarios.map(({ name, pickleId, example }) => ({ feature: plan.feature, name, pickleId, example }))
+            : [],
+        );
+
+      const canonicalPlanned = plannedIn(true);
+      const problems = coverageProblems(recorder.results, [...canonicalPlanned, ...plannedIn(false)]);
       if (problems.length) {
         throw new Error(
           `provider-tck [${options.name}]: the conformance report does not account for every ` +
             `scenario exactly once, so it cannot be trusted:\n  ${problems.join('\n  ')}`,
+        );
+      }
+
+      // The accounting above proves the report has an entry for every scenario. It does not prove
+      // the run produced those entries: a scenario is registered when it is defined, so one Jest
+      // then declined to run carries a placeholder failure and satisfies the accounting anyway. A
+      // partial run therefore goes green today -- a `-t` filter, a `testPathIgnorePatterns` entry,
+      // or a mistake in the extension wiring -- while its report claims nothing it can support.
+      //
+      // The canonical set is the entire content of a conformance claim, so it is checked. Extension
+      // scenarios are excluded: they are the adopter's, and filtering them is the adopter's business.
+      const unexecuted = unexecutedScenarios(canonicalPlanned, recorder.settled);
+      if (unexecuted.length) {
+        throw new Error(
+          `provider-tck [${options.name}]: ${unexecuted.length} of ${canonicalPlanned.length} ` +
+            `canonical scenarios did not run, so this run cannot support a conformance claim and ` +
+            `its report must not be published. The canonical set is the one in open-feature/spec ` +
+            `at ${SPEC_REVISION || 'an unknown revision'}; it is fixed, and running less of it is ` +
+            `not a configuration. If you filtered deliberately -- 'jest -t' while working on a ` +
+            `single scenario -- this failure is the expected consequence.\n  ${unexecuted.join('\n  ')}`,
         );
       }
 
