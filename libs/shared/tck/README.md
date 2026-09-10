@@ -624,6 +624,18 @@ is reported as skipped and *never* as passed — checkable by a consumer rather 
 runner's summary being trustworthy. The harness checks the accounting itself at the end of every
 run, report or no report, and fails the suite if a scenario is missing or recorded twice.
 
+**The canonical scenarios must also have actually run.** The accounting above proves the report has
+an entry per scenario; it does not prove the run produced those entries, because a scenario is
+registered when it is *defined* and one the runner declines to run carries a placeholder failure
+instead. So a filtered run — `jest -t`, a `testPathIgnorePatterns` entry, a mistake in the extension
+wiring — satisfies the accounting and goes green while its report supports nothing. The harness
+therefore fails the suite unless every canonical scenario reached a decision. A capability skip is a
+decision and passes the check; extension scenarios are excluded from it, because which of their own
+scenarios an adopter runs is the adopter's business.
+
+Working on one scenario with `-t` therefore ends in a failed suite. That is the intended cost: the
+alternative is a green run that cannot be told apart from a complete one.
+
 ### Reading the stream
 
 | Question | Where the answer is |
@@ -662,7 +674,8 @@ hand-rolled and no id is invented.
 
 A scenario is registered when it is *defined*, so one Jest never finished — a timeout, or a `-t`
 filter — still appears, as a failure that says so. **A report from a filtered run is partial by
-construction; do not publish one.**
+construction**, and the canonical-coverage check above fails the suite rather than leaving that to
+be noticed.
 
 **One `TestStep` per test case, not one per Gherkin step.** jest-cucumber runs a whole scenario as a
 single Jest test and reports one outcome for it; it never says which step failed. A step per Gherkin

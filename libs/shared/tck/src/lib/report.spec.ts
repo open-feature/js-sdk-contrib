@@ -12,6 +12,7 @@ import {
   REPORT_DIR_ENV,
   coverageProblems,
   reportBaseName,
+  unexecutedScenarios,
   writeConformanceReport,
 } from './report';
 import { loadTckFeatures } from './runProviderTck';
@@ -179,14 +180,18 @@ describe('scenario accounting', () => {
     ]);
   });
 
-  it('accounts for every planned scenario exactly once', () => {
-    const recorder = new ConformanceRecorder({
+  /** A recorder writing into the stream the canonical features above were registered with. */
+  const recorderInto = () =>
+    new ConformanceRecorder({
       suiteName: 'unit',
       control,
       declared: new Set(declared),
       notApplicable: new Map(),
       messages,
     });
+
+  it('accounts for every planned scenario exactly once', () => {
+    const recorder = recorderInto();
 
     for (const feature of plans) {
       for (const { name, pickleId, example, missing } of feature.scenarios) {
@@ -232,6 +237,50 @@ describe('scenario accounting', () => {
       'errors.feature: Requesting the wrong type returns the code default ' +
         '[key=string-flag requested=Integer default=1]: expected 1 outcome(s), recorded 2',
     ]);
+  });
+
+  it('does not call a scenario executed until the runner has decided about it', () => {
+    // The distinction the canonical guard turns on, and the reason `coverageProblems` alone is not
+    // enough. A scenario is registered when it is *defined*, so one Jest then declines to run is
+    // present in the report -- carrying the placeholder failure -- and satisfies the accounting
+    // above while having proved nothing.
+    const recorder = recorderInto();
+    const held = planned.find((scenario) => !scenario.example) as ScenarioIdentity;
+
+    const complete = recorder.started(held);
+    for (const scenario of planned.filter((entry) => entry !== held)) {
+      recorder.started(scenario)({ durationMs: 0 });
+    }
+
+    expect(unexecutedScenarios(planned, recorder.settled)).toEqual([`${held.feature}.feature: ${held.name}`]);
+
+    complete({ durationMs: 1 });
+    expect(unexecutedScenarios(planned, recorder.settled)).toEqual([]);
+  });
+
+  it('treats a capability skip as a decision rather than as a scenario that did not run', () => {
+    // Declaring fewer capabilities narrows what the suite asks, and says so in the declaration and
+    // in every skipped result's reason. It is a claim the provider is making, not a hole in the run,
+    // so the guard must not fire on it -- otherwise no provider could adopt the suite selectively.
+    const recorder = recorderInto();
+    const gated = plans.flatMap((feature) =>
+      feature.scenarios
+        .filter((scenario) => scenario.missing.length)
+        .map(({ name, pickleId, example, missing }) => ({
+          identity: { feature: feature.feature, name, pickleId, example },
+          missing,
+        })),
+    );
+
+    expect(gated.length).toBeGreaterThan(0);
+    gated.forEach(({ identity, missing }) => recorder.skipped(identity, missing));
+
+    expect(
+      unexecutedScenarios(
+        gated.map(({ identity }) => identity),
+        recorder.settled,
+      ),
+    ).toEqual([]);
   });
 });
 

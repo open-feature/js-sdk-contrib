@@ -152,6 +152,7 @@ const UNREPORTED =
  */
 export class ConformanceRecorder {
   private readonly recorded: ScenarioIdentity[] = [];
+  private readonly settledIds = new Set<string>();
 
   constructor(private readonly context: RecorderContext) {}
 
@@ -164,6 +165,10 @@ export class ConformanceRecorder {
    */
   skipped(scenario: ScenarioIdentity, missing: readonly Capability[]): void {
     this.register(scenario, { status: TestStepResultStatus.SKIPPED, message: this.skipReason(missing) });
+    // A gate skip is a settled outcome, not an absent one. The question was put to the suite and
+    // answered: this provider does not claim the capability. That is exactly what a conformance
+    // report is for, so it must not read as a scenario the run failed to reach.
+    this.settledIds.add(scenario.pickleId);
   }
 
   /**
@@ -176,7 +181,12 @@ export class ConformanceRecorder {
   started(scenario: ScenarioIdentity): (completion: { durationMs: number; error?: unknown }) => void {
     const complete = this.register(scenario, { status: TestStepResultStatus.FAILED, message: UNREPORTED });
 
-    return ({ durationMs, error }) =>
+    return ({ durationMs, error }) => {
+      // Settled only here, when the scenario's body has actually run. Registration happens when the
+      // scenario is *defined*, which Jest does even for a scenario it then declines to run, so
+      // registration alone says nothing about execution.
+      this.settledIds.add(scenario.pickleId);
+
       complete(
         error === undefined
           ? { status: TestStepResultStatus.PASSED, durationMs }
@@ -186,6 +196,7 @@ export class ConformanceRecorder {
               message: error instanceof Error ? error.message : String(error),
             },
       );
+    };
   }
 
   /**
@@ -196,11 +207,25 @@ export class ConformanceRecorder {
    */
   skippedUnexpectedly(scenario: ScenarioIdentity, reason: string): void {
     this.register(scenario, { status: TestStepResultStatus.FAILED, message: reason });
+    // Settled: the run reached this scenario and decided about it. The decision was wrong, and it is
+    // recorded as a failure, which is a different complaint from the one the coverage guard makes.
+    this.settledIds.add(scenario.pickleId);
   }
 
   /** Every scenario recorded so far, in the order it was recorded. */
   get results(): readonly ScenarioIdentity[] {
     return this.recorded;
+  }
+
+  /**
+   * The scenarios whose outcome the run actually determined, by pickle id.
+   *
+   * Narrower than {@link results}, and the difference is the point: a scenario is *recorded* when it
+   * is defined and *settled* when the runner has decided about it. Everything recorded but not
+   * settled is a scenario the report carries a placeholder failure for rather than a result.
+   */
+  get settled(): ReadonlySet<string> {
+    return this.settledIds;
   }
 
   /** How many scenarios ended in each Cucumber status, for a line a human reads. */
@@ -341,6 +366,28 @@ export function coverageProblems(
   }
 
   return problems.sort();
+}
+
+/**
+ * The scenarios that were planned but whose outcome the run never determined.
+ *
+ * {@link coverageProblems} asks whether the report accounts for every scenario; this asks the
+ * separate question of whether the run *answered* for them. The two differ because a scenario is
+ * registered when it is defined, so one Jest declined to run is present in the report -- carrying
+ * the placeholder failure {@link ConformanceRecorder.started} wrote -- and therefore satisfies the
+ * accounting while proving nothing.
+ *
+ * A capability skip is settled and does not appear here. Declaring fewer capabilities narrows what
+ * the suite asks; it is visible in the report's declaration and in each skipped result's reason, and
+ * it is a claim the provider is making rather than a hole in the run.
+ *
+ * Give this the canonical scenarios only. An adopter's own scenarios are theirs to filter.
+ */
+export function unexecutedScenarios(planned: readonly ScenarioIdentity[], settled: ReadonlySet<string>): string[] {
+  return planned
+    .filter((scenario) => !settled.has(scenario.pickleId))
+    .map(scenarioName)
+    .sort();
 }
 
 /**
