@@ -1,4 +1,4 @@
-import { Capability } from './capability';
+import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
 import { InProcessControl } from './inProcessControl';
 import { runProviderTck } from './runProviderTck';
 
@@ -46,7 +46,7 @@ runProviderTck({
 
   /*
    * StrictNumericTyping is not merely undeclared, it is inapplicable, and the conformance report
-   * says so with a separate outcome.
+   * says so in its declaration rather than leaving the capability silently absent.
    *
    * **JavaScript has no integer type.** `typeof 10` and `typeof 0.5` are both 'number', the
    * Evaluation API exposes only getNumberDetails, and the in-memory provider type-checks with
@@ -54,8 +54,8 @@ runProviderTck({
    * indistinguishable from asking for it as a Float, and no provider in this language can satisfy
    * that scenario — not because of a defect, but because the distinction does not exist here.
    *
-   * Reporting that as 'not-declared' would show every JavaScript provider as missing something no
-   * JavaScript provider can have. See the README.
+   * Reporting that as an undeclared capability would show every JavaScript provider as missing
+   * something no JavaScript provider can have. See the README.
    */
-  notApplicable: [Capability.StrictNumericTyping],
+  notApplicable: { [Capability.StrictNumericTyping]: NO_INTEGER_TYPE_IN_JAVASCRIPT },
 });

@@ -77,6 +77,19 @@ export enum Capability {
 }
 
 /**
+ * Why `@strict-numeric-typing` cannot hold for a provider written in JavaScript.
+ *
+ * Offered as a constant because it is a fact about the language rather than about any one provider,
+ * and because a report reader comparing two JavaScript providers is better served by one sentence
+ * than by two paraphrases of it. Pass it as the reason in {@link TckOptions.notApplicable}; it ends
+ * up in `declaration.notApplicable` in the conformance report.
+ */
+export const NO_INTEGER_TYPE_IN_JAVASCRIPT =
+  'JavaScript has no integer type: typeof 10 and typeof 0.5 are both "number" and the Evaluation ' +
+  'API exposes only getNumberDetails, so requesting a flag as an Integer is indistinguishable from ' +
+  'requesting it as a Float and no provider in this language can satisfy the scenario';
+
+/**
  * Every capability the TCK recognises.
  *
  * A reasonable starting point for a new adoption: declare everything, run the suite, and remove only

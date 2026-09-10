@@ -1,5 +1,5 @@
 import { MultiProvider } from '@openfeature/server-sdk';
-import { Capability } from './capability';
+import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
 import { InProcessControl } from './inProcessControl';
 import { runProviderTck } from './runProviderTck';
 
@@ -59,5 +59,5 @@ runProviderTck({
 
   // JavaScript has no integer type, so this capability is unsatisfiable in the language rather than
   // unimplemented by the provider. See inMemory.spec.ts.
-  notApplicable: [Capability.StrictNumericTyping],
+  notApplicable: { [Capability.StrictNumericTyping]: NO_INTEGER_TYPE_IN_JAVASCRIPT },
 });
