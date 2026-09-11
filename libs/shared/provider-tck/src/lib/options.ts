@@ -2,6 +2,7 @@ import type { StepDefinitions } from 'jest-cucumber';
 import type { Provider } from '@openfeature/server-sdk';
 import { Capability, DECLARABLE_CAPABILITIES, RESERVED_CAPABILITIES, isReserved } from './capability';
 import type { BackendControl } from './control';
+import type { KnownDeviation } from './deviation';
 
 /** Creates a provider under test. */
 export type ProviderFactory = () => Provider | Promise<Provider>;
@@ -104,6 +105,39 @@ export interface TckOptions {
   notApplicable?: Partial<Record<Capability, string>>;
 
   /**
+   * Gaps this provider is known to have, each named rather than merely absent.
+   *
+   * Neither {@link capabilities} nor {@link notApplicable} can express "this provider attempts the
+   * behaviour and gets it wrong", and that is the case a reader most needs told. A capability left
+   * out of {@link capabilities} reads as a design decision, and a capability in
+   * {@link notApplicable} reads as an impossibility; a defect is neither, and without somewhere to
+   * say so the only honest-looking option left to an adopter is to withdraw the capability — which
+   * replaces a failing scenario with a skip and hides the defect behind something that looks
+   * deliberate.
+   *
+   * So the intended use is the opposite of a withdrawal. Declare the capability, let the scenario
+   * run and fail, and record the deviation beside it:
+   *
+   * ```ts
+   * knownDeviations: [
+   *   KnownDeviation.untracked(
+   *     Capability.Lifecycle,
+   *     'shutdown() does not clear the initialised latch, so a second initialize() returns ' +
+   *       'without recreating the resolver and evaluates against a closed channel',
+   *   ),
+   * ]
+   * ```
+   *
+   * A deviation may also concern no capability at all — pass `undefined` — when the gap is against a
+   * mandatory scenario. It may not concern a reserved one: there is no scenario to deviate *from*,
+   * so the statement would be about nothing, exactly as for the other two fields.
+   *
+   * Declaring one changes nothing about what runs. It is a statement about the provider, carried
+   * through to whatever reads the declaration.
+   */
+  knownDeviations?: readonly KnownDeviation[];
+
+  /**
    * Feature files of your own, run in the same suite as the canonical ones.
    *
    * A vendor with provider-specific behaviour — flagd's `fractional` targeting, say — has scenarios
@@ -179,15 +213,17 @@ export interface ResolvedCapabilities {
    * excluding it from the filter excludes it from nothing.
    */
   undeclared: Capability[];
+  /** The gaps the suite named, checked and in declaration order. */
+  knownDeviations: readonly KnownDeviation[];
 }
 
 /**
  * Works out which capabilities a suite declares, and rejects every option that would make the
  * conformance report claim something the run did not establish.
  *
- * Separated from {@link runProviderTck} so it can be exercised without Jest, because two of the
- * three rules here exist to stop a wrong report rather than a failing test, and a rule with no test
- * is a rule that regresses quietly.
+ * Separated from {@link runProviderTck} so it can be exercised without Jest, because nearly every
+ * rule here exists to stop a wrong report rather than a failing test, and a rule with no test is a
+ * rule that regresses quietly.
  */
 export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
   const notApplicable = new Map<Capability, string>(
@@ -212,6 +248,46 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
         `not exist yet: declaring one cannot cause a skip, so it says nothing about this provider ` +
         `and would invite a report's reader to believe it was verified. Remove it; a scenario ` +
         `arriving upstream is what makes it declarable.`,
+    );
+  }
+
+  const knownDeviations = options.knownDeviations ?? [];
+
+  // Checked here, with the rest of the declaration's shape, rather than further down with the rules
+  // about what the provider supports. These three say nothing about capabilities: they say the
+  // statement itself is malformed, and a malformed statement should be refused before anything is
+  // derived from the declaration it sits in.
+
+  // The same rule as for the other two fields, for the same reason: a reserved capability has no
+  // scenario, so there is nothing to deviate from and the claim is about nothing.
+  const reservedDeviations = knownDeviations.flatMap((deviation) =>
+    deviation.capability && isReserved(deviation.capability) ? [deviation.capability] : [],
+  );
+  if (reservedDeviations.length) {
+    throw new Error(
+      `knownDeviations names ${[...new Set(reservedDeviations)].join(' ')}, which no scenario ` +
+        `carries. A deviation is a gap against a scenario, so a reserved capability leaves nothing ` +
+        `to deviate from. Name the capability whose scenarios the gap is against, or none at all.`,
+    );
+  }
+
+  const unsummarised = knownDeviations.filter((deviation) => !deviation.summary?.trim());
+  if (unsummarised.length) {
+    throw new Error(
+      `knownDeviations contains ${unsummarised.length} entr${unsummarised.length === 1 ? 'y' : 'ies'} ` +
+        `with no summary. A deviation with no summary is indistinguishable from an omission, which ` +
+        `is the thing it exists to distinguish itself from.`,
+    );
+  }
+
+  const bothInapplicableAndDeviant = knownDeviations.flatMap((deviation) =>
+    deviation.capability && notApplicable.has(deviation.capability) ? [deviation.capability] : [],
+  );
+  if (bothInapplicableAndDeviant.length) {
+    throw new Error(
+      `notApplicable and knownDeviations both name ${[...new Set(bothInapplicableAndDeviant)].join(' ')}. ` +
+        `A capability that cannot be put to this provider at all cannot also be one it gets wrong, ` +
+        `and a report's reader has to be able to tell an impossibility from a defect.`,
     );
   }
 
@@ -243,6 +319,7 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
     declared,
     notApplicable,
     undeclared: DECLARABLE_CAPABILITIES.filter((capability) => !declared.has(capability)),
+    knownDeviations,
   };
 }
 
