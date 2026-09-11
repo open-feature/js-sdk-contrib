@@ -1,10 +1,13 @@
 import { loadFeatures, parseFeature } from 'jest-cucumber';
-import { Capability } from './capability';
+import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
 import { planScenarios, skipDisplayName } from './scenarioRunner';
 import { FEATURES_GLOB } from './runProviderTck';
 
 /** The canonical features, with `@object` deliberately undeclared so its scenarios are gated. */
 const features = loadFeatures(FEATURES_GLOB);
+
+/** No capability is inapplicable in these cases; that distinction is exercised on its own below. */
+const NONE: ReadonlyMap<Capability, string> = new Map();
 
 const plansWithout = (...declared: Capability[]) =>
   features.flatMap((parsed) => planScenarios(parsed, new Set(declared)));
@@ -19,9 +22,9 @@ describe('the capability gate', () => {
 
     expect(gated.length).toBeGreaterThan(0);
     for (const scenario of gated) {
-      expect(skipDisplayName(scenario)).toContain('SKIPPED: provider does not declare');
+      expect(skipDisplayName(scenario, NONE)).toContain('SKIPPED: provider does not declare');
       for (const capability of scenario.missing) {
-        expect(skipDisplayName(scenario)).toContain(capability);
+        expect(skipDisplayName(scenario, NONE)).toContain(capability);
       }
     }
   });
@@ -39,7 +42,7 @@ describe('the capability gate', () => {
     expect(objectScenarios.length).toBeGreaterThan(1);
     for (const scenario of objectScenarios) {
       expect(scenario.missing).toContain(Capability.Object);
-      expect(skipDisplayName(scenario)).toBe(
+      expect(skipDisplayName(scenario, NONE)).toBe(
         `${scenario.title} — SKIPPED: provider does not declare ${Capability.Object}`,
       );
     }
@@ -84,7 +87,41 @@ describe('the capability gate', () => {
       ['a plain flag', []],
       ['a structured flag', [Capability.Object]],
     ]);
-    expect(skipDisplayName(planned[1])).toContain('@object');
+    expect(skipDisplayName(planned[1], NONE)).toContain('@object');
+  });
+
+  it('names an inapplicable capability differently from an undeclared one', () => {
+    // Two different claims — "this provider has not implemented X" and "X cannot be asked of this
+    // provider at all" — and the name has to say which, because the gating is identical. Neither
+    // is a pass, which is the property that matters; what differs is what a reader is told.
+    const gated = plansWithout(Capability.Events).filter((scenario) =>
+      scenario.missing.includes(Capability.NumericCoercion),
+    );
+    const inapplicable: ReadonlyMap<Capability, string> = new Map([
+      [Capability.NumericCoercion, NO_INTEGER_TYPE_IN_JAVASCRIPT],
+    ]);
+
+    expect(gated.length).toBeGreaterThan(0);
+    for (const scenario of gated) {
+      expect(skipDisplayName(scenario, NONE)).toBe(
+        `${scenario.title} — SKIPPED: provider does not declare ${Capability.NumericCoercion}`,
+      );
+      expect(skipDisplayName(scenario, inapplicable)).toBe(
+        `${scenario.title} — NOT APPLICABLE: ${Capability.NumericCoercion} does not apply to this provider`,
+      );
+    }
+  });
+
+  it('calls a scenario skipped when only some of what it needs is inapplicable', () => {
+    // A scenario gated by two capabilities, one inapplicable and one merely undeclared, is not
+    // inapplicable: the provider could have had the other one. Claiming otherwise would excuse a
+    // gap with a fact about the language.
+    const [planned] = plansWithout().filter((scenario) => scenario.missing.length > 1);
+
+    expect(planned.missing.length).toBeGreaterThan(1);
+    expect(skipDisplayName(planned, new Map([[planned.missing[0], 'inapplicable']]))).toContain(
+      'SKIPPED: provider does not declare',
+    );
   });
 
   it('leaves an untagged scenario mandatory whatever the provider declares', () => {

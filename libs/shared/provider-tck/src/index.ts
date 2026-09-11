@@ -20,7 +20,15 @@
  * the TCK from npm requires no submodule and no particular repository layout.
  */
 
-export { ALL_CAPABILITIES, Capability, capabilityForTag } from './lib/capability';
+export {
+  ALL_CAPABILITIES,
+  Capability,
+  DECLARABLE_CAPABILITIES,
+  NO_INTEGER_TYPE_IN_JAVASCRIPT,
+  RESERVED_CAPABILITIES,
+  capabilityForTag,
+  isReserved,
+} from './lib/capability';
 export { asConnectionControl, unsupportedControl } from './lib/control';
 export type { BackendControl, ConnectionControl } from './lib/control';
 export { CHANGING_BASELINE, CHANGING_CHANGED, CHANGING_FLAG_KEY, canonicalFlagSet } from './lib/flags';

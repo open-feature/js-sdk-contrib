@@ -43,6 +43,18 @@ export interface BackendControl {
 
   /** A short description of what is being controlled, for messages a human reads. */
   readonly description: string;
+
+  /**
+   * How the backend was driven, for the conformance report's `backend.controlApi`.
+   *
+   * `'http'` means the normative control API; `'in-process'` is the narrow allowance for providers
+   * with no backend, and a report claiming it for a provider that has one should be treated with
+   * suspicion.
+   *
+   * Optional so that adding it breaks no existing implementation. A control that omits it omits the
+   * field from the report, which is honest: nothing is claimed either way.
+   */
+  readonly controlApi?: 'http' | 'in-process';
 }
 
 /**

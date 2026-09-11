@@ -1,4 +1,4 @@
-import { Capability } from './capability';
+import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
 import { InProcessControl } from './inProcessControl';
 import { runProviderTck } from './runProviderTck';
 
@@ -32,21 +32,33 @@ runProviderTck({
    *   does not implement ConnectionControl for the same reason, and the two omissions keep each
    *   other honest: the scenarios are skipped before any step can reach an operation the control
    *   cannot perform.
-   * - NumericCoercion is omitted because **JavaScript has no integer type**. `typeof 10` and
-   *   `typeof 0.5` are both 'number', the Evaluation API exposes only getNumberDetails, and the
-   *   in-memory provider type-checks with `typeof value != typeof defaultValue`. Asking for
-   *   float-flag as an Integer is therefore indistinguishable from asking for it as a Float, and no
-   *   provider in this language can satisfy that scenario. This is a language property, not a bug —
-   *   see the README.
    * - Lifecycle is omitted because there is no backend to reach. InMemoryProvider has no
    *   initialisation step, so the SDK synthesises PROVIDER_READY for it and the readiness scenario
    *   would pass without demonstrating anything — a NoOpProvider passes it identically. It was
    *   passing vacuously while lifecycle.feature was gated by @events; now the skip says so.
-   * - Targeting and Caching are omitted because no scenario carries their tags yet.
+   * - Targeting and Caching are absent because they are reserved rather than optional: no scenario
+   *   carries either tag, so declaring one could not cause a skip and would put a capability
+   *   nothing examined into the report. Naming one here is refused.
    *
    * ConfigurationChange *is* declared, and that is worth stating plainly: the JS in-memory provider
    * has putConfiguration and emits PROVIDER_CONFIGURATION_CHANGED, which the Go and Python SDKs'
    * equivalents do not. It is the reference behaviour Appendix A describes.
    */
   capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object],
+
+  /*
+   * NumericCoercion is not merely undeclared, it is inapplicable, and the conformance report
+   * says so in its declaration rather than leaving the capability silently absent.
+   *
+   * **JavaScript has no integer type.** `typeof 10` and `typeof 0.5` are both 'number', the
+   * Evaluation API exposes only getNumberDetails, and the in-memory provider type-checks with
+   * `typeof value != typeof defaultValue`. Asking for float-flag as an Integer is therefore
+   * indistinguishable from asking for it as a Float, so neither half of the coercion contract can
+   * be put to a provider in this language: there is no lossless narrowing to permit and no lossy
+   * one to reject — not because of a defect, but because the distinction does not exist here.
+   *
+   * Reporting that as an undeclared capability would show every JavaScript provider as missing
+   * something no JavaScript provider can have. See the README.
+   */
+  notApplicable: { [Capability.NumericCoercion]: NO_INTEGER_TYPE_IN_JAVASCRIPT },
 });
