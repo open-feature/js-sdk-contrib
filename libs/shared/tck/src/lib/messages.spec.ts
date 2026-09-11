@@ -42,6 +42,7 @@ function run(declared: readonly Capability[], notApplicable = new Map<Capability
     control,
     declared: new Set(declared),
     notApplicable,
+    knownDeviations: [],
     messages,
   });
 
@@ -356,6 +357,7 @@ describe('recording an outcome', () => {
       control,
       declared: new Set([Capability.Events]),
       notApplicable: new Map(),
+      knownDeviations: [],
       messages,
     });
 
