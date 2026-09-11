@@ -66,21 +66,36 @@ export enum Capability {
    * and this capability is named for it. It was `@strict-numeric-typing`, which named the stricter
    * "never coerce" rule and so forbade the lossless case the ADR requires to work.
    *
-   * Unlike every other entry here this is **not** an optional feature. The specification requires a
-   * provider to report `TYPE_MISMATCH` when the requested type cannot be satisfied. It is a
-   * capability only so that a provider with this defect can adopt the suite today and see the gap
-   * reported as an explicit skip, rather than being unable to adopt at all. Not declaring it is an
-   * admission of a known bug, not a design choice.
+   * The rule is borrowed, not normative. The specification has a single numeric type and says
+   * nothing about what a provider owes a value that does not fit the accessor it was asked through
+   * (open-feature/spec#430), so a provider that behaves differently is not violating it and this
+   * capability is genuinely optional. A provider withholding it should still say which it is — a
+   * deliberate choice, or a tracked defect.
    *
-   * Only the lossy half has a scenario. The canonical flag set holds no integral float to ask the
-   * other half of, and adding one changes the flag set for every language at once, so a provider
-   * that wrongly rejects `10.0` as an integer still passes. Appendix F records that as an open gap,
-   * alongside a second one: the width of a language's integer accessor is not modelled at all.
+   * Both halves have scenarios. The lossy one asks for `float-flag` (`0.5`) as an integer and
+   * expects `TYPE_MISMATCH`; the lossless ones ask for `integral-float-flag` (`10.0`) as an integer
+   * and for `integer-flag` (`10`) as a float, and expect both to succeed. Rejecting every float is
+   * an easy way to pass the first, and the other two are what stop it.
    *
    * JavaScript has no integer type, so this is the one capability that cannot hold here at all —
-   * see {@link NO_INTEGER_TYPE_IN_JAVASCRIPT}.
+   * see {@link NO_INTEGER_TYPE_IN_JAVASCRIPT}. All three scenarios are reported as not applicable.
    */
   NumericCoercion = '@numeric-coercion',
+
+  /**
+   * Provider resolves integers up to 2^53 − 1 exactly.
+   *
+   * Accessor width is a property of the SDK rather than of the provider, which is why it is modelled
+   * apart from {@link NumericCoercion}. Every language's integer accessor can ask for 2^31 − 1, so
+   * that precision scenario is untagged and mandatory. Only some can ask for 2^53 − 1: Java's
+   * accessor is a 32-bit `Integer`, and a provider cannot resolve a value the accessor has no room
+   * for, so a provider on a 32-bit accessor leaves this undeclared.
+   *
+   * JavaScript's `number` represents every integer up to 2^53 − 1 exactly, so a provider here can
+   * declare it whenever its backend and transport carry the value without rounding. Nothing above
+   * 2^53 − 1 is asked for: JavaScript cannot represent it.
+   */
+  LargeIntegers = '@large-integers',
 
   /**
    * Reserved. No scenario carries this tag — targeting is backend evaluation logic.

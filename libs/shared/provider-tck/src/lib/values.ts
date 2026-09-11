@@ -23,7 +23,8 @@ export function parseFlagType(raw: string): FlagType {
  * Converts a value written in a scenario into the type the Evaluation API uses.
  *
  * Everything in Gherkin is a string, so this is where `"0.5"` becomes a number and `"{}"` becomes an
- * empty object.
+ * empty object. An empty cell is a value too: `""` is what the empty-string scenario resolves to,
+ * and it has to survive as exactly that.
  */
 export function parseValue(type: FlagType, raw: string): unknown {
   switch (type) {
@@ -37,7 +38,10 @@ export function parseValue(type: FlagType, raw: string): unknown {
       return raw;
     case 'Integer':
     case 'Float': {
-      const value = Number(raw);
+      // `Number('')` is 0, not NaN, so a blank cell has to be refused explicitly or a scenario
+      // asking for nothing would silently ask for zero. Integers up to 2^53 - 1 parse exactly,
+      // which is as far as any scenario goes.
+      const value = raw.trim() === '' ? Number.NaN : Number(raw);
       if (Number.isNaN(value)) {
         throw new Error(`'${raw}' is not a number`);
       }

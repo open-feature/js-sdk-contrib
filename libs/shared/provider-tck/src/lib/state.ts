@@ -1,4 +1,11 @@
-import type { Client, EvaluationDetails, EventDetails, FlagValue, ServerProviderEvents } from '@openfeature/server-sdk';
+import type {
+  Client,
+  EvaluationDetails,
+  EventDetails,
+  FlagValue,
+  Provider,
+  ServerProviderEvents,
+} from '@openfeature/server-sdk';
 import type { TckOptions } from './options';
 import type { FlagType } from './values';
 
@@ -63,6 +70,33 @@ export interface FlagUnderTest {
   defaultValue: unknown;
 }
 
+/** The two provider functions a scenario may call directly rather than through the SDK. */
+export type LifecycleOperation = 'shutdown' | 'initialize';
+
+/**
+ * The outcome of one direct call into the provider's lifecycle.
+ *
+ * The shutdown scenarios call the provider's own `onClose` and `initialize` rather than going
+ * through the SDK, because the SDK's bookkeeping around them is Appendix B's business rather than
+ * this suite's. Each call is recorded the way an evaluation is — what it threw, if anything — so
+ * that "no exception should have been thrown" reads one kind of record for both, plus how long it
+ * took, which is what the prompt-shutdown scenario bounds.
+ */
+export interface LifecycleRecord {
+  operation: LifecycleOperation;
+  /** Wall-clock milliseconds the call took to settle, or to be given up on. */
+  durationMs: number;
+  /** What the call threw or rejected with, if anything; `undefined` means it settled cleanly. */
+  thrown: unknown;
+}
+
+/** Something the scenario asked of the provider that threw, and what it was. */
+export interface ThrownBy {
+  /** What was being called, for the failure message: `the evaluation`, `shutdown`, `initialize`. */
+  what: string;
+  error: unknown;
+}
+
 /**
  * Everything one scenario accumulates.
  *
@@ -71,10 +105,21 @@ export interface FlagUnderTest {
  */
 export class TckState {
   client: Client | undefined;
+  /**
+   * The provider instance under test, as the factory produced it.
+   *
+   * Everything else reaches the provider through {@link client}, which is how an application would.
+   * The lifecycle and metadata steps are the exception: they ask the provider itself, because what
+   * they verify is the provider's own `onClose`, `initialize` and `metadata` rather than the SDK's
+   * handling of them.
+   */
+  provider: Provider | undefined;
   flag: FlagUnderTest | undefined;
   details: EvaluationDetails<FlagValue> | undefined;
   /** The error an evaluation threw, if any. See the "no exception" step for why this matters. */
   thrown: unknown;
+  /** Every direct lifecycle call this scenario made, in order. */
+  readonly lifecycle: LifecycleRecord[] = [];
   remembered: unknown;
   hasMemory = false;
   readonly recorders = new Map<ServerProviderEvents, EventRecorder>();
@@ -83,9 +128,11 @@ export class TckState {
 
   reset(): void {
     this.client = undefined;
+    this.provider = undefined;
     this.flag = undefined;
     this.details = undefined;
     this.thrown = undefined;
+    this.lifecycle.length = 0;
     this.remembered = undefined;
     this.hasMemory = false;
     this.recorders.clear();
@@ -99,6 +146,53 @@ export class TckState {
       );
     }
     return this.client;
+  }
+
+  requireProvider(): Provider {
+    if (!this.provider) {
+      throw new Error(
+        'no provider has been created in this scenario: a "Given a stable provider" or ' +
+          '"Given a unavailable provider" step must come first',
+      );
+    }
+    return this.provider;
+  }
+
+  /** The most recent direct shutdown call, for the step that bounds it. */
+  requireShutdown(): LifecycleRecord {
+    for (let index = this.lifecycle.length - 1; index >= 0; index -= 1) {
+      const record = this.lifecycle[index];
+      if (record.operation === 'shutdown') {
+        return record;
+      }
+    }
+    throw new Error(
+      'the provider has not been shut down in this scenario: a "When the provider is shut down" ' +
+        'step must come first',
+    );
+  }
+
+  /**
+   * Everything the scenario asked of the provider that threw, in the order it was asked.
+   *
+   * The evaluation and the lifecycle calls are recorded separately, since they carry different
+   * things, but "did anything the scenario asked of the provider throw" is one question and this is
+   * where it is answered. The "no exception" step is the only reader.
+   */
+  exceptions(): ThrownBy[] {
+    const thrown: ThrownBy[] = this.lifecycle
+      .filter((record) => record.thrown !== undefined)
+      .map((record) => ({ what: record.operation, error: record.thrown }));
+
+    if (this.thrown !== undefined) {
+      thrown.push({ what: 'the evaluation', error: this.thrown });
+    }
+    return thrown;
+  }
+
+  /** Whether the scenario has asked anything of the provider yet. */
+  hasCalledProvider(): boolean {
+    return this.details !== undefined || this.thrown !== undefined || this.lifecycle.length > 0;
   }
 
   requireFlag(): FlagUnderTest {

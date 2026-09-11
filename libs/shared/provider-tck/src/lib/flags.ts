@@ -22,17 +22,22 @@ export const CHANGING_CHANGED = 'bar';
 /**
  * The canonical flag set, as an in-memory provider configuration.
  *
- * Mirrors `flags/canonical-flags.json` entry for entry. Two properties of that file are
+ * Mirrors `flags/canonical-flags.json` entry for entry. Four properties of that file are
  * load-bearing and hold here too:
  *
  * - `missing-flag` is absent, which is what the `FLAG_NOT_FOUND` scenario tests. Adding it turns
  *   that scenario green for the wrong reason.
  * - no flag carries a `contextEvaluator`, so every evaluation reports reason `STATIC` — the TCK
  *   tests a provider's mapping of a response, not a backend's evaluation logic.
+ * - `false-flag`, `zero-flag` and `empty-string-flag` resolve to `false`, `0` and `''` on purpose.
+ *   They are values, not absences: a `value || default` anywhere on the way turns the falsy-value
+ *   scenarios into failures that look like provider defects.
+ * - `huge-integer-flag` is 2^53 − 1, which a JavaScript number holds exactly. It must not be
+ *   rounded on the way in.
  *
- * Note that `integer-flag` and `float-flag` are both plain JavaScript numbers. The language has no
- * integer type, which is why {@link Capability.NumericCoercion} cannot be declared here; see
- * that capability's documentation.
+ * Note that `integer-flag`, `float-flag` and `integral-float-flag` are all plain JavaScript numbers,
+ * and `10.0` is the same value as `10`. The language has no integer type, which is why
+ * {@link Capability.NumericCoercion} cannot be declared here; see that capability's documentation.
  */
 export function canonicalFlagSet(changingVariant: string = CHANGING_BASELINE): FlagConfiguration {
   return {
@@ -54,6 +59,43 @@ export function canonicalFlagSet(changingVariant: string = CHANGING_BASELINE): F
     'float-flag': {
       variants: { tenth: 0.1, half: 0.5 },
       defaultVariant: 'half',
+      disabled: false,
+    },
+    // 2^31 - 1, the largest 32-bit signed integer. A float32 round trip does not preserve it.
+    'large-integer-flag': {
+      variants: { one: 1, 'max-int32': 2147483647 },
+      defaultVariant: 'max-int32',
+      disabled: false,
+    },
+    // 2^53 - 1, the largest integer JavaScript represents exactly. Only asked for under
+    // @large-integers.
+    'huge-integer-flag': {
+      variants: { one: 1, 'max-safe': 9007199254740991 },
+      defaultVariant: 'max-safe',
+      disabled: false,
+    },
+    // A float with no fractional part, for the lossless half of @numeric-coercion.
+    'integral-float-flag': {
+      variants: { tenth: 0.1, ten: 10.0 },
+      defaultVariant: 'ten',
+      disabled: false,
+    },
+    // Resolves to false; the scenario's default is true, so treating false as missing is caught.
+    'false-flag': {
+      variants: { on: true, off: false },
+      defaultVariant: 'off',
+      disabled: false,
+    },
+    // Resolves to 0; the scenario's default is 1.
+    'zero-flag': {
+      variants: { one: 1, zero: 0 },
+      defaultVariant: 'zero',
+      disabled: false,
+    },
+    // Resolves to the empty string; the scenario's default is 'fallback'.
+    'empty-string-flag': {
+      variants: { greeting: 'hi', empty: '' },
+      defaultVariant: 'empty',
       disabled: false,
     },
     'object-flag': {
