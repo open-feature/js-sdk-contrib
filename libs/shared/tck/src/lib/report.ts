@@ -259,7 +259,7 @@ export class ConformanceRecorder {
    * A capability the provider chose not to declare and one that cannot hold for it at all are
    * different statements, and both are skips. The distinction lives in this sentence and in the
    * envelope's declaration rather than in the status, because it is a fact about the provider
-   * rather than about the run: `@strict-numeric-typing` is unsatisfiable in JavaScript, and that is
+   * rather than about the run: `@numeric-coercion` is unsatisfiable in JavaScript, and that is
    * true of every scenario carrying it in every run of every JavaScript provider.
    */
   private skipReason(missing: readonly Capability[]): string {
