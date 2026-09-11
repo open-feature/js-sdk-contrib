@@ -25,8 +25,8 @@ runProviderTck({
   newProvider: () => control.newProvider(),
 
   /*
-   * Four capabilities declared, one inapplicable, and every omission is a fact about the provider or
-   * the language rather than a convenience:
+   * Five capabilities declared, and every omission is a fact about the provider or the language
+   * rather than a convenience:
    *
    * - Stale and UnavailableInit are omitted because there is no connection to lose. InProcessControl
    *   does not implement ConnectionControl for the same reason, and the two omissions keep each
@@ -38,9 +38,17 @@ runProviderTck({
    *   passing vacuously while lifecycle.feature was gated by @events; now the skip says so. The
    *   shutdown scenarios go with it: InMemoryProvider has no onClose and no initialize, so calling
    *   them directly would prove as little as the readiness scenario did.
-   * - Targeting and Caching are absent because they are reserved rather than optional: no scenario
-   *   carries either tag, so declaring one could not cause a skip and would put a capability
-   *   nothing examined into the report. Naming one here is refused.
+   * - Targeting is omitted because the in-memory provider cannot have it from this flag file.
+   *   InMemoryProvider takes its rules from a `contextEvaluator` function, and the canonical
+   *   flag-definition format has no way to express one — so targeting-key-flag's `targeting` member
+   *   is inert here and the flag resolves its default variant whatever the context. Leaving the
+   *   capability undeclared is the honest report, and the right one: a KnownDeviation would assert a
+   *   defect, and nothing here is broken. Synthesising a contextEvaluator to make the scenarios pass
+   *   would be worse still — it would test a fixture written for the occasion rather than a
+   *   provider, which is the vacuous pass this suite exists to prevent.
+   * - Caching is absent because it is reserved rather than optional: no scenario carries the tag, so
+   *   declaring it could not cause a skip and would put a capability nothing examined into the
+   *   report. Naming it here is refused.
    *
    * ConfigurationChange *is* declared, and that is worth stating plainly: the JS in-memory provider
    * has putConfiguration and emits PROVIDER_CONFIGURATION_CHANGED, which the Go and Python SDKs'
@@ -48,8 +56,19 @@ runProviderTck({
    *
    * LargeIntegers is declared because a JavaScript number holds 2^53 - 1 exactly and the in-memory
    * provider hands the value back untouched: there is no transport to round it on the way.
+   *
+   * Variants is declared because InMemoryProvider resolves through a named variant and reports the
+   * name: the flag file gives every canonical flag its variants, and the provider hands the matched
+   * one back. Requirement 2.2.4 is only a SHOULD, so this is a claim rather than a given — and it is
+   * made on the run below going green, not on having read the SDK.
    */
-  capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object, Capability.LargeIntegers],
+  capabilities: [
+    Capability.Events,
+    Capability.ConfigurationChange,
+    Capability.Object,
+    Capability.LargeIntegers,
+    Capability.Variants,
+  ],
 
   /*
    * NumericCoercion is left undeclared, so its three scenarios are skipped with that reason.
