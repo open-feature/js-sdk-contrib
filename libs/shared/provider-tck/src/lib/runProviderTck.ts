@@ -110,7 +110,7 @@ export { CANONICAL_FLAGS_PATH, CONTROL_API_PATH } from './assets';
  * the same file would register the vocabulary twice and every step would report as ambiguous.
  */
 export function runProviderTck(options: TckOptions): void {
-  const { declared, notApplicable, undeclared, knownDeviations } = resolveCapabilities(options);
+  const { declared, undeclared, knownDeviations } = resolveCapabilities(options);
   const state = new TckState(options);
 
   // Undeclared capabilities are excluded here, which marks their scenarios `skippedViaTagFilter`.
@@ -149,7 +149,7 @@ export function runProviderTck(options: TckOptions): void {
   }
 
   features.forEach(({ parsed }, position) => {
-    parsed.options.runner = scenarioRunner(parsed.title, plans[position], notApplicable);
+    parsed.options.runner = scenarioRunner(parsed.title, plans[position]);
   });
 
   const extensions = features.filter(({ canonical }) => !canonical).map(({ feature }) => feature);
@@ -160,7 +160,6 @@ export function runProviderTck(options: TckOptions): void {
       console.log(
         `provider-tck [${options.name}]: backend under test is ${options.control.description}; ` +
           `declared capabilities ${[...declared].sort().join(' ') || '(none)'}` +
-          (notApplicable.size ? `; not applicable ${[...notApplicable.keys()].sort().join(' ')}` : '') +
           // Named rather than counted: a reader of the output has to be able to see that a scenario
           // they do not recognise came from the adopter and not from the shared suite.
           (extensions.length ? `; extension features ${extensions.sort().join(' ')}` : '') +

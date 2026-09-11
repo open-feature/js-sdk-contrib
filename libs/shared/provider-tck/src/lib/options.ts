@@ -74,46 +74,14 @@ export interface TckOptions {
   capabilities?: readonly Capability[];
 
   /**
-   * Capabilities whose question cannot be put to this provider at all, each with the reason it
-   * cannot.
-   *
-   * This is **not** a second way of saying "not supported", and collapsing the two would
-   * misrepresent a whole language. `@numeric-coercion` asks whether a provider narrows a float to
-   * an integer only where nothing is lost; JavaScript has no integer type, so no provider written
-   * in it can answer either half of that, and reporting it as an undeclared capability would show
-   * every JavaScript provider as missing something none of them can have. The conformance report
-   * carries these in `declaration.notApplicable`, which is where the report schema puts them:
-   *
-   * ```ts
-   * notApplicable: {
-   *   [Capability.NumericCoercion]: 'JavaScript has no integer type, so requesting a float ' +
-   *     'flag as an Integer is indistinguishable from requesting it as a Float',
-   * }
-   * ```
-   *
-   * The reason is required because a reader of the report has no other way to tell an impossibility
-   * from an excuse. Gating is identical either way — the scenarios are skipped with their reason in
-   * the test name and as SKIPPED in the results stream — so this changes what is *declared*, not
-   * what runs. Use it only where the capability is unsatisfiable in principle; a provider that
-   * simply has not implemented something should leave it out of {@link capabilities} instead.
-   *
-   * A capability listed here must not also appear in {@link capabilities}; declaring both is
-   * rejected. When {@link capabilities} is omitted it defaults to every declarable capability
-   * *except* these. A reserved capability cannot be listed here either: there is no scenario to
-   * declare it inapplicable *to*, so the statement would be about nothing.
-   */
-  notApplicable?: Partial<Record<Capability, string>>;
-
-  /**
    * Gaps this provider is known to have, each named rather than merely absent.
    *
-   * Neither {@link capabilities} nor {@link notApplicable} can express "this provider attempts the
-   * behaviour and gets it wrong", and that is the case a reader most needs told. A capability left
-   * out of {@link capabilities} reads as a design decision, and a capability in
-   * {@link notApplicable} reads as an impossibility; a defect is neither, and without somewhere to
-   * say so the only honest-looking option left to an adopter is to withdraw the capability — which
-   * replaces a failing scenario with a skip and hides the defect behind something that looks
-   * deliberate.
+   * {@link capabilities} cannot express "this provider attempts the behaviour and gets it wrong",
+   * and that is the case a reader most needs told. A capability left out of {@link capabilities}
+   * reads as a decision — a design one, or a language one recorded against the capability itself —
+   * and a defect is neither. Without somewhere to say so, the only honest-looking option left to an
+   * adopter is to withdraw the capability, which replaces a failing scenario with a skip and hides
+   * the defect behind something that looks deliberate.
    *
    * So the intended use is the opposite of a withdrawal. Declare the capability, let the scenario
    * run and fail, and record the deviation beside it:
@@ -130,7 +98,7 @@ export interface TckOptions {
    *
    * A deviation may also concern no capability at all — pass `undefined` — when the gap is against a
    * mandatory scenario. It may not concern a reserved one: there is no scenario to deviate *from*,
-   * so the statement would be about nothing, exactly as for the other two fields.
+   * so the statement would be about nothing, exactly as for {@link capabilities}.
    *
    * Declaring one changes nothing about what runs. It is a statement about the provider, carried
    * through to whatever reads the declaration.
@@ -204,8 +172,6 @@ export interface TckOptions {
 export interface ResolvedCapabilities {
   /** What the provider claims, and so what the conformance report declares. */
   declared: Set<Capability>;
-  /** What cannot hold for this provider at all, each with the reason it cannot. */
-  notApplicable: Map<Capability, string>;
   /**
    * Declarable capabilities this suite does not declare, which is what the tag filter gates on.
    *
@@ -226,12 +192,6 @@ export interface ResolvedCapabilities {
  * rule that regresses quietly.
  */
 export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
-  const notApplicable = new Map<Capability, string>(
-    Object.entries(options.notApplicable ?? {}).flatMap(([tag, reason]) =>
-      reason ? [[tag as Capability, reason]] : [],
-    ),
-  );
-
   // Refused rather than dropped, and refused before anything else is checked. A reserved capability
   // reaching `declaration.declared` is how a real Java report came to assert two capabilities that
   // no scenario examined, and silently filtering it here would leave the adopter believing the claim
@@ -240,10 +200,10 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
   // runner's own output, is invisible in CI unless someone reads the log of a green build, and would
   // have to be re-emitted per suite. The fix is a one-line edit, so failing costs the adopter
   // nothing and guarantees they see it.
-  const reserved = [...new Set([...(options.capabilities ?? []), ...notApplicable.keys()])].filter(isReserved);
+  const reserved = [...new Set(options.capabilities ?? [])].filter(isReserved);
   if (reserved.length) {
     throw new Error(
-      `capabilities or notApplicable names ${reserved.join(' ')}, which no scenario carries. ` +
+      `capabilities names ${reserved.join(' ')}, which no scenario carries. ` +
         `${RESERVED_CAPABILITIES.join(' and ')} are reserved names held open for scenarios that do ` +
         `not exist yet: declaring one cannot cause a skip, so it says nothing about this provider ` +
         `and would invite a report's reader to believe it was verified. Remove it; a scenario ` +
@@ -254,11 +214,11 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
   const knownDeviations = options.knownDeviations ?? [];
 
   // Checked here, with the rest of the declaration's shape, rather than further down with the rules
-  // about what the provider supports. These three say nothing about capabilities: they say the
-  // statement itself is malformed, and a malformed statement should be refused before anything is
-  // derived from the declaration it sits in.
+  // about what the provider supports. Both say nothing about capabilities: they say the statement
+  // itself is malformed, and a malformed statement should be refused before anything is derived
+  // from the declaration it sits in.
 
-  // The same rule as for the other two fields, for the same reason: a reserved capability has no
+  // The same rule as for `capabilities`, for the same reason: a reserved capability has no
   // scenario, so there is nothing to deviate from and the claim is about nothing.
   const reservedDeviations = knownDeviations.flatMap((deviation) =>
     deviation.capability && isReserved(deviation.capability) ? [deviation.capability] : [],
@@ -280,32 +240,7 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
     );
   }
 
-  const bothInapplicableAndDeviant = knownDeviations.flatMap((deviation) =>
-    deviation.capability && notApplicable.has(deviation.capability) ? [deviation.capability] : [],
-  );
-  if (bothInapplicableAndDeviant.length) {
-    throw new Error(
-      `notApplicable and knownDeviations both name ${[...new Set(bothInapplicableAndDeviant)].join(' ')}. ` +
-        `A capability that cannot be put to this provider at all cannot also be one it gets wrong, ` +
-        `and a report's reader has to be able to tell an impossibility from a defect.`,
-    );
-  }
-
-  // Defaulting to everything *except* the inapplicable ones is the only reading that makes the two
-  // fields composable: a suite that names only what cannot apply should not have to restate the
-  // whole capability set to say so.
-  const declared = new Set<Capability>(
-    options.capabilities ?? DECLARABLE_CAPABILITIES.filter((capability) => !notApplicable.has(capability)),
-  );
-
-  const contradictory = [...declared].filter((capability) => notApplicable.has(capability));
-  if (contradictory.length) {
-    throw new Error(
-      `capabilities and notApplicable both list ${contradictory.join(' ')}. A capability is either ` +
-        `something this provider supports or something it cannot be asked about, and the ` +
-        `conformance report has to say which.`,
-    );
-  }
+  const declared = new Set<Capability>(options.capabilities ?? DECLARABLE_CAPABILITIES);
 
   if (declared.has(Capability.UnavailableInit) && !options.newUnavailableProvider) {
     throw new Error(
@@ -317,7 +252,6 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
 
   return {
     declared,
-    notApplicable,
     undeclared: DECLARABLE_CAPABILITIES.filter((capability) => !declared.has(capability)),
     knownDeviations,
   };

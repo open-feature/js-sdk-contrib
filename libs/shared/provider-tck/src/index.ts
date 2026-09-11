@@ -24,7 +24,6 @@ export {
   ALL_CAPABILITIES,
   Capability,
   DECLARABLE_CAPABILITIES,
-  NO_INTEGER_TYPE_IN_JAVASCRIPT,
   RESERVED_CAPABILITIES,
   capabilityForTag,
   isReserved,
