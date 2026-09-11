@@ -219,7 +219,7 @@ A **reserved** capability is a name held open for a scenario nobody has written 
 the only one left: no scenario carries it, so declaring it cannot cause a skip — it says nothing
 about the provider, plays no part in reading the results, and only invites a reader to believe
 something was verified when nothing examined it. It is excluded from the default, and naming it in
-`capabilities` is **rejected** rather than quietly dropped:
+`capabilities` is **rejected** rather than passed through to the report:
 
 ```
 capabilities names @caching, which no scenario carries. @caching is a reserved name held open for
@@ -231,18 +231,16 @@ This is not a hypothetical tidy-up. A published Java conformance report asserts 
 and `@caching` as declared — not by anyone's decision, but because that adoption declares "every
 capability except X" and picks up every reserved tag in the vocabulary on the way past. Rejecting is
 louder than warning on purpose: a console line competes with Jest's own output and is invisible in
-the log of a green CI build, and the fix is a one-line edit.
-
-`@targeting` was reserved on the same footing until Appendix F gained three scenarios for it, and it
-is now declarable like any other capability. That is the expected fate of a reservation rather than
-a surprise, which is why the harness fails a run whose feature files carry a tag this library still
-calls reserved: an out-of-date list makes a testable capability unclaimable, the opposite mistake
-and just as quiet.
+the log of a green CI build, and the fix is a one-line edit. The emitter also filters reserved tags
+out of `declaration.declared`, so no route into a declared set can write one down.
 
 Which capabilities are reserved is decided upstream, in Appendix F, and recorded here in
 `RESERVED_CAPABILITIES`. The harness checks that list against the feature files it actually ran and
 fails if a reservation has expired — a scenario arriving upstream is what makes a capability
-declarable, and an out-of-date list would go on making a testable capability unclaimable.
+declarable, and an out-of-date list would go on making a testable capability unclaimable. That is
+how `@targeting` came to be declarable: it was reserved on exactly the same footing as `@caching`
+until Appendix F gained three scenarios for it. A reservation expiring is the expected course of
+events rather than a surprise.
 
 A capability whose question cannot be put to your provider _at all_ is simply left undeclared, like
 any other, and its scenarios are skipped. There is no second field and no second status: one skip
@@ -701,10 +699,9 @@ about the run.
 
 There is no per-capability verdict in the report, and that is deliberate. A roll-up is derivable
 from the declaration and the stream, and a consumer computing one should count only test cases that
-*ran*: `@targeting` is reserved and no scenario carries it, and every scenario carrying a capability
-can be skipped for a *different* one — both scenarios in `events.feature` carry `@events` as well as
-`@stale` or `@configuration-change` — so counting tag presence rather than execution reports a green
-result for a question nobody asked. Nor is a capability roll-up a conformance verdict in the first
+*ran*: every scenario carrying a capability can be skipped for a *different* one — both scenarios in
+`events.feature` carry `@events` as well as `@stale` or `@configuration-change` — so counting tag
+presence rather than execution reports a green result for a question nobody asked. Nor is a capability roll-up a conformance verdict in the first
 place: scenarios carrying no capability tag are mandatory and roll up into nothing, so a provider
 can fail a mandatory scenario with every capability intact.
 

@@ -3,6 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { TestStepResultStatus, version as messagesVersion } from '@cucumber/messages';
 import type { Capability } from './capability';
+import { isReserved } from './capability';
 import type { BackendControl } from './control';
 import type { CompleteTestCase, ConformanceMessages, Outcome } from './messages';
 import { SPEC_REVISION } from './revision';
@@ -72,6 +73,13 @@ export interface ConformanceReport {
    * provider declines the capability or because the capability cannot hold for it at all.
    */
   declaration: {
+    /**
+     * Capabilities the provider declares *and* that the executed suite gates on.
+     *
+     * A reserved capability — one no executed scenario carries — must never appear here, however
+     * genuinely the provider supports it: it cannot produce a skip, so it plays no part in reading
+     * the results, and listing it invites a reader to believe it was verified.
+     */
     declared: string[];
     notApplicable?: Record<string, string>;
   };
@@ -233,7 +241,12 @@ export class ConformanceRecorder {
         ...(this.context.control.controlApi ? { controlApi: this.context.control.controlApi } : {}),
       },
       declaration: {
-        declared: [...this.context.declared].sort(),
+        // Reserved capabilities are filtered out rather than trusted to be absent. An adoption
+        // naming one is refused by resolveCapabilities, which is where an adopter hears about it;
+        // this is the emitter making the document structurally unable to carry the claim, for every
+        // other route into a declared set -- a recorder built directly, a future option, a merge.
+        // The schema's rule is about what a report says, so it is enforced where the report is made.
+        declared: [...this.context.declared].filter((capability) => !isReserved(capability)).sort(),
         ...(Object.keys(notApplicable).length ? { notApplicable } : {}),
       },
       results,
