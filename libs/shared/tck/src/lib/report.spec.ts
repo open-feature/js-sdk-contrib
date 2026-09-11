@@ -73,11 +73,13 @@ describe('the conformance envelope', () => {
   });
 
   it('never declares a reserved capability, whatever it was handed', () => {
-    // @targeting and @caching are names held open for scenarios that do not exist, so nothing can
-    // be skipped for them and declaring one claims a verification that never happened. A published
-    // Java report asserted both, because that adoption declares "everything except X" and picked up
-    // every reserved tag on the way past. An adoption naming one is refused before it gets here;
-    // this is the emitter being unable to write it down regardless of how the set was built.
+    // A reserved name is held open for scenarios that do not exist, so nothing can be skipped for
+    // it and declaring it claims a verification that never happened. A published Java report
+    // asserted @targeting and @caching both, because that adoption declares "everything except X"
+    // and picked up every reserved tag on the way past. An adoption naming one is refused before it
+    // gets here; this is the emitter being unable to write it down regardless of how the set was
+    // built. Driven off RESERVED_CAPABILITIES rather than a literal, so it keeps testing the rule as
+    // reservations expire -- @targeting's has, leaving @caching.
     const { declaration } = recorderFor([Capability.Events, ...RESERVED_CAPABILITIES]).build(RESULTS);
 
     expect(declaration.declared).toEqual([Capability.Events]);
