@@ -39,6 +39,36 @@ export enum Capability {
    */
   Lifecycle = '@lifecycle',
 
+  /**
+   * Provider can be initialised again after `shutdown`, and serves flags afterwards.
+   *
+   * Separate from {@link Lifecycle} because the specification permits reuse rather than requiring
+   * it.
+   * [Requirement 2.5.2](https://github.com/open-feature/spec/blob/main/specification/sections/02-providers.md)
+   * says a provider **SHOULD** revert to its uninitialized state after `shutdown`, and its
+   * supporting text adds that *"some providers **may** allow reinitialization from this state"*. A
+   * provider that releases its client on shutdown and declines to start again is exercising a
+   * choice the specification offers it, not exhibiting a defect.
+   *
+   * The scenario it gates was originally untagged, on the reading that reverting to the
+   * uninitialized state is observable as exactly one thing — that the provider can be initialised
+   * again and then serves flags. That inference does not hold, and it cost something: a provider
+   * making a permitted choice was reported as failing conformance, and the failure was on its way
+   * to being filed as a defect against the implementation. A false failure is the mirror image of a
+   * vacuous pass, and this vocabulary exists to prevent both.
+   *
+   * Reverting the state is not separately observable either — a provider that reverts but refuses
+   * reuse presents exactly as one that did neither — so a gated reuse scenario is the only
+   * assertion the requirement admits. It remains worth asserting for the providers that do offer
+   * reuse, because releasing the client on shutdown while leaving an initialised flag set is easy
+   * to write and leaves the provider evaluating against a closed connection rather than failing
+   * outright.
+   *
+   * Declare it only if you have tested that reuse genuinely works. Leaving it undeclared is a
+   * statement the specification sanctions, and needs no deviation recorded against it.
+   */
+  Reinitialization = '@reinitialization',
+
   /** Provider enters `STALE` and emits `PROVIDER_STALE` when it loses its backend. */
   Stale = '@stale',
 
