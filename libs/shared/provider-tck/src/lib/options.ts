@@ -1,3 +1,4 @@
+import type { StepDefinitions } from 'jest-cucumber';
 import type { Provider } from '@openfeature/server-sdk';
 import { Capability, DECLARABLE_CAPABILITIES, RESERVED_CAPABILITIES, isReserved } from './capability';
 import type { BackendControl } from './control';
@@ -101,6 +102,46 @@ export interface TckOptions {
    * declare it inapplicable *to*, so the statement would be about nothing.
    */
   notApplicable?: Partial<Record<Capability, string>>;
+
+  /**
+   * Feature files of your own, run in the same suite as the canonical ones.
+   *
+   * A vendor with provider-specific behaviour — flagd's `fractional` targeting, say — has scenarios
+   * the shared suite cannot carry, because they are not part of the contract every provider
+   * implements. Naming them here runs them inside the TCK's own `describe`: the same backend
+   * lifecycle, the same per-scenario reset, the same capability gate. The alternative is a second
+   * harness that has to reimplement all of that and will drift from it.
+   *
+   * Each entry is either a directory — every `.feature` file directly in it, in sorted order — or a
+   * single `.feature` file. Paths resolve against the working directory, which is the test runner's
+   * and not your test file's, so pass absolute ones: `join(__dirname, 'features')`.
+   *
+   * **Extension features must be named differently from the canonical ones, and live in a directory
+   * of their own.** Both are enforced rather than documented: a feature named after a canonical one
+   * is refused. An extension can therefore never shadow, replace or re-run a canonical scenario, and
+   * nothing downstream can mistake one for the other.
+   *
+   * The vocabulary is shared: an extension scenario can use every canonical step, and needs
+   * {@link extensionSteps} only for the steps the canonical vocabulary has no word for.
+   */
+  extensionFeatures?: string | readonly string[];
+
+  /**
+   * Step definitions for the vocabulary {@link extensionFeatures} adds.
+   *
+   * jest-cucumber's own shape, and bound in the same `autoBindSteps` call as the canonical steps, so
+   * an extension step and a canonical step are interchangeable within one scenario:
+   *
+   * ```ts
+   * const fractionalSteps: StepDefinitions = ({ given }) => {
+   *   given(/^a fractional rule splitting "([^"]*)" (\d+)\/(\d+)$/, async (key, a, b) => { ... });
+   * };
+   * ```
+   *
+   * A step matcher that also matches a canonical step is rejected by jest-cucumber as ambiguous, so
+   * an extension cannot quietly redefine what a canonical step means.
+   */
+  extensionSteps?: StepDefinitions | readonly StepDefinitions[];
 
   /**
    * How long to wait for a provider event, in milliseconds.
