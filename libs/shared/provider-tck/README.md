@@ -180,6 +180,49 @@ A capability whose question cannot be put to your provider *at all* goes in `not
 of simply being left out, with the reason it cannot. In JavaScript that is `@numeric-coercion`,
 and the distinction is the subject of the next section.
 
+### A defect is not a decision: `knownDeviations`
+
+Leaving a capability out of `capabilities` reads as a design decision, and putting one in
+`notApplicable` reads as an impossibility. Neither can say "this provider attempts the behaviour and
+gets it wrong" — and with nowhere to say it, the only honest-looking move left is to withdraw the
+capability, which replaces a failing scenario with a skip and makes a defect look deliberate. That
+is the one thing the capability vocabulary is supposed to prevent, arrived at from the other side.
+
+So `knownDeviations` exists to let you do the opposite of withdrawing. Declare the capability, let
+the scenario run and fail, and name the gap beside it:
+
+```ts
+import { Capability, KnownDeviation, runProviderTck } from '@openfeature/provider-tck';
+
+runProviderTck({
+  // ...
+  capabilities: [Capability.Lifecycle /* ... */],
+  knownDeviations: [
+    KnownDeviation.untracked(
+      Capability.Lifecycle,
+      'shutdown() does not clear the initialised latch, so a second initialize() returns without ' +
+        'recreating the resolver and evaluates against a closed channel',
+    ),
+    KnownDeviation.tracked(
+      Capability.LargeIntegers,
+      'https://github.com/open-feature/flagd-testbed/pull/392',
+      'the testbed has no huge-integer-flag, so the 2^53 - 1 scenario cannot pass yet',
+    ),
+  ],
+});
+```
+
+Use `tracked` once there is an issue to point at and `untracked` before then — two factories rather
+than one optional argument, because an omitted URL and an untracked defect are the same value and
+very different claims. Pass `undefined` as the capability when the gap is against a mandatory
+scenario and so belongs to no capability.
+
+Declaring a deviation changes nothing about what runs; it is a statement about the provider, printed
+with the suite's declaration and carried through to whatever reads it. The shape is Java's
+`KnownDeviation`, field for field, so the same defect reported in two languages compares without a
+translation table. A reserved capability is refused here for the same reason as everywhere else: no
+scenario carries it, so there is nothing to deviate from.
+
 ### `@lifecycle` is not `@events`
 
 Provider initialisation used to be gated by `@events`, which was wrong in both directions.

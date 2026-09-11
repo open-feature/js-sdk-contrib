@@ -1,5 +1,6 @@
 import { ALL_CAPABILITIES, Capability, DECLARABLE_CAPABILITIES, RESERVED_CAPABILITIES } from './capability';
 import type { BackendControl } from './control';
+import { KnownDeviation } from './deviation';
 import type { TckOptions } from './options';
 import { resolveCapabilities } from './options';
 
@@ -107,5 +108,83 @@ describe('resolving a suite capabilities', () => {
     expect(() => resolveCapabilities(optionsFor({ capabilities: [Capability.UnavailableInit] }))).toThrow(
       /newUnavailableProvider is not set/,
     );
+  });
+});
+
+describe('a known deviation', () => {
+  it('records the capability, the issue and the summary a tracked gap has', () => {
+    const deviation = KnownDeviation.tracked(
+      Capability.Stale,
+      'https://github.com/open-feature/js-sdk-contrib/issues/1',
+      'never leaves STALE',
+    );
+
+    expect(deviation).toEqual({
+      capability: Capability.Stale,
+      issue: 'https://github.com/open-feature/js-sdk-contrib/issues/1',
+      summary: 'never leaves STALE',
+    });
+  });
+
+  it('leaves the issue absent on an untracked gap rather than inventing one', () => {
+    // Absent rather than empty: a consumer asking "is this tracked?" must not have to decide
+    // whether '' counts, and a report that serialises the field has nothing to omit either.
+    const deviation = KnownDeviation.untracked(Capability.Lifecycle, 'shutdown does not clear the latch');
+
+    expect(deviation.issue).toBeUndefined();
+    expect('issue' in deviation).toBe(false);
+    expect(deviation).toEqual({ capability: Capability.Lifecycle, summary: 'shutdown does not clear the latch' });
+  });
+
+  it('records a gap against a mandatory scenario, which belongs to no capability', () => {
+    const deviation = KnownDeviation.untracked(undefined, 'resolves missing-flag as a default rather than an error');
+
+    expect('capability' in deviation).toBe(false);
+    expect(deviation.summary).toMatch(/missing-flag/);
+  });
+
+  it('rides alongside the capability it concerns, rather than replacing the declaration', () => {
+    // The point of the type: withdrawing @lifecycle would replace a failing scenario with a skip
+    // and make a defect look deliberate. Declaring both leaves the scenario running.
+    const { declared, knownDeviations } = resolveCapabilities(
+      optionsFor({
+        capabilities: [Capability.Lifecycle],
+        knownDeviations: [KnownDeviation.untracked(Capability.Lifecycle, 'shutdown does not clear the latch')],
+      }),
+    );
+
+    expect(declared.has(Capability.Lifecycle)).toBe(true);
+    expect(knownDeviations).toHaveLength(1);
+    expect(knownDeviations[0].capability).toBe(Capability.Lifecycle);
+  });
+
+  it('is empty, not undefined, when a suite declares none', () => {
+    expect(resolveCapabilities(optionsFor({ capabilities: [] })).knownDeviations).toEqual([]);
+  });
+
+  it('refuses a reserved capability, which leaves nothing to deviate from', () => {
+    expect(() =>
+      resolveCapabilities(
+        optionsFor({ knownDeviations: [KnownDeviation.untracked(Capability.Caching, 'no cache at all')] }),
+      ),
+    ).toThrow(/@caching, which no scenario carries/);
+  });
+
+  it('refuses a deviation with no summary, which says nothing an omission does not', () => {
+    expect(() =>
+      resolveCapabilities(optionsFor({ knownDeviations: [KnownDeviation.untracked(Capability.Stale, '   ')] })),
+    ).toThrow(/with no summary/);
+  });
+
+  it('refuses a capability that is both inapplicable and deviant', () => {
+    expect(() =>
+      resolveCapabilities(
+        optionsFor({
+          capabilities: [],
+          notApplicable: { [Capability.NumericCoercion]: 'no integer type' },
+          knownDeviations: [KnownDeviation.untracked(Capability.NumericCoercion, 'narrows 0.5 to 0')],
+        }),
+      ),
+    ).toThrow(/both name @numeric-coercion/);
   });
 });
