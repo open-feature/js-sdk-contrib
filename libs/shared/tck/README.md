@@ -709,6 +709,11 @@ about the run.
 - **`backend.controlApi`** reports how the backend was driven. It is an optional member of
   `BackendControl`, so adding it broke no existing implementation; a control that omits it omits the
   field, which claims nothing either way.
+- **`knownDeviations`** carries whatever [`knownDeviations`](#a-defect-is-not-a-decision-knowndeviations)
+  the adoption declared, field for field. **The field is absent when nothing was declared, and never
+  emitted as `[]`** — an empty array asserts that deviations were considered and none found, which no
+  suite can know on the adopter's behalf, so the two are different claims and only one of them is
+  honest by default. Go, Python and Java omit it on the same rule.
 
 There is no per-capability verdict in the report, and that is deliberate. A roll-up is derivable
 from the declaration and the stream, and a consumer computing one should count only test cases that
