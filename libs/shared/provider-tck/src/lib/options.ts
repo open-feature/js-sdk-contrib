@@ -1,5 +1,5 @@
 import type { Provider } from '@openfeature/server-sdk';
-import type { Capability } from './capability';
+import { Capability, DECLARABLE_CAPABILITIES, RESERVED_CAPABILITIES, isReserved } from './capability';
 import type { BackendControl } from './control';
 
 /** Creates a provider under test. */
@@ -63,9 +63,44 @@ export interface TckOptions {
    * Which optional parts of the provider contract this provider supports.
    *
    * Scenarios tagged with an undeclared capability are reported as skipped, with the reason in the
-   * test name — never as passed. Defaults to every capability; narrow it rather than widening it.
+   * test name — never as passed. Defaults to every *declarable* capability; narrow it rather than
+   * widening it.
+   *
+   * A reserved capability — one no scenario carries, see {@link RESERVED_CAPABILITIES} — cannot be
+   * declared, and naming one here is rejected rather than passed through to the report.
    */
   capabilities?: readonly Capability[];
+
+  /**
+   * Capabilities whose question cannot be put to this provider at all, each with the reason it
+   * cannot.
+   *
+   * This is **not** a second way of saying "not supported", and collapsing the two would
+   * misrepresent a whole language. `@numeric-coercion` asks whether a provider narrows a float to
+   * an integer only where nothing is lost; JavaScript has no integer type, so no provider written
+   * in it can answer either half of that, and reporting it as an undeclared capability would show
+   * every JavaScript provider as missing something none of them can have. The conformance report
+   * carries these in `declaration.notApplicable`, which is where the report schema puts them:
+   *
+   * ```ts
+   * notApplicable: {
+   *   [Capability.NumericCoercion]: 'JavaScript has no integer type, so requesting a float ' +
+   *     'flag as an Integer is indistinguishable from requesting it as a Float',
+   * }
+   * ```
+   *
+   * The reason is required because a reader of the report has no other way to tell an impossibility
+   * from an excuse. Gating is identical either way — the scenarios are skipped with their reason in
+   * the test name and as SKIPPED in the results stream — so this changes what is *declared*, not
+   * what runs. Use it only where the capability is unsatisfiable in principle; a provider that
+   * simply has not implemented something should leave it out of {@link capabilities} instead.
+   *
+   * A capability listed here must not also appear in {@link capabilities}; declaring both is
+   * rejected. When {@link capabilities} is omitted it defaults to every declarable capability
+   * *except* these. A reserved capability cannot be listed here either: there is no scenario to
+   * declare it inapplicable *to*, so the statement would be about nothing.
+   */
+  notApplicable?: Partial<Record<Capability, string>>;
 
   /**
    * How long to wait for a provider event, in milliseconds.
@@ -88,6 +123,86 @@ export interface TckOptions {
    * @default 30000
    */
   readyTimeoutMs?: number;
+}
+
+/** What a suite's capability options work out to, once defaulted and checked. */
+export interface ResolvedCapabilities {
+  /** What the provider claims, and so what the conformance report declares. */
+  declared: Set<Capability>;
+  /** What cannot hold for this provider at all, each with the reason it cannot. */
+  notApplicable: Map<Capability, string>;
+  /**
+   * Declarable capabilities this suite does not declare, which is what the tag filter gates on.
+   *
+   * Reserved capabilities are absent, and their absence changes nothing: no scenario carries one, so
+   * excluding it from the filter excludes it from nothing.
+   */
+  undeclared: Capability[];
+}
+
+/**
+ * Works out which capabilities a suite declares, and rejects every option that would make the
+ * conformance report claim something the run did not establish.
+ *
+ * Separated from {@link runProviderTck} so it can be exercised without Jest, because two of the
+ * three rules here exist to stop a wrong report rather than a failing test, and a rule with no test
+ * is a rule that regresses quietly.
+ */
+export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
+  const notApplicable = new Map<Capability, string>(
+    Object.entries(options.notApplicable ?? {}).flatMap(([tag, reason]) =>
+      reason ? [[tag as Capability, reason]] : [],
+    ),
+  );
+
+  // Refused rather than dropped, and refused before anything else is checked. A reserved capability
+  // reaching `declaration.declared` is how a real Java report came to assert two capabilities that
+  // no scenario examined, and silently filtering it here would leave the adopter believing the claim
+  // was made. A warning would be nearer the letter of the schema, but this is a suite whose entire
+  // purpose is that unverified claims are loud: a console line in a Jest run competes with the
+  // runner's own output, is invisible in CI unless someone reads the log of a green build, and would
+  // have to be re-emitted per suite. The fix is a one-line edit, so failing costs the adopter
+  // nothing and guarantees they see it.
+  const reserved = [...new Set([...(options.capabilities ?? []), ...notApplicable.keys()])].filter(isReserved);
+  if (reserved.length) {
+    throw new Error(
+      `capabilities or notApplicable names ${reserved.join(' ')}, which no scenario carries. ` +
+        `${RESERVED_CAPABILITIES.join(' and ')} are reserved names held open for scenarios that do ` +
+        `not exist yet: declaring one cannot cause a skip, so it says nothing about this provider ` +
+        `and would invite a report's reader to believe it was verified. Remove it; a scenario ` +
+        `arriving upstream is what makes it declarable.`,
+    );
+  }
+
+  // Defaulting to everything *except* the inapplicable ones is the only reading that makes the two
+  // fields composable: a suite that names only what cannot apply should not have to restate the
+  // whole capability set to say so.
+  const declared = new Set<Capability>(
+    options.capabilities ?? DECLARABLE_CAPABILITIES.filter((capability) => !notApplicable.has(capability)),
+  );
+
+  const contradictory = [...declared].filter((capability) => notApplicable.has(capability));
+  if (contradictory.length) {
+    throw new Error(
+      `capabilities and notApplicable both list ${contradictory.join(' ')}. A capability is either ` +
+        `something this provider supports or something it cannot be asked about, and the ` +
+        `conformance report has to say which.`,
+    );
+  }
+
+  if (declared.has(Capability.UnavailableInit) && !options.newUnavailableProvider) {
+    throw new Error(
+      'capabilities declares Capability.UnavailableInit but newUnavailableProvider is not set: ' +
+        'the @unavailable scenarios need a provider pointed at a backend that does not exist. ' +
+        'Supply one, or remove the capability so those scenarios are skipped with a reason.',
+    );
+  }
+
+  return {
+    declared,
+    notApplicable,
+    undeclared: DECLARABLE_CAPABILITIES.filter((capability) => !declared.has(capability)),
+  };
 }
 
 /**

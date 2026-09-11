@@ -96,11 +96,38 @@ call is made. See [`src/lib/scenarioRunner.ts`](./src/lib/scenarioRunner.ts).
 | `Capability.Object` | `@object` | supports structured flag values |
 | `Capability.UnavailableInit` | `@unavailable` | reports an error state instead of hanging against a dead backend |
 | `Capability.NumericCoercion` | `@numeric-coercion` | coerces between integer and float only when lossless, else `TYPE_MISMATCH` — **see below** |
-| `Capability.Targeting` | `@targeting` | reserved; no scenarios yet |
-| `Capability.Caching` | `@caching` | reserved; no scenarios yet |
+| `Capability.Targeting` | `@targeting` | reserved; **not declarable** — no scenarios yet |
+| `Capability.Caching` | `@caching` | reserved; **not declarable** — no scenarios yet |
 
-Untagged scenarios are mandatory and always run. `capabilities` defaults to everything — narrow it
-rather than widening it.
+Untagged scenarios are mandatory and always run. `capabilities` defaults to every *declarable*
+capability — narrow it rather than widening it.
+
+A **reserved** capability is a name held open for a scenario nobody has written yet. No scenario
+carries `@targeting` or `@caching`, so declaring one cannot cause a skip: it says nothing about the
+provider, plays no part in reading the results, and only invites a reader to believe something was
+verified when nothing examined it. They are excluded from the default, and naming one in
+`capabilities` or `notApplicable` is **rejected** rather than quietly dropped:
+
+```
+capabilities or notApplicable names @targeting, which no scenario carries. @targeting and @caching
+are reserved names held open for scenarios that do not exist yet: declaring one cannot cause a skip,
+so it says nothing about this provider and would invite a report's reader to believe it was verified.
+```
+
+This is not a hypothetical tidy-up. A published Java conformance report asserts both as declared —
+not by anyone's decision, but because that adoption declares "every capability except X" and picks
+up every reserved tag in the vocabulary on the way past. Rejecting is louder than warning on
+purpose: a console line competes with Jest's own output and is invisible in the log of a green CI
+build, and the fix is a one-line edit.
+
+Which capabilities are reserved is decided upstream, in Appendix F, and recorded here in
+`RESERVED_CAPABILITIES`. The harness checks that list against the feature files it actually ran and
+fails if a reservation has expired — a scenario arriving upstream is what makes a capability
+declarable, and an out-of-date list would go on making a testable capability unclaimable.
+
+A capability whose question cannot be put to your provider *at all* goes in `notApplicable` instead
+of simply being left out, with the reason it cannot. In JavaScript that is `@numeric-coercion`,
+and the distinction is the subject of the next section.
 
 ### `@lifecycle` is not `@events`
 
@@ -138,10 +165,37 @@ provider that wrongly rejects `10.0` as an integer still passes. Appendix F reco
 gap, along with a second one: the width of a language's integer accessor is not modelled, which is
 what flagd's testbed tags `@int32-bounded`.
 
-So every JavaScript suite leaves the capability undeclared, and the scenario is reported as skipped.
-That is the honest outcome, but it is worth flagging upstream: the capability's meaning is
-language-dependent in a way the specification does not currently acknowledge. Raised on
-[spec#417][tracking].
+So every JavaScript suite leaves the capability out of `capabilities` — but **not** by silently
+omitting it. "This provider has not implemented X" and "X cannot be asked of this provider at all"
+are different claims, and collapsing them would report every JavaScript provider as missing
+something none of them can have. A suite says which it means:
+
+```ts
+runProviderTck({
+  // ...
+  capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object],
+  notApplicable: { [Capability.NumericCoercion]: NO_INTEGER_TYPE_IN_JAVASCRIPT },
+});
+```
+
+The reason is required, because a reader has no other way to tell an impossibility from an excuse.
+`NO_INTEGER_TYPE_IN_JAVASCRIPT` is exported for this one: it is a fact about the language rather
+than about any provider, and one sentence shared between adoptions compares better than two
+paraphrases of it.
+
+Gating is identical either way — the scenarios are skipped with the reason in the test name — so
+this changes what is *declared*, not what runs:
+
+```
+○ skipped A float flag is not silently narrowed to an integer — NOT APPLICABLE: @numeric-coercion does not apply to this provider
+```
+
+Use it only where the capability is unsatisfiable in principle; a provider that simply has not
+implemented something should leave it out of `capabilities` instead. Listing a capability in both is
+rejected.
+
+The capability's meaning being language-dependent is worth flagging upstream regardless, since the
+specification does not currently acknowledge it. Raised on [spec#417][tracking].
 
 ## Controlling the backend
 
@@ -235,6 +289,7 @@ by every language's TCK.
 - Caching, hooks and flag metadata are not covered.
 
 [appendix-a]: https://github.com/open-feature/spec/blob/main/specification/appendix-a-included-utilities.md
+[coercion-adr]: https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/numeric-coercion.md
 [appendix-f]: https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md
 [spec]: https://github.com/open-feature/spec
 [tracking]: https://github.com/open-feature/spec/issues/417
