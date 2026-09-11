@@ -1,5 +1,5 @@
 import { MultiProvider } from '@openfeature/server-sdk';
-import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
+import { Capability } from './capability';
 import { InProcessControl } from './inProcessControl';
 import { runProviderTck } from './runProviderTck';
 
@@ -58,7 +58,6 @@ runProviderTck({
   // 2^53 - 1 exactly, so a rounded value on the way through would be the multi-provider's doing.
   capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object, Capability.LargeIntegers],
 
-  // JavaScript has no integer type, so this capability is unsatisfiable in the language rather than
-  // unimplemented by the provider. See inMemory.spec.ts.
-  notApplicable: { [Capability.NumericCoercion]: NO_INTEGER_TYPE_IN_JAVASCRIPT },
+  // NumericCoercion is left undeclared: JavaScript has no integer type, so the capability is
+  // unsatisfiable in the language rather than unimplemented by the provider. See inMemory.spec.ts.
 });

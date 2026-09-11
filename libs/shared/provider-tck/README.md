@@ -158,10 +158,10 @@ A **reserved** capability is a name held open for a scenario nobody has written 
 carries `@targeting` or `@caching`, so declaring one cannot cause a skip: it says nothing about the
 provider, plays no part in reading the results, and only invites a reader to believe something was
 verified when nothing examined it. They are excluded from the default, and naming one in
-`capabilities` or `notApplicable` is **rejected** rather than quietly dropped:
+`capabilities` is **rejected** rather than quietly dropped:
 
 ```
-capabilities or notApplicable names @targeting, which no scenario carries. @targeting and @caching
+capabilities names @targeting, which no scenario carries. @targeting and @caching
 are reserved names held open for scenarios that do not exist yet: declaring one cannot cause a skip,
 so it says nothing about this provider and would invite a report's reader to believe it was verified.
 ```
@@ -177,17 +177,20 @@ Which capabilities are reserved is decided upstream, in Appendix F, and recorded
 fails if a reservation has expired — a scenario arriving upstream is what makes a capability
 declarable, and an out-of-date list would go on making a testable capability unclaimable.
 
-A capability whose question cannot be put to your provider *at all* goes in `notApplicable` instead
-of simply being left out, with the reason it cannot. In JavaScript that is `@numeric-coercion`,
-and the distinction is the subject of the next section.
+A capability whose question cannot be put to your provider *at all* is simply left undeclared, like
+any other, and its scenarios are skipped. There is no second field and no second status: one skip
+carrying its reason says everything a parallel representation would, and where the impossibility is
+a property of the *language* rather than of the provider it is recorded once — against the
+capability and in Appendix F — instead of restated in every report. In JavaScript that case is
+`@numeric-coercion`, and it is the subject of a section of its own below.
 
 ### A defect is not a decision: `knownDeviations`
 
-Leaving a capability out of `capabilities` reads as a design decision, and putting one in
-`notApplicable` reads as an impossibility. Neither can say "this provider attempts the behaviour and
-gets it wrong" — and with nowhere to say it, the only honest-looking move left is to withdraw the
-capability, which replaces a failing scenario with a skip and makes a defect look deliberate. That
-is the one thing the capability vocabulary is supposed to prevent, arrived at from the other side.
+Leaving a capability out of `capabilities` reads as a decision. It cannot say "this provider
+attempts the behaviour and gets it wrong" — and with nowhere to say it, the only honest-looking move
+left is to withdraw the capability, which replaces a failing scenario with a skip and makes a defect
+look deliberate. That is the one thing the capability vocabulary is supposed to prevent, arrived at
+from the other side.
 
 So `knownDeviations` exists to let you do the opposite of withdrawing. Declare the capability, let
 the scenario run and fail, and name the gap beside it:
@@ -293,38 +296,39 @@ indistinguishable from a valid Float request. Not a defect — the distinction d
 
 Both halves of the rule now have scenarios: `float-flag` (`0.5`) as an integer must be rejected, and
 `integral-float-flag` (`10.0`) as an integer and `integer-flag` (`10`) as a float must succeed. All
-three go through the same not-applicable path here, for the same reason. Accessor width is modelled
-separately, as `@large-integers`: JavaScript represents 2^53 − 1 exactly, so a provider declares it
-unless its transport rounds the value on the way.
+three are gated on the one tag, so all three are skipped here, for the same reason. Accessor width
+is modelled separately, as `@large-integers`: JavaScript represents 2^53 − 1 exactly, so a provider
+declares it unless its transport rounds the value on the way.
 
-So every JavaScript suite leaves the capability out of `capabilities` — but **not** by silently
-omitting it. "This provider has not implemented X" and "X cannot be asked of this provider at all"
-are different claims, and collapsing them would report every JavaScript provider as missing
-something none of them can have. A suite says which it means:
+So every JavaScript suite simply leaves the capability out of `capabilities`, and its scenarios are
+skipped:
 
 ```ts
 runProviderTck({
   // ...
   capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object],
-  notApplicable: { [Capability.NumericCoercion]: NO_INTEGER_TYPE_IN_JAVASCRIPT },
+  // @numeric-coercion is left undeclared. See below for why that is not a gap.
 });
 ```
 
-The reason is required, because a reader has no other way to tell an impossibility from an excuse.
-`NO_INTEGER_TYPE_IN_JAVASCRIPT` is exported for this one: it is a fact about the language rather
-than about any provider, and one sentence shared between adoptions compares better than two
-paraphrases of it.
-
-Gating is identical either way — the scenarios are skipped with the reason in the test name — so
-this changes what is *declared*, not what runs:
-
 ```
-○ skipped A float flag is not silently narrowed to an integer — NOT APPLICABLE: @numeric-coercion does not apply to this provider
+○ skipped A float flag is not silently narrowed to an integer — SKIPPED: provider does not declare @numeric-coercion
 ```
 
-Use it only where the capability is unsatisfiable in principle; a provider that simply has not
-implemented something should leave it out of `capabilities` instead. Listing a capability in both is
-rejected.
+**Where that sentence about the language lives.** Not in the report, and not in the skip. The
+impossibility is a property of the *SDK* — true of every provider written against it, and for as
+long as the Evaluation API has a single numeric accessor — so it is stated once in the TSDoc on
+`Capability.NumericCoercion`, once in this section, and once upstream in
+[Appendix F][appendix-f]. A per-report field would repeat a language fact on each provider's behalf
+and would still say nothing in a run where no scenario carried the tag; four implementations built
+such a field and no adoption in any of them populated it, which is why the report schema dropped it.
+
+The consequence is worth stating plainly: read only the skip line, or only a report's declaration,
+and you learn that `@numeric-coercion` was not declared but not why it could not be. That is
+deliberate — the reason is one lookup away, in the two places above, rather than duplicated per
+scenario — but it does mean the *why* is documentation rather than run output. A JavaScript provider
+that withheld the tag for some other reason, such as a real narrowing defect, must therefore say so
+through `knownDeviations`, which is exactly what that field is for.
 
 The capability's meaning being language-dependent is worth flagging upstream regardless, since the
 specification does not currently acknowledge it. Raised on [spec#417][tracking].
