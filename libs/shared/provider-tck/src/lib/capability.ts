@@ -52,22 +52,35 @@ export enum Capability {
   UnavailableInit = '@unavailable',
 
   /**
-   * Provider keeps the integer and float types distinct instead of coercing between them.
+   * Provider coerces between the integer and float types only where the coercion is lossless, and
+   * reports `TYPE_MISMATCH` where it would lose information.
    *
-   * Unlike every other entry here this is **not** an optional feature. The specification requires a
-   * provider to report `TYPE_MISMATCH` when the requested type cannot be satisfied, and narrowing
-   * `0.5` to `0` loses information silently — the worst failure mode a feature flag has, because the
+   * The rule has two halves and both are part of the contract. An integral float — `10.0` asked for
+   * as an integer — must resolve, because the value the caller asked for is the value the flag
+   * holds. A fractional one — `0.5` asked for as an integer — must fail, because narrowing it to
+   * `0` loses information silently, which is the worst failure mode a feature flag has: the
    * application sees a plausible value and no error at all.
    *
-   * It is a capability only so that a provider with this defect can adopt the suite today and see
-   * the gap reported as an explicit skip, rather than being unable to adopt at all. Not declaring it
-   * is an admission of a known bug, not a design choice.
+   * The rule is flagd's
+   * [numeric coercion ADR](https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/numeric-coercion.md),
+   * and this capability is named for it. It was `@strict-numeric-typing`, which named the stricter
+   * "never coerce" rule and so forbade the lossless case the ADR requires to work.
    *
-   * JavaScript has no integer type, so this is the one capability whose meaning differs here: the
-   * suite can only check that a float is not silently truncated, not that the two types are
-   * represented distinctly.
+   * Unlike every other entry here this is **not** an optional feature. The specification requires a
+   * provider to report `TYPE_MISMATCH` when the requested type cannot be satisfied. It is a
+   * capability only so that a provider with this defect can adopt the suite today and see the gap
+   * reported as an explicit skip, rather than being unable to adopt at all. Not declaring it is an
+   * admission of a known bug, not a design choice.
+   *
+   * Only the lossy half has a scenario. The canonical flag set holds no integral float to ask the
+   * other half of, and adding one changes the flag set for every language at once, so a provider
+   * that wrongly rejects `10.0` as an integer still passes. Appendix F records that as an open gap,
+   * alongside a second one: the width of a language's integer accessor is not modelled at all.
+   *
+   * JavaScript has no integer type, so this is the one capability that cannot hold here at all —
+   * see {@link NO_INTEGER_TYPE_IN_JAVASCRIPT}.
    */
-  StrictNumericTyping = '@strict-numeric-typing',
+  NumericCoercion = '@numeric-coercion',
 
   /** Reserved. No scenario carries this tag — targeting is backend evaluation logic. */
   Targeting = '@targeting',

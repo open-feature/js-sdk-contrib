@@ -4,7 +4,7 @@
  * `Integer` and `Float` are distinct in the Gherkin but both resolve through `getNumberDetails`
  * here, because JavaScript has a single `number` type. That is the one place where the shared
  * scenarios cannot mean quite the same thing in this language — see
- * {@link Capability.StrictNumericTyping}.
+ * {@link Capability.NumericCoercion}.
  */
 export type FlagType = 'Boolean' | 'String' | 'Integer' | 'Float' | 'Object';
 

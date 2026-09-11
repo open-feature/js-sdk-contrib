@@ -95,7 +95,7 @@ call is made. See [`src/lib/scenarioRunner.ts`](./src/lib/scenarioRunner.ts).
 | `Capability.ConfigurationChange` | `@configuration-change` | detects configuration changes and emits `PROVIDER_CONFIGURATION_CHANGED` |
 | `Capability.Object` | `@object` | supports structured flag values |
 | `Capability.UnavailableInit` | `@unavailable` | reports an error state instead of hanging against a dead backend |
-| `Capability.StrictNumericTyping` | `@strict-numeric-typing` | does not coerce between integer and float — **see below** |
+| `Capability.NumericCoercion` | `@numeric-coercion` | coerces between integer and float only when lossless, else `TYPE_MISMATCH` — **see below** |
 | `Capability.Targeting` | `@targeting` | reserved; no scenarios yet |
 | `Capability.Caching` | `@caching` | reserved; no scenarios yet |
 
@@ -118,15 +118,25 @@ terminal outcomes are observable: READY against a healthy backend, ERROR against
 
 ## The one place JavaScript cannot answer the shared question
 
-`@strict-numeric-typing` asserts that a provider reports `TYPE_MISMATCH` rather than silently
-narrowing `0.5` to `0` when a float flag is requested as an integer. In Go, Java and Python that is a
-real question with a right answer.
+`@numeric-coercion` has two halves: a provider must resolve a coercion that loses nothing — `10.0`
+asked for as an integer — and must report `TYPE_MISMATCH` for one that does not, rather than
+silently narrowing `0.5` to `0`. The rule is flagd's [numeric coercion ADR][coercion-adr], and the
+tag was called `@strict-numeric-typing` until it was renamed to match. In Go, Java and Python this is
+a real question with a right answer.
 
 **JavaScript has no integer type.** `typeof 10` and `typeof 0.5` are both `'number'`, the Evaluation
 API exposes only `getNumberDetails`, and the in-memory provider type-checks with
 `typeof value != typeof defaultValue`. Requesting `float-flag` as an Integer is therefore
-*indistinguishable* from requesting it as a Float, and **no provider in this language can satisfy
-that scenario** — not because of a defect, but because the distinction does not exist.
+*indistinguishable* from requesting it as a Float, so **neither half can be put to a provider in
+this language**: there is no lossless coercion to permit, because `10.0` and `10` are the same value
+and nothing is narrowed, and no lossy one to reject, because `0.5` asked for as an Integer is
+indistinguishable from a valid Float request. Not a defect — the distinction does not exist here.
+
+Only the lossy half has a scenario at all, in any language. The canonical flag set holds no integral
+float to ask the other half of, and adding one changes the flag set for every language at once, so a
+provider that wrongly rejects `10.0` as an integer still passes. Appendix F records that as an open
+gap, along with a second one: the width of a language's integer accessor is not modelled, which is
+what flagd's testbed tags `@int32-bounded`.
 
 So every JavaScript suite leaves the capability undeclared, and the scenario is reported as skipped.
 That is the honest outcome, but it is worth flagging upstream: the capability's meaning is
