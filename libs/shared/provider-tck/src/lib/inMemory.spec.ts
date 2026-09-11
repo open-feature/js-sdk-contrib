@@ -25,8 +25,8 @@ runProviderTck({
   newProvider: () => control.newProvider(),
 
   /*
-   * Four capabilities, and every omission is a fact about the provider or the language rather than a
-   * convenience:
+   * Four capabilities declared, one inapplicable, and every omission is a fact about the provider or
+   * the language rather than a convenience:
    *
    * - Stale and UnavailableInit are omitted because there is no connection to lose. InProcessControl
    *   does not implement ConnectionControl for the same reason, and the two omissions keep each
@@ -35,7 +35,9 @@ runProviderTck({
    * - Lifecycle is omitted because there is no backend to reach. InMemoryProvider has no
    *   initialisation step, so the SDK synthesises PROVIDER_READY for it and the readiness scenario
    *   would pass without demonstrating anything — a NoOpProvider passes it identically. It was
-   *   passing vacuously while lifecycle.feature was gated by @events; now the skip says so.
+   *   passing vacuously while lifecycle.feature was gated by @events; now the skip says so. The
+   *   shutdown scenarios go with it: InMemoryProvider has no onClose and no initialize, so calling
+   *   them directly would prove as little as the readiness scenario did.
    * - Targeting and Caching are absent because they are reserved rather than optional: no scenario
    *   carries either tag, so declaring one could not cause a skip and would put a capability
    *   nothing examined into the report. Naming one here is refused.
@@ -43,8 +45,11 @@ runProviderTck({
    * ConfigurationChange *is* declared, and that is worth stating plainly: the JS in-memory provider
    * has putConfiguration and emits PROVIDER_CONFIGURATION_CHANGED, which the Go and Python SDKs'
    * equivalents do not. It is the reference behaviour Appendix A describes.
+   *
+   * LargeIntegers is declared because a JavaScript number holds 2^53 - 1 exactly and the in-memory
+   * provider hands the value back untouched: there is no transport to round it on the way.
    */
-  capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object],
+  capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object, Capability.LargeIntegers],
 
   /*
    * NumericCoercion is not merely undeclared, it is inapplicable, and the conformance report

@@ -54,8 +54,9 @@ runProviderTck({
   // nor its in-memory child does anything on startup, so the readiness scenario was passing
   // vacuously on synthesised PROVIDER_READY rather than on any behaviour of this provider.
   // ConfigurationChange is declared because the child emits it — if the multi-provider does not
-  // forward it, this suite fails and that is the finding.
-  capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object],
+  // forward it, this suite fails and that is the finding. LargeIntegers likewise: the child resolves
+  // 2^53 - 1 exactly, so a rounded value on the way through would be the multi-provider's doing.
+  capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object, Capability.LargeIntegers],
 
   // JavaScript has no integer type, so this capability is unsatisfiable in the language rather than
   // unimplemented by the provider. See inMemory.spec.ts.
