@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import { version as messagesVersion } from '@cucumber/messages';
 import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT, RESERVED_CAPABILITIES } from './capability';
 import type { BackendControl } from './control';
+import type { KnownDeviation } from './deviation';
+import { KnownDeviation as Deviation } from './deviation';
 import { ConformanceMessages } from './messages';
 import type { ScenarioIdentity } from './report';
 import {
@@ -25,12 +27,17 @@ const control: BackendControl = {
   changeFlag: async () => undefined,
 };
 
-const recorderFor = (declared: Capability[], notApplicable = new Map<Capability, string>()) =>
+const recorderFor = (
+  declared: Capability[],
+  notApplicable = new Map<Capability, string>(),
+  knownDeviations: readonly KnownDeviation[] = [],
+) =>
   new ConformanceRecorder({
     suiteName: 'unit',
     control,
     declared: new Set(declared),
     notApplicable,
+    knownDeviations,
     messages: new ConformanceMessages(),
     observedProviderName: () => 'observed-provider',
   });
@@ -107,6 +114,7 @@ describe('the conformance envelope', () => {
       control,
       declared: new Set(),
       notApplicable: new Map(),
+      knownDeviations: [],
       messages: new ConformanceMessages(),
     });
 
@@ -187,6 +195,7 @@ describe('scenario accounting', () => {
       control,
       declared: new Set(declared),
       notApplicable: new Map(),
+      knownDeviations: [],
       messages,
     });
 
@@ -331,5 +340,66 @@ describe('writing the report', () => {
     expect(reportBaseName('flagd/rpc')).toBe('flagd-rpc');
     expect(reportBaseName('../../etc/passwd')).toBe('etc-passwd');
     expect(reportBaseName('///')).toBe('report');
+  });
+
+  /** Writes a report for `deviations` and returns the envelope that actually landed on disk. */
+  const envelopeWith = (deviations: readonly KnownDeviation[]): Record<string, unknown> => {
+    const dir = mkdtempSync(join(tmpdir(), 'tck-deviations-'));
+    process.env[REPORT_DIR_ENV] = dir;
+
+    try {
+      const written = writeConformanceReport(recorderFor([Capability.Stale], new Map(), deviations), 'in-memory');
+      return JSON.parse(readFileSync(written?.report as string, 'utf8')) as Record<string, unknown>;
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it('carries a declared deviation into the emitted envelope', () => {
+    // Asserted on the document that was written, not on the resolved options. The bug this covers
+    // was an emitter with no reference to the field at all: the option was accepted, validated and
+    // printed to the console, so every check short of reading the output agreed it was wired. Go
+    // had the same class of bug in a subtler form -- the config field was populated and never
+    // passed to the emitter -- so the config is exactly the wrong place to look.
+    const envelope = envelopeWith([
+      Deviation.tracked(
+        Capability.Stale,
+        'https://github.com/open-feature/flagd/issues/1996',
+        'never leaves STALE when the backend returns',
+      ),
+    ]);
+
+    // The shared field names, not paraphrases of them: two languages reporting the same defect have
+    // to compare without a translation table.
+    expect(envelope['knownDeviations']).toEqual([
+      {
+        capability: '@stale',
+        issue: 'https://github.com/open-feature/flagd/issues/1996',
+        summary: 'never leaves STALE when the backend returns',
+      },
+    ]);
+  });
+
+  it('omits the field entirely when nothing was declared, rather than emitting an empty array', () => {
+    // An empty array and an absent field are different claims: stating none asserts that deviations
+    // were considered and none found, which no suite can know on the adopter's behalf. Checked on
+    // the serialised document because that is where the distinction survives or does not -- and
+    // `toBeUndefined` alone would pass for an emitted `[]` read back off a missing key, so the key
+    // itself is asserted absent.
+    const envelope = envelopeWith([]);
+
+    expect(envelope).not.toHaveProperty('knownDeviations');
+    expect(Object.keys(envelope)).not.toContain('knownDeviations');
+    // The rest of the envelope is unaffected, so the omission is the field and not the document.
+    expect(envelope['declaration']).toEqual({ declared: ['@stale'] });
+  });
+
+  it('records a deviation against a mandatory scenario, which belongs to no capability', () => {
+    // `capability` is optional in the schema precisely for this case, and the factory omits the key
+    // rather than emitting an explicit null -- `additionalProperties` is false and a null would not
+    // validate as a string.
+    const envelope = envelopeWith([Deviation.untracked(undefined, 'metadata name is empty on init')]);
+
+    expect(envelope['knownDeviations']).toEqual([{ summary: 'metadata name is empty on init' }]);
   });
 });

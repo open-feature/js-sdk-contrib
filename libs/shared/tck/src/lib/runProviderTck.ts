@@ -273,6 +273,7 @@ export function runProviderTck(options: TckOptions): void {
     control: options.control,
     declared,
     notApplicable,
+    knownDeviations,
     messages,
     observedProviderName: () => state.providerName,
   });
