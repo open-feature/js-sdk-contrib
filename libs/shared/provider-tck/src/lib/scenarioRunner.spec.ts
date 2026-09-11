@@ -131,6 +131,60 @@ describe('the capability gate', () => {
     expect(titled('A large integer resolves without loss of precision')?.missing).toEqual([]);
   });
 
+  it('gates every variant assertion on @variants, and gates nothing else on it', () => {
+    // The consolidation this tag exists for. The variant assertions used to be spread across the
+    // untagged evaluation scenarios, which failed a backend with no variant concept ten times over
+    // for something requirement 2.2.4 only SHOULDs. They are now one outline of eight rows, so a
+    // provider leaving the tag undeclared sees eight skips and no failures -- and, just as
+    // important, the value and reason scenarios it shares flags with still run.
+    const gated = plansWithout(Capability.Events).filter((scenario) =>
+      scenario.missing.includes(Capability.Variants),
+    );
+
+    expect(gated).toHaveLength(8);
+    for (const scenario of gated) {
+      expect(scenario.title).toBe('The resolved details name the variant');
+      expect(scenario.missing).toEqual([Capability.Variants]);
+    }
+
+    // The flags the outline covers are still asserted for value and reason by scenarios that are
+    // untagged, so withdrawing @variants withdraws the variant claim and nothing else.
+    const mandatory = plansWithout(Capability.Events).filter((scenario) => !scenario.missing.length);
+    expect(mandatory.map((scenario) => scenario.title)).toContain('Resolve values with reason');
+    expect(mandatory.map((scenario) => scenario.title)).toContain('A falsy value is a value, not an absence');
+  });
+
+  it('gates the three @targeting scenarios, which are no longer a reservation', () => {
+    // @targeting was a reserved name until Appendix F carried scenarios for it. All three are
+    // needed: a matching context, a non-matching one -- without which a provider that always
+    // returned the targeted value would pass -- and no context at all.
+    const gated = plansWithout(Capability.Events).filter((scenario) =>
+      scenario.missing.includes(Capability.Targeting),
+    );
+
+    expect(gated.map((scenario) => scenario.title).sort()).toEqual([
+      'A matching evaluation context resolves the targeted variant',
+      'A non-matching evaluation context resolves the default variant',
+      'No evaluation context resolves the default variant',
+    ]);
+    for (const scenario of gated) {
+      expect(scenario.missing).toEqual([Capability.Targeting]);
+    }
+  });
+
+  it('leaves the untargeted-context scenario mandatory, no capability gating it', () => {
+    // Requirement 2.2.1 makes the evaluation context a parameter of every resolve method, and this
+    // is the only scenario that supplies one with no targeting involved. It must not be gated: a
+    // provider that threw on any context would otherwise be skipped rather than failed.
+    const all = plansWithout();
+    const untargeted = all.find(
+      (scenario) => scenario.title === 'Supplying an evaluation context does not disturb an untargeted resolution',
+    );
+
+    expect(untargeted).toBeDefined();
+    expect(untargeted?.missing).toEqual([]);
+  });
+
   it('gives an undeclared capability one skip wording, whatever the reason it went undeclared', () => {
     // One skip carrying its reason is the whole mechanism. A capability the provider chose not to
     // declare and one that cannot hold in the language at all are both skips, and the scenario's

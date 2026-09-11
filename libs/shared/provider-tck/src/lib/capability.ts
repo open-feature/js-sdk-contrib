@@ -78,6 +78,29 @@ export enum Capability {
   /** Provider supports structured (object) flag values. */
   Object = '@object',
 
+  /**
+   * Provider names the variant it resolved.
+   *
+   * Gated because a variant is optional rather than required, in both of the places that say so.
+   * [Requirement 2.2.4](https://github.com/open-feature/spec/blob/main/specification/sections/02-providers.md)
+   * is a **SHOULD** — in normal execution a provider *"SHOULD populate the resolution details
+   * structure's variant field"* — and goes on to say the value *"might only be meaningful in the
+   * context of the flag management system associated with the provider"*. `types.md` types the field
+   * `variant (string, optional)`.
+   *
+   * Some backends have no variant concept for a plain flag at all. Their evaluation response carries
+   * no such key, so the provider never receives one and no amount of seeding can produce one.
+   * Asserting a variant in every evaluation scenario failed such a provider ten times over for
+   * something its author could not fix — and left nothing to record as a
+   * {@link TckOptions.knownDeviations}, because there was no capability to hang one on. That is the
+   * false failure this vocabulary exists to prevent, and it is why the variant assertions are
+   * consolidated into one gated Scenario Outline rather than spread across the untagged ones.
+   *
+   * Withholding it costs nothing else: the value and reason assertions are untagged and unaffected,
+   * requirement 2.2.3 making the value a MUST.
+   */
+  Variants = '@variants',
+
   /** Provider reports an error state promptly, rather than hanging, against an unreachable backend. */
   UnavailableInit = '@unavailable',
 
@@ -140,9 +163,28 @@ export enum Capability {
   LargeIntegers = '@large-integers',
 
   /**
-   * Reserved. No scenario carries this tag — targeting is backend evaluation logic.
+   * Provider resolves a flag differently for a matching evaluation context.
    *
-   * Reserved means **not declarable**; see {@link RESERVED_CAPABILITIES}.
+   * Declarable, and no longer reserved: the scenarios the name was being held open for now exist.
+   * They are what makes context passthrough observable at all. Every other flag in the canonical set
+   * resolves the same way whatever the context, so a provider that drops the context on the floor
+   * passes all of them; `targeting-key-flag` resolves to a different value for a matching targeting
+   * key, so dropping it is caught by the resolved value itself and no echo endpoint on the control
+   * API is needed.
+   *
+   * Three scenarios, and all three are needed. A matching context resolves the targeted variant, a
+   * non-matching one resolves the default — without which a provider that always returned the
+   * targeted value would pass — and an absent context resolves the default without erroring, which
+   * catches a provider that requires a targeting key or cannot evaluate a rule without one.
+   *
+   * This is still not backend evaluation logic under test: `targeting-key-flag`'s rule is specified
+   * by behaviour rather than by syntax, so a backend expresses it however it expresses targeting.
+   * What is verified is that the context reached the backend, not how the backend read it.
+   *
+   * A provider whose backend has no targeting at all leaves this undeclared and the three scenarios
+   * are skipped with that reason. The TCK's own in-memory suites are in exactly that position: the
+   * SDK's `InMemoryProvider` takes its rules from a `contextEvaluator` function, which the canonical
+   * flag file has no way to express, so the flag's `targeting` member is inert there.
    */
   Targeting = '@targeting',
 
@@ -164,9 +206,14 @@ export enum Capability {
  * believe something was verified when nothing examined it. That is the vacuous conformance claim the
  * capability vocabulary exists to prevent.
  *
- * It is not a hypothetical. A published Java conformance report asserted both of these as declared
- * — not by anyone's decision, but because that adoption declares "every capability except X" and
- * picked up every reserved tag in the vocabulary on the way past.
+ * It is not a hypothetical. A published Java conformance report asserted both `@targeting` and
+ * `@caching` as declared — not by anyone's decision, but because that adoption declares "every
+ * capability except X" and picked up every reserved tag in the vocabulary on the way past.
+ *
+ * `@caching` is the only reservation left. {@link Capability.Targeting} was one until Appendix F
+ * gained the three scenarios it was being held open for, which is exactly the transition the
+ * expiry check below exists to force: a reservation is only ever temporary, and one outliving its
+ * scenario makes a testable capability unclaimable.
  *
  * One list, in one place, because the failure mode is the rule and the list drifting apart. The
  * harness also checks it against the feature files it actually ran, so a reservation that expires
@@ -174,7 +221,7 @@ export enum Capability {
  *
  * @see https://github.com/open-feature/spec/blob/main/specification/assets/provider-tck/report/conformance-report.schema.json
  */
-export const RESERVED_CAPABILITIES: readonly Capability[] = Object.freeze([Capability.Targeting, Capability.Caching]);
+export const RESERVED_CAPABILITIES: readonly Capability[] = Object.freeze([Capability.Caching]);
 
 /** Whether a capability is reserved, and so cannot be declared. */
 export function isReserved(capability: Capability): boolean {
