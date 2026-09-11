@@ -1,7 +1,6 @@
 import { IdGenerator } from '@cucumber/messages';
 import { parseFeature } from 'jest-cucumber';
 import { Capability } from './capability';
-import type { ExampleTable } from './examples';
 import { readFeatureMessages } from './messages';
 import { planFeature, skipDisplayName } from './scenarioRunner';
 import { loadTckFeatures } from './runProviderTck';

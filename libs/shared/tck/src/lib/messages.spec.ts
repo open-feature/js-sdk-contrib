@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020';
 import type { Envelope, Pickle } from '@cucumber/messages';
 import { TestStepResultStatus } from '@cucumber/messages';
-import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
+import { Capability } from './capability';
 import type { BackendControl } from './control';
 import { ConformanceMessages } from './messages';
 import { ConformanceRecorder } from './report';
@@ -20,8 +20,6 @@ const control: BackendControl = {
 /** What the in-memory suite declares, which is the reference adoption. */
 const DECLARED = [Capability.Events, Capability.ConfigurationChange, Capability.Object];
 
-const NOT_APPLICABLE = new Map([[Capability.NumericCoercion, NO_INTEGER_TYPE_IN_JAVASCRIPT]]);
-
 /**
  * Drives the harness's own bookkeeping over the canonical features without running Jest.
  *
@@ -29,7 +27,7 @@ const NOT_APPLICABLE = new Map([[Capability.NumericCoercion, NO_INTEGER_TYPE_IN_
  * passed. What the runner adds on top -- Jest, step definitions, a provider -- is not what these
  * tests are about.
  */
-function run(declared: readonly Capability[], notApplicable = new Map<Capability, string>()) {
+function run(declared: readonly Capability[]) {
   const messages = new ConformanceMessages();
   const features = loadTckFeatures(undefined, messages.newId);
   features.forEach((feature) => messages.addFeature(feature.messages));
@@ -41,7 +39,6 @@ function run(declared: readonly Capability[], notApplicable = new Map<Capability
     suiteName: 'unit',
     control,
     declared: new Set(declared),
-    notApplicable,
     knownDeviations: [],
     messages,
   });
@@ -144,7 +141,7 @@ function messagesSchemaDir(): string {
 }
 
 describe('the results stream', () => {
-  const { envelopes, ndjson, plans } = run(DECLARED, NOT_APPLICABLE);
+  const { envelopes, ndjson, plans } = run(DECLARED);
   const planned = plans.flatMap((plan) => plan.scenarios.map((scenario) => ({ plan, scenario })));
 
   it('is valid Cucumber Messages, checked against the schema the protocol ships', () => {
@@ -232,22 +229,29 @@ describe('the results stream', () => {
     }
   });
 
-  it('says why a scenario was skipped, and distinguishes cannot from does not', () => {
-    // Both are skips: a status a consumer has to special-case is a status that gets read as a pass
-    // by something. The declaration in the envelope and this sentence carry the difference.
+  it('says why every skipped scenario was skipped, in one wording for every kind of skip', () => {
+    // Both kinds are skips: a status a consumer has to special-case is a status that gets read as a
+    // pass by something. One reason, naming the tags that were missing, is the whole mechanism --
+    // and there is deliberately no second wording for a capability that cannot hold in the language
+    // at all, so nothing here can dress a gap up as an impossibility. @numeric-coercion is in this
+    // set, undeclared like any other, and it reads exactly as the rest do.
     const statuses = statusByPickle(envelopes);
-    const reasons = new Set(
-      planned
-        .filter(({ scenario }) => scenario.missing.length)
-        .map(({ scenario }) => statuses.get(scenario.pickleId)?.message ?? ''),
-    );
+    const gated = planned.filter(({ scenario }) => scenario.missing.length);
 
-    expect([...reasons].some((reason) => reason.includes('does not declare'))).toBe(true);
-    expect(
-      [...reasons].some(
-        (reason) => reason.includes('cannot hold') && reason.includes('JavaScript has no integer type'),
-      ),
-    ).toBe(true);
+    expect(gated.length).toBeGreaterThan(0);
+    expect(gated.some(({ scenario }) => scenario.missing.includes(Capability.NumericCoercion))).toBe(true);
+
+    for (const { scenario } of gated) {
+      const reason = statuses.get(scenario.pickleId)?.message ?? '';
+
+      expect(reason).toContain('which this provider does not declare');
+      for (const capability of scenario.missing) {
+        expect(reason).toContain(capability);
+      }
+      // The removed second wording. Asserted absent rather than merely unused, because its return
+      // would be a report claiming an impossibility the schema no longer has a place for.
+      expect(reason).not.toContain('cannot hold');
+    }
   });
 
   it('gives every row of a Scenario Outline its own identity', () => {
@@ -356,7 +360,6 @@ describe('recording an outcome', () => {
       suiteName: 'unit',
       control,
       declared: new Set([Capability.Events]),
-      notApplicable: new Map(),
       knownDeviations: [],
       messages,
     });

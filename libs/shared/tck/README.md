@@ -614,7 +614,7 @@ $ jq -r 'select(.testStepFinished).testStepFinished.testStepResult.status' repor
 ```
 
 It is an environment variable rather than a `TckOptions` field so that emitting a report is a
-property of the *run* and not of the code: CI sets it, a developer running the suite locally does
+property of the _run_ and not of the code: CI sets it, a developer running the suite locally does
 not, and no adopter changes a line to publish one. Unset means no report, which is not an error.
 Several suites in one run each write their own pair of files, so flagd's two resolvers do not
 collide. The stream is written first and the envelope second, carrying a `sha256` digest of it, so
@@ -623,13 +623,13 @@ an envelope never names results that are not there or have moved on.
 **Every scenario appears exactly once**, whatever its outcome: one `Pickle`, one `TestCase` and one
 `TestCaseStarted`/`TestStepFinished`/`TestCaseFinished`, including for every scenario the capability
 gate skipped. That is what makes Appendix F's rule — a scenario skipped for an undeclared capability
-is reported as skipped and *never* as passed — checkable by a consumer rather than dependent on the
+is reported as skipped and _never_ as passed — checkable by a consumer rather than dependent on the
 runner's summary being trustworthy. The harness checks the accounting itself at the end of every
 run, report or no report, and fails the suite if a scenario is missing or recorded twice.
 
 **The canonical scenarios must also have actually run.** The accounting above proves the report has
 an entry per scenario; it does not prove the run produced those entries, because a scenario is
-registered when it is *defined* and one the runner declines to run carries a placeholder failure
+registered when it is _defined_ and one the runner declines to run carries a placeholder failure
 instead. So a filtered run — `jest -t`, a `testPathIgnorePatterns` entry, a mistake in the extension
 wiring — satisfies the accounting and goes green while its report supports nothing. The harness
 therefore fails the suite unless every canonical scenario reached a decision. A capability skip is a
@@ -641,17 +641,17 @@ alternative is a green run that cannot be told apart from a complete one.
 
 ### Reading the stream
 
-| Question | Where the answer is |
-| --- | --- |
-| what was in the suite | one `Pickle` per scenario, one `TestCase` per pickle |
-| what the outcome was | `TestStepFinished.testStepResult.status` |
-| why it was skipped | `TestStepFinished.testStepResult.message` |
-| what tags it carried | `Pickle.tags`, `Examples`-block tags included |
-| which row of an outline | `Pickle.astNodeIds` — the second id is the `TableRow` in the `GherkinDocument` |
-| what was actually executed | `Source`, verbatim |
+| Question                   | Where the answer is                                                            |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| what was in the suite      | one `Pickle` per scenario, one `TestCase` per pickle                           |
+| what the outcome was       | `TestStepFinished.testStepResult.status`                                       |
+| why it was skipped         | `TestStepFinished.testStepResult.message`                                      |
+| what tags it carried       | `Pickle.tags`, `Examples`-block tags included                                  |
+| which row of an outline    | `Pickle.astNodeIds` — the second id is the `TableRow` in the `GherkinDocument` |
+| what was actually executed | `Source`, verbatim                                                             |
 
 The eleven rows of `errors.feature`'s type-mismatch matrix are the case that matters. They share a
-scenario name, and they share their *expanded* name too, because that outline's title has no
+scenario name, and they share their _expanded_ name too, because that outline's title has no
 placeholders in it — so nothing but the AST node identifies them:
 
 ```console
@@ -675,7 +675,7 @@ point the decision is made rather than scraped back out of a reporter. `@cucumbe
 the `Source`, `GherkinDocument` and `Pickle` messages from the feature files, so no message here is
 hand-rolled and no id is invented.
 
-A scenario is registered when it is *defined*, so one Jest never finished — a timeout, or a `-t`
+A scenario is registered when it is _defined_, so one Jest never finished — a timeout, or a `-t`
 filter — still appears, as a failure that says so. **A report from a filtered run is partial by
 construction**, and the canonical-coverage check above fails the suite rather than leaving that to
 be noticed.
@@ -697,13 +697,15 @@ about the run.
 
 - **`provider.name` is what the provider reports through its own metadata**, not the suite name. The
   suite name is chosen to read well in a failure message — `flagd-rpc` — which makes it the
-  *configuration*, and it is reported as such. One provider with two materially different modes
+  _configuration_, and it is reported as such. One provider with two materially different modes
   produces two reports that are not interchangeable.
 - **`declaration` is an input to reading the results, not a summary of them.** A skipped test case
   says the question was not put to this provider; only the declaration says whether that is because
-  the provider declines the capability (`declared` does not list it) or because the capability
-  cannot hold for it at all (`notApplicable`, with the reason). Given the declaration and a
-  scenario's tags, the reason for any skip follows without being transported per scenario.
+  the provider declines the capability — `declared` does not list it. Given the declaration and a
+  scenario's tags, the reason for any skip follows without being transported per scenario. There is
+  no parallel not-applicable member: a capability that cannot hold in the _language_ at all is a
+  property of the SDK, recorded once in [Appendix F][appendix-f] rather than in every report, and in
+  a run it is simply undeclared with the skip carrying the reason.
 - **`tck.specRevision`** comes from [`src/lib/revision.ts`](./src/lib/revision.ts), which
   [`scripts/write-revision.js`](./scripts/write-revision.js) generates from the submodule. It is
   captured at build time because the submodule is not part of the published npm package. Nothing
@@ -720,7 +722,7 @@ about the run.
 
 There is no per-capability verdict in the report, and that is deliberate. A roll-up is derivable
 from the declaration and the stream, and a consumer computing one should count only test cases that
-*ran*: every scenario carrying a capability can be skipped for a *different* one — both scenarios in
+_ran_: every scenario carrying a capability can be skipped for a _different_ one — both scenarios in
 `events.feature` carry `@events` as well as `@stale` or `@configuration-change` — so counting tag
 presence rather than execution reports a green result for a question nobody asked. Nor is a capability roll-up a conformance verdict in the first
 place: scenarios carrying no capability tag are mandatory and roll up into nothing, so a provider
