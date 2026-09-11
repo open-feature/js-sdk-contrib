@@ -34,8 +34,30 @@ const libRoot = resolve(__dirname, '..');
 const specRoot = join(libRoot, 'spec');
 const outputPath = join(libRoot, 'src', 'lib', 'revision.ts');
 
+/**
+ * Runs git with the ambient repository pointers removed from the environment.
+ *
+ * `GIT_DIR` and `GIT_WORK_TREE` take precedence over `-C`, so with either set this would read the
+ * **outer** repository's HEAD and record a commit of this repository as the specification revision.
+ * The 40-hex check below cannot catch that: a commit id is a valid commit id. The result is a
+ * conformance report naming a revision it never ran against, which is the one thing the recorded
+ * revision exists to prevent.
+ *
+ * Not hypothetical, and not exotic. Those variables are the usual workaround for tooling that
+ * shells out to `git submodule` from inside a linked worktree, so the environment that most needs
+ * this script to be right is exactly the one that breaks it.
+ */
 function gitOutput(args) {
-  return execFileSync('git', args, { cwd: libRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  const env = { ...process.env };
+  delete env.GIT_DIR;
+  delete env.GIT_WORK_TREE;
+  delete env.GIT_INDEX_FILE;
+  return execFileSync('git', args, {
+    cwd: libRoot,
+    env,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
 }
 
 /**
@@ -52,6 +74,17 @@ function readRevision() {
     return undefined;
   }
   try {
+    // Checked before the revision is trusted, because every failure mode here produces a
+    // *plausible* commit id rather than an error. If git resolved some other repository, its HEAD
+    // would be recorded as the specification revision and nothing downstream could tell.
+    const toplevel = gitOutput(['-C', specRoot, 'rev-parse', '--show-toplevel']);
+    if (resolve(toplevel) !== resolve(specRoot)) {
+      process.stderr.write(
+        `write-revision: git resolved ${toplevel} rather than the spec submodule at ${specRoot}, ` +
+          `so any commit it reported would be the wrong repository's -- keeping the committed revision.\n`,
+      );
+      return undefined;
+    }
     return gitOutput(['-C', specRoot, 'rev-parse', 'HEAD']);
   } catch (error) {
     process.stderr.write(`write-revision: could not read the spec revision from git: ${error.message}\n`);
