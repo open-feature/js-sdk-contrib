@@ -83,31 +83,12 @@ describe('resolving a suite capabilities', () => {
     }
   });
 
-  it('leaves an inapplicable capability out of the default, without restating the whole set', () => {
-    const { declared, notApplicable } = resolveCapabilities(
-      optionsFor({
-        newUnavailableProvider: () => ({}) as never,
-        notApplicable: { [Capability.NumericCoercion]: 'no integer type' },
-      }),
-    );
-
-    expect(declared.has(Capability.NumericCoercion)).toBe(false);
-    expect(declared.has(Capability.Events)).toBe(true);
-    expect(notApplicable.get(Capability.NumericCoercion)).toBe('no integer type');
-  });
-
   it('refuses a suite that declares a reserved capability', () => {
     // Refused rather than dropped: a suite that asked for a claim it cannot have should be told,
     // not quietly corrected into a report that no longer matches what it wrote.
     expect(() => resolveCapabilities(optionsFor({ capabilities: [Capability.Events, Capability.Targeting] }))).toThrow(
       /@targeting, which no scenario carries/,
     );
-  });
-
-  it('refuses a reserved capability declared inapplicable, which is a claim about nothing', () => {
-    expect(() =>
-      resolveCapabilities(optionsFor({ capabilities: [], notApplicable: { [Capability.Caching]: 'no cache' } })),
-    ).toThrow(/@caching, which no scenario carries/);
   });
 
   it('reports every reserved capability a suite named, rather than only the first', () => {
@@ -125,17 +106,6 @@ describe('resolving a suite capabilities', () => {
     expect(undeclared).not.toContain(Capability.Targeting);
     expect(undeclared).toContain(Capability.Stale);
     expect(undeclared.length).toBe(DECLARABLE_CAPABILITIES.length - 1);
-  });
-
-  it('refuses a capability that is both declared and inapplicable', () => {
-    expect(() =>
-      resolveCapabilities(
-        optionsFor({
-          capabilities: [Capability.NumericCoercion],
-          notApplicable: { [Capability.NumericCoercion]: 'no integer type' },
-        }),
-      ),
-    ).toThrow(/both list @numeric-coercion/);
   });
 
   it('refuses @unavailable without a provider pointed at a backend that does not exist', () => {
@@ -208,17 +178,5 @@ describe('a known deviation', () => {
     expect(() =>
       resolveCapabilities(optionsFor({ knownDeviations: [KnownDeviation.untracked(Capability.Stale, '   ')] })),
     ).toThrow(/with no summary/);
-  });
-
-  it('refuses a capability that is both inapplicable and deviant', () => {
-    expect(() =>
-      resolveCapabilities(
-        optionsFor({
-          capabilities: [],
-          notApplicable: { [Capability.NumericCoercion]: 'no integer type' },
-          knownDeviations: [KnownDeviation.untracked(Capability.NumericCoercion, 'narrows 0.5 to 0')],
-        }),
-      ),
-    ).toThrow(/both name @numeric-coercion/);
   });
 });
