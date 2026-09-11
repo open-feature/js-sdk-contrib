@@ -162,7 +162,7 @@ export const CONTROL_API_PATH = join(resolveAssetDir('openapi'), 'control-api.ya
  * the same file would register the vocabulary twice and every step would report as ambiguous.
  */
 export function runProviderTck(options: TckOptions): void {
-  const { declared, notApplicable, undeclared } = resolveCapabilities(options);
+  const { declared, notApplicable, undeclared, knownDeviations } = resolveCapabilities(options);
   const state = new TckState(options);
 
   // Undeclared capabilities are excluded here, which marks their scenarios `skippedViaTagFilter`.
@@ -215,7 +215,18 @@ export function runProviderTck(options: TckOptions): void {
           (notApplicable.size ? `; not applicable ${[...notApplicable.keys()].sort().join(' ')}` : '') +
           // Named rather than counted: a reader of the output has to be able to see that a scenario
           // they do not recognise came from the adopter and not from the shared suite.
-          (extensions.length ? `; extension features ${extensions.sort().join(' ')}` : ''),
+          (extensions.length ? `; extension features ${extensions.sort().join(' ')}` : '') +
+          // Printed in full, next to the declaration it qualifies. A deviation exists to be read
+          // alongside a failure, and a run's output is where someone reads that failure first.
+          knownDeviations
+            .map(
+              (deviation) =>
+                `\nprovider-tck [${options.name}]: known deviation` +
+                (deviation.capability ? ` in ${deviation.capability}` : '') +
+                ` -- ${deviation.summary}` +
+                (deviation.issue ? ` (${deviation.issue})` : ' (not tracked upstream)'),
+            )
+            .join(''),
       );
     });
 
