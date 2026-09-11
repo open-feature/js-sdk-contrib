@@ -1,4 +1,4 @@
-import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
+import { Capability } from './capability';
 import { InProcessControl } from './inProcessControl';
 import { runProviderTck } from './runProviderTck';
 
@@ -52,18 +52,16 @@ runProviderTck({
   capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object, Capability.LargeIntegers],
 
   /*
-   * NumericCoercion is not merely undeclared, it is inapplicable, and the conformance report
-   * says so in its declaration rather than leaving the capability silently absent.
+   * NumericCoercion is left undeclared, so its three scenarios are skipped with that reason.
    *
    * **JavaScript has no integer type.** `typeof 10` and `typeof 0.5` are both 'number', the
    * Evaluation API exposes only getNumberDetails, and the in-memory provider type-checks with
    * `typeof value != typeof defaultValue`. Asking for float-flag as an Integer is therefore
    * indistinguishable from asking for it as a Float, so neither half of the coercion contract can
-   * be put to a provider in this language: there is no lossless narrowing to permit and no lossy
-   * one to reject — not because of a defect, but because the distinction does not exist here.
+   * be put to a provider in this language — not because of a defect, but because the distinction
+   * does not exist here.
    *
-   * Reporting that as an undeclared capability would show every JavaScript provider as missing
-   * something no JavaScript provider can have. See the README.
+   * That is a property of the language rather than of this provider, so it is stated once against
+   * Capability.NumericCoercion and in Appendix F rather than restated in this suite's report.
    */
-  notApplicable: { [Capability.NumericCoercion]: NO_INTEGER_TYPE_IN_JAVASCRIPT },
 });

@@ -74,11 +74,7 @@ type ScenarioAction = (...args: unknown[]) => void | Promise<void> | undefined;
  * F requires a skipped scenario to be reported with its reason, so the harness composes the name
  * itself, at the point jest-cucumber makes the `test.skip` call.
  */
-export function scenarioRunner(
-  featureTitle: string,
-  planned: readonly PlannedScenario[],
-  notApplicable: ReadonlyMap<Capability, string>,
-): IJestLike {
+export function scenarioRunner(featureTitle: string, planned: readonly PlannedScenario[]): IJestLike {
   let index = 0;
 
   const describeFeature = (title: string, body: FeatureBody): void => {
@@ -123,7 +119,7 @@ export function scenarioRunner(
 
     // The body is never invoked; it is passed on so Jest reports the scenario as skipped rather
     // than as an empty test.
-    test.skip(skipDisplayName(scenario, notApplicable), async () => action(), timeout);
+    test.skip(skipDisplayName(scenario), async () => action(), timeout);
   };
 
   return {
@@ -142,19 +138,19 @@ export function scenarioRunner(
  * The reason travels in the name because Jest has nowhere else to put it, and a suite that quietly
  * goes green on scenarios it did not run is worse than no suite at all.
  *
- * A capability the provider merely does not declare and one that cannot hold for it at all are
- * named differently, because they are different claims — see {@link TckOptions.notApplicable}.
- * Neither is a pass, and the gating is identical; what differs is what a reader is being told.
+ * One skip carrying its reason is the whole mechanism. "Does not declare it" and "cannot hold for
+ * it at all" are both skips, and a second wording for the second case tells a reader nothing this
+ * one does not: the scenario's own tags say what was asked and the declaration says whether it was
+ * claimed. Where a capability cannot hold in the language at all — `@numeric-coercion` here — that
+ * is a property of the SDK rather than of the provider, and it is recorded once against
+ * {@link Capability.NumericCoercion} and in Appendix F instead of restated in every run.
  */
-export function skipDisplayName(scenario: PlannedScenario, notApplicable: ReadonlyMap<Capability, string>): string {
+export function skipDisplayName(scenario: PlannedScenario): string {
   if (!scenario.missing.length) {
     // jest-cucumber also skips a scenario whose steps are pending. This suite has none, so reaching
     // here means something skipped a scenario the TCK expected to run.
     return `${scenario.title} — SKIPPED: for a reason the TCK did not ask for`;
   }
 
-  const tags = scenario.missing.join(' ');
-  return scenario.missing.every((capability) => notApplicable.has(capability))
-    ? `${scenario.title} — NOT APPLICABLE: ${tags} does not apply to this provider`
-    : `${scenario.title} — SKIPPED: provider does not declare ${tags}`;
+  return `${scenario.title} — SKIPPED: provider does not declare ${scenario.missing.join(' ')}`;
 }
