@@ -71,7 +71,7 @@ runProviderTck({
   name: 'in-memory-with-extension',
   control,
   newProvider: () => control.newProvider(),
-  capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object],
+  capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object, Capability.LargeIntegers],
   notApplicable: { [Capability.NumericCoercion]: NO_INTEGER_TYPE_IN_JAVASCRIPT },
 
   // Absolute, because paths resolve against the runner's working directory rather than this file's.
