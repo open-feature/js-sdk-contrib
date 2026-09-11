@@ -102,13 +102,41 @@ export const flagSteps =
       throw new Error(`error-code was '${actual}', expected '${expected}'`);
     });
 
+    then(/^the error message should be empty$/, () => {
+      // Every success path asserts this (requirement 2.3.2). A provider that reports a value AND an
+      // error message is sending two contradictory signals, and an application reading the message
+      // will believe the wrong one.
+      const details = state.requireDetails();
+      // Typed as `string | undefined`, but a provider written in JavaScript can hand back `null`,
+      // and a null message is as empty as a missing one.
+      const message: unknown = details.errorMessage;
+      if (message !== undefined && message !== null && message !== '') {
+        throw new Error(`an error message was reported alongside the value, expected none: '${String(message)}'`);
+      }
+    });
+
     then('no exception should have been thrown', () => {
+      // Nothing the scenario asked of the provider may have thrown: the evaluation, if there was
+      // one, and every direct lifecycle call. Each records what it threw rather than propagating
+      // it, and this is the one step that reads those records back.
+      //
       // The Evaluation API is specified never to throw: an errored evaluation returns the code
-      // default with an error code. A provider that rejects instead takes the caller down with it.
-      if (state.thrown !== undefined) {
+      // default with an error code. A provider that rejects instead takes the caller down with it
+      // -- and one that rejects from shutdown does so from the application's own shutdown, where an
+      // exception is least welcome.
+      if (!state.hasCalledProvider()) {
         throw new Error(
-          `the evaluation threw ${String(state.thrown)}. A flag evaluation must always resolve to ` +
-            `a value and an error code, never reject`,
+          'nothing has been asked of the provider in this scenario: a "When the flag was evaluated ' +
+            'with details" or "When the provider is shut down" step must come first',
+        );
+      }
+
+      const thrown = state.exceptions();
+      if (thrown.length) {
+        const listed = thrown.map(({ what, error }) => `${what} threw ${String(error)}`).join('; ');
+        throw new Error(
+          `${listed}. A flag evaluation must always resolve to a value and an error code, and a ` +
+            `lifecycle call must return, never reject`,
         );
       }
     });

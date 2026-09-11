@@ -90,6 +90,53 @@ describe('the capability gate', () => {
     expect(skipDisplayName(planned[1], NONE)).toContain('@object');
   });
 
+  it('loads every canonical feature, the metadata one included', () => {
+    // Feature files are discovered from the asset directory rather than enumerated, so a file
+    // arriving upstream is picked up without a wiring change here. This pins that it was: a
+    // feature the harness quietly failed to load would be the one kind of gap nothing else reports.
+    expect(features.map((parsed) => parsed.title).sort()).toEqual([
+      'Provider error handling',
+      'Provider events',
+      'Provider flag evaluation',
+      'Provider lifecycle',
+      'Provider metadata',
+    ]);
+  });
+
+  it('reports both halves of @numeric-coercion as inapplicable, not only the lossy one', () => {
+    // The lossless scenarios arrived with the integral float in the canonical flag set. They carry
+    // the same tag, so a JavaScript suite must see all three named NOT APPLICABLE and none of them
+    // fail: with one numeric type there is nothing to coerce, in either direction.
+    const gated = plansWithout(Capability.Events).filter((scenario) =>
+      scenario.missing.includes(Capability.NumericCoercion),
+    );
+    const inapplicable: ReadonlyMap<Capability, string> = new Map([
+      [Capability.NumericCoercion, NO_INTEGER_TYPE_IN_JAVASCRIPT],
+    ]);
+
+    expect(gated.map((scenario) => scenario.title).sort()).toEqual([
+      'A float flag is not silently narrowed to an integer',
+      'An integer requested as a float is widened without loss',
+      'An integral float requested as an integer is coerced without loss',
+    ]);
+    for (const scenario of gated) {
+      expect(scenario.missing).toEqual([Capability.NumericCoercion]);
+      expect(skipDisplayName(scenario, inapplicable)).toContain('NOT APPLICABLE');
+    }
+  });
+
+  it('gates the 2^53 - 1 scenario on @large-integers and leaves the 2^31 - 1 one mandatory', () => {
+    // Accessor width is a property of the SDK rather than of the provider, so only the value a
+    // 32-bit accessor cannot ask for is tagged. The other precision scenario runs for everyone.
+    const all = plansWithout(Capability.Events);
+    const titled = (title: string) => all.find((scenario) => scenario.title === title);
+
+    expect(titled('An integer beyond 32 bits resolves without loss of precision')?.missing).toEqual([
+      Capability.LargeIntegers,
+    ]);
+    expect(titled('A large integer resolves without loss of precision')?.missing).toEqual([]);
+  });
+
   it('names an inapplicable capability differently from an undeclared one', () => {
     // Two different claims — "this provider has not implemented X" and "X cannot be asked of this
     // provider at all" — and the name has to say which, because the gating is identical. Neither
