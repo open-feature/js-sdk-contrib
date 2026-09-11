@@ -188,12 +188,13 @@ describe('the results stream', () => {
   it('carries the executed feature source, so the stream says what was asked', () => {
     const sources = envelopes.flatMap((envelope) => (envelope.source ? [envelope.source] : []));
 
+    // Appendix F's canonical form: the path relative to the spec's asset directory.
     expect(sources.map((source) => source.uri)).toEqual([
-      'specification/assets/provider-tck/gherkin/errors.feature',
-      'specification/assets/provider-tck/gherkin/evaluation.feature',
-      'specification/assets/provider-tck/gherkin/events.feature',
-      'specification/assets/provider-tck/gherkin/lifecycle.feature',
-      'specification/assets/provider-tck/gherkin/metadata.feature',
+      'gherkin/errors.feature',
+      'gherkin/evaluation.feature',
+      'gherkin/events.feature',
+      'gherkin/lifecycle.feature',
+      'gherkin/metadata.feature',
     ]);
     for (const source of sources) {
       expect(source.data).toContain('Feature:');
