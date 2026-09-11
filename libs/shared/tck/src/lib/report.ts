@@ -71,7 +71,14 @@ export interface ConformanceReport {
    * An *input* to reading the results rather than a summary of them, which is why it cannot be
    * derived from the stream and has to be stated here. A skipped test case in the stream says the
    * question was not put to this provider; only the declaration says whether that is because the
-   * provider declines the capability or because the capability cannot hold for it at all.
+   * provider declines the capability. Given the declaration and a scenario's tags, the reason for
+   * any skip follows without being transported per scenario.
+   *
+   * There is deliberately no parallel not-applicable member. A capability that cannot hold in a
+   * *language* at all — `@numeric-coercion` where there is one numeric type, `@large-integers` on a
+   * 32-bit accessor — is a property of the SDK rather than of the provider, so it is recorded once
+   * in Appendix F instead of restated in every report; in a run it is simply undeclared, and the
+   * skip carries the reason.
    */
   declaration: {
     /**
@@ -82,7 +89,6 @@ export interface ConformanceReport {
      * the results, and listing it invites a reader to believe it was verified.
      */
     declared: string[];
-    notApplicable?: Record<string, string>;
   };
   results: {
     format: typeof RESULTS_FORMAT;
@@ -139,8 +145,6 @@ export interface RecorderContext {
   suiteName: string;
   control: BackendControl;
   declared: ReadonlySet<Capability>;
-  /** Capabilities that cannot hold for this provider at all, each with the reason it cannot. */
-  notApplicable: ReadonlyMap<Capability, string>;
   /**
    * Deviations the adopter declared, which the envelope carries verbatim.
    *
@@ -265,8 +269,6 @@ export class ConformanceRecorder {
   }
 
   build(results: ConformanceReport['results']): ConformanceReport {
-    const notApplicable: Record<string, string> = Object.fromEntries(this.context.notApplicable);
-
     return {
       schemaVersion: REPORT_SCHEMA_VERSION,
       provider: {
@@ -298,12 +300,11 @@ export class ConformanceRecorder {
         // other route into a declared set -- a recorder built directly, a future option, a merge.
         // The schema's rule is about what a report says, so it is enforced where the report is made.
         declared: [...this.context.declared].filter((capability) => !isReserved(capability)).sort(),
-        ...(Object.keys(notApplicable).length ? { notApplicable } : {}),
       },
       results,
       // Omitted when empty, never emitted as `[]`. The two are different claims -- an empty array
       // says deviations were considered and none found, which is not something this suite can say
-      // for the adopter -- and the same idiom the declaration's `notApplicable` uses just above.
+      // for the adopter.
       // Copied into a fresh array so the envelope does not alias the adopter's option object, and
       // carried verbatim otherwise: the field names are already the shared ones, so translating
       // them here is the one thing that would break comparing two languages' reports.
@@ -327,26 +328,20 @@ export class ConformanceRecorder {
   /**
    * Why a scenario was skipped.
    *
-   * A capability the provider chose not to declare and one that cannot hold for it at all are
-   * different statements, and both are skips. The distinction lives in this sentence and in the
-   * envelope's declaration rather than in the status, because it is a fact about the provider
-   * rather than about the run: `@numeric-coercion` is unsatisfiable in JavaScript, and that is
-   * true of every scenario carrying it in every run of every JavaScript provider.
+   * One skip carrying this reason is the whole mechanism. A capability the provider chose not to
+   * declare and one that cannot hold for it at all are both skips, and a second status or a
+   * parallel declaration member would say nothing this sentence and the scenario's own tags do not.
+   * Where the impossibility is a property of the language rather than of the provider --
+   * `@numeric-coercion` has no answer in JavaScript, there being one numeric type -- it is recorded
+   * against {@link Capability.NumericCoercion} and in Appendix F, once, rather than repeated here
+   * on every provider's behalf.
    */
   private skipReason(missing: readonly Capability[]): string {
     if (missing.length === 0) {
       return 'skipped by the capability gate, which named no capability';
     }
 
-    const tags = missing.join(' ');
-    const inapplicable = missing.filter((capability) => this.context.notApplicable.has(capability));
-
-    // The stronger statement wins when a scenario is gated by both, so a provider cannot hide a gap
-    // behind an inapplicable tag that happens to sit on the same scenario.
-    return inapplicable.length === missing.length
-      ? `requires ${tags}, which cannot hold for this provider: ` +
-          `${inapplicable.map((capability) => this.context.notApplicable.get(capability)).join('; ')}`
-      : `requires ${tags}, which this provider does not declare`;
+    return `requires ${missing.join(' ')}, which this provider does not declare`;
   }
 }
 

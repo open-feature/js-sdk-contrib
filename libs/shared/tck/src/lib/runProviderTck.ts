@@ -272,7 +272,6 @@ export function runProviderTck(options: TckOptions): void {
     suiteName: options.name,
     control: options.control,
     declared,
-    notApplicable,
     knownDeviations,
     messages,
     observedProviderName: () => state.providerName,

@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { version as messagesVersion } from '@cucumber/messages';
-import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT, RESERVED_CAPABILITIES } from './capability';
+import { Capability, RESERVED_CAPABILITIES } from './capability';
 import type { BackendControl } from './control';
 import type { KnownDeviation } from './deviation';
 import { KnownDeviation as Deviation } from './deviation';
@@ -27,16 +27,11 @@ const control: BackendControl = {
   changeFlag: async () => undefined,
 };
 
-const recorderFor = (
-  declared: Capability[],
-  notApplicable = new Map<Capability, string>(),
-  knownDeviations: readonly KnownDeviation[] = [],
-) =>
+const recorderFor = (declared: Capability[], knownDeviations: readonly KnownDeviation[] = []) =>
   new ConformanceRecorder({
     suiteName: 'unit',
     control,
     declared: new Set(declared),
-    notApplicable,
     knownDeviations,
     messages: new ConformanceMessages(),
     observedProviderName: () => 'observed-provider',
@@ -70,20 +65,11 @@ describe('the conformance envelope', () => {
     const { declaration } = recorderFor([Capability.Events, Capability.Object]).build(RESULTS);
 
     expect(declaration.declared).toEqual([Capability.Events, Capability.Object]);
+    // `declared` is the whole declaration. The schema dropped its not-applicable member, so the
+    // envelope must not carry one: a capability that cannot hold in the language at all is simply
+    // undeclared here, and the skip in the stream carries the reason.
+    expect(Object.keys(declaration)).toEqual(['declared']);
     expect(declaration).not.toHaveProperty('notApplicable');
-  });
-
-  it('states a capability that cannot hold for this provider, with the reason', () => {
-    // JavaScript is the language that forces the distinction: @numeric-coercion is
-    // unsatisfiable because there is no integer type, so leaving it merely undeclared would report
-    // every JavaScript provider as missing something none of them can have.
-    const notApplicable = new Map([[Capability.NumericCoercion, NO_INTEGER_TYPE_IN_JAVASCRIPT]]);
-    const { declaration } = recorderFor([Capability.Events], notApplicable).build(RESULTS);
-
-    expect(declaration.declared).toEqual([Capability.Events]);
-    expect(declaration.notApplicable).toEqual({
-      [Capability.NumericCoercion]: expect.stringContaining('no integer type'),
-    });
   });
 
   it('never declares a reserved capability, whatever it was handed', () => {
@@ -113,7 +99,6 @@ describe('the conformance envelope', () => {
       suiteName: 'unit',
       control,
       declared: new Set(),
-      notApplicable: new Map(),
       knownDeviations: [],
       messages: new ConformanceMessages(),
     });
@@ -194,7 +179,6 @@ describe('scenario accounting', () => {
       suiteName: 'unit',
       control,
       declared: new Set(declared),
-      notApplicable: new Map(),
       knownDeviations: [],
       messages,
     });
@@ -348,7 +332,7 @@ describe('writing the report', () => {
     process.env[REPORT_DIR_ENV] = dir;
 
     try {
-      const written = writeConformanceReport(recorderFor([Capability.Stale], new Map(), deviations), 'in-memory');
+      const written = writeConformanceReport(recorderFor([Capability.Stale], deviations), 'in-memory');
       return JSON.parse(readFileSync(written?.report as string, 'utf8')) as Record<string, unknown>;
     } finally {
       rmSync(dir, { recursive: true, force: true });
