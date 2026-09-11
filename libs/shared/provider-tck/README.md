@@ -141,6 +141,7 @@ call is made. See [`src/lib/scenarioRunner.ts`](./src/lib/scenarioRunner.ts).
 | --- | --- | --- |
 | `Capability.Events` | `@events` | emits lifecycle events at all |
 | `Capability.Lifecycle` | `@lifecycle` | performs an initialisation that reaches its backend, with an observable outcome — **see below** |
+| `Capability.Reinitialization` | `@reinitialization` | can be initialised again after `shutdown`, which the specification permits rather than requires — **see below** |
 | `Capability.Stale` | `@stale` | enters `STALE` and emits `PROVIDER_STALE` on backend loss |
 | `Capability.ConfigurationChange` | `@configuration-change` | detects configuration changes and emits `PROVIDER_CONFIGURATION_CHANGED` |
 | `Capability.Object` | `@object` | supports structured flag values |
@@ -196,17 +197,17 @@ import { Capability, KnownDeviation, runProviderTck } from '@openfeature/provide
 
 runProviderTck({
   // ...
-  capabilities: [Capability.Lifecycle /* ... */],
+  capabilities: [Capability.Stale, Capability.LargeIntegers /* ... */],
   knownDeviations: [
     KnownDeviation.untracked(
-      Capability.Lifecycle,
-      'shutdown() does not clear the initialised latch, so a second initialize() returns without ' +
-        'recreating the resolver and evaluates against a closed channel',
+      Capability.Stale,
+      'the provider emits PROVIDER_STALE on backend loss but never leaves STALE when the backend ' +
+        'returns, so it serves cached values indefinitely',
     ),
     KnownDeviation.tracked(
       Capability.LargeIntegers,
       'https://github.com/open-feature/flagd-testbed/pull/392',
-      'the testbed has no huge-integer-flag, so the 2^53 - 1 scenario cannot pass yet',
+      'the testbed has no large-integer-flag, so the 2^53 - 1 scenario cannot pass yet',
     ),
   ],
 });
@@ -223,6 +224,13 @@ with the suite's declaration and carried through to whatever reads it. The shape
 translation table. A reserved capability is refused here for the same reason as everywhere else: no
 scenario carries it, so there is nothing to deviate from.
 
+**Check the requirement before you record one.** A deviation is a claim that the provider gets
+something wrong, so it only makes sense where the specification asks for the behaviour. Where a
+scenario is gated on a capability, the gate itself is usually the specification saying the behaviour
+is optional — `@reinitialization` is exactly that, and a provider that declines reuse should leave
+the tag undeclared rather than declare it and record a deviation. Find the numbered requirement
+first; a failing scenario is not on its own evidence of a defect.
+
 ### `@lifecycle` is not `@events`
 
 Provider initialisation used to be gated by `@events`, which was wrong in both directions.
@@ -236,6 +244,36 @@ provider with no initialisation step**, so a provider that declares `@events` bu
 startup passes the readiness scenario without demonstrating anything — a `NoOpProvider` passes it
 identically. Declare `@lifecycle` only if initialisation genuinely contacts your backend and both
 terminal outcomes are observable: READY against a healthy backend, ERROR against an unreachable one.
+
+### `@reinitialization` is not `@lifecycle` either
+
+Declaring `@lifecycle` says your provider initialises for real. It does *not* say the provider can be
+initialised a second time after `shutdown`, and those come apart because the specification permits
+reuse rather than requiring it.
+[Requirement 2.5.2](https://github.com/open-feature/spec/blob/main/specification/sections/02-providers.md)
+says a provider **SHOULD** revert to its uninitialized state after `shutdown`, and its supporting
+text adds that *"some providers **may** allow reinitialization from this state"*. A provider that
+releases its client on shutdown and declines to start again is taking an option the specification
+offers it.
+
+This is worth spelling out because getting it wrong has a cost, and it was paid once already. The
+reuse scenario was originally untagged, on the reading that reverting to the uninitialized state is
+observable as exactly one thing — the provider can be initialised again and then serves flags. The
+inference does not hold, and while it stood, a provider making a permitted choice was reported as
+failing conformance and the failure was on its way to being filed as a defect against the
+implementation. **A false failure is the mirror image of a vacuous pass**, and this library cares
+about both.
+
+So do not reach for `knownDeviations` when the reuse scenario fails. Leave `@reinitialization`
+undeclared and the scenario is skipped, which is the accurate report: nothing is broken. Declare it
+only once you have tested that a second `initialize()` genuinely works — where it does, the scenario
+is worth having, because releasing the client on shutdown while leaving an initialised flag set is
+easy to write and leaves the provider evaluating against a closed connection rather than failing
+outright.
+
+The general rule, of which this is one instance: before recording a deviation or withholding a
+capability because a scenario failed, find the numbered requirement and check that the specification
+asks for the behaviour at all.
 
 ## The one place JavaScript cannot answer the shared question
 
