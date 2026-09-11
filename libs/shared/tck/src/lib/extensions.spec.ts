@@ -170,18 +170,19 @@ describe('loading extension features', () => {
       'A vendor rule resolves through the provider under test',
     );
     // How a report consumer tells an adopter's scenario from a canonical one: a canonical feature is
-    // named by its path in open-feature/spec, which an extension has no claim to.
+    // named by its path relative to the spec's asset directory, which an extension has no claim to.
     for (const { pickle } of vendor.messages.planned) {
       expect(pickle.uri).toBe(`${EXTENSION_URI_PREFIX}/vendor.feature`);
     }
   });
 
-  it('leaves every canonical feature canonical', () => {
+  it('leaves every canonical feature canonical, named relative to the asset directory', () => {
     for (const feature of loadTckFeatures(undefined)) {
       expect(feature.canonical).toBe(true);
-      expect(feature.messages.planned[0].pickle.uri).toBe(
-        `specification/assets/provider-tck/gherkin/${feature.feature}.feature`,
-      );
+      // Appendix F's form, asserted literally rather than through a helper: `gherkin/<name>.feature`
+      // and nothing longer. A repository-relative path is what this implementation emitted before,
+      // and it is the reason a consumer could not join these results against another language's.
+      expect(feature.messages.planned[0].pickle.uri).toBe(`gherkin/${feature.feature}.feature`);
     }
   });
 

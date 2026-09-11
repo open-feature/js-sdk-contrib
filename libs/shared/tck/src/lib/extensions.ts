@@ -4,9 +4,10 @@ import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'nod
 /**
  * The URI prefix an extension feature is named under in the results stream.
  *
- * A canonical feature is named by the path it has in open-feature/spec, which -- with
- * `tck.specRevision` from the envelope -- says exactly which artifact ran. An adopter's feature has
- * no such path, and giving it one would claim the canonical suite contains something it does not.
+ * A canonical feature is named by its path relative to the spec's asset directory --
+ * `gherkin/errors.feature` -- which, with `tck.specRevision` from the envelope, says exactly which
+ * artifact ran. An adopter's feature has no such path, and giving it one would claim the canonical
+ * suite contains something it does not.
  * So extension features are named under their own prefix, and that is what tells a report consumer
  * which scenarios came from the shared suite and which the adopter added.
  *

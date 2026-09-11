@@ -26,16 +26,40 @@ import { registerSuiteUnderTest } from './underTest';
 export const FEATURES_GLOB = join(resolveAssetDir('features'), '*.feature');
 
 /**
+ * The directory component a canonical feature's URI carries, which is the spec's name for it.
+ *
+ * The same string as `SPEC_SUBDIR.features`, and deliberately not read from it: that map says where
+ * to *find* the files in a submodule checkout, this says what the canonical URI *is*. They only
+ * happen to coincide. The published package renames the directory to `features`, and the URI must
+ * not follow it -- a report from a packaged run and one from a submodule run have to name the same
+ * feature identically.
+ */
+const CANONICAL_URI_DIR = 'gherkin';
+
+/**
  * The URI a feature file is named by in the results stream.
  *
- * The path the artifacts have upstream, not the path they happen to sit at on this machine: with
- * `tck.specRevision` from the envelope it names the executed file exactly, and it is the same
- * string wherever the suite runs. Assembled with forward slashes for the same reason -- a URI is
- * not a filesystem path, and a Windows separator here would make two runs of identical assets
- * report different sources.
+ * **The path relative to the spec's asset directory** -- `gherkin/errors.feature` -- not the path
+ * relative to a repository root and not the path the file happens to sit at on this machine. With
+ * `tck.specRevision` from the envelope that names the executed artifact exactly, and it is the same
+ * string wherever the suite runs.
+ *
+ * Appendix F states the form, and it states it because a phrasing that merely implied it produced
+ * three different answers across four TCK implementations -- this one emitted the repository-relative
+ * path, which is the reading that made the rule's defect visible. The directory is the unit because
+ * those assets are also a released Go module whose root *is* that directory: its embed keys are
+ * `gherkin/*.feature`, and nothing inside it knows or should know where it sits in a checkout.
+ * Anything longer forces every consumer to hardcode a constant describing a checkout it does not
+ * have, and a consumer joining two languages' results keys on this URI and the scenario name -- so
+ * the form is what makes the join work at all.
+ *
+ * Assembled with forward slashes, because a URI is not a filesystem path and a Windows separator
+ * here would make two runs of identical assets report different sources.
+ *
+ * @see https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md
  */
 function featureUri(feature: string): string {
-  return `specification/assets/provider-tck/gherkin/${feature}.feature`;
+  return `${CANONICAL_URI_DIR}/${feature}.feature`;
 }
 
 /** One feature file: its bare name, jest-cucumber's parse, its Cucumber Messages, and where it came from. */
