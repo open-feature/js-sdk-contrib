@@ -104,7 +104,7 @@ same-named extension file *replace* a canonical one — the suite went green hav
 version of a canonical scenario:
 
 - an extension feature may not be named after a canonical one (`errors`, `evaluation`, `events`,
-  `lifecycle`), and belongs in a directory of its own;
+  `lifecycle`, `metadata`), and belongs in a directory of its own;
 - an extension feature may not live inside the canonical asset directory.
 
 A step matcher that also matches a canonical step is rejected by jest-cucumber as ambiguous, so an
@@ -146,6 +146,7 @@ call is made. See [`src/lib/scenarioRunner.ts`](./src/lib/scenarioRunner.ts).
 | `Capability.Object` | `@object` | supports structured flag values |
 | `Capability.UnavailableInit` | `@unavailable` | reports an error state instead of hanging against a dead backend |
 | `Capability.NumericCoercion` | `@numeric-coercion` | coerces between integer and float only when lossless, else `TYPE_MISMATCH` — **see below** |
+| `Capability.LargeIntegers` | `@large-integers` | resolves integers up to 2^53 − 1 exactly; leave undeclared where the transport rounds it |
 | `Capability.Targeting` | `@targeting` | reserved; **not declarable** — no scenarios yet |
 | `Capability.Caching` | `@caching` | reserved; **not declarable** — no scenarios yet |
 
@@ -209,11 +210,11 @@ this language**: there is no lossless coercion to permit, because `10.0` and `10
 and nothing is narrowed, and no lossy one to reject, because `0.5` asked for as an Integer is
 indistinguishable from a valid Float request. Not a defect — the distinction does not exist here.
 
-Only the lossy half has a scenario at all, in any language. The canonical flag set holds no integral
-float to ask the other half of, and adding one changes the flag set for every language at once, so a
-provider that wrongly rejects `10.0` as an integer still passes. Appendix F records that as an open
-gap, along with a second one: the width of a language's integer accessor is not modelled, which is
-what flagd's testbed tags `@int32-bounded`.
+Both halves of the rule now have scenarios: `float-flag` (`0.5`) as an integer must be rejected, and
+`integral-float-flag` (`10.0`) as an integer and `integer-flag` (`10`) as a float must succeed. All
+three go through the same not-applicable path here, for the same reason. Accessor width is modelled
+separately, as `@large-integers`: JavaScript represents 2^53 − 1 exactly, so a provider declares it
+unless its transport rounds the value on the way.
 
 So every JavaScript suite leaves the capability out of `capabilities` — but **not** by silently
 omitting it. "This provider has not implemented X" and "X cannot be asked of this provider at all"
