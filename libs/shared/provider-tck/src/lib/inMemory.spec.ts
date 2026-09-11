@@ -32,7 +32,7 @@ runProviderTck({
    *   does not implement ConnectionControl for the same reason, and the two omissions keep each
    *   other honest: the scenarios are skipped before any step can reach an operation the control
    *   cannot perform.
-   * - StrictNumericTyping is omitted because **JavaScript has no integer type**. `typeof 10` and
+   * - NumericCoercion is omitted because **JavaScript has no integer type**. `typeof 10` and
    *   `typeof 0.5` are both 'number', the Evaluation API exposes only getNumberDetails, and the
    *   in-memory provider type-checks with `typeof value != typeof defaultValue`. Asking for
    *   float-flag as an Integer is therefore indistinguishable from asking for it as a Float, and no

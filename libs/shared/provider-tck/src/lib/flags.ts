@@ -31,7 +31,7 @@ export const CHANGING_CHANGED = 'bar';
  *   tests a provider's mapping of a response, not a backend's evaluation logic.
  *
  * Note that `integer-flag` and `float-flag` are both plain JavaScript numbers. The language has no
- * integer type, which is why {@link Capability.StrictNumericTyping} cannot be declared here; see
+ * integer type, which is why {@link Capability.NumericCoercion} cannot be declared here; see
  * that capability's documentation.
  */
 export function canonicalFlagSet(changingVariant: string = CHANGING_BASELINE): FlagConfiguration {
