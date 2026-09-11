@@ -107,8 +107,20 @@ export enum Capability {
    * and for `integer-flag` (`10`) as a float, and expect both to succeed. Rejecting every float is
    * an easy way to pass the first, and the other two are what stop it.
    *
-   * JavaScript has no integer type, so this is the one capability that cannot hold here at all —
-   * see {@link NO_INTEGER_TYPE_IN_JAVASCRIPT}. All three scenarios are reported as not applicable.
+   * **JavaScript has no integer type, so this is the one capability that cannot hold here at all.**
+   * `typeof 10` and `typeof 0.5` are both `'number'` and the Evaluation API exposes only
+   * `getNumberDetails`, so requesting a flag as an Integer is indistinguishable from requesting it
+   * as a Float. Neither half of the contract can be put to a provider in this language: there is no
+   * lossless coercion to permit, because `10.0` and `10` are the same value and nothing is
+   * narrowed, and no lossy one to reject with `TYPE_MISMATCH`, because `0.5` asked for as an
+   * Integer is indistinguishable from a perfectly valid Float request.
+   *
+   * A JavaScript suite therefore leaves this undeclared, and its three scenarios are skipped with
+   * that reason. **This paragraph is where the impossibility is recorded**, together with Appendix
+   * F upstream — not a field in every report. It is a property of the SDK rather than of any one
+   * provider: true of every provider written against this SDK, and for as long as the Evaluation
+   * API has a single numeric accessor. Stating it per run would repeat a language fact on each
+   * provider's behalf and still say nothing in a run where no scenario carried the tag.
    */
   NumericCoercion = '@numeric-coercion',
 
@@ -168,26 +180,6 @@ export const RESERVED_CAPABILITIES: readonly Capability[] = Object.freeze([Capab
 export function isReserved(capability: Capability): boolean {
   return RESERVED_CAPABILITIES.includes(capability);
 }
-
-/**
- * Why `@numeric-coercion` cannot hold for a provider written in JavaScript.
- *
- * It is neither half of the contract that fails here, but the premise both halves rest on: there
- * has to be an integer request distinguishable from a float one before "was this coercion lossless?"
- * is a question at all.
- *
- * Offered as a constant because it is a fact about the language rather than about any one provider,
- * and because a report reader comparing two JavaScript providers is better served by one sentence
- * than by two paraphrases of it. Pass it as the reason in {@link TckOptions.notApplicable}; it ends
- * up in `declaration.notApplicable` in the conformance report.
- */
-export const NO_INTEGER_TYPE_IN_JAVASCRIPT =
-  'JavaScript has no integer type: typeof 10 and typeof 0.5 are both "number" and the Evaluation ' +
-  'API exposes only getNumberDetails, so requesting a flag as an Integer is indistinguishable from ' +
-  'requesting it as a Float. Neither half of the coercion contract can be put to a provider in ' +
-  'this language: there is no lossless coercion to permit, because 10.0 and 10 are the same value ' +
-  'and no narrowing happens, and no lossy one to reject with TYPE_MISMATCH, because 0.5 asked for ' +
-  'as an Integer is indistinguishable from a perfectly valid Float request';
 
 /**
  * Every capability the TCK recognises as a tag, reserved ones included.

@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import type { StepDefinitions } from 'jest-cucumber';
 import type { InMemoryProvider } from '@openfeature/server-sdk';
-import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
+import { Capability } from './capability';
 import { canonicalFlagSet } from './flags';
 import { InProcessControl } from './inProcessControl';
 import { runProviderTck } from './runProviderTck';
@@ -72,7 +72,6 @@ runProviderTck({
   control,
   newProvider: () => control.newProvider(),
   capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object, Capability.LargeIntegers],
-  notApplicable: { [Capability.NumericCoercion]: NO_INTEGER_TYPE_IN_JAVASCRIPT },
 
   // Absolute, because paths resolve against the runner's working directory rather than this file's.
   // A directory named for what it holds, and nothing like the canonical `gherkin`/`features`.
