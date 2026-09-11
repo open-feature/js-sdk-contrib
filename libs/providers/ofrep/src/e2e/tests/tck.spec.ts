@@ -94,7 +94,7 @@ runContainerizedProviderTck({
    *   scenarios describe. `newUnavailableProvider` is therefore left unset, which runProviderTck
    *   requires to be consistent with the capability.
    *
-   * - StrictNumericTyping is omitted for the reason every JavaScript provider omits it, not for
+   * - NumericCoercion is omitted for the reason every JavaScript provider omits it, not for
    *   anything specific to OFREP: the language has no integer type, so asking for float-flag as an
    *   Integer is indistinguishable from asking for it as a Float and the scenario is unsatisfiable
    *   by construction. See "The one place JavaScript cannot answer the shared question" in the TCK
