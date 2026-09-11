@@ -1,5 +1,6 @@
 import type {
   Client,
+  EvaluationContext,
   EvaluationDetails,
   EventDetails,
   FlagValue,
@@ -115,6 +116,16 @@ export class TckState {
    */
   provider: Provider | undefined;
   flag: FlagUnderTest | undefined;
+  /**
+   * The evaluation context a scenario supplied, or `undefined` if it supplied none.
+   *
+   * The distinction is load-bearing rather than cosmetic, which is why this is not defaulted to an
+   * empty object. One `@targeting` scenario asserts that a targeting rule which cannot match does
+   * not error *when no context is passed at all*, and it catches a provider that requires a
+   * targeting key. Passing `{}` where the scenario said nothing would put that provider on a
+   * different code path and the scenario would stop asking its question.
+   */
+  context: EvaluationContext | undefined;
   details: EvaluationDetails<FlagValue> | undefined;
   /** The error an evaluation threw, if any. See the "no exception" step for why this matters. */
   thrown: unknown;
@@ -130,6 +141,7 @@ export class TckState {
     this.client = undefined;
     this.provider = undefined;
     this.flag = undefined;
+    this.context = undefined;
     this.details = undefined;
     this.thrown = undefined;
     this.lifecycle.length = 0;

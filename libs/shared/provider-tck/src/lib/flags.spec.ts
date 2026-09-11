@@ -32,7 +32,7 @@ describe('canonicalFlagSet is the packaged canonical-flags.json', () => {
   it('is not reading an empty or truncated file', () => {
     // Guards the rest of this file: every assertion below is driven by `packagedFlags`, so an empty
     // parse would make all of them pass while examining nothing.
-    expect(packagedFlags.length).toBeGreaterThanOrEqual(13);
+    expect(packagedFlags.length).toBeGreaterThanOrEqual(14);
   });
 
   it('defines exactly the flags the file defines', () => {
@@ -143,9 +143,39 @@ describe('the properties the canonical file calls load-bearing', () => {
   });
 
   it('gives no flag a contextEvaluator, so every evaluation reports STATIC', () => {
+    // Still true of every flag, targeting-key-flag included, and it is not an oversight there. The
+    // flag-definition format expresses a rule as data; InMemoryProvider expresses one as a
+    // `contextEvaluator` function, and the format has no way to carry a function. So the flag's
+    // `targeting` member is inert for this decoder, and the in-memory suites leave @targeting
+    // undeclared rather than synthesise an evaluator to satisfy the scenarios -- which would test a
+    // fixture written for the occasion instead of a provider.
     for (const flag of Object.values(canonicalFlagSet())) {
       expect(flag.contextEvaluator).toBeUndefined();
     }
+  });
+
+  it('carries targeting-key-flag with its two variants, defaulting to the miss', () => {
+    // The one flag in the set with a targeting rule, and what makes context passthrough observable
+    // for a backend that has targeting: a matching key resolves a different value, so a provider
+    // that drops the context is caught by the resolved value rather than needing an echo endpoint.
+    // The decoder reads state, variants and defaultVariant, so what survives here is the flag's
+    // shape -- which is what the `@targeting` scenarios' default-variant halves assert.
+    const flag = canonicalFlagSet()['targeting-key-flag'];
+
+    expect(flag).toBeDefined();
+    expect(Object.keys(flag.variants).sort()).toEqual(['hit', 'miss']);
+    expect(flag.variants['hit']).toBe('hit');
+    expect(flag.defaultVariant).toBe('miss');
+    expect(resolved(flag)).toBe('miss');
+  });
+
+  it('drops the targeting member rather than passing it to the SDK as a flag field', () => {
+    // The decoder is a translation of three fields, not a pass-through of the document. A member it
+    // does not understand must not ride along into the SDK's configuration, where it would either be
+    // ignored silently or -- worse -- collide with a field the SDK adds later.
+    const flag = canonicalFlagSet()['targeting-key-flag'] as Record<string, unknown>;
+
+    expect(Object.keys(flag).sort()).toEqual(['defaultVariant', 'disabled', 'variants']);
   });
 });
 

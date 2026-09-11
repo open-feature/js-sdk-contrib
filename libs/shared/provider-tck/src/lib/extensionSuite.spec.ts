@@ -71,7 +71,16 @@ runProviderTck({
   name: 'in-memory-with-extension',
   control,
   newProvider: () => control.newProvider(),
-  capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object, Capability.LargeIntegers],
+  // The in-memory suite's declaration, for the same reasons: see inMemory.spec.ts. Targeting stays
+  // undeclared because the canonical flag format cannot express an InMemoryProvider
+  // contextEvaluator, so targeting-key-flag's rule is inert here.
+  capabilities: [
+    Capability.Events,
+    Capability.ConfigurationChange,
+    Capability.Object,
+    Capability.LargeIntegers,
+    Capability.Variants,
+  ],
 
   // Absolute, because paths resolve against the runner's working directory rather than this file's.
   // A directory named for what it holds, and nothing like the canonical `gherkin`/`features`.

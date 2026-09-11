@@ -126,7 +126,13 @@ const canonicalFlagsText = readFileSync(CANONICAL_FLAGS_PATH, 'utf8');
  *   that scenario green for the wrong reason.
  * - no flag carries a `contextEvaluator`, so every evaluation reports reason `STATIC` — the TCK
  *   tests a provider's mapping of a response, not a backend's evaluation logic. Nothing here can
- *   introduce one: the format has no way to express it.
+ *   introduce one: the format has no way to express it. `targeting-key-flag` is the one flag with a
+ *   targeting rule and it is no exception, because the rule is *data* in the file and an
+ *   `InMemoryProvider` rule is a *function*. Its `targeting` member is therefore inert for this
+ *   decoder — the flag resolves its `miss` default whatever the context — and the in-memory suites
+ *   leave `@targeting` undeclared so its scenarios are skipped with that reason. Synthesising an
+ *   evaluator to make them pass would test a fixture written for the occasion rather than a
+ *   provider, which is the vacuous pass this library exists to prevent.
  * - `boolean-zero-flag`, `integer-zero-flag` and `string-zero-flag` resolve to `false`, `0` and `''`.
  *   They are values, not absences: a `value || default` anywhere on the way turns the falsy-value
  *   scenarios into failures that look like provider defects. `JSON.parse` preserves all three, and

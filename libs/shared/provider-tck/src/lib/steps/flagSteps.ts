@@ -1,5 +1,6 @@
 import type { StepDefinitions } from 'jest-cucumber';
 import type { JsonValue } from '@openfeature/server-sdk';
+import { Capability } from '../capability';
 import type { TckState } from '../state';
 import { describe as describeValue, parseFlagType, parseValue, valuesEqual } from '../values';
 
@@ -19,9 +20,22 @@ export const flagSteps =
       },
     );
 
+    given(/^a context containing a targeting key with value "([^"]*)"$/, (targetingKey: string) => {
+      // The wording is Appendix B's, and the Java TCK already carries a step definition for it.
+      // Inventing a second way to say "a context containing a targeting key" is the kind of
+      // divergence the appendix exists to prevent, so the phrasing is copied rather than improved.
+      state.context = { targetingKey };
+    });
+
     when('the flag was evaluated with details', async () => {
       const client = state.requireClient();
       const flag = state.requireFlag();
+      // Passed through on every resolve, and `undefined` where the scenario supplied none.
+      // Requirement 2.2.1 makes the evaluation context a parameter of every resolve method, and
+      // until the untargeted-context scenario arrived no canonical scenario supplied one at all --
+      // so a provider that threw on any context, or serialised it into a malformed request, passed
+      // the whole suite. The `undefined` case is equally deliberate: see TckState.context.
+      const context = state.context;
 
       state.details = undefined;
       state.thrown = undefined;
@@ -29,19 +43,19 @@ export const flagSteps =
       try {
         switch (flag.type) {
           case 'Boolean':
-            state.details = await client.getBooleanDetails(flag.key, flag.defaultValue as boolean);
+            state.details = await client.getBooleanDetails(flag.key, flag.defaultValue as boolean, context);
             break;
           case 'String':
-            state.details = await client.getStringDetails(flag.key, flag.defaultValue as string);
+            state.details = await client.getStringDetails(flag.key, flag.defaultValue as string, context);
             break;
           // JavaScript has a single number type, so both map to the same call. See
           // Capability.NumericCoercion for what that costs.
           case 'Integer':
           case 'Float':
-            state.details = await client.getNumberDetails(flag.key, flag.defaultValue as number);
+            state.details = await client.getNumberDetails(flag.key, flag.defaultValue as number, context);
             break;
           case 'Object':
-            state.details = await client.getObjectDetails(flag.key, flag.defaultValue as JsonValue);
+            state.details = await client.getObjectDetails(flag.key, flag.defaultValue as JsonValue, context);
             break;
         }
       } catch (error) {
@@ -68,7 +82,10 @@ export const flagSteps =
       if (details.variant !== expected) {
         throw new Error(
           `variant was '${details.variant}', expected '${expected}'. A variant that does not ` +
-            `survive the trip from the backend is one of the easiest parts of the contract to drop`,
+            `survive the trip from the backend is one of the easiest parts of the contract to drop ` +
+            `-- but requirement 2.2.4 is a SHOULD and the field is typed optional, so a backend ` +
+            `with no variant concept should leave ${Capability.Variants} undeclared rather than ` +
+            `fail here`,
         );
       }
     });
