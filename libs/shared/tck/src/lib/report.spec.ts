@@ -66,15 +66,15 @@ describe('the conformance envelope', () => {
   });
 
   it('states a capability that cannot hold for this provider, with the reason', () => {
-    // JavaScript is the language that forces the distinction: @strict-numeric-typing is
+    // JavaScript is the language that forces the distinction: @numeric-coercion is
     // unsatisfiable because there is no integer type, so leaving it merely undeclared would report
     // every JavaScript provider as missing something none of them can have.
-    const notApplicable = new Map([[Capability.StrictNumericTyping, NO_INTEGER_TYPE_IN_JAVASCRIPT]]);
+    const notApplicable = new Map([[Capability.NumericCoercion, NO_INTEGER_TYPE_IN_JAVASCRIPT]]);
     const { declaration } = recorderFor([Capability.Events], notApplicable).build(RESULTS);
 
     expect(declaration.declared).toEqual([Capability.Events]);
     expect(declaration.notApplicable).toEqual({
-      [Capability.StrictNumericTyping]: expect.stringContaining('no integer type'),
+      [Capability.NumericCoercion]: expect.stringContaining('no integer type'),
     });
   });
 

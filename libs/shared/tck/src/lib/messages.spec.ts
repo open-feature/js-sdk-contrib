@@ -20,7 +20,7 @@ const control: BackendControl = {
 /** What the in-memory suite declares, which is the reference adoption. */
 const DECLARED = [Capability.Events, Capability.ConfigurationChange, Capability.Object];
 
-const NOT_APPLICABLE = new Map([[Capability.StrictNumericTyping, NO_INTEGER_TYPE_IN_JAVASCRIPT]]);
+const NOT_APPLICABLE = new Map([[Capability.NumericCoercion, NO_INTEGER_TYPE_IN_JAVASCRIPT]]);
 
 /**
  * Drives the harness's own bookkeeping over the canonical features without running Jest.
