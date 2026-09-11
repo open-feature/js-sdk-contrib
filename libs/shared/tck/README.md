@@ -130,8 +130,11 @@ of the run. An extension scenario carries no weight in a conformance claim: it i
 question, run in the adopter's own suite.
 
 In the results stream, an extension scenario is named under the `extensions/` URI prefix while a
-canonical one keeps its path in [open-feature/spec][spec]. That is what a report consumer reads to
-tell them apart, and it is why extension scenarios do not count towards conformance.
+canonical one is named by its path **relative to the spec's asset directory** —
+`gherkin/errors.feature`, not a path relative to any repository root. That partition is what a report
+consumer reads to tell the two apart, and it is why extension scenarios do not count towards
+conformance. Both forms are [Appendix F][appendix-f]'s, stated there exactly because a phrasing that
+merely implied them produced three different answers across four TCK implementations.
 
 ### Reaching the provider under test from a vendor step
 
