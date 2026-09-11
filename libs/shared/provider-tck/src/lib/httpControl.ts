@@ -24,7 +24,7 @@ export interface HttpControlOptions {
    * `beforeAll` has run, so a plain string is usually impossible to supply. Hence the thunk form:
    *
    * ```ts
-   * const control = new HttpControl({ baseUrl: () => `http://${container.getLaunchpadUrl()}` });
+   * const control = new HttpControl({ baseUrl: () => `http://${container.getControlUrl()}` });
    * ```
    *
    * It is resolved once, on the first control call, and reused for the rest of the suite — which is
