@@ -1,4 +1,11 @@
-import { ALL_CAPABILITIES, Capability, DECLARABLE_CAPABILITIES, RESERVED_CAPABILITIES } from './capability';
+import {
+  ALL_CAPABILITIES,
+  Capability,
+  DECLARABLE_CAPABILITIES,
+  RESERVED_CAPABILITIES,
+  capabilityForTag,
+  isReserved,
+} from './capability';
 import type { BackendControl } from './control';
 import { KnownDeviation } from './deviation';
 import type { TckOptions } from './options';
@@ -33,6 +40,33 @@ describe('the reserved capabilities', () => {
     for (const capability of RESERVED_CAPABILITIES) {
       expect(ALL_CAPABILITIES).toContain(capability);
     }
+  });
+});
+
+describe('the @reinitialization capability', () => {
+  // Requirement 2.5.2 says a provider SHOULD revert to its uninitialized state after shutdown, and
+  // that "some providers MAY allow reinitialization from this state". Permitted, not required — so
+  // the reuse scenario has to be gated, and the gate has to be declarable. A provider that declines
+  // reuse leaves it undeclared and the scenario skips; the wrong move is to declare it and record a
+  // deviation, which reports a sanctioned choice as a defect.
+  it('is declarable, because declining reuse is a choice and offering it is a claim', () => {
+    expect(DECLARABLE_CAPABILITIES).toContain(Capability.Reinitialization);
+    expect(isReserved(Capability.Reinitialization)).toBe(false);
+  });
+
+  it('resolves from the tag the gated scenario carries', () => {
+    expect(capabilityForTag('@reinitialization')).toBe(Capability.Reinitialization);
+  });
+
+  it('is left out when a suite narrows the default, without needing a deviation', () => {
+    const { declared, undeclared, knownDeviations } = resolveCapabilities(
+      optionsFor({ capabilities: [Capability.Lifecycle] }),
+    );
+
+    expect(declared.has(Capability.Lifecycle)).toBe(true);
+    expect(declared.has(Capability.Reinitialization)).toBe(false);
+    expect(undeclared).toContain(Capability.Reinitialization);
+    expect(knownDeviations).toEqual([]);
   });
 });
 
