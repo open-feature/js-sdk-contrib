@@ -5,8 +5,9 @@ import { runProviderTck } from './runProviderTck';
 
 /**
  * NOT CURRENTLY RUN -- excluded via `testPathIgnorePatterns` in this project's jest.config.ts,
- * because the SDK's MultiProvider does not pass it. It fails 16 of 29 scenarios, every one of them
- * from a single root cause: the multi-provider replaces the child's error code with `GENERAL`
+ * because the SDK's MultiProvider does not pass it. It fails 16 of the 39 scenarios it runs -- 52
+ * in the canonical set, 13 skipped by the declaration below -- and every one of them comes from a
+ * single root cause: the multi-provider replaces the child's error code with `GENERAL`
  * (15x TYPE_MISMATCH, 1x FLAG_NOT_FOUND). The information is not lost so much as thrown away --
  * `collectProviderErrors` builds an `ErrorWithCode` carrying the child's real code, and
  * `constructAggregateError` then wraps it in an `AggregateError extends GeneralError`, so the code
@@ -56,7 +57,18 @@ runProviderTck({
   // ConfigurationChange is declared because the child emits it — if the multi-provider does not
   // forward it, this suite fails and that is the finding. LargeIntegers likewise: the child resolves
   // 2^53 - 1 exactly, so a rounded value on the way through would be the multi-provider's doing.
-  capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object, Capability.LargeIntegers],
+  // Variants is declared on the same footing and asks a real question of this provider in
+  // particular: a multi-provider assembles its own resolution details from a child's, and dropping
+  // the variant while carrying the value across is an easy thing to do. Targeting stays undeclared
+  // because the child cannot have it — the canonical flag format cannot express an InMemoryProvider
+  // contextEvaluator, so targeting-key-flag's rule is inert underneath.
+  capabilities: [
+    Capability.Events,
+    Capability.ConfigurationChange,
+    Capability.Object,
+    Capability.LargeIntegers,
+    Capability.Variants,
+  ],
 
   // NumericCoercion is left undeclared: JavaScript has no integer type, so the capability is
   // unsatisfiable in the language rather than unimplemented by the provider. See inMemory.spec.ts.

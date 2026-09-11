@@ -145,32 +145,39 @@ call is made. See [`src/lib/scenarioRunner.ts`](./src/lib/scenarioRunner.ts).
 | `Capability.Stale` | `@stale` | enters `STALE` and emits `PROVIDER_STALE` on backend loss |
 | `Capability.ConfigurationChange` | `@configuration-change` | detects configuration changes and emits `PROVIDER_CONFIGURATION_CHANGED` |
 | `Capability.Object` | `@object` | supports structured flag values |
+| `Capability.Variants` | `@variants` | names the variant it resolved, which requirement 2.2.4 makes a `SHOULD` and `types.md` types as optional — **see below** |
 | `Capability.UnavailableInit` | `@unavailable` | reports an error state instead of hanging against a dead backend |
 | `Capability.NumericCoercion` | `@numeric-coercion` | coerces between integer and float only when lossless, else `TYPE_MISMATCH` — **see below** |
 | `Capability.LargeIntegers` | `@large-integers` | resolves integers up to 2^53 − 1 exactly; leave undeclared where the transport rounds it |
-| `Capability.Targeting` | `@targeting` | reserved; **not declarable** — no scenarios yet |
+| `Capability.Targeting` | `@targeting` | resolves a flag differently for a matching evaluation context |
 | `Capability.Caching` | `@caching` | reserved; **not declarable** — no scenarios yet |
 
 Untagged scenarios are mandatory and always run. `capabilities` defaults to every *declarable*
 capability — narrow it rather than widening it.
 
-A **reserved** capability is a name held open for a scenario nobody has written yet. No scenario
-carries `@targeting` or `@caching`, so declaring one cannot cause a skip: it says nothing about the
-provider, plays no part in reading the results, and only invites a reader to believe something was
-verified when nothing examined it. They are excluded from the default, and naming one in
+A **reserved** capability is a name held open for a scenario nobody has written yet. `@caching` is
+the only one left: no scenario carries it, so declaring it cannot cause a skip — it says nothing
+about the provider, plays no part in reading the results, and only invites a reader to believe
+something was verified when nothing examined it. It is excluded from the default, and naming it in
 `capabilities` is **rejected** rather than quietly dropped:
 
 ```
-capabilities names @targeting, which no scenario carries. @targeting and @caching
-are reserved names held open for scenarios that do not exist yet: declaring one cannot cause a skip,
-so it says nothing about this provider and would invite a report's reader to believe it was verified.
+capabilities names @caching, which no scenario carries. @caching is a reserved name held open for
+scenarios that do not exist yet: declaring one cannot cause a skip, so it says nothing about this
+provider and would invite a report's reader to believe it was verified.
 ```
 
-This is not a hypothetical tidy-up. A published Java conformance report asserts both as declared —
-not by anyone's decision, but because that adoption declares "every capability except X" and picks
-up every reserved tag in the vocabulary on the way past. Rejecting is louder than warning on
-purpose: a console line competes with Jest's own output and is invisible in the log of a green CI
-build, and the fix is a one-line edit.
+This is not a hypothetical tidy-up. A published Java conformance report asserts both `@targeting`
+and `@caching` as declared — not by anyone's decision, but because that adoption declares "every
+capability except X" and picks up every reserved tag in the vocabulary on the way past. Rejecting is
+louder than warning on purpose: a console line competes with Jest's own output and is invisible in
+the log of a green CI build, and the fix is a one-line edit.
+
+`@targeting` was reserved on the same footing until Appendix F gained three scenarios for it, and it
+is now declarable like any other capability. That is the expected fate of a reservation rather than
+a surprise, which is why the harness fails a run whose feature files carry a tag this library still
+calls reserved: an out-of-date list makes a testable capability unclaimable, the opposite mistake
+and just as quiet.
 
 Which capabilities are reserved is decided upstream, in Appendix F, and recorded here in
 `RESERVED_CAPABILITIES`. The harness checks that list against the feature files it actually ran and
@@ -277,6 +284,60 @@ outright.
 The general rule, of which this is one instance: before recording a deviation or withholding a
 capability because a scenario failed, find the numbered requirement and check that the specification
 asks for the behaviour at all.
+
+### `@variants` is a `SHOULD`, and used not to be gated at all
+
+Every evaluation scenario asserted a variant, which reads as obviously correct right up until a
+backend with no variant concept for a plain flag is put under test. Its evaluation response carries
+no such key, the provider never receives one, and no amount of seeding can produce one — so ten
+scenarios failed a conformant provider for something its author could not fix, and there was nothing
+to record as a `knownDeviation` either, because no capability existed to hang one on.
+
+Both places that type the field say it is optional.
+[Requirement 2.2.4](https://github.com/open-feature/spec/blob/main/specification/sections/02-providers.md)
+is a **SHOULD** and adds that the value *"might only be meaningful in the context of the flag
+management system associated with the provider"*; `types.md` types it `variant (string, optional)`.
+The suite was asserting a `MUST` neither of them states.
+
+The variant assertions are therefore consolidated into a single gated Scenario Outline of eight
+rows. Declare `@variants` where your backend names its variants and they run; leave it undeclared
+and they are skipped with that reason rather than passed. Nothing else changes either way — the
+value and reason assertions for the same flags are untagged, requirement 2.2.3 making the value a
+`MUST`.
+
+The `reason` assertions are the deliberate exception, and Appendix F states it as a decision rather
+than leaving it as an oversight: requirement 2.2.5 is also a `SHOULD` and even permits *"some other
+string"*, yet the suite pins a specific reason anyway, because a wrong reason is its cheapest
+diagnosis of a provider quietly falling back to the code default. Read a reason failure differently
+from a value failure: the value rests on a `MUST`, the reason on a house rule.
+
+### `@targeting` stopped being a reservation
+
+`@targeting` was a reserved name — targeting being backend evaluation logic, and so out of scope —
+until Appendix F gained `targeting-key-flag` and three scenarios for it. It is now declarable like
+any other capability.
+
+What changed is that a targeting key is the one piece of evaluation context whose passthrough is
+observable without an echo endpoint on the control API. Every other canonical flag resolves the same
+way whatever the context, so a provider that drops the context on the floor passes all of them;
+`targeting-key-flag` resolves `hit` for one specific targeting key and `miss` otherwise, so dropping
+it is caught by the resolved value itself. All three scenarios are needed: the matching context, the
+non-matching one — without which a provider that always returned the targeted value would pass — and
+no context at all, which catches a provider that requires a targeting key or cannot evaluate a rule
+without one.
+
+This is still not the backend's rule language under test. The flag's rule is specified by behaviour
+— resolve `hit` when the targeting key is exactly `5c3d8535-f81a-4478-a6d3-afaa4d51199e` — so a
+backend expresses it however it expresses targeting, and the flag, its variants and the uuid are
+[flagd-testbed][flagd-testbed]'s own, so a backend already serving that harness already serves this.
+
+**The TCK's own in-memory suites leave it undeclared**, and that is a fact about the fixture rather
+than a defect. `InMemoryProvider` takes its rules from a `contextEvaluator` *function*, and the
+canonical flag-definition format expresses a rule as *data*; there is no way to carry a function
+through JSON, so the flag's `targeting` member is inert for that decoder and the flag resolves `miss`
+whatever the context. Leaving the capability undeclared is the honest report. Synthesising an
+evaluator to turn the scenarios green would be worse than the skip: it would test a fixture written
+for the occasion instead of a provider.
 
 ## The one place JavaScript cannot answer the shared question
 
@@ -445,6 +506,7 @@ by every language's TCK.
 - Caching, hooks and flag metadata are not covered.
 
 [appendix-a]: https://github.com/open-feature/spec/blob/main/specification/appendix-a-included-utilities.md
+[flagd-testbed]: https://github.com/open-feature/flagd-testbed
 [coercion-adr]: https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/numeric-coercion.md
 [appendix-f]: https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md
 [spec]: https://github.com/open-feature/spec

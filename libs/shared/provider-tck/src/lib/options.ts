@@ -184,6 +184,19 @@ export interface ResolvedCapabilities {
 }
 
 /**
+ * The reserved names, worded so the refusal reads as English however many there are.
+ *
+ * There was one reservation for every message when `@targeting` and `@caching` were both reserved.
+ * `@targeting` became declarable the moment Appendix F gained scenarios for it, leaving a single
+ * name and a sentence that read "@caching are reserved names" — a reservation expiring is the
+ * expected course of events, so the message has to survive it.
+ */
+function listReserved(): string {
+  const names = RESERVED_CAPABILITIES.join(' and ');
+  return RESERVED_CAPABILITIES.length === 1 ? `${names} is a reserved name` : `${names} are reserved names`;
+}
+
+/**
  * Works out which capabilities a suite declares, and rejects every option that would make the
  * conformance report claim something the run did not establish.
  *
@@ -204,7 +217,7 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
   if (reserved.length) {
     throw new Error(
       `capabilities names ${reserved.join(' ')}, which no scenario carries. ` +
-        `${RESERVED_CAPABILITIES.join(' and ')} are reserved names held open for scenarios that do ` +
+        `${listReserved()} held open for scenarios that do ` +
         `not exist yet: declaring one cannot cause a skip, so it says nothing about this provider ` +
         `and would invite a report's reader to believe it was verified. Remove it; a scenario ` +
         `arriving upstream is what makes it declarable.`,
