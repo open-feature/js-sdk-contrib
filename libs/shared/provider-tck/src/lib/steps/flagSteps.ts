@@ -35,7 +35,7 @@ export const flagSteps =
             state.details = await client.getStringDetails(flag.key, flag.defaultValue as string);
             break;
           // JavaScript has a single number type, so both map to the same call. See
-          // Capability.StrictNumericTyping for what that costs.
+          // Capability.NumericCoercion for what that costs.
           case 'Integer':
           case 'Float':
             state.details = await client.getNumberDetails(flag.key, flag.defaultValue as number);
