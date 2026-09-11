@@ -1,5 +1,5 @@
 import { MultiProvider } from '@openfeature/server-sdk';
-import { Capability } from './capability';
+import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
 import { InProcessControl } from './inProcessControl';
 import { runProviderTck } from './runProviderTck';
 
@@ -50,10 +50,14 @@ runProviderTck({
   newProvider: () => new MultiProvider([{ provider: control.newProvider() }]),
 
   // Same reasoning as the in-memory suite: no connection to lose, no backend for initialisation to
-  // reach, and JavaScript has no integer type. Lifecycle stays undeclared for the same reason it
-  // does there — neither the multi-provider nor its in-memory child does anything on startup, so
-  // the readiness scenario was passing vacuously on synthesised PROVIDER_READY rather than on any
-  // behaviour of this provider. ConfigurationChange is declared because the child emits it — if the
-  // multi-provider does not forward it, this suite fails and that is the finding.
+  // reach. Lifecycle stays undeclared for the same reason it does there — neither the multi-provider
+  // nor its in-memory child does anything on startup, so the readiness scenario was passing
+  // vacuously on synthesised PROVIDER_READY rather than on any behaviour of this provider.
+  // ConfigurationChange is declared because the child emits it — if the multi-provider does not
+  // forward it, this suite fails and that is the finding.
   capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object],
+
+  // JavaScript has no integer type, so this capability is unsatisfiable in the language rather than
+  // unimplemented by the provider. See inMemory.spec.ts.
+  notApplicable: { [Capability.NumericCoercion]: NO_INTEGER_TYPE_IN_JAVASCRIPT },
 });

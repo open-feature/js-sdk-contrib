@@ -2,8 +2,9 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { autoBindSteps, loadFeatures } from 'jest-cucumber';
 import { OpenFeature } from '@openfeature/server-sdk';
-import { ALL_CAPABILITIES, Capability } from './capability';
+import { expiredReservations } from './capability';
 import type { TckOptions } from './options';
+import { resolveCapabilities } from './options';
 import { planScenarios, scenarioRunner } from './scenarioRunner';
 import { TckState } from './state';
 import { eventSteps } from './steps/eventSteps';
@@ -97,17 +98,7 @@ export const CONTROL_API_PATH = join(resolveAssetDir('openapi'), 'control-api.ya
  * the same file would register the vocabulary twice and every step would report as ambiguous.
  */
 export function runProviderTck(options: TckOptions): void {
-  const declared = new Set<Capability>(options.capabilities ?? ALL_CAPABILITIES);
-  const undeclared = ALL_CAPABILITIES.filter((capability) => !declared.has(capability));
-
-  if (declared.has(Capability.UnavailableInit) && !options.newUnavailableProvider) {
-    throw new Error(
-      'capabilities declares Capability.UnavailableInit but newUnavailableProvider is not set: ' +
-        'the @unavailable scenarios need a provider pointed at a backend that does not exist. ' +
-        'Supply one, or remove the capability so those scenarios are skipped with a reason.',
-    );
-  }
-
+  const { declared, notApplicable, undeclared } = resolveCapabilities(options);
   const state = new TckState(options);
 
   // Undeclared capabilities are excluded here, which marks their scenarios `skippedViaTagFilter`.
@@ -120,16 +111,33 @@ export function runProviderTck(options: TckOptions): void {
   // the harness supplies one per feature. That is the only seam that reaches a Scenario Outline's
   // example rows: `scenarioNameTemplate` never does.
   const features = loadFeatures(FEATURES_GLOB, { tagFilter });
-  for (const parsed of features) {
-    parsed.options.runner = scenarioRunner(parsed.title, planScenarios(parsed, declared));
+  const plans = features.map((parsed) => planScenarios(parsed, declared));
+
+  // Which capabilities are reserved is recorded here but decided upstream, so it is checked against
+  // the features that actually ran rather than trusted. A reservation whose scenario has since been
+  // written would otherwise go on making a testable capability undeclarable -- the opposite mistake,
+  // and just as quiet.
+  const expired = expiredReservations(plans.flatMap((plan) => plan.flatMap((scenario) => scenario.tags)));
+  if (expired.length) {
+    throw new Error(
+      `provider-tck [${options.name}]: ${expired.join(' ')} is reserved here, but the executed ` +
+        `feature files now carry a scenario for it. Remove it from RESERVED_CAPABILITIES so ` +
+        `adoptions can declare it, or those scenarios will be skipped for a capability nobody can ` +
+        `claim.`,
+    );
   }
+
+  features.forEach((parsed, position) => {
+    parsed.options.runner = scenarioRunner(parsed.title, plans[position], notApplicable);
+  });
 
   describe(`provider-tck [${options.name}]`, () => {
     beforeAll(() => {
       // eslint-disable-next-line no-console
       console.log(
         `provider-tck [${options.name}]: backend under test is ${options.control.description}; ` +
-          `declared capabilities ${[...declared].sort().join(' ') || '(none)'}`,
+          `declared capabilities ${[...declared].sort().join(' ') || '(none)'}` +
+          (notApplicable.size ? `; not applicable ${[...notApplicable.keys()].sort().join(' ')}` : ''),
       );
     });
 

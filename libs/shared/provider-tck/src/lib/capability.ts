@@ -82,21 +82,88 @@ export enum Capability {
    */
   NumericCoercion = '@numeric-coercion',
 
-  /** Reserved. No scenario carries this tag — targeting is backend evaluation logic. */
+  /**
+   * Reserved. No scenario carries this tag — targeting is backend evaluation logic.
+   *
+   * Reserved means **not declarable**; see {@link RESERVED_CAPABILITIES}.
+   */
   Targeting = '@targeting',
 
-  /** Reserved; no scenario carries this tag yet. */
+  /**
+   * Reserved; no scenario carries this tag yet.
+   *
+   * Reserved means **not declarable**; see {@link RESERVED_CAPABILITIES}.
+   */
   Caching = '@caching',
 }
 
 /**
- * Every capability the TCK recognises.
+ * The capabilities that exist in the vocabulary but that no scenario carries.
  *
- * A reasonable starting point for a new adoption: declare everything, run the suite, and remove only
- * what the provider genuinely cannot do. Narrowing from the full set surfaces gaps; widening towards
- * it hides them.
+ * A reserved tag is a name held open for a scenario that has not been written yet. Until one is, the
+ * capability gates nothing, so it **must not be declared** and must not appear in a conformance
+ * report's `declaration.declared`: a capability no executed scenario carries cannot produce a skip,
+ * which means it plays no part in reading the results and listing it only invites a reader to
+ * believe something was verified when nothing examined it. That is the vacuous conformance claim the
+ * capability vocabulary exists to prevent.
+ *
+ * It is not a hypothetical. A published Java conformance report asserted both of these as declared
+ * — not by anyone's decision, but because that adoption declares "every capability except X" and
+ * picked up every reserved tag in the vocabulary on the way past.
+ *
+ * One list, in one place, because the failure mode is the rule and the list drifting apart. The
+ * harness also checks it against the feature files it actually ran, so a reservation that expires
+ * upstream is reported rather than silently outliving the scenario that ended it.
+ *
+ * @see https://github.com/open-feature/spec/blob/main/specification/assets/provider-tck/report/conformance-report.schema.json
+ */
+export const RESERVED_CAPABILITIES: readonly Capability[] = Object.freeze([Capability.Targeting, Capability.Caching]);
+
+/** Whether a capability is reserved, and so cannot be declared. */
+export function isReserved(capability: Capability): boolean {
+  return RESERVED_CAPABILITIES.includes(capability);
+}
+
+/**
+ * Why `@numeric-coercion` cannot hold for a provider written in JavaScript.
+ *
+ * It is neither half of the contract that fails here, but the premise both halves rest on: there
+ * has to be an integer request distinguishable from a float one before "was this coercion lossless?"
+ * is a question at all.
+ *
+ * Offered as a constant because it is a fact about the language rather than about any one provider,
+ * and because a report reader comparing two JavaScript providers is better served by one sentence
+ * than by two paraphrases of it. Pass it as the reason in {@link TckOptions.notApplicable}; it ends
+ * up in `declaration.notApplicable` in the conformance report.
+ */
+export const NO_INTEGER_TYPE_IN_JAVASCRIPT =
+  'JavaScript has no integer type: typeof 10 and typeof 0.5 are both "number" and the Evaluation ' +
+  'API exposes only getNumberDetails, so requesting a flag as an Integer is indistinguishable from ' +
+  'requesting it as a Float. Neither half of the coercion contract can be put to a provider in ' +
+  'this language: there is no lossless coercion to permit, because 10.0 and 10 are the same value ' +
+  'and no narrowing happens, and no lossy one to reject with TYPE_MISMATCH, because 0.5 asked for ' +
+  'as an Integer is indistinguishable from a perfectly valid Float request';
+
+/**
+ * Every capability the TCK recognises as a tag, reserved ones included.
+ *
+ * This is the vocabulary, not the set an adopter may declare — for that see
+ * {@link DECLARABLE_CAPABILITIES}. Reserved tags belong here because a tag still has to be
+ * recognised to be refused.
  */
 export const ALL_CAPABILITIES: readonly Capability[] = Object.freeze(Object.values(Capability));
+
+/**
+ * Every capability an adoption may declare: {@link ALL_CAPABILITIES} without the reserved ones.
+ *
+ * A reasonable starting point for a new adoption: declare all of these, run the suite, and remove
+ * only what the provider genuinely cannot do. Narrowing from the full set surfaces gaps; widening
+ * towards it hides them. It is also what {@link TckOptions.capabilities} defaults to, so
+ * "declare everything" cannot mean "declare things nothing tested".
+ */
+export const DECLARABLE_CAPABILITIES: readonly Capability[] = Object.freeze(
+  ALL_CAPABILITIES.filter((capability) => !isReserved(capability)),
+);
 
 /**
  * Maps a Gherkin tag onto the capability it gates, or `undefined` if it gates nothing.
@@ -106,4 +173,17 @@ export const ALL_CAPABILITIES: readonly Capability[] = Object.freeze(Object.valu
  */
 export function capabilityForTag(tag: string): Capability | undefined {
   return ALL_CAPABILITIES.find((capability) => capability === tag);
+}
+
+/**
+ * Reserved capabilities that a scenario in the executed features turns out to carry.
+ *
+ * A non-empty answer means {@link RESERVED_CAPABILITIES} is now wrong: the scenario the tag was
+ * being held open for exists, so the capability is testable and an adoption should be allowed — and
+ * required — to say whether it has it. Checked against what actually ran, because the reservation
+ * expires in the specification repository and this list lives here.
+ */
+export function expiredReservations(tags: Iterable<string>): Capability[] {
+  const carried = new Set<string>(tags);
+  return RESERVED_CAPABILITIES.filter((capability) => carried.has(capability));
 }
