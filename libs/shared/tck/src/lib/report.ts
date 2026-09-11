@@ -5,6 +5,7 @@ import { TestStepResultStatus, version as messagesVersion } from '@cucumber/mess
 import type { Capability } from './capability';
 import { isReserved } from './capability';
 import type { BackendControl } from './control';
+import type { KnownDeviation } from './deviation';
 import type { CompleteTestCase, ConformanceMessages, Outcome } from './messages';
 import { SPEC_REVISION } from './revision';
 import { packageVersion, ownVersion } from './versions';
@@ -99,6 +100,21 @@ export interface ConformanceReport {
     location: string;
     digest?: string;
   };
+  /**
+   * Deviations the provider acknowledges: behaviour it is *required* to have and does not.
+   *
+   * Optional, and **an empty array is a different claim from an absent field**. Stating none asserts
+   * that deviations were considered and none found, which no suite can know on the adopter's behalf
+   * -- so this is omitted entirely when the list is empty rather than emitted as `[]`. Appendix F
+   * states that rule, and the other three implementations obey it the same way: Go with
+   * `omitempty`, Python on a truthiness check, Java by mapping empty to null.
+   *
+   * This is the field that makes a defect legible as a defect. A withheld capability and a broken
+   * one produce identical results -- scenarios skipped -- so without this a provider that withholds
+   * `@numeric-coercion` because it narrows `0.5` to `0` is indistinguishable from one that simply
+   * chose not to support it.
+   */
+  knownDeviations?: KnownDeviation[];
 }
 
 /**
@@ -125,6 +141,16 @@ export interface RecorderContext {
   declared: ReadonlySet<Capability>;
   /** Capabilities that cannot hold for this provider at all, each with the reason it cannot. */
   notApplicable: ReadonlyMap<Capability, string>;
+  /**
+   * Deviations the adopter declared, which the envelope carries verbatim.
+   *
+   * Required rather than optional, though the emitted field is not: an omitted context field would
+   * make a wiring mistake silent, and that is exactly how this went wrong here -- the option was
+   * resolved, validated and printed to the console while the emitter had no reference to it at all.
+   * Go had the same class of bug in a subtler form. A required field turns forgetting it into a
+   * compile error.
+   */
+  knownDeviations: readonly KnownDeviation[];
   /** The stream the outcomes are recorded into. */
   messages: ConformanceMessages;
   /** What the provider called itself, or `undefined` if no scenario ever registered one. */
@@ -275,6 +301,13 @@ export class ConformanceRecorder {
         ...(Object.keys(notApplicable).length ? { notApplicable } : {}),
       },
       results,
+      // Omitted when empty, never emitted as `[]`. The two are different claims -- an empty array
+      // says deviations were considered and none found, which is not something this suite can say
+      // for the adopter -- and the same idiom the declaration's `notApplicable` uses just above.
+      // Copied into a fresh array so the envelope does not alias the adopter's option object, and
+      // carried verbatim otherwise: the field names are already the shared ones, so translating
+      // them here is the one thing that would break comparing two languages' reports.
+      ...(this.context.knownDeviations.length ? { knownDeviations: [...this.context.knownDeviations] } : {}),
     };
   }
 
