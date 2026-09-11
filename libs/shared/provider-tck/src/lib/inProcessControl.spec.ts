@@ -68,4 +68,32 @@ describe('InProcessControl', () => {
     // for the wrong reason, and nothing else in the suite would notice.
     expect(Object.keys(canonicalFlagSet())).not.toContain('missing-flag');
   });
+
+  /** What the canonical flag set resolves `key` to: its default variant's value. */
+  const resolvedValue = (key: string): unknown => {
+    const flag = canonicalFlagSet()[key];
+    if (!flag) {
+      throw new Error(`${key} is not in the canonical flag set`);
+    }
+    return flag.variants[flag.defaultVariant];
+  };
+
+  it('keeps the falsy values of the canonical flag set as values', () => {
+    // false, 0 and "" are what the falsy-value scenarios resolve to, and each scenario's default is
+    // something else. A `||` default anywhere between this set and the provider would hand back the
+    // default instead, and the failure would look like a provider defect rather than a seeding one.
+    expect(resolvedValue('false-flag')).toBe(false);
+    expect(resolvedValue('zero-flag')).toBe(0);
+    expect(resolvedValue('empty-string-flag')).toBe('');
+  });
+
+  it('holds 2^53 - 1 exactly', () => {
+    // The @large-integers scenario asks for the largest integer a JavaScript number represents
+    // without rounding. Anything that had gone through a narrower type on the way here would be
+    // off by one or more, and the scenario would blame the provider.
+    const value = resolvedValue('huge-integer-flag');
+
+    expect(value).toBe(Number.MAX_SAFE_INTEGER);
+    expect(Number.isSafeInteger(value)).toBe(true);
+  });
 });
