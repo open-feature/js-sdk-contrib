@@ -58,7 +58,7 @@
       "outputs": ["{workspaceRoot}/coverage/libs/providers/flagd"],
       "options": {
         "jestConfig": "libs/providers/flagd/src/e2e/jest.config.ts",
-        "parallel": false
+        "runInBand": true
       },
       "dependsOn": [
         {
