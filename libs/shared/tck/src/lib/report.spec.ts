@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { version as messagesVersion } from '@cucumber/messages';
-import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT } from './capability';
+import { Capability, NO_INTEGER_TYPE_IN_JAVASCRIPT, RESERVED_CAPABILITIES } from './capability';
 import type { BackendControl } from './control';
 import { ConformanceMessages } from './messages';
 import type { ScenarioIdentity } from './report';
@@ -76,6 +76,20 @@ describe('the conformance envelope', () => {
     expect(declaration.notApplicable).toEqual({
       [Capability.NumericCoercion]: expect.stringContaining('no integer type'),
     });
+  });
+
+  it('never declares a reserved capability, whatever it was handed', () => {
+    // @targeting and @caching are names held open for scenarios that do not exist, so nothing can
+    // be skipped for them and declaring one claims a verification that never happened. A published
+    // Java report asserted both, because that adoption declares "everything except X" and picked up
+    // every reserved tag on the way past. An adoption naming one is refused before it gets here;
+    // this is the emitter being unable to write it down regardless of how the set was built.
+    const { declaration } = recorderFor([Capability.Events, ...RESERVED_CAPABILITIES]).build(RESULTS);
+
+    expect(declaration.declared).toEqual([Capability.Events]);
+    for (const capability of RESERVED_CAPABILITIES) {
+      expect(declaration.declared).not.toContain(capability);
+    }
   });
 
   it('names the provider as the provider names itself and the suite as the configuration', () => {
