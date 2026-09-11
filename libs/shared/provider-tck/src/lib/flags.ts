@@ -29,7 +29,7 @@ export const CHANGING_CHANGED = 'bar';
  *   that scenario green for the wrong reason.
  * - no flag carries a `contextEvaluator`, so every evaluation reports reason `STATIC` — the TCK
  *   tests a provider's mapping of a response, not a backend's evaluation logic.
- * - `false-flag`, `zero-flag` and `empty-string-flag` resolve to `false`, `0` and `''` on purpose.
+ * - `boolean-zero-flag`, `integer-zero-flag` and `string-zero-flag` resolve to `false`, `0` and `''`.
  *   They are values, not absences: a `value || default` anywhere on the way turns the falsy-value
  *   scenarios into failures that look like provider defects.
  * - `huge-integer-flag` is 2^53 − 1, which a JavaScript number holds exactly. It must not be
@@ -81,21 +81,21 @@ export function canonicalFlagSet(changingVariant: string = CHANGING_BASELINE): F
       disabled: false,
     },
     // Resolves to false; the scenario's default is true, so treating false as missing is caught.
-    'false-flag': {
-      variants: { on: true, off: false },
-      defaultVariant: 'off',
+    'boolean-zero-flag': {
+      variants: { zero: false, 'non-zero': true },
+      defaultVariant: 'zero',
       disabled: false,
     },
     // Resolves to 0; the scenario's default is 1.
-    'zero-flag': {
-      variants: { one: 1, zero: 0 },
+    'integer-zero-flag': {
+      variants: { zero: 0, 'non-zero': 1 },
       defaultVariant: 'zero',
       disabled: false,
     },
     // Resolves to the empty string; the scenario's default is 'fallback'.
-    'empty-string-flag': {
-      variants: { greeting: 'hi', empty: '' },
-      defaultVariant: 'empty',
+    'string-zero-flag': {
+      variants: { zero: '', 'non-zero': 'str' },
+      defaultVariant: 'zero',
       disabled: false,
     },
     'object-flag': {

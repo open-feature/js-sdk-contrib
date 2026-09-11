@@ -82,9 +82,9 @@ describe('InProcessControl', () => {
     // false, 0 and "" are what the falsy-value scenarios resolve to, and each scenario's default is
     // something else. A `||` default anywhere between this set and the provider would hand back the
     // default instead, and the failure would look like a provider defect rather than a seeding one.
-    expect(resolvedValue('false-flag')).toBe(false);
-    expect(resolvedValue('zero-flag')).toBe(0);
-    expect(resolvedValue('empty-string-flag')).toBe('');
+    expect(resolvedValue('boolean-zero-flag')).toBe(false);
+    expect(resolvedValue('integer-zero-flag')).toBe(0);
+    expect(resolvedValue('string-zero-flag')).toBe('');
   });
 
   it('holds 2^53 - 1 exactly', () => {

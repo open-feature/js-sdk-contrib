@@ -28,7 +28,7 @@ describe('parseValue', () => {
 
   it('refuses a blank numeric cell rather than reading it as zero', () => {
     // Number('') is 0. A scenario asking for a number and giving none has a typo in it, and
-    // zero-flag exists precisely so that a resolved 0 is never a coincidence.
+    // integer-zero-flag exists precisely so that a resolved 0 is never a coincidence.
     expect(() => parseValue('Integer', '')).toThrow(/is not a number/);
     expect(() => parseValue('Float', '   ')).toThrow(/is not a number/);
   });
