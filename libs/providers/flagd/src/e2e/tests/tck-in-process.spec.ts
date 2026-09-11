@@ -19,7 +19,7 @@ runFlagdTck({
    * PROVIDER_STALE (flagd-provider.ts:136) before escalating to PROVIDER_ERROR
    * (flagd-provider.ts:144).
    *
-   * The omissions are the same and have the same reasons: StrictNumericTyping because JavaScript has
+   * The omissions are the same and have the same reasons: NumericCoercion because JavaScript has
    * no integer type, so the scenario is unsatisfiable by construction (see the TCK README), and
    * Targeting and Caching because no scenario carries their tags yet.
    *
