@@ -1,8 +1,8 @@
-import { existsSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import type { StepDefinitions } from 'jest-cucumber';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import { OpenFeature } from '@openfeature/server-sdk';
+import { resolveAssetDir } from './assets';
 import { expiredReservations } from './capability';
 import { featureFileNames, resolveExtensionFeatures } from './extensions';
 import type { TckOptions } from './options';
@@ -12,63 +12,6 @@ import { TckState } from './state';
 import { eventSteps } from './steps/eventSteps';
 import { flagSteps } from './steps/flagSteps';
 import { providerSteps } from './steps/providerSteps';
-
-/** Where the conformance assets live inside a checkout of open-feature/spec. */
-const SPEC_ASSET_ROOT = join('spec', 'specification', 'assets', 'provider-tck');
-
-/**
- * The directory each packaged asset directory is built from inside the spec submodule.
- *
- * Only `features` is renamed: the spec calls that directory `gherkin`, and the published package
- * keeps the name the API talks about.
- */
-const SPEC_SUBDIR: Record<string, string> = {
-  features: 'gherkin',
-  flags: 'flags',
-  openapi: 'openapi',
-};
-
-/**
- * Locates a directory of conformance assets, resolved from this module rather than from the working
- * directory.
- *
- * That rules out a workspace-relative path: it would resolve against whatever directory the test
- * runner happened to start in, which is the workspace root here and something else entirely for
- * anyone consuming the published package.
- *
- * Two layouts have to work, so both are tried in order:
- *
- *   - `<pkg>/features` — the published package. The assets ship *inside* the library, so **adopting
- *     the TCK never requires a git submodule**; the rollup `assets` globs copy them out of the
- *     submodule and place them next to the bundle at package time;
- *   - `<lib>/spec/specification/assets/provider-tck/gherkin` — this repository, where the assets are
- *     not vendored at all but read straight out of the `open-feature/spec` submodule. They are
- *     owned there, and a copy in this repository would be a second place for conformance to drift.
- */
-function resolveAssetDir(name: string): string {
-  const fromSpec = join(SPEC_ASSET_ROOT, SPEC_SUBDIR[name] ?? name);
-  const candidates = [
-    // The published package, whose entry point sits at the package root or one level below it.
-    join(__dirname, name),
-    join(__dirname, '..', name),
-    join(__dirname, '..', '..', name),
-    // This repository, where the entry point compiles from `src/lib` under the library root.
-    join(__dirname, '..', '..', fromSpec),
-    join(__dirname, '..', fromSpec),
-  ];
-
-  const found = candidates.find((candidate) => existsSync(candidate));
-  if (!found) {
-    throw new Error(
-      `provider-tck: could not locate its '${name}' directory. ` +
-        `Looked in: ${candidates.join(', ')}. ` +
-        `Consuming the published package needs no submodule -- the assets ship inside it, so if ` +
-        `they are missing it was built without its asset globs. Working in js-sdk-contrib needs ` +
-        `the spec submodule: run 'git submodule update --init libs/shared/provider-tck/spec'.`,
-    );
-  }
-  return found;
-}
 
 /** The glob matching the canonical feature files packaged with this library. */
 export const FEATURES_GLOB = join(resolveAssetDir('features'), '*.feature');
@@ -135,11 +78,16 @@ function asList<T>(value: T | readonly T[] | undefined): readonly T[] {
   return Array.isArray(value) ? (value as readonly T[]) : ([value] as readonly T[]);
 }
 
-/** The canonical flag set, as raw JSON, for a suite that seeds a backend from it. */
-export const CANONICAL_FLAGS_PATH = join(resolveAssetDir('flags'), 'canonical-flags.json');
-
-/** The OpenAPI document a containerised backend under test must implement. */
-export const CONTROL_API_PATH = join(resolveAssetDir('openapi'), 'control-api.yaml');
+/**
+ * The canonical flag set as raw JSON, and the control-API document a containerised backend must
+ * implement, re-exported from where they are resolved.
+ *
+ * Both are part of this module's published surface and both are now defined in `assets`, which is
+ * also where {@link canonicalFlagSet} reads the flag file from. One definition of each path is the
+ * point: the file an adopter seeds a backend from is provably the same file this library builds
+ * its own in-memory flag configuration out of.
+ */
+export { CANONICAL_FLAGS_PATH, CONTROL_API_PATH } from './assets';
 
 /**
  * Runs the OpenFeature Provider Conformance Suite against the provider described by `options`.
