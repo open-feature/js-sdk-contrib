@@ -21,7 +21,7 @@ import { packageVersion, ownVersion } from './versions';
  *
  * Unset means no report, which is the default and is not an error.
  */
-export const REPORT_DIR_ENV = 'PROVIDER_TCK_REPORT_DIR';
+export const REPORT_DIR_ENV = 'TCK_REPORT_DIR';
 
 /** The major version of the report schema this emitter produces. */
 const REPORT_SCHEMA_VERSION = '1';
