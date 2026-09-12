@@ -11,7 +11,7 @@ runFlagdTck({
   resolverType: 'in-process',
 
   /*
-   * The same six capabilities as the RPC suite, and that identity is the finding rather than a
+   * The same eight capabilities as the RPC suite, and that identity is the finding rather than a
    * copy-paste: in Go the two resolvers differ over PROVIDER_STALE (go-sdk-contrib#939), here they
    * cannot, because both report a lost connection through the same `disconnectCallback` seam —
    * src/lib/service/in-process/grpc/grpc-fetch.ts:197 here, src/lib/service/grpc/grpc-service.ts:274
@@ -23,9 +23,16 @@ runFlagdTck({
    * service, and in-process reaches it harder -- it syncs the whole ruleset before reporting ready,
    * so READY cannot be synthesised on a provider that did nothing.
    *
+   * Variants and Targeting are declared as in RPC, and the resolvers reach them by different routes:
+   * RPC reads the variant and the targeting decision out of flagd's evaluation response, while
+   * in-process syncs the ruleset and evaluates it locally in flagd-core. The identical result is
+   * again the finding — an application switching resolver sees the same variant and the same
+   * targeted value, including the one @variants row that fails for want of `large-integer-flag`
+   * in the testbed image (flagd-testbed#392). See the RPC suite for why no deviation is recorded.
+   *
    * The omissions are the same and have the same reasons: NumericCoercion because JavaScript has
    * no integer type, so the scenario is unsatisfiable by construction (see the TCK README), and
-   * Targeting and Caching because no scenario carries their tags yet.
+   * Caching because it is still reserved and no scenario carries the tag.
    *
    * Reinitialization is left undeclared, as in RPC and for the same reason -- and it is the same
    * code shape: `disconnect` calls `this._syncClient.close()` (grpc-fetch.ts:95-99) and nothing
@@ -45,6 +52,8 @@ runFlagdTck({
     Capability.ConfigurationChange,
     Capability.Object,
     Capability.UnavailableInit,
+    Capability.Variants,
+    Capability.Targeting,
   ],
 
   // In-process syncs the whole ruleset before reporting ready, so it needs longer than RPC.
