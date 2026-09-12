@@ -135,13 +135,23 @@ export interface TckOptions {
    * an extension step and a canonical step are interchangeable within one scenario:
    *
    * ```ts
-   * const fractionalSteps: StepDefinitions = ({ given }) => {
+   * const fractionalSteps: StepDefinitions = ({ given, then }) => {
    *   given(/^a fractional rule splitting "([^"]*)" (\d+)\/(\d+)$/, async (key, a, b) => { ... });
+   *   then(/^the split resolves "([^"]*)"$/, async (expected: string) => {
+   *     expect(await clientUnderTest().getStringValue('fractional-flag', 'none')).toBe(expected);
+   *   });
    * };
    * ```
    *
    * A step matcher that also matches a canonical step is rejected by jest-cucumber as ambiguous, so
    * an extension cannot quietly redefine what a canonical step means.
+   *
+   * **Reach the provider under test with {@link clientUnderTest}**, not with a client of your own.
+   * `StepDefinitions` is handed nothing but jest-cucumber's own `given`/`when`/`then`, so that
+   * accessor is the route to the client the suite registered — and registering a second provider
+   * would put the step's question to something other than the provider the rest of the scenario is
+   * about. {@link providerUnderTest} is there for a step whose subject is the provider's own surface
+   * rather than the SDK's handling of it.
    */
   extensionSteps?: StepDefinitions | readonly StepDefinitions[];
 

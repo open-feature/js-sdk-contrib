@@ -39,3 +39,4 @@ export { InProcessControl } from './lib/inProcessControl';
 export { DEFAULT_EVENT_TIMEOUT_MS, DEFAULT_READY_TIMEOUT_MS, domainFor } from './lib/options';
 export type { ProviderFactory, TckOptions } from './lib/options';
 export { CANONICAL_FLAGS_PATH, CONTROL_API_PATH, FEATURES_GLOB, runProviderTck } from './lib/runProviderTck';
+export { clientUnderTest, providerUnderTest } from './lib/underTest';
