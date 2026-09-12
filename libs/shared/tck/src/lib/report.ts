@@ -14,8 +14,9 @@ import { packageVersion, ownVersion } from './versions';
  * Names the directory a conformance report is written to.
  *
  * It is an environment variable rather than a {@link TckOptions} field so that emitting a report is
- * a property of the *run* and not of the code: CI sets it, a developer running the suite locally
- * does not, and no adopter has to change a line to publish one. Each suite writes
+ * a property of the *run* and not of the code: whoever wants a report sets it, a developer running
+ * the suite locally does not, and no adopter has to change a line to publish one. Nothing in this
+ * repository sets it automatically, the containerised suites being excluded from CI. Each suite writes
  * `<dir>/<name>.json` and `<dir>/<name>.ndjson`, so two suites in one run -- flagd's RPC and
  * in-process resolvers, say -- each produce their own pair without colliding.
  *
