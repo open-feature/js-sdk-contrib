@@ -59,6 +59,18 @@ runFlagdTck({
    *   dropped the context would pass all of them. What is under test is still the provider: the
    *   flag's rule is flagd's to evaluate, and all three scenarios assert is that the context reached
    *   it.
+   * - DisabledFlags is declared, and the RPC resolver earns it despite the evaluation happening
+   *   remotely — which is the interesting part, because an OFREP provider in the same position
+   *   cannot. flagd answers a disabled flag with `reason: DISABLED`, an empty variant and the
+   *   *type's zero value* rather than the caller's, since the request never carried one: the wire
+   *   response for `disabled-integer-flag` is `{"value":"0","reason":"DISABLED","variant":""}`. What
+   *   closes the gap is that the provider substitutes locally — grpc-service.ts:306-312 replaces the
+   *   value with the caller's default when the variant is empty and the reason is DEFAULT or
+   *   DISABLED — so flagd's protocol keeps the decision remote while the default stays client-side.
+   *   Nothing had to be seeded: the four flags are flagd-testbed's own, from
+   *   `flags/disabled-flags.json`, and the launchpad already serves them under the `default`
+   *   configuration. All four rows pass, which is what the declaration rests on; without the
+   *   substitution, three of the four would have failed on the value alone.
    * - Caching is omitted because it is still reserved: no scenario carries the tag, so declaring it
    *   could not cause a skip and would put a capability nothing examined into the report.
    */
@@ -71,6 +83,7 @@ runFlagdTck({
     Capability.UnavailableInit,
     Capability.Variants,
     Capability.Targeting,
+    Capability.DisabledFlags,
   ],
 
   // The RPC resolver asks flagd to resolve each flag, so it is ready as soon as the stream is up.
