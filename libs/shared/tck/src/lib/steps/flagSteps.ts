@@ -193,8 +193,7 @@ export const flagSteps =
       const details = state.requireDetails();
       if (!state.hasMemory) {
         throw new Error(
-          'no value was remembered in this scenario: a "the resolved value is remembered" step ' +
-            'must come first',
+          'no value was remembered in this scenario: a "the resolved value is remembered" step ' + 'must come first',
         );
       }
       if (valuesEqual(state.remembered, details.value)) {
