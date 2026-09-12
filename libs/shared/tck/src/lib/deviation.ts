@@ -16,10 +16,18 @@ import type { Capability } from './capability';
  * which is why this is declared through {@link TckOptions.knownDeviations}, along
  * {@link TckOptions.capabilities}.
  *
- * A declared capability can carry one too, and that is the more useful case: withdrawing the
- * capability would hide the defect behind a skip, while declaring the capability and naming the
- * deviation leaves the scenario running and failing, with the reason recorded next to it. Prefer
- * that to a withdrawal whenever the provider genuinely attempts the behaviour.
+ * Legitimate in two shapes, and a report's results already distinguish them. Either the capability
+ * is **declared**, the scenario runs and it fails, with the deviation saying the failure is known
+ * and why — prefer this, because the failure stays visible — or the capability is **withheld** and
+ * its scenarios skip, with the deviation explaining the absence. The second is legitimate only
+ * where the provider cannot attempt the behaviour at all, so that running the scenario would
+ * establish nothing; withdrawing a capability *in order to* turn a failing scenario into a skip is
+ * the failure mode this type exists to prevent.
+ *
+ * Either way, the gap has to be against something the specification requires — a numbered `MUST`,
+ * or a rule the implementation bound itself to elsewhere. Where the specification permits the
+ * choice, withholding the capability is the whole of the honest report and a deviation would assert
+ * a defect that does not exist.
  *
  * Part of the declaration vocabulary rather than of any one consumer of it. This is something an
  * adopter *writes*, so it belongs to the suite an adopter adopts; whatever reads the declaration —
@@ -36,7 +44,12 @@ export interface KnownDeviation {
   /** Where the gap is tracked, absent when it is not tracked anywhere. */
   readonly issue?: string;
 
-  /** What the gap is, in a form someone comparing providers can use. */
+  /**
+   * What the gap is, in a form someone comparing providers can use.
+   *
+   * Required. An entry with no summary records that something is wrong without saying what, which
+   * is worth less than the bare skip or failure it accompanies.
+   */
   readonly summary: string;
 }
 

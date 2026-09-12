@@ -236,14 +236,27 @@ capability and in Appendix F — instead of restated in every report. In JavaScr
 
 ### A defect is not a decision: `knownDeviations`
 
-Leaving a capability out of `capabilities` reads as a decision. It cannot say "this provider
-attempts the behaviour and gets it wrong" — and with nowhere to say it, the only honest-looking move
-left is to withdraw the capability, which replaces a failing scenario with a skip and makes a defect
-look deliberate. That is the one thing the capability vocabulary is supposed to prevent, arrived at
-from the other side.
+**A `knownDeviations` entry says: this provider fails to do something it is required to do.** The
+requirement has to be a numbered `MUST`, or a rule the implementation bound itself to elsewhere.
+Where the specification _permits_ the choice, withholding the capability **is** the honest report,
+and a deviation entry would assert a defect that does not exist.
 
-So `knownDeviations` exists to let you do the opposite of withdrawing. Declare the capability, let
-the scenario run and fail, and name the gap beside it:
+Leaving a capability out of `capabilities` reads as a decision, and it cannot say "this provider
+attempts the behaviour and gets it wrong". Both a defect and a decision produce the same skip, so a
+consumer comparing providers reads one as the other unless something says which happened. That is
+what this field is for.
+
+It is legitimate in two shapes, and a report's results already distinguish them:
+
+1. **The capability is declared, the scenario runs, and it fails.** Prefer this. The failure stays
+   visible and the deviation says it is known and why.
+2. **The capability is withheld, and its scenarios skip.** Legitimate only when the provider cannot
+   attempt the behaviour at all, so running the scenario would establish nothing. The deviation then
+   explains the absence, so a reader can tell a defect from a design decision.
+
+Withdrawing a capability _in order to_ turn a failing scenario into a skip is the failure mode this
+field exists to prevent. If the provider attempts the behaviour and gets it wrong, shape 1 is the
+honest report:
 
 ```ts
 import { Capability, KnownDeviation, runProviderTck } from '@openfeature/tck';
@@ -266,10 +279,13 @@ runProviderTck({
 });
 ```
 
-Use `tracked` once there is an issue to point at and `untracked` before then — two factories rather
-than one optional argument, because an omitted URL and an untracked defect are the same value and
-very different claims. Pass `undefined` as the capability when the gap is against a mandatory
-scenario and so belongs to no capability.
+`summary` is required: an entry with no summary records that something is wrong without saying what,
+which is worth less than the bare skip or failure it accompanies. The issue is optional — use
+`tracked` once there is an issue to point at and `untracked` before then, two factories rather than
+one optional argument, because an omitted URL and an untracked defect are the same value and very
+different claims. Naming an untracked defect is still what separates it from a choice. Pass
+`undefined` as the capability when the gap is against a mandatory, ungated scenario and so belongs
+to no capability.
 
 Declaring a deviation changes nothing about what runs; it is a statement about the provider, printed
 with the suite's declaration and carried through to whatever reads it. The shape is Java's
@@ -277,12 +293,12 @@ with the suite's declaration and carried through to whatever reads it. The shape
 translation table. A reserved capability is refused here for the same reason as everywhere else: no
 scenario carries it, so there is nothing to deviate from.
 
-**Check the requirement before you record one.** A deviation is a claim that the provider gets
-something wrong, so it only makes sense where the specification asks for the behaviour. Where a
-scenario is gated on a capability, the gate itself is usually the specification saying the behaviour
-is optional — `@reinitialization` is exactly that, and a provider that declines reuse should leave
-the tag undeclared rather than declare it and record a deviation. Find the numbered requirement
-first; a failing scenario is not on its own evidence of a defect.
+**Check the requirement before you record one.** Where a scenario is gated on a capability, the gate
+itself is often the specification saying the behaviour is optional — `@reinitialization` is exactly
+that, and a provider that declines reuse owes no deviation at all, because nothing is broken. Find
+the numbered requirement first; a failing scenario is not on its own evidence of a defect. That is
+the difference between shape 2 and a withdrawal with nothing to report: shape 2 still names a
+requirement the provider fails.
 
 ### `@lifecycle` is not `@events`
 
@@ -625,7 +641,9 @@ the same reason as the other two: there is no backend for initialisation to reac
 | `extensionSuite.spec.ts`   | the same provider, plus `fixtures/extension-features` | reference adoption for a vendor with scenarios of its own, and the proof they share one lifecycle with the canonical set |
 | `multiProvider.spec.ts`    | `MultiProvider` wrapping one child                    | delegation must be transparent                                                                                           |
 | `inProcessControl.spec.ts` | `InProcessControl`                                    | pins what the Gherkin cannot assert about itself                                                                         |
-| `httpControl.spec.ts`      | `HttpControl`                                         | pins the control-API request sequence, without a container                                                               |
+| `httpControl.spec.ts`      | `HttpControl`                                         | pins the control-API request sequence and the readiness rules, without a container                                       |
+| `compose.spec.ts`          | `runContainerizedProviderTck`'s refusals              | every refusal replaces a failure that would otherwise arrive minutes later as a container that never came up             |
+| `underTest.spec.ts`        | `clientUnderTest` / `providerUnderTest`               | the failure modes a real run cannot reach: no suite, and two suites in one file                                          |
 
 `multiProvider.spec.ts` wraps exactly one child deliberately. That is the interesting configuration
 rather than a degenerate one: the correct answer is precisely what the in-memory suite already
@@ -670,8 +688,17 @@ by every language's TCK.
 
 ## Known gaps
 
-- **Evaluation context passthrough is unverifiable** without an echo operation on the control API.
-- Caching, hooks and flag metadata are not covered.
+- **Evaluation context passthrough is verified only for the targeting key.** `targeting-key-flag`
+  resolves differently for a matching context, so a provider that drops the context is caught by the
+  resolved value itself — that is what the three `@targeting` scenarios do, and no echo operation is
+  needed for it. What is still unverified is that the _whole_ context arrives intact: a provider that
+  forwards the targeting key and silently discards every other attribute passes. Closing that needs
+  either an echo operation on the control API or a second canonical flag whose rule keys on a custom
+  attribute.
+- **`POST /restart` is unused.** No current scenario needs a bounded outage — the stale scenario uses
+  an explicit disconnect and reconnect — so `ConnectionControl` has no `disconnectFor`.
+- Caching, hooks and flag metadata are not covered. Provider metadata is, but only as far as a
+  non-empty name.
 
 [appendix-a]: https://github.com/open-feature/spec/blob/main/specification/appendix-a-included-utilities.md
 [flagd-testbed]: https://github.com/open-feature/flagd-testbed
