@@ -615,8 +615,9 @@ $ jq -r 'select(.testStepFinished).testStepFinished.testStepResult.status' repor
 ```
 
 It is an environment variable rather than a `TckOptions` field so that emitting a report is a
-property of the _run_ and not of the code: CI sets it, a developer running the suite locally does
-not, and no adopter changes a line to publish one. Unset means no report, which is not an error.
+property of the _run_ and not of the code: whoever wants a report sets it, a developer running the
+suite locally does not, and no adopter changes a line to publish one. Nothing here sets it
+automatically — see "What CI runs, and what it does not". Unset means no report, which is not an error.
 Several suites in one run each write their own pair of files, so flagd's two resolvers do not
 collide. The stream is written first and the envelope second, carrying a `sha256` digest of it, so
 an envelope never names results that are not there or have moved on.
