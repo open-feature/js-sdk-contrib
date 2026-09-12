@@ -670,6 +670,26 @@ else — a variant that does not survive the hop, a reason rewritten to `DEFAULT
 flattened to `GENERAL`, an event that never reaches the client. The Java equivalent found a real bug
 this way ([java-sdk#1882](https://github.com/open-feature/java-sdk/issues/1882)).
 
+### What CI runs, and what it does not
+
+Every suite in that table is **Docker-free** and runs in the default build, which is what makes
+`inMemory.spec.ts` the canary: a break in the harness fails `nx test tck` with no container
+anywhere.
+
+**The containerised adoptions are deliberately excluded from the default build**, and that is a
+policy rather than an oversight. Each lives behind a `tck` target of its own — `npx nx tck
+providers-flagd`, `npx nx tck providers-ofrep` — which neither `npm run e2e` nor any CI job invokes,
+and a maintainer is expected to run them locally before merging a change to the suite or to a
+provider it covers. It is written down here because an exclusion nobody wrote down is
+indistinguishable from an accident, which is very nearly what happened: a conformance suite dropped
+into `libs/providers/flagd/src/e2e/tests/` is picked up by the pre-existing `e2e` target's Jest
+config for no better reason than the directory it sits in, and that target _is_ a CI job.
+
+The cost being avoided is not only minutes of runtime. A conformance run pins its claim to an exact
+backend image, so the image tag is part of the result; a run nobody reads, against a tag that
+drifted under it, produces a red build that says nothing about the provider. That is also why the
+Compose files pin their tag instead of following a submodule.
+
 ## A note in JavaScript's favour
 
 The Go and Python SDKs' in-memory providers cannot update their flag set or emit
