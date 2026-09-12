@@ -117,10 +117,29 @@ runContainerizedProviderTck({
    *   share of it than they do anywhere else. `targeting-key-flag` is flagd-testbed's own, so
    *   nothing had to be seeded.
    *
+   * - DisabledFlags IS declared, and it is the one result here that contradicted the expectation
+   *   rather than confirming it. The capability was written assuming a provider whose backend
+   *   decides could not have it: the request carries the flag key and the evaluation context but
+   *   never the caller's *default*, so a server asked about a disabled flag has nothing to return
+   *   and the provider nothing to substitute. That reasoning skips a step. OFREP's response schema
+   *   makes `value` optional, and flagd's OFREP handler omits it altogether for a disabled flag —
+   *   `200 OK` with `{"key":"disabled-boolean-flag","reason":"DISABLED","metadata":{}}`, no `value`
+   *   and no `variant`. `toResolutionDetails` handles exactly that shape
+   *   (libs/shared/ofrep-core/src/lib/api/ofrep-api.ts:239-245): an absent value becomes the
+   *   caller's default, carrying the server's reason and no error code. So the substitution is
+   *   client-side here too — the protocol can say "no value" instead of making the server invent
+   *   one, which is the step the capability's rationale was missing.
+   *
+   *   All four rows pass, twice over, and that is what the declaration rests on rather than the
+   *   reading above. It stays a claim about this provider against this backend: an OFREP server that
+   *   answered a disabled flag with the flag's configured value, or with a `404`, would fail these
+   *   rows through no fault of the provider. That is why the tag is gated, and why withholding it
+   *   elsewhere would need no `knownDeviations` entry.
+   *
    * - Caching is omitted because it is still reserved: no scenario carries the tag, so declaring it
    *   could not cause a skip and would put a capability nothing examined into the report.
    */
-  capabilities: [Capability.Object, Capability.Variants, Capability.Targeting],
+  capabilities: [Capability.Object, Capability.Variants, Capability.Targeting, Capability.DisabledFlags],
 
   // The SDK synthesises READY as soon as registration completes, since the provider has no
   // initialisation step. This is headroom for a loaded machine, not an expected latency.
