@@ -605,9 +605,12 @@ const control = new HttpControl({ baseUrl: () => `http://${myStack.controlUrl()}
 `awaitReady(timeoutMs)` polls `GET /healthz` until the control API will accept commands. `404`
 counts as ready: the path is optional, and an answer at all means the control port is listening,
 which is what readiness falls back to. `503` and a connection error are retried. There is
-deliberately no settle delay after a control call to pair with it — `POST /start` blocks until the
-flags are evaluable, so a fixed sleep afterwards would cover a window that no longer exists and
-would stop the suite being able to detect it reopening.
+deliberately no settle delay after a control call to pair with it: every state-changing endpoint —
+`/start`, `/change`, `/reset` — is specified not to return until the new state is actually being
+served, so a fixed sleep afterwards would cover a window the API says is not there, and a suite that
+slept instead of holding the backend to that promise would stop being able to detect the window
+reopening. How long the _provider_ then takes to notice is a property of its transport, and that is
+what `eventTimeoutMs` is for; the two must not be confused.
 
 It prefers `POST /reset` for scenario isolation and falls back to `POST /start?config=default` on a
 `404` or `501`, caching that decision once per suite. The fallback is the normal path rather than an
@@ -711,7 +714,10 @@ by every language's TCK.
   either an echo operation on the control API or a second canonical flag whose rule keys on a custom
   attribute.
 - **`POST /restart` is unused.** No current scenario needs a bounded outage — the stale scenario uses
-  an explicit disconnect and reconnect — so `ConnectionControl` has no `disconnectFor`.
+  an explicit disconnect and reconnect — so `ConnectionControl` has no `disconnectFor`. The control
+  API now marks the endpoint `[OPTIONAL]` for that reason. What would bring it back is a `@caching`
+  scenario asserting what a stale provider serves _during_ an outage: that needs `/restart`'s
+  preservation of flag state, which `/start` on reconnect does not give.
 - Caching, hooks and flag metadata are not covered. Provider metadata is, but only as far as a
   non-empty name.
 

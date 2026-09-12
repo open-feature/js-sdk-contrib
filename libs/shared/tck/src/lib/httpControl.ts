@@ -184,10 +184,14 @@ export class HttpControl implements BackendControl, ConnectionControl {
    * deliberately unreachable during the outage scenarios while the control API has to stay up,
    * otherwise the suite could not end the outage.
    *
-   * There is deliberately no settle delay after a control call to pair with this. `POST /start`
-   * blocks until the flags are evaluable (flagd-testbed#394), so a fixed sleep afterwards would
-   * cover a window that no longer exists — and it is the control API's promise to keep. A suite that
-   * slept instead of holding it to that promise would stop being able to detect when it breaks.
+   * There is deliberately no settle delay after a control call to pair with this. Every
+   * state-changing endpoint — `/start`, `/change`, `/reset` — is specified not to return until the
+   * new state is actually being served, so a fixed sleep afterwards would cover a window the API
+   * says is not there. It is the control API's promise to keep, and a suite that slept instead of
+   * holding the backend to it would stop being able to detect when it breaks. How long the
+   * *provider* then takes to notice is a property of its transport, which is what the event timeout
+   * is for; conflating the two makes the provider's detection latency unmeasurable, because the
+   * clock starts before there is anything to detect.
    */
   async awaitReady(timeoutMs: number): Promise<void> {
     const deadline = Date.now() + timeoutMs;
