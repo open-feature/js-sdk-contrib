@@ -54,11 +54,11 @@ export function resolveAssetDir(name: string): string {
   const found = candidates.find((candidate) => existsSync(candidate));
   if (!found) {
     throw new Error(
-      `provider-tck: could not locate its '${name}' directory. ` +
+      `tck: could not locate its '${name}' directory. ` +
         `Looked in: ${candidates.join(', ')}. ` +
         `Consuming the published package needs no submodule -- the assets ship inside it, so if ` +
         `they are missing it was built without its asset globs. Working in js-sdk-contrib needs ` +
-        `the spec submodule: run 'git submodule update --init libs/shared/provider-tck/spec'.`,
+        `the spec submodule: run 'git submodule update --init libs/shared/tck/spec'.`,
     );
   }
   return found;

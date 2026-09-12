@@ -21,7 +21,7 @@ const write = (dir: string, name: string): string => {
 };
 
 beforeEach(() => {
-  workspace = mkdtempSync(join(tmpdir(), 'provider-tck-extensions-'));
+  workspace = mkdtempSync(join(tmpdir(), 'tck-extensions-'));
   canonicalDir = join(workspace, 'gherkin');
   for (const name of canonicalNames) {
     write(canonicalDir, `${name}.feature`);
