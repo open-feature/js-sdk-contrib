@@ -37,9 +37,7 @@ export function readExampleTables(featurePath: string): ExampleTable[] {
 
   // A Rule groups scenarios under a heading; its children are outlines like any other. No canonical
   // feature uses one today, and silently ignoring them if one appears would drop scenarios.
-  const children = (document.feature?.children ?? []).flatMap((child) =>
-    child.rule ? child.rule.children : [child],
-  );
+  const children = (document.feature?.children ?? []).flatMap((child) => (child.rule ? child.rule.children : [child]));
 
   return children
     .flatMap((child) => (child.scenario ? [child.scenario] : []))
