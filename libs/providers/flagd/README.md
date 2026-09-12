@@ -250,9 +250,18 @@ It needs a **Docker daemon**. The suite brings up
 flagd-testbed image — discovers the mapped ports, and drives the backend over the testbed's control
 API.
 
-**It is deliberately excluded from the default build, and from CI.** `nx test providers-flagd` and
-`nx e2e providers-flagd` do not run it, and neither does any workflow; that is why it has a target of
-its own rather than living in `src/e2e/tests`, where Jest's default `testMatch` would sweep it into
-the `e2e` target that CI does run. Run it by hand before merging a change to this provider or to the
-suite. A conformance result pins its claim to the exact backend image in that Compose file, so a bump
-to the tag is a deliberate act with a result to record.
+**It is deliberately excluded from the default build, and from CI.** The mechanism: the suites live
+in `src/e2e/tck/` behind a Jest project of their own
+([`src/e2e/tck/jest.config.ts`](./src/e2e/tck/jest.config.ts)) reached only by the `tck` target, and
+`src/e2e/jest.config.ts` ignores that directory. So `nx test providers-flagd` and
+`nx e2e providers-flagd` do not run them, and neither does any workflow — `npx nx tck providers-flagd`
+is the only way in. Run it by hand before merging a change to this provider or to the suite.
+
+Why an adoption suite is excluded rather than made a required gate is
+[Appendix F, "Running the suite in CI"](https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md).
+The directory boundary is what it is because of the first mistake named there: these suites once sat
+in `src/e2e/tests/`, where the pre-existing `e2e` target's default `testMatch` swept them up, and
+that target _is_ a CI job here.
+
+A conformance result pins its claim to the exact backend image in that Compose file, so a bump to the
+tag is a deliberate act with a result to record.
