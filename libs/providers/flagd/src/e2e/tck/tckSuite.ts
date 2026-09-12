@@ -16,9 +16,18 @@ import { FlagdProvider } from '../../lib/flagd-provider';
  * definitions in module state, so two suites in one file would register the vocabulary twice and
  * every step would report as ambiguous.
  *
- * The existing e2e suites in this directory are untouched, and so is flagd-testbed. The suite drives
- * the testbed's launchpad through the standardised control API, which the launchpad already
- * implements, and brings the stack up itself from `../tck/docker-compose.yaml`.
+ * The existing e2e suites in `../tests` are untouched, and so is flagd-testbed. The suite drives the
+ * testbed's launchpad through the standardised control API, which the launchpad already implements,
+ * and brings the stack up itself from `docker-compose.yaml` beside this file.
+ *
+ * ## Why this lives in its own directory, with its own Jest config and Nx target
+ *
+ * Docker-gated and excluded from the default build, run by hand before merge. `nx tck
+ * providers-flagd` is the only thing that runs it: `npm run e2e` is `nx run-many --all
+ * --target=e2e`, and CI has a job for exactly that, so a conformance spec left in `../tests` would
+ * be swept into a CI job by Jest's default testMatch for no better reason than the directory it sat
+ * in. A conformance run pins its claim to an exact backend image, and a claim nobody reads is cost
+ * without signal.
  */
 export interface FlagdTckSuite {
   /** Identifies the suite in test output and scopes its OpenFeature domain. */
@@ -78,7 +87,7 @@ export function runFlagdTck(suite: FlagdTckSuite): void {
     // The suite owns the stack: started once before the first scenario and never restarted, with
     // scenario isolation coming from the control API instead. See the no-container-restart
     // invariant in the control API specification.
-    composeFile: join(__dirname, '..', 'tck', 'docker-compose.yaml'),
+    composeFile: join(__dirname, 'docker-compose.yaml'),
     backendPorts: [backendPort],
     startupTimeoutMs: STACK_TIMEOUT_MS,
 
