@@ -4,7 +4,7 @@ import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import { OpenFeature } from '@openfeature/server-sdk';
 import { resolveAssetDir } from './assets';
 import { expiredReservations } from './capability';
-import { featureFileNames, resolveExtensionFeatures } from './extensions';
+import { featureFiles, resolveExtensionFeatures } from './extensions';
 import type { TckOptions } from './options';
 import { resolveCapabilities } from './options';
 import { planScenarios, scenarioRunner } from './scenarioRunner';
@@ -39,9 +39,9 @@ export interface TckFeature {
 export function loadTckFeatures(tagFilter: string | undefined): TckFeature[] {
   const dir = resolveAssetDir('features');
 
-  return featureFileNames(dir).map((entry) => ({
-    feature: basename(entry, '.feature'),
-    parsed: loadFeature(join(dir, entry), { tagFilter }),
+  return featureFiles(dir).map((path) => ({
+    feature: basename(path, '.feature'),
+    parsed: loadFeature(path, { tagFilter }),
     canonical: true,
   }));
 }
@@ -62,7 +62,7 @@ export function loadExtensionFeatures(paths: readonly string[], tagFilter: strin
   }
 
   const canonicalDir = resolveAssetDir('features');
-  const canonicalNames = new Set(featureFileNames(canonicalDir).map((entry) => basename(entry, '.feature')));
+  const canonicalNames = new Set(featureFiles(canonicalDir).map((path) => basename(path, '.feature')));
 
   return resolveExtensionFeatures(paths, canonicalDir, canonicalNames).map(({ feature, path }) => ({
     feature,

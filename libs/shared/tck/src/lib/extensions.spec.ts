@@ -1,7 +1,7 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { featureFileNames, resolveExtensionFeatures } from './extensions';
+import { basename, join } from 'node:path';
+import { featureFiles, resolveExtensionFeatures } from './extensions';
 import { loadExtensionFeatures, loadTckFeatures } from './runProviderTck';
 
 /** The canonical feature names, read the same way the harness reads them. */
@@ -43,6 +43,51 @@ describe('resolving extension features', () => {
       'alpha',
       'zebra',
     ]);
+  });
+
+  it('recurses into subdirectories rather than under-collecting in silence', () => {
+    // The scan took direct children only, so an adopter who grouped their features into
+    // subdirectories got a run that was missing scenarios and said nothing about it -- the same
+    // silent under-collection the shadowing refusals below exist to prevent, reached from the other
+    // side. The other three languages' suites recurse; this is the test that keeps this one honest.
+    const dir = join(workspace, 'extension-features');
+    write(dir, 'alpha.feature');
+    write(dir, 'zebra.feature');
+    write(join(dir, 'nested'), 'deep.feature');
+    write(join(dir, 'nested', 'deeper'), 'deepest.feature');
+    write(join(dir, 'nested'), 'notes.md');
+
+    // Depth first, by entry name at each level: 'nested' sorts between the two files, so its
+    // subtree lands between them. Not by whole path, which would depend on the platform's
+    // separator sorting before or after '.'.
+    expect(resolveExtensionFeatures([dir], canonicalDir, canonicalNames).map(({ feature }) => feature)).toEqual([
+      'alpha',
+      'deep',
+      'deepest',
+      'zebra',
+    ]);
+  });
+
+  it('keeps the shadowing refusals in force across subdirectories', () => {
+    // Recursion makes two new shadowing opportunities reachable, and neither may be admitted: a
+    // canonical name buried a level down, and one bare name claimed twice from different
+    // subdirectories. Both are refused by the same rules, because the name a scenario is attributed
+    // to is the bare file name and a subdirectory does not qualify it.
+    const [canonical] = [...canonicalNames].sort();
+    const dir = join(workspace, 'extension-features');
+    write(join(dir, 'nested'), `${canonical}.feature`);
+
+    expect(() => resolveExtensionFeatures([dir], canonicalDir, canonicalNames)).toThrow(
+      `is named ${canonical}.feature, which is the name of a canonical feature`,
+    );
+
+    const twice = join(workspace, 'twice');
+    write(join(twice, 'targeting'), 'fractional.feature');
+    write(join(twice, 'caching'), 'fractional.feature');
+
+    expect(() => resolveExtensionFeatures([twice], canonicalDir, canonicalNames)).toThrow(
+      'two extension features are named fractional.feature',
+    );
   });
 
   it('takes a single .feature file as well as a directory', () => {
@@ -133,6 +178,34 @@ describe('loading extension features', () => {
   });
 
   it('reads the canonical directory the same way the loader does', () => {
-    expect(featureFileNames(join(workspace, 'gherkin'))).toEqual([...canonicalNames].sort().map((n) => `${n}.feature`));
+    expect(featureFiles(join(workspace, 'gherkin'))).toEqual(
+      [...canonicalNames].sort().map((name) => join(workspace, 'gherkin', `${name}.feature`)),
+    );
+  });
+
+  it('follows a symlinked directory without recursing forever through a cycle', () => {
+    // Following links is the point: a symlinked feature directory skipped as "not a directory" is
+    // the under-collection this recursion exists to stop. Following them needs the cycle guard, and
+    // a guard with no test is a guard that regresses.
+    const dir = join(workspace, 'linked');
+    write(dir, 'alpha.feature');
+    write(join(dir, 'real'), 'beta.feature');
+
+    try {
+      symlinkSync(join(dir, 'real'), join(dir, 'link'), 'dir');
+      symlinkSync(dir, join(dir, 'real', 'loop'), 'dir');
+    } catch (error) {
+      // Windows refuses to create a symlink without Developer Mode or elevation, and skipping is
+      // honest where pretending to have tested it would not be.
+      if ((error as NodeJS.ErrnoException).code === 'EPERM' || (error as NodeJS.ErrnoException).code === 'EEXIST') {
+        return;
+      }
+      throw error;
+    }
+
+    // It returns, which is the assertion the cycle guard is here for. 'beta' appears once rather
+    // than twice: the guard is keyed on the real path, so one directory reached under two names is
+    // walked once and the collected set is the same either way.
+    expect(featureFiles(dir).map((path) => basename(path, '.feature'))).toEqual(['alpha', 'beta']);
   });
 });
