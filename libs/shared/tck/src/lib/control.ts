@@ -51,10 +51,19 @@ export interface BackendControl {
    * with no backend, and a report claiming it for a provider that has one should be treated with
    * suspicion.
    *
-   * Optional so that adding it breaks no existing implementation. A control that omits it omits the
-   * field from the report, which is honest: nothing is claimed either way.
+   * Required, closed to those two values, with no default and no inference from the control's
+   * concrete type. The same scenarios passing over the control API and passing through in-process
+   * manipulation of a provider that *does* have a backend are not the same claim, and this is the
+   * only field that separates them. An absent value would therefore not be "no claim made" but an
+   * unfalsifiable one: every control either drives a real backend over HTTP or manipulates an
+   * in-process one, so there is no third case an empty value legitimately covers.
+   *
+   * Requiring it costs an implementor nothing, because almost nobody implements this interface. A
+   * provider with a backend gets {@link HttpControl} from the Compose harness and writes no control
+   * at all; a provider with none gets {@link InProcessControl}. The only implementor is whoever
+   * writes a control by hand — precisely the case where the value cannot be inferred.
    */
-  readonly controlApi?: 'http' | 'in-process';
+  readonly controlApi: 'http' | 'in-process';
 }
 
 /**

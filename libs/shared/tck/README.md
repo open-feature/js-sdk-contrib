@@ -618,6 +618,15 @@ Two of the API's requirements are easy to get wrong:
 - **`/start` resets flag state; `/restart` preserves it.** An outage must be observable as a change
   in availability, never as a change in flag values.
 
+A control written by hand also has to state **`controlApi`**: `'http'` if it drives a real backend
+over the control API, `'in-process'` if it manipulates a provider that has no backend. It is a
+required member with no default, and it is deliberately not inferred from the control's type. The
+same scenarios passing over the control API and passing through in-process manipulation of a
+provider that _does_ have a backend are not the same claim, and the report's `backend.controlApi` is
+the only field that separates them — so an omitted value would not be "no claim made" but an
+unfalsifiable one. `HttpControl` and `InProcessControl` answer it for you, which is why requiring it
+costs almost nobody anything: from a Compose file you write no control at all.
+
 ### Providers with no backend
 
 An in-memory, environment-variable or file-based provider has nothing to connect to. Those may

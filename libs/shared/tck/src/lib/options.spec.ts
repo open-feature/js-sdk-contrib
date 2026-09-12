@@ -14,6 +14,7 @@ import { resolveCapabilities } from './options';
 
 const control: BackendControl = {
   description: 'a control that exists only to be named in a report',
+  controlApi: 'in-process',
   prepareScenario: async () => undefined,
   changeFlag: async () => undefined,
 };
