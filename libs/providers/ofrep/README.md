@@ -125,3 +125,23 @@ Run `nx package providers-ofrep` to build the library.
 ## Running unit tests
 
 Run `nx test providers-ofrep` to execute the unit tests via [Jest](https://jestjs.io).
+
+## Running the conformance suite
+
+This provider adopts the [OpenFeature Provider TCK](../../shared/tck/README.md):
+
+```sh
+npx nx tck providers-ofrep
+```
+
+It needs a **Docker daemon**. The suite brings up
+[`src/e2e/tck/docker-compose.yaml`](./src/e2e/tck/docker-compose.yaml) itself — a pinned
+flagd-testbed image, used because flagd serves OFREP and its launchpad is the reference
+implementation of the suite's control API — discovers the mapped ports, and drives the backend over
+that API.
+
+**It is deliberately excluded from the default build, and from CI.** The target is `tck` rather than
+`e2e` for that reason: `npm run e2e` runs every project's `e2e` target and CI has a job for it, so
+this suite would otherwise pull a backend image on every push and pin a conformance claim nobody
+read. Run it by hand before merging a change to this provider or to the suite. The claim is pinned to
+the exact image tag in that Compose file, so a bump is a deliberate act with a result to record.
