@@ -129,6 +129,13 @@ The canonical features are loaded unconditionally and first, so no extension wir
 of the run. An extension scenario carries no weight in a conformance claim: it is the adopter's own
 question, run in the adopter's own suite.
 
+In the results stream, an extension scenario is named under the `extensions/` URI prefix while a
+canonical one is named by its path **relative to the spec's asset directory** —
+`gherkin/errors.feature`, not a path relative to any repository root. That partition is what a report
+consumer reads to tell the two apart, and it is why extension scenarios do not count towards
+conformance. Both forms are [Appendix F][appendix-f]'s, stated there exactly because a phrasing that
+merely implied them produced three different answers across four TCK implementations.
+
 ### Reaching the provider under test from a vendor step
 
 `StepDefinitions` is handed nothing but jest-cucumber's own `given`/`when`/`then`, and the provider
@@ -215,7 +222,7 @@ A **reserved** capability is a name held open for a scenario nobody has written 
 the only one left: no scenario carries it, so declaring it cannot cause a skip — it says nothing
 about the provider, plays no part in reading the results, and only invites a reader to believe
 something was verified when nothing examined it. It is excluded from the default, and naming it in
-`capabilities` is **rejected** rather than quietly dropped:
+`capabilities` is **rejected** rather than passed through to the report:
 
 ```
 capabilities names @caching, which no scenario carries. @caching is a reserved name held open for
@@ -227,18 +234,16 @@ This is not a hypothetical tidy-up. A published Java conformance report asserts 
 and `@caching` as declared — not by anyone's decision, but because that adoption declares "every
 capability except X" and picks up every reserved tag in the vocabulary on the way past. Rejecting is
 louder than warning on purpose: a console line competes with Jest's own output and is invisible in
-the log of a green CI build, and the fix is a one-line edit.
-
-`@targeting` was reserved on the same footing until Appendix F gained three scenarios for it, and it
-is now declarable like any other capability. That is the expected fate of a reservation rather than
-a surprise, which is why the harness fails a run whose feature files carry a tag this library still
-calls reserved: an out-of-date list makes a testable capability unclaimable, the opposite mistake
-and just as quiet.
+the log of a green CI build, and the fix is a one-line edit. The emitter also filters reserved tags
+out of `declaration.declared`, so no route into a declared set can write one down.
 
 Which capabilities are reserved is decided upstream, in Appendix F, and recorded here in
 `RESERVED_CAPABILITIES`. The harness checks that list against the feature files it actually ran and
 fails if a reservation has expired — a scenario arriving upstream is what makes a capability
-declarable, and an out-of-date list would go on making a testable capability unclaimable.
+declarable, and an out-of-date list would go on making a testable capability unclaimable. That is
+how `@targeting` came to be declarable: it was reserved on exactly the same footing as `@caching`
+until Appendix F gained three scenarios for it. A reservation expiring is the expected course of
+events rather than a surprise.
 
 A capability whose question cannot be put to your provider _at all_ is simply left undeclared, like
 any other, and its scenarios are skipped. There is no second field and no second status: one skip
@@ -589,6 +594,144 @@ Install it in the adopting project — `npm i -D testcontainers` — if you use 
 `BackendControl`. Compose is an additional path, and now the default one, for a provider that talks
 to something.
 
+## Conformance reports
+
+Set `TCK_REPORT_DIR` and each suite writes two files: an envelope at `<dir>/<name>.json`,
+conforming to the [report schema][report-schema] in the specification, and the results it points at
+at `<dir>/<name>.ndjson`.
+
+**The results are [Cucumber Messages][messages], not a format this project defines.** Per-scenario
+outcomes, tags, Scenario Outline row identity and the executed feature source are all specified
+there already, and specifying them again would mean a second format to version and two places for
+the same fact to disagree. The envelope carries only what Messages has no opinion about: what was
+tested, and what the provider claims.
+
+```console
+$ TCK_REPORT_DIR=./reports npx jest
+$ jq -r 'select(.testStepFinished).testStepFinished.testStepResult.status' reports/in-memory.ndjson \
+    | sort | uniq -c
+     43 PASSED
+     13 SKIPPED
+```
+
+It is an environment variable rather than a `TckOptions` field so that emitting a report is a
+property of the _run_ and not of the code: whoever wants a report sets it, a developer running the
+suite locally does not, and no adopter changes a line to publish one. Nothing here sets it
+automatically — see "What CI runs, and what it does not". Unset means no report, which is not an error.
+Several suites in one run each write their own pair of files, so flagd's two resolvers do not
+collide. The stream is written first and the envelope second, carrying a `sha256` digest of it, so
+an envelope never names results that are not there or have moved on.
+
+**Every scenario appears exactly once**, whatever its outcome: one `Pickle`, one `TestCase` and one
+`TestCaseStarted`/`TestStepFinished`/`TestCaseFinished`, including for every scenario the capability
+gate skipped. That is what makes Appendix F's rule — a scenario skipped for an undeclared capability
+is reported as skipped and _never_ as passed — checkable by a consumer rather than dependent on the
+runner's summary being trustworthy. The harness checks the accounting itself at the end of every
+run, report or no report, and fails the suite if a scenario is missing or recorded twice.
+
+**The canonical scenarios must also have actually run.** The accounting above proves the report has
+an entry per scenario; it does not prove the run produced those entries, because a scenario is
+registered when it is _defined_ and one the runner declines to run carries a placeholder failure
+instead. So a filtered run — `jest -t`, a `testPathIgnorePatterns` entry, a mistake in the extension
+wiring — satisfies the accounting and goes green while its report supports nothing. The harness
+therefore fails the suite unless every canonical scenario reached a decision. A capability skip is a
+decision and passes the check; extension scenarios are excluded from it, because which of their own
+scenarios an adopter runs is the adopter's business.
+
+Working on one scenario with `-t` therefore ends in a failed suite. That is the intended cost: the
+alternative is a green run that cannot be told apart from a complete one.
+
+### Reading the stream
+
+| Question                   | Where the answer is                                                            |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| what was in the suite      | one `Pickle` per scenario, one `TestCase` per pickle                           |
+| what the outcome was       | `TestStepFinished.testStepResult.status`                                       |
+| why it was skipped         | `TestStepFinished.testStepResult.message`                                      |
+| what tags it carried       | `Pickle.tags`, `Examples`-block tags included                                  |
+| which row of an outline    | `Pickle.astNodeIds` — the second id is the `TableRow` in the `GherkinDocument` |
+| what was actually executed | `Source`, verbatim                                                             |
+
+The eleven rows of `errors.feature`'s type-mismatch matrix are the case that matters. They share a
+scenario name, and they share their _expanded_ name too, because that outline's title has no
+placeholders in it — so nothing but the AST node identifies them:
+
+```console
+$ jq -r 'select(.pickle) | select(.pickle.name | test("wrong type")) | .pickle.astNodeIds | @tsv' \
+    reports/in-memory.ndjson
+25      9
+25      10
+25      11
+...
+```
+
+`25` is the `Scenario Outline`, and the second id is the row: `jq` the `GherkinDocument` for it and
+its cells come back. No separator, ordering or escaping rule has to be agreed between four
+languages for that to work, which is what a naming convention would have required.
+
+**jest-cucumber has no output layer at all** — no reporter, no JSON, nothing. The stream is
+therefore built by the harness, and two things it already did make that cheap rather than painful.
+It plans every scenario before the run, which is where the `Pickle` and `TestCase` messages come
+from; and it owns the `test`/`test.skip` calls, which is where the outcomes are recorded, at the
+point the decision is made rather than scraped back out of a reporter. `@cucumber/gherkin` compiles
+the `Source`, `GherkinDocument` and `Pickle` messages from the feature files, so no message here is
+hand-rolled and no id is invented.
+
+A scenario is registered when it is _defined_, so one Jest never finished — a timeout, or a `-t`
+filter — still appears, as a failure that says so. **A report from a filtered run is partial by
+construction**, and the canonical-coverage check above fails the suite rather than leaving that to
+be noticed.
+
+**One `TestStep` per test case, not one per Gherkin step.** jest-cucumber runs a whole scenario as a
+single Jest test and reports one outcome for it; it never says which step failed. A step per Gherkin
+step would mean inventing per-step results to fill in — marking them all failed over-claims, and
+marking one of them failed picks a step at random — so the stream carries the granularity the runner
+actually has. The steps themselves are in the stream on the `Pickle`, with the outline row already
+substituted into them, and jest-cucumber's failure message names the step it was on.
+
+**A gated scenario is `SKIPPED`, whichever kind of skip it was**, with the reason on the result. The
+difference between a capability the provider declined and one that cannot hold for it at all is not
+a status, because a status a consumer has to special-case is a status something reads as a pass. It
+is in the envelope's declaration, where it belongs: it is a fact about the provider rather than
+about the run.
+
+### Reading the envelope
+
+- **`provider.name` is what the provider reports through its own metadata**, not the suite name. The
+  suite name is chosen to read well in a failure message — `flagd-rpc` — which makes it the
+  _configuration_, and it is reported as such. One provider with two materially different modes
+  produces two reports that are not interchangeable.
+- **`declaration` is an input to reading the results, not a summary of them.** A skipped test case
+  says the question was not put to this provider; only the declaration says whether that is because
+  the provider declines the capability — `declared` does not list it. Given the declaration and a
+  scenario's tags, the reason for any skip follows without being transported per scenario. There is
+  no parallel not-applicable member: a capability that cannot hold in the _language_ at all is a
+  property of the SDK, recorded once in [Appendix F][appendix-f] rather than in every report, and in
+  a run it is simply undeclared with the skip carrying the reason.
+- **`tck.specRevision`** comes from [`src/lib/revision.ts`](./src/lib/revision.ts), which
+  [`scripts/write-revision.js`](./scripts/write-revision.js) generates from the submodule. It is
+  captured at build time because the submodule is not part of the published npm package. Nothing
+  else about the artifacts needs asserting: the stream carries every executed feature file verbatim
+  as a `Source`, which identifies them by content, covers only what ran, and is under the digest.
+- **`backend.controlApi`** reports how the backend was driven, and both it and the `backend` block
+  it sits in are always written, because the schema requires both. `BackendControl` requires the
+  member, so there is nothing here to infer — see [Controlling the
+  backend](#controlling-the-backend) for why a value that could be absent would be an unfalsifiable
+  claim rather than no claim.
+- **`knownDeviations`** carries whatever [`knownDeviations`](#a-defect-is-not-a-decision-knowndeviations)
+  the adoption declared, field for field. **The field is absent when nothing was declared, and never
+  emitted as `[]`** — an empty array asserts that deviations were considered and none found, which no
+  suite can know on the adopter's behalf, so the two are different claims and only one of them is
+  honest by default. Go, Python and Java omit it on the same rule.
+
+There is no per-capability verdict in the report, and that is deliberate. A roll-up is derivable
+from the declaration and the stream, and a consumer computing one should count only test cases that
+_ran_: every scenario carrying a capability can be skipped for a _different_ one — both scenarios in
+`events.feature` carry `@events` as well as `@stale` or `@configuration-change` — so counting tag
+presence rather than execution reports a green result for a question nobody asked. Nor is a capability roll-up a conformance verdict in the first
+place: scenarios carrying no capability tag are mandatory and roll up into nothing, so a provider
+can fail a mandatory scenario with every capability intact.
+
 ## Controlling the backend
 
 `BackendControl` is the single seam between the scenarios and whatever manipulates the backend. Step
@@ -789,6 +932,12 @@ The two audiences are deliberately different:
   `nx test tck` and `nx package tck` depend on the `pullSpec` target, which runs
   that for you. CI checks out with `submodules: recursive`.
 
+`pullSpec` also regenerates [`src/lib/revision.ts`](./src/lib/revision.ts) from the submodule, so
+the revision a conformance report names is refreshed by the same command that checks the artifacts
+out. That file is committed, because a plain `jest` invocation does not go through Nx and a source
+tree without git should still compile; if git or the submodule is unavailable the generator says so
+and leaves the committed values alone rather than overwriting them with a guess.
+
 Prettier is pointed away from `spec/` so it never rewrites artifacts that are consumed byte for byte
 by every language's TCK.
 
@@ -821,6 +970,8 @@ by every language's TCK.
 [appendix-a]: https://github.com/open-feature/spec/blob/main/specification/appendix-a-included-utilities.md
 [flagd-testbed]: https://github.com/open-feature/flagd-testbed
 [coercion-adr]: https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/numeric-coercion.md
+[messages]: https://github.com/cucumber/messages
+[report-schema]: https://github.com/open-feature/spec/blob/main/specification/assets/provider-tck/report/conformance-report.schema.json
 [appendix-f]: https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md
 [spec]: https://github.com/open-feature/spec
 [tracking]: https://github.com/open-feature/spec/issues/417

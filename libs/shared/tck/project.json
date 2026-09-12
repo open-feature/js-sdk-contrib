@@ -16,7 +16,7 @@
     "pullSpec": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": ["git submodule update --init spec"],
+        "commands": ["git submodule update --init spec", "node scripts/write-revision.js"],
         "cwd": "libs/shared/tck",
         "parallel": false
       }
