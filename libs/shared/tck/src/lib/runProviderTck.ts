@@ -12,6 +12,7 @@ import { TckState } from './state';
 import { eventSteps } from './steps/eventSteps';
 import { flagSteps } from './steps/flagSteps';
 import { providerSteps } from './steps/providerSteps';
+import { registerSuiteUnderTest } from './underTest';
 
 /** The glob matching the canonical feature files packaged with this library. */
 export const FEATURES_GLOB = join(resolveAssetDir('features'), '*.feature');
@@ -112,6 +113,11 @@ export { CANONICAL_FLAGS_PATH, CONTROL_API_PATH } from './assets';
 export function runProviderTck(options: TckOptions): void {
   const { declared, undeclared, knownDeviations } = resolveCapabilities(options);
   const state = new TckState(options);
+
+  // Before anything else observable happens, so an extension step bound below has a suite to read
+  // and a second call in the same file is refused with a message rather than by jest-cucumber
+  // reporting every step as ambiguous.
+  registerSuiteUnderTest(state);
 
   // Undeclared capabilities are excluded here, which marks their scenarios `skippedViaTagFilter`.
   // jest-cucumber turns that into `test.skip`, so they are reported as SKIPPED rather than quietly
