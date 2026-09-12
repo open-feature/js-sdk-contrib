@@ -236,3 +236,23 @@ Run `nx package providers-flagd` to build the library.
 ## Running Unit Tests
 
 Run `nx test providers-flagd` to execute the unit tests via [Jest](https://jestjs.io).
+
+## Running the conformance suite
+
+This provider adopts the [OpenFeature Provider TCK](../../shared/tck/README.md), once per resolver:
+
+```sh
+npx nx tck providers-flagd
+```
+
+It needs a **Docker daemon**. The suite brings up
+[`src/e2e/tck/docker-compose.yaml`](./src/e2e/tck/docker-compose.yaml) itself — a pinned
+flagd-testbed image — discovers the mapped ports, and drives the backend over the testbed's control
+API.
+
+**It is deliberately excluded from the default build, and from CI.** `nx test providers-flagd` and
+`nx e2e providers-flagd` do not run it, and neither does any workflow; that is why it has a target of
+its own rather than living in `src/e2e/tests`, where Jest's default `testMatch` would sweep it into
+the `e2e` target that CI does run. Run it by hand before merging a change to this provider or to the
+suite. A conformance result pins its claim to the exact backend image in that Compose file, so a bump
+to the tag is a deliberate act with a result to record.
