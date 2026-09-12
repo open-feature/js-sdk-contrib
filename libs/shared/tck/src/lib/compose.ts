@@ -128,13 +128,17 @@ export interface ContainerizedTckOptions extends Omit<TckOptions, 'control' | 'n
   additionalPorts?: Readonly<Record<string, readonly number[]>>;
 
   /**
-   * The named flag configuration passed to `POST /start`, which seeds the canonical flag set.
+   * The named flag configuration of the **backend**, passed to `POST /start`, which seeds the
+   * canonical flag set.
    *
-   * The same option as {@link HttpControlOptions.configuration}, and it defaults the same way.
+   * The same option as {@link HttpControlOptions.backendConfiguration}, and it defaults the same
+   * way. Named for the backend rather than bare `configuration` because that word is already taken:
+   * in a conformance report `provider.configuration` is which mode of the *provider* was tested, and
+   * {@link TckOptions.name} is what feeds it.
    *
    * @default 'default'
    */
-  configuration?: string;
+  backendConfiguration?: string;
 
   /**
    * How long the stack and its control API have to become reachable.
@@ -431,7 +435,7 @@ export function runContainerizedProviderTck(options: ContainerizedTckOptions): v
     backendService = DEFAULT_BACKEND_SERVICE,
     controlPort = DEFAULT_CONTROL_PORT,
     additionalPorts = {},
-    configuration,
+    backendConfiguration,
     startupTimeoutMs = DEFAULT_STARTUP_TIMEOUT_MS,
     ...tck
   } = options;
@@ -448,7 +452,7 @@ export function runContainerizedProviderTck(options: ContainerizedTckOptions): v
   // The thunk form, because the control API's host port does not exist until the stack is up while
   // this call happens at module load. Resolved once, on the first control call, which is safe
   // precisely because nothing restarts the stack.
-  const control = new HttpControl({ baseUrl: () => stack.controlApiUrl(), configuration });
+  const control = new HttpControl({ baseUrl: () => stack.controlApiUrl(), backendConfiguration });
 
   // A scenario may await readiness once and then several events, and Jest's own default of five
   // seconds is never enough for a real backend. Derived from the suite's own timeouts rather than
