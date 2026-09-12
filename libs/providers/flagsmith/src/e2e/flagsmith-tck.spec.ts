@@ -9,7 +9,7 @@
  * launchpad implementing the control API. Nothing about it is language-specific, and it needed no
  * changes for any of the four adoptions, which is the control API doing its job.
  */
-import { Capability, HttpControl, KnownDeviation, runProviderTck } from '@openfeature/provider-tck';
+import { Capability, HttpControl, KnownDeviation, runProviderTck } from '@openfeature/tck';
 import { FlagsmithOpenFeatureProvider } from '../lib/flagsmith-provider';
 import { GenericContainer, Wait } from 'testcontainers';
 import type { StartedTestContainer } from 'testcontainers';

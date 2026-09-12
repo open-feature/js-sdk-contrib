@@ -5,12 +5,12 @@ const config: Config = {
   clearMocks: true,
   preset: 'ts-jest',
   // Pointed at the library's spec tsconfig, which chains up to tsconfig.base.json where
-  // @openfeature/provider-tck is mapped to the workspace source.
+  // @openfeature/tck is mapped to the workspace source.
   transform: {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/../../tsconfig.spec.json' }],
   },
   moduleNameMapper: {
-    '^@openfeature/provider-tck$': '<rootDir>/../../../../shared/provider-tck/src/index.ts',
+    '^@openfeature/tck$': '<rootDir>/../../../../shared/tck/src/index.ts',
     // NOTE: no generic "(.+)\\.js$" -> "$1" rule here, unlike the flagd e2e config. It is too
     // greedy: it rewrites package names ending in "-js" too, and breaks @grpc/grpc-js.
   },
