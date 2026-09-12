@@ -11,7 +11,8 @@
  */
 import { Capability, HttpControl, KnownDeviation, runProviderTck } from '@openfeature/provider-tck';
 import { FlagsmithOpenFeatureProvider } from '../lib/flagsmith-provider';
-import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers';
+import { GenericContainer, Wait } from 'testcontainers';
+import type { StartedTestContainer } from 'testcontainers';
 import { Flagsmith } from 'flagsmith-nodejs';
 
 const TESTBED_IMAGE = process.env['FLAGSMITH_TESTBED_IMAGE'] ?? 'ghcr.io/aepfli/flagsmith-tck-testbed:latest';
