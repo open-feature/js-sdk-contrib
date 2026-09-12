@@ -76,29 +76,48 @@ export interface TckOptions {
   /**
    * Gaps this provider is known to have, each named rather than merely absent.
    *
-   * {@link capabilities} cannot express "this provider attempts the behaviour and gets it wrong",
-   * and that is the case a reader most needs told. A capability left out of {@link capabilities}
-   * reads as a decision — a design one, or a language one recorded against the capability itself —
-   * and a defect is neither. Without somewhere to say so, the only honest-looking option left to an
-   * adopter is to withdraw the capability, which replaces a failing scenario with a skip and hides
-   * the defect behind something that looks deliberate.
+   * **An entry says: this provider fails to do something it is required to do.** The requirement
+   * must be a numbered `MUST`, or a rule the implementation bound itself to elsewhere. Where the
+   * specification *permits* the choice, withholding the capability **is** the honest report and a
+   * deviation would assert a defect that does not exist — `@reinitialization` is exactly that case,
+   * and the README says why at length.
    *
-   * So the intended use is the opposite of a withdrawal. Declare the capability, let the scenario
-   * run and fail, and record the deviation beside it:
+   * {@link capabilities} cannot express any of this on its own. A capability left out reads as a
+   * decision — a design one, or a language one recorded against the capability itself — and both a
+   * defect and a decision produce the same skip, so a consumer comparing providers reads one as the
+   * other unless something says which happened.
+   *
+   * It is legitimate in two shapes, and a report's results already distinguish them:
+   *
+   * 1. **The capability is declared, the scenario runs, and it fails.** Prefer this. The failure
+   *    stays visible and the deviation says it is known and why.
+   * 2. **The capability is withheld, and its scenarios skip.** Legitimate only when the provider
+   *    cannot attempt the behaviour at all, so running the scenario would establish nothing. The
+   *    deviation then explains the absence, so a reader can tell a defect from a design decision.
+   *
+   * Withdrawing a capability *in order to* turn a failing scenario into a skip is the failure mode
+   * this field exists to prevent. If the provider attempts the behaviour and gets it wrong, shape 1
+   * is the honest report:
    *
    * ```ts
+   * capabilities: [Capability.Lifecycle, Capability.Reinitialization],
    * knownDeviations: [
    *   KnownDeviation.untracked(
-   *     Capability.Lifecycle,
+   *     Capability.Reinitialization,
    *     'shutdown() does not clear the initialised latch, so a second initialize() returns ' +
    *       'without recreating the resolver and evaluates against a closed channel',
    *   ),
    * ]
    * ```
    *
+   * {@link KnownDeviation.summary} is required: an entry with no summary records that something is
+   * wrong without saying what, which is worth less than the bare skip or failure it accompanies.
+   * The issue is optional — {@link KnownDeviation.tracked} and {@link KnownDeviation.untracked} are
+   * the two forms, and naming an untracked defect is still what separates it from a choice.
+   *
    * A deviation may also concern no capability at all — pass `undefined` — when the gap is against a
-   * mandatory scenario. It may not concern a reserved one: there is no scenario to deviate *from*,
-   * so the statement would be about nothing, exactly as for {@link capabilities}.
+   * mandatory, ungated scenario. It may not concern a reserved one: there is no scenario to deviate
+   * *from*, so the statement would be about nothing, exactly as for {@link capabilities}.
    *
    * Declaring one changes nothing about what runs. It is a statement about the provider, carried
    * through to whatever reads the declaration.

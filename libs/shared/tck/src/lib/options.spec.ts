@@ -4,6 +4,7 @@ import {
   DECLARABLE_CAPABILITIES,
   RESERVED_CAPABILITIES,
   capabilityForTag,
+  expiredReservations,
   isReserved,
 } from './capability';
 import type { BackendControl } from './control';
@@ -48,6 +49,21 @@ describe('the reserved capabilities', () => {
     expect(() => resolveCapabilities(optionsFor({ capabilities: [Capability.Caching] }))).toThrow(
       /@caching is a reserved name held open/,
     );
+  });
+
+  it('expire when a scenario carries one, which the harness checks against what actually ran', () => {
+    // The other half of the reservation rule, and the half with no test until now: the harness
+    // fails a run whose canonical features carry a tag this library still calls reserved, because
+    // an out-of-date list makes a testable capability unclaimable -- the opposite mistake to
+    // declaring an unverified one, and just as quiet. This is the whole of the detection; that
+    // runProviderTck acts on it is asserted by every suite in this package passing, which they can
+    // only do while no canonical scenario carries a reserved tag.
+    expect(expiredReservations(['@events', '@object'])).toEqual([]);
+    expect(expiredReservations([Capability.Caching, '@events'])).toEqual([Capability.Caching]);
+
+    // Deduplicated, since the tags come from every scenario of every executed feature and a tag
+    // carried twice is not two expiries.
+    expect(expiredReservations([Capability.Caching, Capability.Caching])).toEqual([Capability.Caching]);
   });
 });
 
@@ -165,9 +181,9 @@ describe('resolving a suite capabilities', () => {
     // The message lists what the suite named rather than stopping at the first offender. There is
     // only one reserved name left to offend with, so a repeat is the case left to pin: a suite that
     // named it twice must not be told about it twice.
-    expect(() =>
-      resolveCapabilities(optionsFor({ capabilities: [Capability.Caching, Capability.Caching] })),
-    ).toThrow(/capabilities names @caching, which no scenario carries/);
+    expect(() => resolveCapabilities(optionsFor({ capabilities: [Capability.Caching, Capability.Caching] }))).toThrow(
+      /capabilities names @caching, which no scenario carries/,
+    );
   });
 
   it('gates on the declarable capabilities a suite left out', () => {
