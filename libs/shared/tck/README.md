@@ -116,6 +116,46 @@ The canonical features are loaded unconditionally and first, so no extension wir
 of the run. An extension scenario carries no weight in a conformance claim: it is the adopter's own
 question, run in the adopter's own suite.
 
+### Reaching the provider under test from a vendor step
+
+`StepDefinitions` is handed nothing but jest-cucumber's own `given`/`when`/`then`, and the provider
+is registered under a suite-scoped domain the adopter never sees. So a vendor step that wants to
+evaluate a flag has two options, and only one of them is a test of anything:
+
+```ts
+import { clientUnderTest, providerUnderTest } from '@openfeature/tck';
+
+const vendorSteps: StepDefinitions = ({ then }) => {
+  then(/^the split resolves "([^"]*)"$/, async (expected: string) => {
+    expect(await clientUnderTest().getStringValue('fractional-flag', 'none')).toBe(expected);
+  });
+};
+```
+
+`clientUnderTest()` is the client of the provider this scenario registered — the same client every
+canonical step uses. **Building a client of your own instead resolves against a different
+provider**: a fresh `OpenFeature.getClient()` sits in the default domain, where the provider under
+test was never registered, so the step asks its question of whatever happens to be there. A vendor
+scenario that passes against a `NoOpProvider` is the failure mode this accessor exists to remove,
+and it is a quiet one — the step returns the default value and the assertion is what fails, so it
+reads as a provider defect rather than as test wiring.
+
+`providerUnderTest()` returns the provider instance itself, for a step whose subject is the
+provider's own surface rather than the SDK's handling of it — the same distinction the canonical
+lifecycle and metadata steps draw. A fresh instance per scenario, so hold it no longer than the step
+that asked for it.
+
+Both throw before the scenario has registered a provider, which in the canonical vocabulary means
+before a `Given a stable provider` step. Put one in a `Background`, as the canonical features do.
+
+Every language's suite has this route, because without it the extension point is not usable: Go's
+`tck.ClientFromContext(ctx)`, Java's `TckState` injected into the step class, Python's `tck_state`
+fixture. JavaScript's is module-scoped rather than injected because that is where jest-cucumber puts
+a step definition — `StepDefinitions` is a module-level closure, so a module-level accessor is the
+one thing it can always reach. Jest gives every test file its own module registry, and the suite
+already requires one `runProviderTck` call per file, so "the suite in this module" and "the suite in
+this file" are the same thing. A second call in one file is refused with a message saying so.
+
 ## Capabilities
 
 Not every provider implements every optional part of the contract. Each scenario exercising an
