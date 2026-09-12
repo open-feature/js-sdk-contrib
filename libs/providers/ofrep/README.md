@@ -125,3 +125,32 @@ Run `nx package providers-ofrep` to build the library.
 ## Running unit tests
 
 Run `nx test providers-ofrep` to execute the unit tests via [Jest](https://jestjs.io).
+
+## Running the conformance suite
+
+This provider adopts the [OpenFeature Provider TCK](../../shared/tck/README.md):
+
+```sh
+npx nx tck providers-ofrep
+```
+
+It needs a **Docker daemon**. The suite brings up
+[`src/e2e/tck/docker-compose.yaml`](./src/e2e/tck/docker-compose.yaml) itself — a pinned
+flagd-testbed image, used because flagd serves OFREP and its launchpad is the reference
+implementation of the suite's control API — discovers the mapped ports, and drives the backend over
+that API.
+
+**It is deliberately excluded from the default build, and from CI.** The mechanism: the suite lives
+in `src/e2e/tck/` behind a Jest project of its own
+([`src/e2e/tck/jest.config.ts`](./src/e2e/tck/jest.config.ts)), reached only by a `tck` target. The
+name matters — `npm run e2e` is `nx run-many --all --target=e2e` and CI has a job for it, so an `e2e`
+target here would pull a backend image on every push. `npx nx tck providers-ofrep` is the only way
+in; run it by hand before merging a change to this provider or to the suite.
+
+Why an adoption suite is excluded rather than made a required gate is
+[Appendix F, "Running the suite in CI"](https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md).
+Both mistakes it names were live here: this suite originally _created_ an `e2e` target where the
+project had none, and nothing said it was meant to be excluded.
+
+The claim is pinned to the exact image tag in that Compose file, so a bump is a deliberate act with a
+result to record.
