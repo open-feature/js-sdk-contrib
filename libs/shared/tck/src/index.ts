@@ -28,6 +28,13 @@ export {
   capabilityForTag,
   isReserved,
 } from './lib/capability';
+export {
+  DEFAULT_BACKEND_SERVICE,
+  DEFAULT_CONTROL_PORT,
+  DEFAULT_STARTUP_TIMEOUT_MS,
+  runContainerizedProviderTck,
+} from './lib/compose';
+export type { BackendEndpoint, ContainerizedProviderFactory, ContainerizedTckOptions } from './lib/compose';
 export { asConnectionControl, unsupportedControl } from './lib/control';
 export type { BackendControl, ConnectionControl } from './lib/control';
 export { KnownDeviation } from './lib/deviation';

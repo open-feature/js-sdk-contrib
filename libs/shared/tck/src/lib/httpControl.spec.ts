@@ -129,6 +129,77 @@ describe('HttpControl', () => {
     await expect(subject.changeFlag()).rejects.toThrow(/must use http or https/);
   });
 
+  describe('awaitReady', () => {
+    it('accepts 200, which is the control API saying it is ready', async () => {
+      await expect(control().awaitReady(1_000)).resolves.toBeUndefined();
+
+      expect(calls).toEqual([`GET ${BASE}/healthz`]);
+    });
+
+    it('accepts 404, because /healthz is optional and an answer is itself the readiness signal', async () => {
+      // Spelled out in the control API document: readiness falls back to "the control port accepts
+      // a connection", and it just did or this request would not have been answered. The reference
+      // launchpad does not serve the path, so 404 is the common case rather than the edge one.
+      statuses.set('/healthz', 404);
+
+      await expect(control().awaitReady(1_000)).resolves.toBeUndefined();
+    });
+
+    it('retries 503, which is the specified "not ready yet"', async () => {
+      statuses.set('/healthz', 503);
+      let attempts = 0;
+      const inner = globalThis.fetch;
+      globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+        attempts += 1;
+        if (attempts === 3) {
+          statuses.set('/healthz', 200);
+        }
+        return inner(input as string, init);
+      }) as unknown as typeof fetch;
+
+      await expect(control().awaitReady(5_000)).resolves.toBeUndefined();
+
+      expect(attempts).toBe(3);
+    });
+
+    it('gives up with the last thing it saw, and says which knob raises the budget', async () => {
+      // The failure this produces has to be distinguishable from a provider defect: at this point
+      // no provider has been constructed, so a message about the control API is the only honest
+      // report -- and the fix is nearly always the timeout rather than the stack.
+      statuses.set('/healthz', 503);
+
+      await expect(control().awaitReady(50)).rejects.toThrow(
+        /did not become ready within 50ms; last attempt: HTTP 503/,
+      );
+      await expect(control().awaitReady(50)).rejects.toThrow(/raise startupTimeoutMs/);
+    });
+
+    it('treats an unreachable control API as not ready yet rather than as a failure', async () => {
+      // The stack is still coming up. Reporting the connection error immediately would turn the
+      // normal first second of every containerised run into a failed suite.
+      let attempts = 0;
+      globalThis.fetch = (async () => {
+        attempts += 1;
+        if (attempts < 2) {
+          throw new Error('connect ECONNREFUSED');
+        }
+        return new Response(null, { status: 200 });
+      }) as unknown as typeof fetch;
+
+      await expect(control().awaitReady(5_000)).resolves.toBeUndefined();
+
+      expect(attempts).toBe(2);
+    });
+
+    it('reports the connection error it kept failing with, not just that it timed out', async () => {
+      globalThis.fetch = (async () => {
+        throw new Error('connect ECONNREFUSED');
+      }) as unknown as typeof fetch;
+
+      await expect(control().awaitReady(50)).rejects.toThrow(/last attempt: GET .*\/healthz failed: connect/);
+    });
+  });
+
   it('can simulate an outage', () => {
     // The mirror of the InProcessControl assertion that it cannot: declaring Capability.Stale is
     // only honest if the control behind it can actually take the backend away.
