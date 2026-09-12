@@ -101,6 +101,54 @@ export enum Capability {
    */
   Variants = '@variants',
 
+  /**
+   * Provider resolves a flag disabled in the flag management system to the caller's default.
+   *
+   * Gated because what a disabled flag resolves to is a property of **where the substitution
+   * happens** rather than of provider quality, and nothing in the provider's own code decides that
+   * on its own. Only the caller has the default value, so the question is whether it is in hand at
+   * the point the flag's state is read — and where it is not, whether the wire format can say *"no
+   * value"* plainly enough for the client to put it in.
+   *
+   * A provider that evaluates locally has it in hand: an in-memory provider has nowhere else to
+   * decide, and flagd's in-process resolver syncs the ruleset and evaluates it in flagd-core, which
+   * returns the default it was passed. A provider whose backend decides depends on the protocol
+   * between them, and the two in this repository both turn out to carry it. flagd's RPC resolver
+   * receives the *type's* zero value with `reason: DISABLED` and an empty variant, and the provider
+   * replaces it with the caller's default. OFREP goes further: its response schema makes `value`
+   * optional and flagd's handler omits the field entirely, which `ofrep-core` reads as "use the
+   * default".
+   *
+   * The drafting of this capability assumed OFREP could not have it, on the reasoning that the
+   * request never carries a default so the server cannot return one. Measuring it said otherwise —
+   * the server does not have to return a value at all. What genuinely cannot have the capability is
+   * a pair where the backend answers with the flag's *configured* value, or with an error, and the
+   * client has no hook to substitute on. That is a property of the provider and its backend
+   * together rather than of provider quality, which is why the tag is gated and why a run declaring
+   * it is a claim about the pair it ran against.
+   *
+   * It follows that a provider withholding it owes **no** {@link TckOptions.knownDeviations} entry:
+   * a capability the pair cannot have is not a gap in the implementation. Reach for a deviation only
+   * where a provider that does have the default in hand gets it wrong.
+   *
+   * Nothing in the specification says what a provider owes a disabled flag. Requirement 1.4.7 is
+   * about the SDK propagating whatever reason arrived, and requirement 2.2.5 only lists `DISABLED`
+   * among the reason strings a provider may use. So Appendix F states the behaviour, the way it does
+   * for {@link NumericCoercion}, and gates it.
+   *
+   * The four rows assert the **value** and the absence of an error, and deliberately not the
+   * reason. Each row's caller default differs from the flag's configured value, so a provider that
+   * ignores the state returns the configured value and is caught on the value alone — which rests on
+   * requirement 2.2.3, a MUST. Pinning reason `DISABLED` would rest on 2.2.5, a SHOULD that
+   * expressly permits *"some other string"*.
+   *
+   * No variant is asserted either. A disabled flag has resolved no variant, so there is none to
+   * name: this capability and {@link Variants} deliberately do not compose. That is also why the
+   * rows are scalar-only and there is no disabled object flag — a row needing both `@object` and
+   * this tag could not be one row of a single outline.
+   */
+  DisabledFlags = '@disabled-flags',
+
   /** Provider reports an error state promptly, rather than hanging, against an unreachable backend. */
   UnavailableInit = '@unavailable',
 
