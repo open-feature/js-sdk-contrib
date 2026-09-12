@@ -1,6 +1,6 @@
 /* eslint-disable */
 module.exports = {
-  displayName: 'provider-tck',
+  displayName: 'tck',
   preset: '../../../jest.preset.js',
   testEnvironment: 'node',
   transform: {
@@ -12,5 +12,5 @@ module.exports = {
   // runs, all from one root cause -- it replaces every child error code with GENERAL. Tracked upstream;
   // see the comment at the top of that file. Re-enabling is deleting this line.
   testPathIgnorePatterns: ['<rootDir>/src/lib/multiProvider.spec.ts'],
-  coverageDirectory: '../../../coverage/libs/shared/provider-tck',
+  coverageDirectory: '../../../coverage/libs/shared/tck',
 };
