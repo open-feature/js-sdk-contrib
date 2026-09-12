@@ -1,4 +1,4 @@
-import { Capability } from '@openfeature/provider-tck';
+import { Capability } from '@openfeature/tck';
 import { runFlagdTck } from './tckSuite';
 
 /**
@@ -67,5 +67,4 @@ runFlagdTck({
 
   // In-process syncs the whole ruleset before reporting ready, so it needs longer than RPC.
   readyTimeoutMs: 60_000,
-  retryGracePeriod: 30,
 });
