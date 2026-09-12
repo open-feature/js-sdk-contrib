@@ -20,18 +20,24 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"]
+      "outputs": [
+        "{options.outputFile}"
+      ]
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "libs/providers/flagsmith/jest.config.ts"
       }
     },
     "package": {
       "executor": "@nx/rollup:rollup",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "project": "libs/providers/flagsmith/package.json",
         "outputPath": "dist/libs/providers/flagsmith",
@@ -41,7 +47,10 @@
         "generateExportsField": true,
         "umdName": "flagsmith",
         "external": "all",
-        "format": ["cjs", "esm"],
+        "format": [
+          "cjs",
+          "esm"
+        ],
         "assets": [
           {
             "glob": "package.json",
@@ -59,6 +68,16 @@
             "output": "./"
           }
         ]
+      }
+    },
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/libs/providers/flagsmith-e2e"
+      ],
+      "options": {
+        "jestConfig": "libs/providers/flagsmith/src/e2e/jest.config.ts",
+        "parallel": false
       }
     }
   }
