@@ -88,6 +88,13 @@
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
+    "libs/shared/tck": {
+      "release-type": "node",
+      "prerelease": false,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "versioning": "default"
+    },
     "libs/providers/flipt": {
       "release-type": "node",
       "prerelease": false,

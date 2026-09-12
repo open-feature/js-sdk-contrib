@@ -10,3 +10,8 @@ CHANGELOG.md
 package-lock.json
 
 .nx/self-healing
+
+# The open-feature/spec submodule the provider TCK reads its conformance artifacts from. They are
+# consumed byte for byte by every language's provider TCK and are owned upstream, so reformatting
+# them here would fork the definition of conformance -- and would dirty the submodule besides.
+libs/shared/tck/spec/
