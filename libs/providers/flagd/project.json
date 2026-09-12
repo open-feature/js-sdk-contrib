@@ -74,6 +74,23 @@
         }
       ]
     },
+    "tck": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/flagd"],
+      "options": {
+        "jestConfig": "libs/providers/flagd/src/e2e/tck/jest.config.ts",
+        "runInBand": true
+      },
+      "dependsOn": [
+        {
+          "target": "generate"
+        },
+        {
+          "projects": ["flagd-core"],
+          "target": "buildValidators"
+        }
+      ]
+    },
     "package": {
       "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
