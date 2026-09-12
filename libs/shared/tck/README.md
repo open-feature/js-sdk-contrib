@@ -609,8 +609,8 @@ tested, and what the provider claims.
 $ PROVIDER_TCK_REPORT_DIR=./reports npx jest
 $ jq -r 'select(.testStepFinished).testStepFinished.testStepResult.status' reports/in-memory.ndjson \
     | sort | uniq -c
-     24 PASSED
-      5 SKIPPED
+     43 PASSED
+     13 SKIPPED
 ```
 
 It is an environment variable rather than a `TckOptions` field so that emitting a report is a
