@@ -18,6 +18,13 @@ import { OFREPProvider } from '../../lib/ofrep-provider';
  * bulk response carries no `eventStreams` field, so the SSE path is unreachable too. Adopting it
  * against this backend would declare capabilities that the backend, not the provider, makes
  * untestable. It waits for a neutral OFREP testbed.
+ *
+ * ## How it runs
+ *
+ * `npx nx tck providers-ofrep`, with a Docker daemon, and never in CI. The target is deliberately
+ * not called `e2e`: `npm run e2e` runs every project's `e2e` target and CI has a job for it, so this
+ * suite would otherwise pull a backend image on every push and pin a conformance claim nobody read.
+ * See the provider README.
  */
 
 /** The container-internal port flagd serves OFREP on. */
@@ -41,7 +48,7 @@ runContainerizedProviderTck({
   // scenario isolation coming from the control API instead — which restarts the flagd *process*
   // inside the container, keeping the port mapping. See the no-container-restart invariant in the
   // control API specification.
-  composeFile: join(__dirname, '..', 'tck', 'docker-compose.yaml'),
+  composeFile: join(__dirname, 'docker-compose.yaml'),
   backendPorts: [OFREP_PORT],
   startupTimeoutMs: STACK_TIMEOUT_MS,
 
