@@ -61,6 +61,13 @@ runProviderTck({
    * name: the flag file gives every canonical flag its variants, and the provider hands the matched
    * one back. Requirement 2.2.4 is only a SHOULD, so this is a claim rather than a given — and it is
    * made on the run below going green, not on having read the SDK.
+   *
+   * DisabledFlags is declared for the reason the capability exists: the substitution happens here.
+   * An in-memory provider has no backend to defer to, so the default the caller passed in is the
+   * only value it could return for a flag it declined to evaluate — and the decoder carries the
+   * state through, so the four flags really are disabled underneath. Whether the SDK's
+   * InMemoryProvider honours the flag rather than serving its configured value anyway is not
+   * something reading it would settle, so it was measured: the four rows pass.
    */
   capabilities: [
     Capability.Events,
@@ -68,6 +75,7 @@ runProviderTck({
     Capability.Object,
     Capability.LargeIntegers,
     Capability.Variants,
+    Capability.DisabledFlags,
   ],
 
   /*

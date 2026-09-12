@@ -49,7 +49,7 @@ located relative to this module rather than to the working directory, so **adopt
 no git submodule and no particular repository layout** — `npm install` is the whole setup. The same
 code path works whether you consume the library from npm or from inside this workspace.
 
-Contributors to this repository *do* need the submodule, because in-tree the artifacts are read
+Contributors to this repository _do_ need the submodule, because in-tree the artifacts are read
 straight out of [open-feature/spec][spec] rather than copied. See [Where the artifacts come
 from](#where-the-artifacts-come-from).
 
@@ -78,7 +78,9 @@ import { join } from 'node:path';
 import type { StepDefinitions } from 'jest-cucumber';
 
 const vendorSteps: StepDefinitions = ({ given }) => {
-  given(/^a fractional rule splitting "([^"]*)" (\d+)\/(\d+)$/, async (key, a, b) => { /* ... */ });
+  given(/^a fractional rule splitting "([^"]*)" (\d+)\/(\d+)$/, async (key, a, b) => {
+    /* ... */
+  });
 };
 
 runProviderTck({
@@ -100,7 +102,7 @@ file, or a list of either. Paths resolve against the runner's working directory 
 test file's, so pass absolute ones.
 
 Two rules are enforced rather than documented, because without them the Java prototype let a
-same-named extension file *replace* a canonical one — the suite went green having run the adopter's
+same-named extension file _replace_ a canonical one — the suite went green having run the adopter's
 version of a canonical scenario:
 
 - an extension feature may not be named after a canonical one (`errors`, `evaluation`, `events`,
@@ -132,27 +134,28 @@ into `test.skip` rather than omitting them, so they stay visible in the report.
 
 The reason is composed by the harness rather than by jest-cucumber's `scenarioNameTemplate`, which
 does not reach far enough: the template is applied to a Scenario Outline's own title, and each
-example row is then defined under its *expanded* title instead, so a skipped example row showed no
+example row is then defined under its _expanded_ title instead, so a skipped example row showed no
 reason at all — four rows of `errors.feature` whenever `@object` is undeclared. jest-cucumber accepts
 the `describe`/`test` pair it calls, so the harness supplies one and names the skip at the point the
 call is made. See [`src/lib/scenarioRunner.ts`](./src/lib/scenarioRunner.ts).
 
-| Capability | Tag | Meaning |
-| --- | --- | --- |
-| `Capability.Events` | `@events` | emits lifecycle events at all |
-| `Capability.Lifecycle` | `@lifecycle` | performs an initialisation that reaches its backend, with an observable outcome — **see below** |
-| `Capability.Reinitialization` | `@reinitialization` | can be initialised again after `shutdown`, which the specification permits rather than requires — **see below** |
-| `Capability.Stale` | `@stale` | enters `STALE` and emits `PROVIDER_STALE` on backend loss |
-| `Capability.ConfigurationChange` | `@configuration-change` | detects configuration changes and emits `PROVIDER_CONFIGURATION_CHANGED` |
-| `Capability.Object` | `@object` | supports structured flag values |
-| `Capability.Variants` | `@variants` | names the variant it resolved, which requirement 2.2.4 makes a `SHOULD` and `types.md` types as optional — **see below** |
-| `Capability.UnavailableInit` | `@unavailable` | reports an error state instead of hanging against a dead backend |
-| `Capability.NumericCoercion` | `@numeric-coercion` | coerces between integer and float only when lossless, else `TYPE_MISMATCH` — **see below** |
-| `Capability.LargeIntegers` | `@large-integers` | resolves integers up to 2^53 − 1 exactly; leave undeclared where the transport rounds it |
-| `Capability.Targeting` | `@targeting` | resolves a flag differently for a matching evaluation context |
-| `Capability.Caching` | `@caching` | reserved; **not declarable** — no scenarios yet |
+| Capability                       | Tag                     | Meaning                                                                                                                  |
+| -------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `Capability.Events`              | `@events`               | emits lifecycle events at all                                                                                            |
+| `Capability.Lifecycle`           | `@lifecycle`            | performs an initialisation that reaches its backend, with an observable outcome — **see below**                          |
+| `Capability.Reinitialization`    | `@reinitialization`     | can be initialised again after `shutdown`, which the specification permits rather than requires — **see below**          |
+| `Capability.Stale`               | `@stale`                | enters `STALE` and emits `PROVIDER_STALE` on backend loss                                                                |
+| `Capability.ConfigurationChange` | `@configuration-change` | detects configuration changes and emits `PROVIDER_CONFIGURATION_CHANGED`                                                 |
+| `Capability.Object`              | `@object`               | supports structured flag values                                                                                          |
+| `Capability.Variants`            | `@variants`             | names the variant it resolved, which requirement 2.2.4 makes a `SHOULD` and `types.md` types as optional — **see below** |
+| `Capability.DisabledFlags`       | `@disabled-flags`       | resolves a flag disabled in the management system to the caller's default — **see below**                                |
+| `Capability.UnavailableInit`     | `@unavailable`          | reports an error state instead of hanging against a dead backend                                                         |
+| `Capability.NumericCoercion`     | `@numeric-coercion`     | coerces between integer and float only when lossless, else `TYPE_MISMATCH` — **see below**                               |
+| `Capability.LargeIntegers`       | `@large-integers`       | resolves integers up to 2^53 − 1 exactly; leave undeclared where the transport rounds it                                 |
+| `Capability.Targeting`           | `@targeting`            | resolves a flag differently for a matching evaluation context                                                            |
+| `Capability.Caching`             | `@caching`              | reserved; **not declarable** — no scenarios yet                                                                          |
 
-Untagged scenarios are mandatory and always run. `capabilities` defaults to every *declarable*
+Untagged scenarios are mandatory and always run. `capabilities` defaults to every _declarable_
 capability — narrow it rather than widening it.
 
 A **reserved** capability is a name held open for a scenario nobody has written yet. `@caching` is
@@ -184,10 +187,10 @@ Which capabilities are reserved is decided upstream, in Appendix F, and recorded
 fails if a reservation has expired — a scenario arriving upstream is what makes a capability
 declarable, and an out-of-date list would go on making a testable capability unclaimable.
 
-A capability whose question cannot be put to your provider *at all* is simply left undeclared, like
+A capability whose question cannot be put to your provider _at all_ is simply left undeclared, like
 any other, and its scenarios are skipped. There is no second field and no second status: one skip
 carrying its reason says everything a parallel representation would, and where the impossibility is
-a property of the *language* rather than of the provider it is recorded once — against the
+a property of the _language_ rather than of the provider it is recorded once — against the
 capability and in Appendix F — instead of restated in every report. In JavaScript that case is
 `@numeric-coercion`, and it is the subject of a section of its own below.
 
@@ -257,12 +260,12 @@ terminal outcomes are observable: READY against a healthy backend, ERROR against
 
 ### `@reinitialization` is not `@lifecycle` either
 
-Declaring `@lifecycle` says your provider initialises for real. It does *not* say the provider can be
+Declaring `@lifecycle` says your provider initialises for real. It does _not_ say the provider can be
 initialised a second time after `shutdown`, and those come apart because the specification permits
 reuse rather than requiring it.
 [Requirement 2.5.2](https://github.com/open-feature/spec/blob/main/specification/sections/02-providers.md)
 says a provider **SHOULD** revert to its uninitialized state after `shutdown`, and its supporting
-text adds that *"some providers **may** allow reinitialization from this state"*. A provider that
+text adds that _"some providers **may** allow reinitialization from this state"_. A provider that
 releases its client on shutdown and declines to start again is taking an option the specification
 offers it.
 
@@ -295,8 +298,8 @@ to record as a `knownDeviation` either, because no capability existed to hang on
 
 Both places that type the field say it is optional.
 [Requirement 2.2.4](https://github.com/open-feature/spec/blob/main/specification/sections/02-providers.md)
-is a **SHOULD** and adds that the value *"might only be meaningful in the context of the flag
-management system associated with the provider"*; `types.md` types it `variant (string, optional)`.
+is a **SHOULD** and adds that the value _"might only be meaningful in the context of the flag
+management system associated with the provider"_; `types.md` types it `variant (string, optional)`.
 The suite was asserting a `MUST` neither of them states.
 
 The variant assertions are therefore consolidated into a single gated Scenario Outline of eight
@@ -306,8 +309,8 @@ value and reason assertions for the same flags are untagged, requirement 2.2.3 m
 `MUST`.
 
 The `reason` assertions are the deliberate exception, and Appendix F states it as a decision rather
-than leaving it as an oversight: requirement 2.2.5 is also a `SHOULD` and even permits *"some other
-string"*, yet the suite pins a specific reason anyway, because a wrong reason is its cheapest
+than leaving it as an oversight: requirement 2.2.5 is also a `SHOULD` and even permits _"some other
+string"_, yet the suite pins a specific reason anyway, because a wrong reason is its cheapest
 diagnosis of a provider quietly falling back to the code default. Read a reason failure differently
 from a value failure: the value rests on a `MUST`, the reason on a house rule.
 
@@ -332,12 +335,54 @@ backend expresses it however it expresses targeting, and the flag, its variants 
 [flagd-testbed][flagd-testbed]'s own, so a backend already serving that harness already serves this.
 
 **The TCK's own in-memory suites leave it undeclared**, and that is a fact about the fixture rather
-than a defect. `InMemoryProvider` takes its rules from a `contextEvaluator` *function*, and the
-canonical flag-definition format expresses a rule as *data*; there is no way to carry a function
+than a defect. `InMemoryProvider` takes its rules from a `contextEvaluator` _function_, and the
+canonical flag-definition format expresses a rule as _data_; there is no way to carry a function
 through JSON, so the flag's `targeting` member is inert for that decoder and the flag resolves `miss`
 whatever the context. Leaving the capability undeclared is the honest report. Synthesising an
 evaluator to turn the scenarios green would be worse than the skip: it would test a fixture written
 for the occasion instead of a provider.
+
+### `@disabled-flags` is a fact about the provider and its backend together
+
+A flag disabled in the flag management system resolves to nothing, and the caller's default stands
+in. What the four `@disabled-flags` rows ask is whether your provider gets there — and the answer is
+decided by **where the substitution happens** rather than by how good the provider is. Only the
+caller ever has the default value, so the question is whether it is in hand at the point the flag's
+state is read, and where it is not, whether the wire format can say _"no value"_ plainly enough for
+the client to put it in.
+
+A provider that evaluates locally has it in hand: an in-memory provider has nowhere else to decide,
+and flagd's in-process resolver syncs the ruleset and evaluates it locally. A provider whose backend
+decides depends on the protocol between them, and both of the ones in this repository carry it.
+flagd's RPC resolver receives the _type's_ zero value with `reason: DISABLED` and an empty variant,
+and substitutes the caller's default itself. OFREP goes further: its response schema makes `value`
+optional and flagd's handler omits the field altogether, which `ofrep-core` reads as "use the
+default".
+
+**The capability was drafted expecting OFREP not to be able to have it**, on the reasoning that the
+request never carries a default so the server cannot return one. Measuring it said otherwise — the
+server does not have to return a value at all. What genuinely cannot have it is a pair where the
+backend answers a disabled flag with the flag's _configured_ value, or with an error, and the client
+has no hook to substitute on. That is a property of the provider and its backend together, which is
+why the tag is gated and why declaring it is a claim about the pair the run was made against.
+
+So this is a capability, and one of the clearest cases for [`knownDeviations` being the wrong
+tool](#a-defect-is-not-a-decision-knowndeviations): a provider whose pairing cannot have the
+capability leaves it undeclared and owes **no** deviation, because there is no defect to record.
+Reach for a deviation only where a provider that _does_ have the default in hand gets it wrong.
+
+Nothing in the specification says what a provider owes a disabled flag — requirement 1.4.7 is about
+the SDK propagating whatever reason arrived, and requirement 2.2.5 only lists `DISABLED` among the
+reason strings a provider _may_ use. Appendix F therefore states the behaviour, as it does for
+`@numeric-coercion`, and gates it.
+
+The rows assert the **value** and the absence of an error, and deliberately not the reason. Each
+row's caller default differs from the flag's configured value, so a provider that ignores the state
+returns the configured value and is caught on the value alone, which rests on requirement 2.2.3 — a
+`MUST`. Pinning reason `DISABLED` would rest on 2.2.5, the `SHOULD` that expressly permits _"some
+other string"_. No variant is asserted either: a disabled flag resolved no variant, so there is none
+to name, and `@disabled-flags` and `@variants` do not compose. That is also why the four rows are
+scalar-only — a row needing both `@object` and this tag could not be one row of a single outline.
 
 ## The one place JavaScript cannot answer the shared question
 
@@ -350,7 +395,7 @@ a real question with a right answer.
 **JavaScript has no integer type.** `typeof 10` and `typeof 0.5` are both `'number'`, the Evaluation
 API exposes only `getNumberDetails`, and the in-memory provider type-checks with
 `typeof value != typeof defaultValue`. Requesting `float-flag` as an Integer is therefore
-*indistinguishable* from requesting it as a Float, so **neither half can be put to a provider in
+_indistinguishable_ from requesting it as a Float, so **neither half can be put to a provider in
 this language**: there is no lossless coercion to permit, because `10.0` and `10` are the same value
 and nothing is narrowed, and no lossy one to reject, because `0.5` asked for as an Integer is
 indistinguishable from a valid Float request. Not a defect — the distinction does not exist here.
@@ -377,7 +422,7 @@ runProviderTck({
 ```
 
 **Where that sentence about the language lives.** Not in the report, and not in the skip. The
-impossibility is a property of the *SDK* — true of every provider written against it, and for as
+impossibility is a property of the _SDK_ — true of every provider written against it, and for as
 long as the Evaluation API has a single numeric accessor — so it is stated once in the TSDoc on
 `Capability.NumericCoercion`, once in this section, and once upstream in
 [Appendix F][appendix-f]. A per-report field would repeat a language fact on each provider's behalf
@@ -387,7 +432,7 @@ such a field and no adoption in any of them populated it, which is why the repor
 The consequence is worth stating plainly: read only the skip line, or only a report's declaration,
 and you learn that `@numeric-coercion` was not declared but not why it could not be. That is
 deliberate — the reason is one lookup away, in the two places above, rather than duplicated per
-scenario — but it does mean the *why* is documentation rather than run output. A JavaScript provider
+scenario — but it does mean the _why_ is documentation rather than run output. A JavaScript provider
 that withheld the tag for some other reason, such as a real narrowing defect, must therefore say so
 through `knownDeviations`, which is exactly what that field is for.
 
@@ -427,7 +472,7 @@ restores flag state and is not specified to start a stopped backend.
 
 Two of the API's requirements are easy to get wrong:
 
-- **Containers are never stopped or restarted mid-suite.** Unavailability is simulated *inside* the
+- **Containers are never stopped or restarted mid-suite.** Unavailability is simulated _inside_ the
   running stack. Container orchestrators assign host ports dynamically and cannot reliably preserve
   them across a restart, so restarting silently invalidates every provider already pointed at the
   old port, and the failure looks like a flaky provider.
@@ -451,13 +496,13 @@ the same reason as the other two: there is no backend for initialisation to reac
 
 ## The self-tests
 
-| Suite | Subject | Why |
-| --- | --- | --- |
-| `inMemory.spec.ts` | the SDK's `InMemoryProvider` | reference adoption for a backend-less provider, and the Docker-free canary |
-| `extensionSuite.spec.ts` | the same provider, plus `fixtures/extension-features` | reference adoption for a vendor with scenarios of its own, and the proof they share one lifecycle with the canonical set |
-| `multiProvider.spec.ts` | `MultiProvider` wrapping one child | delegation must be transparent |
-| `inProcessControl.spec.ts` | `InProcessControl` | pins what the Gherkin cannot assert about itself |
-| `httpControl.spec.ts` | `HttpControl` | pins the control-API request sequence, without a container |
+| Suite                      | Subject                                               | Why                                                                                                                      |
+| -------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `inMemory.spec.ts`         | the SDK's `InMemoryProvider`                          | reference adoption for a backend-less provider, and the Docker-free canary                                               |
+| `extensionSuite.spec.ts`   | the same provider, plus `fixtures/extension-features` | reference adoption for a vendor with scenarios of its own, and the proof they share one lifecycle with the canonical set |
+| `multiProvider.spec.ts`    | `MultiProvider` wrapping one child                    | delegation must be transparent                                                                                           |
+| `inProcessControl.spec.ts` | `InProcessControl`                                    | pins what the Gherkin cannot assert about itself                                                                         |
+| `httpControl.spec.ts`      | `HttpControl`                                         | pins the control-API request sequence, without a container                                                               |
 
 `multiProvider.spec.ts` wraps exactly one child deliberately. That is the interesting configuration
 rather than a degenerate one: the correct answer is precisely what the in-memory suite already
