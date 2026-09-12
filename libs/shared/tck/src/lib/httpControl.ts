@@ -166,6 +166,69 @@ export class HttpControl implements BackendControl, ConnectionControl {
   }
 
   /**
+   * Waits until the control API will accept commands, or gives up after `timeoutMs`.
+   *
+   * A real readiness check against the control API itself, and the only waiting the suite does
+   * around a control call. `GET /healthz` is **optional** in the control API document, which is why
+   * a `404` counts as ready: the path is not implemented, and readiness then falls back to the
+   * control port accepting a connection — which it just did, or this request would not have got an
+   * answer. `503` is the specified "not ready yet", and a connection error is the stack still coming
+   * up; both are retried.
+   *
+   * Note that this reports the health of the *control API*, never of the backend. The backend is
+   * deliberately unreachable during the outage scenarios while the control API has to stay up,
+   * otherwise the suite could not end the outage.
+   *
+   * There is deliberately no settle delay after a control call to pair with this. `POST /start`
+   * blocks until the flags are evaluable (flagd-testbed#394), so a fixed sleep afterwards would
+   * cover a window that no longer exists — and it is the control API's promise to keep. A suite that
+   * slept instead of holding it to that promise would stop being able to detect when it breaks.
+   */
+  async awaitReady(timeoutMs: number): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    let last = 'no attempt completed';
+
+    for (;;) {
+      try {
+        const status = await this.probe();
+        if (status === 200 || status === 404) {
+          return;
+        }
+        last = `HTTP ${status}`;
+      } catch (error) {
+        last = (error as Error).message;
+      }
+
+      if (Date.now() >= deadline) {
+        throw new Error(
+          `the control API at ${this.base()} did not become ready within ${timeoutMs}ms; last ` +
+            `attempt: ${last}. The stack is up as far as its published ports are concerned, so ` +
+            `either the control API is not listening on the port the suite was told about, or it ` +
+            `needs longer than this -- raise startupTimeoutMs.`,
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+  }
+
+  /** One `GET /healthz`, returning its status code. Separate from {@link call}, which only POSTs. */
+  private async probe(): Promise<number> {
+    const target = `${this.base()}/healthz`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.requestTimeoutMs);
+
+    try {
+      const response = await fetch(target, { method: 'GET', signal: controller.signal });
+      await response.arrayBuffer().catch(() => undefined);
+      return response.status;
+    } catch (error) {
+      throw new Error(`GET ${target} failed: ${(error as Error).message}`);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
    * Makes the backend unreachable without touching any container: the backend process inside the
    * still-running container is stopped.
    *
