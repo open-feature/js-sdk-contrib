@@ -1,21 +1,19 @@
 /**
  * The OpenFeature Provider Conformance Suite against the Flagsmith **JavaScript** provider.
  *
- * The fourth language to run against the same container. Go reports 31 pass / 2 fail / 19 skip,
- * Python 28 / 5 / 19, Java 20 / 12 / 20 — the same backend, the same 52 scenarios, three providers
- * written by different people against one API, and the reasons for their failures barely overlap.
+ * One of four language adoptions running against the same container. Go reports 35 pass / 2 fail /
+ * 19 skip, Java 24 / 12 / 20, Python 28 / 5 / 19 — the same backend, the same scenarios, four
+ * providers written by different people against one API, and the reasons for their failures barely
+ * overlap.
  *
  * The backend is https://github.com/aepfli/flagsmith-tck-testbed — the Flagsmith Edge Proxy with a
  * launchpad implementing the control API. Nothing about it is language-specific, and it needed no
- * changes for any of the four adoptions, which is the control API doing its job.
+ * changes for any of the four adoptions.
  */
-import { Capability, HttpControl, KnownDeviation, runProviderTck } from '@openfeature/tck';
+import { join } from 'node:path';
+import { Capability, KnownDeviation, runContainerizedProviderTck } from '@openfeature/tck';
 import { FlagsmithOpenFeatureProvider } from '../lib/flagsmith-provider';
-import { GenericContainer, Wait } from 'testcontainers';
-import type { StartedTestContainer } from 'testcontainers';
 import { Flagsmith } from 'flagsmith-nodejs';
-
-const TESTBED_IMAGE = process.env['FLAGSMITH_TESTBED_IMAGE'] ?? 'ghcr.io/aepfli/flagsmith-tck-testbed:latest';
 
 /**
  * Fixed by the testbed. The control API has no way to communicate connection parameters —
@@ -25,71 +23,42 @@ const TESTBED_IMAGE = process.env['FLAGSMITH_TESTBED_IMAGE'] ?? 'ghcr.io/aepfli/
 const SERVER_SIDE_KEY = 'ser.provider-tck-server-key';
 
 const PROXY_PORT = 8000;
-const CONTROL_PORT = 8080;
 
-let container: StartedTestContainer;
-let baseUrl: string;
-let controlUrl: string;
-
-// HttpControl accepts baseUrl as a thunk precisely for this: the testbed maps host ports
-// dynamically, so the URL does not exist until beforeAll has started the container, while
-// runProviderTck is called at module scope.
-const control = new HttpControl({ baseUrl: () => controlUrl });
-
-beforeAll(async () => {
-  // Started once for the whole suite and never restarted. Scenario isolation comes from the
-  // control API instead: the no-container-restart invariant exists because dynamically mapped host
-  // ports do not survive a restart.
-  container = await new GenericContainer(TESTBED_IMAGE)
-    .withExposedPorts(PROXY_PORT, CONTROL_PORT)
-    // The launchpad logs this once its HTTP server is up. That is readiness of the CONTROL API and
-    // says nothing about the backend — the two deliberately differ, because the control API stays
-    // reachable while the backend is down during an outage scenario. The TCK calls POST /start
-    // before each scenario, and /start is what must not return until the seeded state is served.
-    .withWaitStrategy(Wait.forLogMessage(/launchpad listening/))
-    .withStartupTimeout(90_000)
-    .start();
-
-  const host = container.getHost();
-  // The Flagsmith SDK appends its own path segments, so this is the API root with a trailing
-  // slash: remote evaluation requests "flags/" beneath it.
-  baseUrl = `http://${host}:${container.getMappedPort(PROXY_PORT)}/api/v1/`;
-  controlUrl = `http://${host}:${container.getMappedPort(CONTROL_PORT)}`;
-}, 120_000);
-
-afterAll(async () => {
-  await container?.stop();
-});
-
-runProviderTck({
+// The suite owns the stack: it starts Compose, discovers the dynamically mapped host ports, builds
+// the HttpControl against the control API, waits until it accepts commands, constructs a provider
+// per scenario and tears the stack down. Nothing here touches testcontainers directly.
+runContainerizedProviderTck({
   name: 'flagsmith-js-remote',
-  control,
+  composeFile: join(__dirname, 'docker-compose.yaml'),
+  backendPorts: [PROXY_PORT],
 
-  newProvider: () => {
-    const client = new Flagsmith({ environmentKey: SERVER_SIDE_KEY, apiUrl: baseUrl });
+  newProvider: (endpoint) => {
+    // The Flagsmith SDK appends its own path segments, so this is the API root with a trailing
+    // slash: remote evaluation requests "flags/" beneath it.
+    const apiUrl = `http://${endpoint.host}:${endpoint.port(PROXY_PORT)}/api/v1/`;
+    const client = new Flagsmith({ environmentKey: SERVER_SIDE_KEY, apiUrl });
+
     // useBooleanConfigValue puts this provider on the same footing as the other three.
     //
     // It defaults to FALSE here, meaning a boolean flag resolves from Flagsmith's `enabled` state
-    // rather than from feature_state_value -- the same default Python takes, and the opposite of
-    // Go and Java. Four providers for one product, split two-two on what a boolean flag *is*.
+    // rather than from feature_state_value — the same default Python takes, and the opposite of Go
+    // and Java. Four providers for one product, split two-two on what a boolean flag *is*.
     //
     // The canonical set models booleans as values and seeds every flag enabled, so the default
     // would resolve boolean-zero-flag to true, which the falsy-value scenario exists to catch.
     return new FlagsmithOpenFeatureProvider(client, { useBooleanConfigValue: true });
   },
 
-  // Predictions, to be corrected by the run.
+  // Capability.Variants is withheld: Flagsmith has no variant concept for a plain feature, the
+  // evaluation response carries no variant key, and no seeding can produce one. That is permitted
+  // rather than defective — 2.2.4 makes the variant a SHOULD and types.md marks the field optional
+  // — so it carries no deviation entry.
   //
-  // Capability.Variants is withheld for the reason the Go adoption established: Flagsmith has no
-  // variant concept for a plain feature, the evaluation response carries no variant key, and no
-  // seeding can produce one. Permitted rather than defective — 2.2.4 makes the variant a SHOULD —
-  // so it carries no deviation entry.
+  // Capability.DisabledFlags is withheld too, but unlike @variants it is a defect rather than a
+  // permitted absence — see the deviation below. Go and Java both declare it and pass.
   //
-  // Lifecycle and event capabilities are withheld pending the run, as in the other three.
-  // Capability.DisabledFlags is WITHHELD, and unlike @variants it is a defect rather than a
-  // permitted absence -- see the deviation below. Flagsmith's native model is `enabled` plus a
-  // value, so the canonical set's four disabled-* flags map straight onto this backend; Go and
-  // Java both declare it and pass. This provider cannot, in either configuration.
+  // The lifecycle and event capabilities are withheld because this provider has no observable
+  // initialisation for the suite to assert against.
   capabilities: [Capability.Object, Capability.LargeIntegers, Capability.Targeting],
 
   knownDeviations: [
@@ -98,9 +67,9 @@ runProviderTck({
       'A disabled flag raises GeneralError rather than resolving to the caller default with no ' +
         'error code, so the scenario fails with error-code GENERAL where it expects none. ' +
         'Neither configuration satisfies it: returnValueForDisabledFlags defaults to false and ' +
-        'throws, and setting it true returns the configured value of the flag instead of the caller ' +
-        'default -- which the scenario also catches, because the configured value of each disabled ' +
-        'flag differs from the default the scenario passes in. The Go and Java Flagsmith ' +
+        'throws, and setting it true returns the configured value of the flag instead of the ' +
+        'caller default -- which the scenario also catches, because the configured value of each ' +
+        'disabled flag differs from the default the scenario passes in. The Go and Java Flagsmith ' +
         'providers return the caller default with reason DISABLED and no error code, which is ' +
         'what the tag asserts, and both declare the capability.',
     ),
