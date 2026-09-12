@@ -80,6 +80,7 @@ runProviderTck({
     Capability.Object,
     Capability.LargeIntegers,
     Capability.Variants,
+    Capability.DisabledFlags,
   ],
 
   // Absolute, because paths resolve against the runner's working directory rather than this file's.

@@ -32,14 +32,22 @@ describe('canonicalFlagSet is the packaged canonical-flags.json', () => {
   it('is not reading an empty or truncated file', () => {
     // Guards the rest of this file: every assertion below is driven by `packagedFlags`, so an empty
     // parse would make all of them pass while examining nothing.
-    expect(packagedFlags.length).toBeGreaterThanOrEqual(14);
+    expect(packagedFlags.length).toBeGreaterThanOrEqual(18);
   });
 
   it('defines exactly the flags the file defines', () => {
     expect(Object.keys(canonicalFlagSet()).sort()).toEqual(packagedFlags.map(([key]) => key).sort());
   });
 
-  it('resolves every flag to the value its packaged defaultVariant names', () => {
+  it('carries the value its packaged defaultVariant names for every flag, disabled ones included', () => {
+    // "Carries", not "resolves", and the distinction is the `disabled-*` flags. Their configured
+    // value is the one value a conformant provider must never serve -- the caller's default stands
+    // in instead -- so a reader could reasonably expect them to be exempt here. They are not, and
+    // must not be: what suppresses the value is the flag's *state*, asserted separately below, and
+    // the decoder has to carry the value through faithfully for the suppression to be observable at
+    // all. A decoder that dropped their variants would make the scenarios pass for the wrong reason,
+    // since a flag resolving to nothing and a flag with nothing to resolve look identical from the
+    // caller's side.
     const configuration = canonicalFlagSet();
 
     for (const [key, flag] of packagedFlags) {
@@ -142,13 +150,64 @@ describe('the properties the canonical file calls load-bearing', () => {
     });
   });
 
-  it('gives no flag a contextEvaluator, so every evaluation reports STATIC', () => {
+  it('disables exactly the four disabled-* flags and nothing else', () => {
+    // The newest of the file's load-bearing properties, and the one with the widest blast radius:
+    // every other scenario in the canonical corpus assumes the flag it names serves its own value.
+    // Disabling anything else turns those scenarios into failures that read as provider defects,
+    // and enabling one of these four makes the @disabled-flags rows pass while examining nothing --
+    // the flag would serve its configured value and the assertion is on the value.
+    //
+    // Asserted over the whole set rather than over the four names, so a fifth disabled flag arriving
+    // upstream shows up here rather than in whichever scenario it silently broke.
+    const configuration = canonicalFlagSet();
+    const disabled = Object.keys(configuration).filter((key) => configuration[key].disabled);
+
+    expect(disabled.sort()).toEqual([
+      'disabled-boolean-flag',
+      'disabled-float-flag',
+      'disabled-integer-flag',
+      'disabled-string-flag',
+    ]);
+  });
+
+  it('mirrors each disabled flag on its enabled twin, so the caller default differs from the value', () => {
+    // What makes the @disabled-flags rows catch a provider that ignores the state: each row's
+    // caller default is the flag's *other* variant, so a provider serving the configured value is
+    // caught on the value alone, with no reason assertion needed. That only works while the twins
+    // agree -- a disabled flag whose default variant drifted to match the scenario's caller default
+    // would pass whether the state was honoured or not.
+    const configuration = canonicalFlagSet();
+    const mirrors: [string, string][] = [
+      ['disabled-boolean-flag', 'boolean-flag'],
+      ['disabled-string-flag', 'string-flag'],
+      ['disabled-integer-flag', 'integer-flag'],
+      ['disabled-float-flag', 'float-flag'],
+    ];
+
+    for (const [disabledKey, enabledKey] of mirrors) {
+      expect(configuration[disabledKey].variants).toEqual(configuration[enabledKey].variants);
+      expect(resolved(configuration[disabledKey])).toEqual(resolved(configuration[enabledKey]));
+    }
+
+    // And the scenarios' caller defaults are the other variant of each pair, which is the half a
+    // reader cannot see from the flag file alone.
+    expect(resolved(configuration['disabled-boolean-flag'])).not.toBe(false);
+    expect(resolved(configuration['disabled-string-flag'])).not.toBe('bye');
+    expect(resolved(configuration['disabled-integer-flag'])).not.toBe(1);
+    expect(resolved(configuration['disabled-float-flag'])).not.toBe(0.1);
+  });
+
+  it('gives no flag a contextEvaluator, so every enabled flag reports STATIC', () => {
     // Still true of every flag, targeting-key-flag included, and it is not an oversight there. The
     // flag-definition format expresses a rule as data; InMemoryProvider expresses one as a
     // `contextEvaluator` function, and the format has no way to carry a function. So the flag's
     // `targeting` member is inert for this decoder, and the in-memory suites leave @targeting
     // undeclared rather than synthesise an evaluator to satisfy the scenarios -- which would test a
     // fixture written for the occasion instead of a provider.
+    //
+    // "Enabled", because the four disabled-* flags resolve no variant at all and so report whatever
+    // their provider reports for a flag it declined to evaluate. The untagged scenarios that pin
+    // STATIC name enabled flags only, and the @disabled-flags rows assert no reason.
     for (const flag of Object.values(canonicalFlagSet())) {
       expect(flag.contextEvaluator).toBeUndefined();
     }
