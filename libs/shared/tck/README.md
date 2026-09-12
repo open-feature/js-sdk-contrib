@@ -524,16 +524,22 @@ a provider per scenario, and tears the stack down after the last one. Every othe
 `capabilities`, `knownDeviations`, `extensionFeatures`, the timeouts — is the same as for
 `runProviderTck`.
 
-| option             | required | default     | what it is                                                       |
-| ------------------ | -------- | ----------- | ---------------------------------------------------------------- |
-| `composeFile`      | yes      | —           | path to the Compose file; pass an absolute one                   |
-| `backendPorts`     | yes      | —           | container-internal ports the **provider** connects to            |
-| `newProvider`      | yes      | —           | builds the provider from a `BackendEndpoint`                     |
-| `backendService`   | no       | `'backend'` | the Compose service hosting both the control API and the backend |
-| `controlPort`      | no       | `8080`      | container-internal port of the control API                       |
-| `additionalPorts`  | no       | `{}`        | extra service → ports, for a stack with more than one service    |
-| `configuration`    | no       | `'default'` | the configuration name passed to `POST /start`                   |
-| `startupTimeoutMs` | no       | `60000`     | budget for the stack and its control API to become reachable     |
+| option                 | required | default     | what it is                                                       |
+| ---------------------- | -------- | ----------- | ---------------------------------------------------------------- |
+| `composeFile`          | yes      | —           | path to the Compose file; pass an absolute one                   |
+| `backendPorts`         | yes      | —           | container-internal ports the **provider** connects to            |
+| `newProvider`          | yes      | —           | builds the provider from a `BackendEndpoint`                     |
+| `backendService`       | no       | `'backend'` | the Compose service hosting both the control API and the backend |
+| `controlPort`          | no       | `8080`      | container-internal port of the control API                       |
+| `additionalPorts`      | no       | `{}`        | extra service → ports, for a stack with more than one service    |
+| `backendConfiguration` | no       | `'default'` | the backend's configuration name passed to `POST /start`         |
+| `startupTimeoutMs`     | no       | `60000`     | budget for the stack and its control API to become reachable     |
+
+`backendConfiguration` names the **backend's** configuration, not the provider's. A report's
+`provider.configuration` is which mode of the provider was tested — flagd RPC against flagd
+in-process — and `name` is what feeds that. The two were worth keeping apart in every language's
+spelling rather than in a comment: three of the four had taken the bare word for the backend's, so
+`configuration` meant opposite things depending on which suite you were reading.
 
 The concepts and the defaults are identical in Go, Java and Python, deliberately: an adopter porting
 a stack between two languages' suites should be changing syntax, not re-deriving the contract.
