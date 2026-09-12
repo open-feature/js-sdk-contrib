@@ -81,7 +81,7 @@ describe('HttpControl', () => {
   it('reconnects by starting the configuration already in effect', async () => {
     // An outage must be observable as a change in availability and never as a change in flag values,
     // which is what starting the same configuration guarantees.
-    const subject = new HttpControl({ baseUrl: BASE, configuration: 'ssl' });
+    const subject = new HttpControl({ baseUrl: BASE, backendConfiguration: 'ssl' });
 
     await subject.reconnect();
 

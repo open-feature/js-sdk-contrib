@@ -1,10 +1,15 @@
 import type { BackendControl, ConnectionControl } from './control';
 
 /**
- * The configuration name every backend under test must support, and the one that serves the
+ * The backend configuration name every backend under test must support, and the one that serves the
  * canonical flag set.
+ *
+ * Named for the *backend's* configuration throughout, never bare `configuration`: in a conformance
+ * report `provider.configuration` means which mode of the provider was tested — flagd RPC against
+ * flagd in-process — which is what {@link TckOptions.name} feeds. Two unrelated things sharing the
+ * word is how one language ended up meaning the opposite of another.
  */
-export const DEFAULT_CONFIGURATION = 'default';
+export const DEFAULT_BACKEND_CONFIGURATION = 'default';
 
 /**
  * How long a single control-API request may take.
@@ -33,12 +38,12 @@ export interface HttpControlOptions {
   baseUrl: string | (() => string);
 
   /**
-   * The named flag configuration to seed.
+   * The named flag configuration of the **backend** to seed, passed to `POST /start`.
    *
-   * Defaults to {@link DEFAULT_CONFIGURATION}, the only name every backend must support and the one
-   * serving the canonical flag set.
+   * Defaults to {@link DEFAULT_BACKEND_CONFIGURATION}, the only name every backend must support and
+   * the one serving the canonical flag set.
    */
-  configuration?: string;
+  backendConfiguration?: string;
 
   /** How long a single control-API request may take. @default 30000 */
   requestTimeoutMs?: number;
@@ -88,7 +93,7 @@ export class HttpControl implements BackendControl, ConnectionControl {
   readonly controlApi = 'http' as const;
 
   private readonly resolveBaseUrl: () => string;
-  private readonly configuration: string;
+  private readonly backendConfiguration: string;
   private readonly requestTimeoutMs: number;
 
   /** The resolved, trailing-slash-free base URL; `undefined` until the first control call. */
@@ -104,7 +109,7 @@ export class HttpControl implements BackendControl, ConnectionControl {
   private backendMaybeDown = false;
 
   constructor(options: HttpControlOptions) {
-    const { baseUrl, configuration, requestTimeoutMs } = options;
+    const { baseUrl, backendConfiguration, requestTimeoutMs } = options;
 
     if (!baseUrl) {
       throw new Error(
@@ -114,7 +119,7 @@ export class HttpControl implements BackendControl, ConnectionControl {
     }
 
     this.resolveBaseUrl = typeof baseUrl === 'function' ? baseUrl : () => baseUrl;
-    this.configuration = configuration ?? DEFAULT_CONFIGURATION;
+    this.backendConfiguration = backendConfiguration ?? DEFAULT_BACKEND_CONFIGURATION;
     this.requestTimeoutMs = requestTimeoutMs ?? DEFAULT_CONTROL_TIMEOUT_MS;
   }
 
@@ -251,7 +256,7 @@ export class HttpControl implements BackendControl, ConnectionControl {
   }
 
   private async start(): Promise<void> {
-    await this.require('/start', { config: this.configuration });
+    await this.require('/start', { config: this.backendConfiguration });
   }
 
   /** Performs a control call and fails on any non-2xx response. */
