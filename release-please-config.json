@@ -88,7 +88,7 @@
       "bump-patch-for-minor-pre-major": true,
       "versioning": "default"
     },
-    "libs/shared/provider-tck": {
+    "libs/shared/tck": {
       "release-type": "node",
       "prerelease": false,
       "bump-minor-pre-major": true,

@@ -26,7 +26,7 @@ One call in one `.spec.ts` file. It uses **jest-cucumber**, the same runner the 
 already uses, so an adopting library gains no new test framework.
 
 ```ts
-import { Capability, runProviderTck } from '@openfeature/provider-tck';
+import { Capability, runProviderTck } from '@openfeature/tck';
 
 const control = new MyBackendControl();
 
@@ -206,7 +206,7 @@ So `knownDeviations` exists to let you do the opposite of withdrawing. Declare t
 the scenario run and fail, and name the gap beside it:
 
 ```ts
-import { Capability, KnownDeviation, runProviderTck } from '@openfeature/provider-tck';
+import { Capability, KnownDeviation, runProviderTck } from '@openfeature/tck';
 
 runProviderTck({
   // ...
@@ -531,15 +531,15 @@ suite exists to prevent. Changes to them belong upstream.
 The two audiences are deliberately different:
 
 - **Adopters need no submodule.** `nx package` copies the artifacts out of the submodule and into
-  the published library, so an `npm install` of `@openfeature/provider-tck` is self-contained.
+  the published library, so an `npm install` of `@openfeature/tck` is self-contained.
 - **Contributors do.** Working on the TCK in this repository means the assets are read straight out
   of the submodule, so a checkout without it cannot load any feature file:
 
   ```sh
-  git submodule update --init libs/shared/provider-tck/spec
+  git submodule update --init libs/shared/tck/spec
   ```
 
-  `nx test provider-tck` and `nx package provider-tck` depend on the `pullSpec` target, which runs
+  `nx test tck` and `nx package tck` depend on the `pullSpec` target, which runs
   that for you. CI checks out with `submodules: recursive`.
 
 Prettier is pointed away from `spec/` so it never rewrites artifacts that are consumed byte for byte

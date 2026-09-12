@@ -1,7 +1,7 @@
 {
-  "name": "provider-tck",
+  "name": "tck",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/shared/provider-tck/src",
+  "sourceRoot": "libs/shared/tck/src",
   "projectType": "library",
   "tags": [],
   "targets": {
@@ -9,7 +9,7 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "npm run publish-if-not-exists",
-        "cwd": "dist/libs/shared/provider-tck"
+        "cwd": "dist/libs/shared/tck"
       },
       "dependsOn": ["build"]
     },
@@ -17,7 +17,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": ["git submodule update --init spec"],
-        "cwd": "libs/shared/provider-tck",
+        "cwd": "libs/shared/tck",
         "parallel": false
       }
     },
@@ -27,10 +27,10 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/shared/provider-tck"],
+      "outputs": ["{workspaceRoot}/coverage/libs/shared/tck"],
       "dependsOn": ["pullSpec"],
       "options": {
-        "jestConfig": "libs/shared/provider-tck/jest.config.ts"
+        "jestConfig": "libs/shared/tck/jest.config.ts"
       }
     },
     "package": {
@@ -38,13 +38,13 @@
       "outputs": ["{options.outputPath}"],
       "dependsOn": ["pullSpec"],
       "options": {
-        "project": "libs/shared/provider-tck/package.json",
-        "outputPath": "dist/libs/shared/provider-tck",
-        "entryFile": "libs/shared/provider-tck/src/index.ts",
-        "tsConfig": "libs/shared/provider-tck/tsconfig.lib.json",
+        "project": "libs/shared/tck/package.json",
+        "outputPath": "dist/libs/shared/tck",
+        "entryFile": "libs/shared/tck/src/index.ts",
+        "tsConfig": "libs/shared/tck/tsconfig.lib.json",
         "compiler": "tsc",
         "generateExportsField": true,
-        "umdName": "provider-tck",
+        "umdName": "tck",
         "external": "all",
         "format": ["cjs", "esm"],
         "assets": [
@@ -55,22 +55,22 @@
           },
           {
             "glob": "README.md",
-            "input": "./libs/shared/provider-tck",
+            "input": "./libs/shared/tck",
             "output": "./"
           },
           {
             "glob": "**/*",
-            "input": "./libs/shared/provider-tck/spec/specification/assets/provider-tck/gherkin",
+            "input": "./libs/shared/tck/spec/specification/assets/provider-tck/gherkin",
             "output": "./features"
           },
           {
             "glob": "**/*",
-            "input": "./libs/shared/provider-tck/spec/specification/assets/provider-tck/flags",
+            "input": "./libs/shared/tck/spec/specification/assets/provider-tck/flags",
             "output": "./flags"
           },
           {
             "glob": "**/*",
-            "input": "./libs/shared/provider-tck/spec/specification/assets/provider-tck/openapi",
+            "input": "./libs/shared/tck/spec/specification/assets/provider-tck/openapi",
             "output": "./openapi"
           }
         ]
