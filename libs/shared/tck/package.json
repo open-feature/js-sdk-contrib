@@ -13,6 +13,12 @@
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.17.0",
-    "jest-cucumber": "^4.4.0"
+    "jest-cucumber": "^4.4.0",
+    "testcontainers": "^11.0.0"
+  },
+  "peerDependenciesMeta": {
+    "testcontainers": {
+      "optional": true
+    }
   }
 }

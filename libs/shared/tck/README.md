@@ -479,6 +479,81 @@ through `knownDeviations`, which is exactly what that field is for.
 The capability's meaning being language-dependent is worth flagging upstream regardless, since the
 specification does not currently acknowledge it. Raised on [spec#417][tracking].
 
+## A provider with a backend: supply a Compose file and nothing else
+
+Most providers talk to something, and orchestrating that something used to be the adopter's job. It
+was also the single largest adoption cost in the suite: every flagd adoption in every language
+hand-rolled a container wrapper, and each one re-solved dynamic port discovery, control-API
+readiness and teardown for itself.
+
+**The suite owns the stack.** Name a Compose file, say which ports the provider connects to, and
+build a provider from the endpoint it discovers:
+
+```ts
+import { join } from 'node:path';
+import { runContainerizedProviderTck } from '@openfeature/tck';
+
+runContainerizedProviderTck({
+  name: 'my-provider',
+  composeFile: join(__dirname, 'docker-compose.yaml'),
+  backendPorts: [8013],
+  newProvider: (endpoint) => new MyProvider({ host: endpoint.host, port: endpoint.port(8013) }),
+  newUnavailableProvider: () => new MyProvider({ host: 'localhost', port: 9999 }),
+});
+```
+
+That is the whole adoption. The suite starts the stack once, discovers the dynamically mapped host
+ports, builds the `HttpControl` against the control API, waits until it accepts commands, constructs
+a provider per scenario, and tears the stack down after the last one. Every other option —
+`capabilities`, `knownDeviations`, `extensionFeatures`, the timeouts — is the same as for
+`runProviderTck`.
+
+| option             | required | default     | what it is                                                       |
+| ------------------ | -------- | ----------- | ---------------------------------------------------------------- |
+| `composeFile`      | yes      | —           | path to the Compose file; pass an absolute one                   |
+| `backendPorts`     | yes      | —           | container-internal ports the **provider** connects to            |
+| `newProvider`      | yes      | —           | builds the provider from a `BackendEndpoint`                     |
+| `backendService`   | no       | `'backend'` | the Compose service hosting both the control API and the backend |
+| `controlPort`      | no       | `8080`      | container-internal port of the control API                       |
+| `additionalPorts`  | no       | `{}`        | extra service → ports, for a stack with more than one service    |
+| `configuration`    | no       | `'default'` | the configuration name passed to `POST /start`                   |
+| `startupTimeoutMs` | no       | `60000`     | budget for the stack and its control API to become reachable     |
+
+The concepts and the defaults are identical in Go, Java and Python, deliberately: an adopter porting
+a stack between two languages' suites should be changing syntax, not re-deriving the contract.
+
+Three rules are not preferences:
+
+- **The Compose file must not pin host ports.** Docker assigns them dynamically and the suite
+  discovers them after startup. A pinned port collides with a developer's own backend and makes the
+  suite unrunnable in parallel.
+- **The stack starts once and is never restarted.** Testcontainers cannot reliably preserve mapped
+  host ports across a restart, so a restart would silently invalidate every provider already pointed
+  at the old port. Unavailability is always simulated inside the running stack through the control
+  API.
+- **`newProvider` is a factory, called once per scenario**, because the mapped ports do not exist
+  until the stack is up.
+
+`backendPorts` and `additionalPorts` are configuration rather than documentation: Compose publishes
+whatever the Compose file lists whether the options mention it or not, so the suite resolves only
+ports that were declared and names the option to edit when one was not. The control port is mapped
+automatically and listing it in `backendPorts` is refused — that option is the ports the _provider_
+connects to, and a provider pointed at the control API would be testing the testbed.
+
+`startupTimeoutMs` counts from `docker compose up`, so on a machine that has not pulled the images it
+includes the pull. 60 seconds suits a warm machine; a cold CI runner wants considerably more. The
+suite also sets a Jest test timeout of `readyTimeoutMs + 4 × eventTimeoutMs`, because Jest's own
+five-second default is never enough for a real backend; call `jest.setTimeout` after
+`runContainerizedProviderTck` to override it.
+
+`testcontainers` is an **optional peer dependency** and is loaded on first use, not on import, so a
+provider with no backend adopts this library without pulling Docker tooling into its `node_modules`.
+Install it in the adopting project — `npm i -D testcontainers` — if you use this entry point.
+
+`runProviderTck` remains the path for a provider with no backend, which supplies its own
+`BackendControl`. Compose is an additional path, and now the default one, for a provider that talks
+to something.
+
 ## Controlling the backend
 
 `BackendControl` is the single seam between the scenarios and whatever manipulates the backend. Step
@@ -492,17 +567,25 @@ another language's TCK drives the same endpoints against the same stack and must
 answers.
 
 `HttpControl` is the client for it, and it implements both `BackendControl` and `ConnectionControl`
-over the global `fetch`, so it adds no dependency. It takes a thunk for the base URL because the
-control service's host port is mapped dynamically and does not exist until the stack is up, whereas
-`runProviderTck` has to be called at module load:
+over the global `fetch`, so it adds no dependency. **If your stack comes up from a Compose file you
+never construct it**: `runContainerizedProviderTck` builds it for you and awaits its readiness — see
+above. What follows is for a backend the suite cannot bring up itself: one already running in CI, or
+one started by tooling of your own.
+
+It takes a thunk for the base URL because a control service's host port is usually mapped
+dynamically and does not exist until the stack is up, whereas `runProviderTck` has to be called at
+module load:
 
 ```ts
-const container = MyComposeStack.build();
-beforeAll(() => container.start());
-afterAll(() => container.stop());
-
-const control = new HttpControl({ baseUrl: () => `http://${container.getControlUrl()}` });
+const control = new HttpControl({ baseUrl: () => `http://${myStack.controlUrl()}` });
 ```
+
+`awaitReady(timeoutMs)` polls `GET /healthz` until the control API will accept commands. `404`
+counts as ready: the path is optional, and an answer at all means the control port is listening,
+which is what readiness falls back to. `503` and a connection error are retried. There is
+deliberately no settle delay after a control call to pair with it — `POST /start` blocks until the
+flags are evaluable, so a fixed sleep afterwards would cover a window that no longer exists and
+would stop the suite being able to detect it reopening.
 
 It prefers `POST /reset` for scenario isolation and falls back to `POST /start?config=default` on a
 `404` or `501`, caching that decision once per suite. The fallback is the normal path rather than an
