@@ -299,10 +299,13 @@ export function domainFor(options: TckOptions): string {
   return `tck/${options.name}`;
 }
 
-export function eventTimeout(options: TckOptions): number {
+// Narrowed to the field each one reads, rather than taking the whole options object, so that the
+// containerised entry point can default a timeout from its own options before it has assembled a
+// TckOptions to pass on.
+export function eventTimeout(options: Pick<TckOptions, 'eventTimeoutMs'>): number {
   return options.eventTimeoutMs ?? DEFAULT_EVENT_TIMEOUT_MS;
 }
 
-export function readyTimeout(options: TckOptions): number {
+export function readyTimeout(options: Pick<TckOptions, 'readyTimeoutMs'>): number {
   return options.readyTimeoutMs ?? DEFAULT_READY_TIMEOUT_MS;
 }
