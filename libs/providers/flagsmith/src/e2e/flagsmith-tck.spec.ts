@@ -86,9 +86,24 @@ runProviderTck({
   // so it carries no deviation entry.
   //
   // Lifecycle and event capabilities are withheld pending the run, as in the other three.
+  // Capability.DisabledFlags is WITHHELD, and unlike @variants it is a defect rather than a
+  // permitted absence -- see the deviation below. Flagsmith's native model is `enabled` plus a
+  // value, so the canonical set's four disabled-* flags map straight onto this backend; Go and
+  // Java both declare it and pass. This provider cannot, in either configuration.
   capabilities: [Capability.Object, Capability.LargeIntegers, Capability.Targeting],
 
   knownDeviations: [
+    KnownDeviation.untracked(
+      Capability.DisabledFlags,
+      'A disabled flag raises GeneralError rather than resolving to the caller default with no ' +
+        'error code, so the scenario fails with error-code GENERAL where it expects none. ' +
+        'Neither configuration satisfies it: returnValueForDisabledFlags defaults to false and ' +
+        'throws, and setting it true returns the configured value of the flag instead of the caller ' +
+        'default -- which the scenario also catches, because the configured value of each disabled ' +
+        'flag differs from the default the scenario passes in. The Go and Java Flagsmith ' +
+        'providers return the caller default with reason DISABLED and no error code, which is ' +
+        'what the tag asserts, and both declare the capability.',
+    ),
     KnownDeviation.untracked(
       Capability.NumericCoercion,
       'Withheld pending the run, recorded as a prediction rather than a measurement. Flagsmith ' +
