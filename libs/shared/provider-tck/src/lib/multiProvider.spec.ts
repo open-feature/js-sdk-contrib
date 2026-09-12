@@ -5,7 +5,7 @@ import { runProviderTck } from './runProviderTck';
 
 /**
  * NOT CURRENTLY RUN -- excluded via `testPathIgnorePatterns` in this project's jest.config.ts,
- * because the SDK's MultiProvider does not pass it. It fails 16 of the 39 scenarios it runs -- 52
+ * because the SDK's MultiProvider does not pass it. It fails 16 of the 43 scenarios it runs -- 56
  * in the canonical set, 13 skipped by the declaration below -- and every one of them comes from a
  * single root cause: the multi-provider replaces the child's error code with `GENERAL`
  * (15x TYPE_MISMATCH, 1x FLAG_NOT_FOUND). The information is not lost so much as thrown away --
@@ -13,8 +13,8 @@ import { runProviderTck } from './runProviderTck';
  * `constructAggregateError` then wraps it in an `AggregateError extends GeneralError`, so the code
  * survives only inside `originalErrors[].error.code`, which nothing reads.
  *
- * Everything else passes, which is the useful half of the result: evaluation, variants, reasons and
- * configuration-change events all survive delegation intact.
+ * Everything else passes, which is the useful half of the result: evaluation, variants, reasons,
+ * disabled flags and configuration-change events all survive delegation intact.
  *
  * This is kept, not deleted, because it is the regression test -- re-enabling it is deleting one
  * line of jest.config.ts.
@@ -61,13 +61,18 @@ runProviderTck({
   // particular: a multi-provider assembles its own resolution details from a child's, and dropping
   // the variant while carrying the value across is an easy thing to do. Targeting stays undeclared
   // because the child cannot have it — the canonical flag format cannot express an InMemoryProvider
-  // contextEvaluator, so targeting-key-flag's rule is inert underneath.
+  // contextEvaluator, so targeting-key-flag's rule is inert underneath. DisabledFlags is declared
+  // because the child substitutes locally and the multi-provider delegates to it, which makes the
+  // rows another transparency question: a disabled flag is a resolution the child declined, and a
+  // wrapper that treated "no value" as an error rather than as the caller's default would be caught
+  // here and nowhere else.
   capabilities: [
     Capability.Events,
     Capability.ConfigurationChange,
     Capability.Object,
     Capability.LargeIntegers,
     Capability.Variants,
+    Capability.DisabledFlags,
   ],
 
   // NumericCoercion is left undeclared: JavaScript has no integer type, so the capability is
