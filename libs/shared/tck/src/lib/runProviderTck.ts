@@ -141,7 +141,7 @@ export function runProviderTck(options: TckOptions): void {
   );
   if (expired.length) {
     throw new Error(
-      `provider-tck [${options.name}]: ${expired.join(' ')} is reserved here, but the executed ` +
+      `tck [${options.name}]: ${expired.join(' ')} is reserved here, but the executed ` +
         `feature files now carry a scenario for it. Remove it from RESERVED_CAPABILITIES so ` +
         `adoptions can declare it, or those scenarios will be skipped for a capability nobody can ` +
         `claim.`,
@@ -154,11 +154,11 @@ export function runProviderTck(options: TckOptions): void {
 
   const extensions = features.filter(({ canonical }) => !canonical).map(({ feature }) => feature);
 
-  describe(`provider-tck [${options.name}]`, () => {
+  describe(`tck [${options.name}]`, () => {
     beforeAll(() => {
       // eslint-disable-next-line no-console
       console.log(
-        `provider-tck [${options.name}]: backend under test is ${options.control.description}; ` +
+        `tck [${options.name}]: backend under test is ${options.control.description}; ` +
           `declared capabilities ${[...declared].sort().join(' ') || '(none)'}` +
           // Named rather than counted: a reader of the output has to be able to see that a scenario
           // they do not recognise came from the adopter and not from the shared suite.
@@ -168,7 +168,7 @@ export function runProviderTck(options: TckOptions): void {
           knownDeviations
             .map(
               (deviation) =>
-                `\nprovider-tck [${options.name}]: known deviation` +
+                `\ntck [${options.name}]: known deviation` +
                 (deviation.capability ? ` in ${deviation.capability}` : '') +
                 ` -- ${deviation.summary}` +
                 (deviation.issue ? ` (${deviation.issue})` : ' (not tracked upstream)'),

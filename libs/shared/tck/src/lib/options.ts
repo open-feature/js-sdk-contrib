@@ -277,9 +277,16 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
  * replaces the previous one; a fresh domain per scenario would leave every provider of the suite
  * registered, which for a provider holding a network connection means leaking one connection per
  * scenario.
+ *
+ * The prefix follows the package name, deliberately. It is observable — a domain appears in SDK
+ * messages and in anything that lists registered providers — and a reader who sees it has to be
+ * able to find the thing that produced it; `provider-tck/in-memory` would send them looking for a
+ * package that no longer exists. Nothing consumes the string, so nothing outside this suite can be
+ * broken by following the rename, and the only two properties that matter — that it is stable for
+ * the life of a suite and unique per suite name — are unaffected.
  */
 export function domainFor(options: TckOptions): string {
-  return `provider-tck/${options.name}`;
+  return `tck/${options.name}`;
 }
 
 export function eventTimeout(options: TckOptions): number {
