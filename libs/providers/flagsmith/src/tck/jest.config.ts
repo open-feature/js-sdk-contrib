@@ -1,7 +1,7 @@
 import type { Config } from 'jest';
 
 const config: Config = {
-  displayName: 'providers-flagsmith-e2e',
+  displayName: 'providers-flagsmith-tck',
   clearMocks: true,
   preset: 'ts-jest',
   // Pointed at the library's spec tsconfig, which chains up to tsconfig.base.json where
