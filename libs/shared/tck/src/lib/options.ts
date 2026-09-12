@@ -133,9 +133,10 @@ export interface TckOptions {
    * lifecycle, the same per-scenario reset, the same capability gate. The alternative is a second
    * harness that has to reimplement all of that and will drift from it.
    *
-   * Each entry is either a directory — every `.feature` file directly in it, in sorted order — or a
-   * single `.feature` file. Paths resolve against the working directory, which is the test runner's
-   * and not your test file's, so pass absolute ones: `join(__dirname, 'features')`.
+   * Each entry is either a directory — every `.feature` file **anywhere under it**, subdirectories
+   * included, in a stable order — or a single `.feature` file. Paths resolve against the working
+   * directory, which is the test runner's and not your test file's, so pass absolute ones:
+   * `join(__dirname, 'features')`.
    *
    * **Extension features must be named differently from the canonical ones, and live in a directory
    * of their own.** Both are enforced rather than documented: a feature named after a canonical one
