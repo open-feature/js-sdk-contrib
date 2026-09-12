@@ -70,13 +70,13 @@
         ]
       }
     },
-    "e2e": {
+    "tck": {
       "executor": "@nx/jest:jest",
       "outputs": [
-        "{workspaceRoot}/coverage/libs/providers/flagsmith-e2e"
+        "{workspaceRoot}/coverage/libs/providers/flagsmith-tck"
       ],
       "options": {
-        "jestConfig": "libs/providers/flagsmith/src/e2e/jest.config.ts",
+        "jestConfig": "libs/providers/flagsmith/src/tck/jest.config.ts",
         "parallel": false
       }
     }
