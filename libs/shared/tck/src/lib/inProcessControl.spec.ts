@@ -9,8 +9,9 @@ import { InProcessControl } from './inProcessControl';
  * conformance suites meaningless.
  */
 describe('InProcessControl', () => {
-  const resolveChanging = async (provider: { resolveStringEvaluation: (k: string, d: string) => Promise<{ value: string }> }) =>
-    (await provider.resolveStringEvaluation(CHANGING_FLAG_KEY, 'unset')).value;
+  const resolveChanging = async (provider: {
+    resolveStringEvaluation: (k: string, d: string) => Promise<{ value: string }>;
+  }) => (await provider.resolveStringEvaluation(CHANGING_FLAG_KEY, 'unset')).value;
 
   it('actually changes the resolved value, not just the event', async () => {
     // The assumption every configuration-change scenario rests on. If changeFlag emitted an event

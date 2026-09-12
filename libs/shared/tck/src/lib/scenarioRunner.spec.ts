@@ -137,9 +137,7 @@ describe('the capability gate', () => {
     // for something requirement 2.2.4 only SHOULDs. They are now one outline of eight rows, so a
     // provider leaving the tag undeclared sees eight skips and no failures -- and, just as
     // important, the value and reason scenarios it shares flags with still run.
-    const gated = plansWithout(Capability.Events).filter((scenario) =>
-      scenario.missing.includes(Capability.Variants),
-    );
+    const gated = plansWithout(Capability.Events).filter((scenario) => scenario.missing.includes(Capability.Variants));
 
     expect(gated).toHaveLength(8);
     for (const scenario of gated) {
@@ -158,9 +156,7 @@ describe('the capability gate', () => {
     // @targeting was a reserved name until Appendix F carried scenarios for it. All three are
     // needed: a matching context, a non-matching one -- without which a provider that always
     // returned the targeted value would pass -- and no context at all.
-    const gated = plansWithout(Capability.Events).filter((scenario) =>
-      scenario.missing.includes(Capability.Targeting),
-    );
+    const gated = plansWithout(Capability.Events).filter((scenario) => scenario.missing.includes(Capability.Targeting));
 
     expect(gated.map((scenario) => scenario.title).sort()).toEqual([
       'A matching evaluation context resolves the targeted variant',
