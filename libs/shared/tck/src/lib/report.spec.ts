@@ -116,7 +116,13 @@ describe('the conformance envelope', () => {
     expect(tck.specRevision).toMatch(/^[0-9a-f]{40}$/);
     expect(sdk.name).toBe('@openfeature/server-sdk');
     expect(sdk.version).toMatch(/^\d+\.\d+\.\d+/);
-    expect(backend?.controlApi).toBe('in-process');
+
+    // Both of these are required by the schema, and the emitter writes them unconditionally. A
+    // report that omitted either would be invalid rather than merely terse: the control API path
+    // and in-process manipulation of a provider that has a backend are different claims, and this
+    // is the only field between them.
+    expect(backend.description).toBe(control.description);
+    expect(backend.controlApi).toBe('in-process');
   });
 
   it('points at the results rather than containing them', () => {
