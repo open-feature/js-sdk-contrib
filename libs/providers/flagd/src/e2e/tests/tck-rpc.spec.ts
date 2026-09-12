@@ -1,4 +1,4 @@
-import { Capability } from '@openfeature/provider-tck';
+import { Capability } from '@openfeature/tck';
 import { runFlagdTck } from './tckSuite';
 
 /**
@@ -88,5 +88,4 @@ runFlagdTck({
 
   // The RPC resolver asks flagd to resolve each flag, so it is ready as soon as the stream is up.
   readyTimeoutMs: 30_000,
-  retryGracePeriod: 30,
 });
