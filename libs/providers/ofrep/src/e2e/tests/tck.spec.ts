@@ -58,7 +58,7 @@ runContainerizedProviderTck({
     }),
 
   /*
-   * One capability, and every omission below is derived from the provider's source rather than
+   * Three capabilities, and every omission below is derived from the provider's source rather than
    * assumed. This is the smallest declaration of any provider in this repo, and that is the finding:
    * `OFREPProvider` is stateless. Its entire surface is a constructor, `onClose`, and four
    * `resolve*Evaluation` methods that each POST to `/ofrep/v1/evaluate/flags/{key}` —
@@ -101,9 +101,26 @@ runContainerizedProviderTck({
    *   README. This is where the JS declaration is narrower than Go's and Java's, which do declare it
    *   on otherwise identical, equally stateless OFREP providers.
    *
-   * - Targeting and Caching are omitted because no scenario carries their tags yet.
+   * - Variants IS declared. The OFREP evaluation response carries a `variant` field and
+   *   `toResolutionDetails` copies it onto the resolution details (ofrep-api.ts:235-263), so the
+   *   eight gated rows ask a real question of the provider. Requirement 2.2.4 is only a SHOULD and
+   *   `types.md` types the field optional, so the claim rests on the run rather than the reading:
+   *   seven of the eight rows pass. The eighth asks for `large-integer-flag`, which this testbed
+   *   image does not serve at all (flagd-testbed#392) -- the same missing flag that already fails
+   *   the mandatory 2^31 - 1 scenario here. No deviation is recorded for it: the gap is in the
+   *   backend's flag set, not in the provider.
+   *
+   * - Targeting IS declared, and it is no longer a reserved name: Appendix F carries three scenarios
+   *   for it. They are the only ones in the suite that ask this provider to serialise an evaluation
+   *   context into a request at all — `postEvaluateFlag` puts it in the POST body — so for a
+   *   stateless provider whose whole contract is one request and one response, they cover a larger
+   *   share of it than they do anywhere else. `targeting-key-flag` is flagd-testbed's own, so
+   *   nothing had to be seeded.
+   *
+   * - Caching is omitted because it is still reserved: no scenario carries the tag, so declaring it
+   *   could not cause a skip and would put a capability nothing examined into the report.
    */
-  capabilities: [Capability.Object],
+  capabilities: [Capability.Object, Capability.Variants, Capability.Targeting],
 
   // The SDK synthesises READY as soon as registration completes, since the provider has no
   // initialisation step. This is headroom for a loaded machine, not an expected latency.
