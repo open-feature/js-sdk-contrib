@@ -58,7 +58,7 @@
       "outputs": ["{workspaceRoot}/coverage/libs/providers/flagd"],
       "options": {
         "jestConfig": "libs/providers/flagd/src/e2e/jest.config.ts",
-        "parallel": false
+        "runInBand": true
       },
       "dependsOn": [
         {
@@ -67,6 +67,23 @@
         {
           "projects": ["flagd-core"],
           "target": "pullTestHarness"
+        },
+        {
+          "projects": ["flagd-core"],
+          "target": "buildValidators"
+        }
+      ]
+    },
+    "tck": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/providers/flagd"],
+      "options": {
+        "jestConfig": "libs/providers/flagd/src/e2e/tck/jest.config.ts",
+        "runInBand": true
+      },
+      "dependsOn": [
+        {
+          "target": "generate"
         },
         {
           "projects": ["flagd-core"],

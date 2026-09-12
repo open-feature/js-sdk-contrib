@@ -1,0 +1,35 @@
+# Backend stack for the OpenFeature Provider Conformance Suite, wrapping the unmodified flagd
+# testbed image.
+#
+# The image serves flagd itself and the "launchpad" control API on 8080, whose endpoints the
+# suite's control API contract was derived from. Both resolvers come from the one service: 8013 is
+# RPC evaluation and 8015 is the in-process sync stream, so the two suites share this file and
+# differ only in which port they declare.
+#
+# Note there are no host port bindings. The suite requires dynamically mapped ports and discovers
+# them after startup -- a pinned host port would make the suite unrunnable in parallel and would
+# collide with a developer's own flagd.
+#
+# Note also there is no /flags volume, unlike test-harness/docker-compose.yaml next door. The
+# launchpad writes the configuration it is asked for into the container's own /flags from the
+# rawflags baked into the image, so a bind mount buys nothing here and costs isolation: the
+# neighbouring e2e suites share one host directory through that mount, and with two containers up
+# at once each rewrites the other's flags. The damage does not read as a race -- a scenario resolves
+# a flag another suite has just replaced and reports a plainly wrong answer -- which is the worst
+# thing a conformance suite can get wrong. Omitting the mount removes the shared resource rather
+# than scheduling around it.
+#
+# The image tag is pinned deliberately rather than read from test-harness/version.txt. Every
+# capability the two suites declare rests on a run against this exact image, so a bump is a
+# deliberate act with a result to record, not something a dependency update does silently. v3.10.1
+# is what the submodule pins today. It still does not serve large-integer-flag, huge-integer-flag or
+# integral-float-flag; only the first is reached by scenarios that run here, and it fails the
+# mandatory 32-bit precision scenario and one @variants row until open-feature/flagd-testbed#392
+# lands. Bump the tag then.
+services:
+  backend:
+    image: ghcr.io/open-feature/flagd-testbed:v3.10.1
+    ports:
+      - 8013 # flagd RPC evaluation (gRPC)
+      - 8015 # flagd in-process sync (gRPC)
+      - 8080 # launchpad control API
