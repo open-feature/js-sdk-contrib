@@ -64,6 +64,14 @@ timescales — a streaming provider sees a configuration change in milliseconds,
 30 seconds may need most of a poll interval. Set it to comfortably exceed your worst-case detection
 latency, or the suite reports timeouts that are really just impatience.
 
+`runProviderTck` raises **Jest's** per-test timeout for you, and you should not need to touch it.
+Jest's default is 5 s, which is below everything this suite works to — `eventTimeoutMs` defaults to
+12 s, `readyTimeoutMs` to 30 s, and `lifecycle.feature` bounds an error event at 10 s — so whichever
+cap fired first was Jest's, and the harness's own timeouts, which exist to fail with a message
+naming what did not happen, were unreachable. The value is derived from your two settings rather
+than picked, and it is a backstop: if it is what fires, something is wrong that the message will not
+explain.
+
 ## Extending the suite
 
 A vendor usually has behaviour outside the shared contract — flagd's `fractional` targeting is the
@@ -97,9 +105,10 @@ them is one suite: the same `describe`, the same provider lifecycle, the same pe
 reset, the same capability gate. An extension scenario uses the canonical steps freely and needs
 `extensionSteps` only for words the canonical vocabulary does not have.
 
-`extensionFeatures` takes a directory (every `.feature` file directly in it, sorted) or a single
-file, or a list of either. Paths resolve against the runner's working directory rather than your
-test file's, so pass absolute ones.
+`extensionFeatures` takes a directory or a single file, or a list of either. A directory is scanned
+**recursively**, so grouping features into subdirectories works and does not quietly drop them;
+ordering is by entry name at each level, depth first, so it is the same on every platform. Paths
+resolve against the runner's working directory rather than your test file's, so pass absolute ones.
 
 Two rules are enforced rather than documented, because without them the Java prototype let a
 same-named extension file _replace_ a canonical one — the suite went green having run the adopter's
@@ -108,6 +117,10 @@ version of a canonical scenario:
 - an extension feature may not be named after a canonical one (`errors`, `evaluation`, `events`,
   `lifecycle`, `metadata`), and belongs in a directory of its own;
 - an extension feature may not live inside the canonical asset directory.
+
+Both survive the recursion, and so does the rule that two extension features may not share a name:
+a scenario is attributed by the **bare** file name, so a subdirectory does not qualify it and
+`targeting/fractional.feature` beside `caching/fractional.feature` is refused.
 
 A step matcher that also matches a canonical step is rejected by jest-cucumber as ambiguous, so an
 extension cannot redefine what a canonical step means either.
@@ -656,12 +669,40 @@ the same reason as the other two: there is no backend for initialisation to reac
 | Suite                      | Subject                                               | Why                                                                                                                      |
 | -------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `inMemory.spec.ts`         | the SDK's `InMemoryProvider`                          | reference adoption for a backend-less provider, and the Docker-free canary                                               |
+| `controllable.spec.ts`     | a provider with a real `initialize` and `onClose`     | the only Docker-free cover for `lifecycle.feature`; see below                                                            |
 | `extensionSuite.spec.ts`   | the same provider, plus `fixtures/extension-features` | reference adoption for a vendor with scenarios of its own, and the proof they share one lifecycle with the canonical set |
 | `multiProvider.spec.ts`    | `MultiProvider` wrapping one child                    | delegation must be transparent                                                                                           |
 | `inProcessControl.spec.ts` | `InProcessControl`                                    | pins what the Gherkin cannot assert about itself                                                                         |
 | `httpControl.spec.ts`      | `HttpControl`                                         | pins the control-API request sequence and the readiness rules, without a container                                       |
 | `compose.spec.ts`          | `runContainerizedProviderTck`'s refusals              | every refusal replaces a failure that would otherwise arrive minutes later as a container that never came up             |
 | `underTest.spec.ts`        | `clientUnderTest` / `providerUnderTest`               | the failure modes a real run cannot reach: no suite, and two suites in one file                                          |
+
+`controllable.spec.ts` exists because `inMemory.spec.ts` cannot cover the lifecycle feature and
+never will. The SDK's `InMemoryProvider` implements **neither `initialize` nor `onClose`** — it is
+handed its whole flag set by its constructor — and the SDK's registry marks a provider with no
+`initialize` as `READY` the moment it is registered. So the readiness scenario would pass against it
+having demonstrated nothing, which is exactly why that suite withholds `Lifecycle`, and why it is
+right to.
+
+The consequence was that **the shutdown and re-initialisation steps only ever executed through the
+flagd adoption**, which is Docker-gated and excluded from CI — so in a normal run nothing exercised
+them, and when they broke it surfaced inside a containerised provider suite where a TCK defect looks
+like a provider defect. `ControllableProvider` acquires its flag store at `initialize()` time from a
+store that can refuse it, which is enough for all six lifecycle scenarios: initialisation succeeds
+observably, fails observably, shutdown releases and repeats, shutdown against a dead backend returns
+promptly, and a provider offering reuse really is reusable.
+
+It is composition rather than `extends InMemoryProvider`, and the reason was read out of the SDK's
+build rather than assumed: `putConfiguration` ends with an unconditional
+`events.emit(ConfigurationChanged, …)`, so a subclass seeding its flags at `initialize()` time would
+announce a configuration change on every initialisation. A double that emits events the real thing
+does not emit is worse than no double.
+
+`ControllableProvider` is **not published**. It lives in `controllable.testkit.ts`, which
+`tsconfig.lib.json` excludes exactly as it excludes the `.spec.ts` files, so it has no declaration in
+`dist` and no route into the package. An adopter with no backend still uses `InProcessControl` and
+the SDK's own provider — `inMemory.spec.ts` remains the reference adoption, and this is a strict
+superset of its coverage rather than a replacement for it.
 
 `multiProvider.spec.ts` wraps exactly one child deliberately. That is the interesting configuration
 rather than a degenerate one: the correct answer is precisely what the in-memory suite already
@@ -676,19 +717,46 @@ Every suite in that table is **Docker-free** and runs in the default build, whic
 `inMemory.spec.ts` the canary: a break in the harness fails `nx test tck` with no container
 anywhere.
 
-**The containerised adoptions are deliberately excluded from the default build**, and that is a
-policy rather than an oversight. Each lives behind a `tck` target of its own — `npx nx tck
-providers-flagd`, `npx nx tck providers-ofrep` — which neither `npm run e2e` nor any CI job invokes,
-and a maintainer is expected to run them locally before merging a change to the suite or to a
-provider it covers. It is written down here because an exclusion nobody wrote down is
-indistinguishable from an accident, which is very nearly what happened: a conformance suite dropped
-into `libs/providers/flagd/src/e2e/tests/` is picked up by the pre-existing `e2e` target's Jest
-config for no better reason than the directory it sits in, and that target _is_ a CI job.
+**The containerised adoptions are deliberately excluded from the default build.** Why an adoption
+suite is excluded rather than gating a merge is
+[Appendix F, "Running the suite in CI"][appendix-f] — read it there rather than here, because four
+READMEs restating it in four sets of words is how the reasoning drifted in the first place. What
+belongs here is the mechanism, which is JavaScript's alone:
 
-The cost being avoided is not only minutes of runtime. A conformance run pins its claim to an exact
-backend image, so the image tag is part of the result; a run nobody reads, against a tag that
-drifted under it, produces a red build that says nothing about the provider. That is also why the
-Compose files pin their tag instead of following a submodule.
+|       | where the exclusion lives                                                                                                                                                                                                          | how to run it                |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| flagd | `libs/providers/flagd/src/e2e/tck/jest.config.ts`, a Jest project of its own, reached only by a `tck` target in `project.json`. The pre-existing `e2e` config ignores that directory: `testPathIgnorePatterns: ['<rootDir>/tck/']` | `npx nx tck providers-flagd` |
+| OFREP | `libs/providers/ofrep/src/e2e/tck/jest.config.ts`, likewise behind a `tck` target                                                                                                                                                  | `npx nx tck providers-ofrep` |
+
+Nothing invokes a `tck` target: not `npm run e2e` (`nx run-many --all --target=e2e`), not a `test`
+target, not any workflow in `.github/workflows`. Those two commands are the only ways in, and a
+maintainer runs them before merging a change to the suite or to a provider it covers.
+
+Appendix F names two mistakes, and both were made here before this shape existed. **An exclusion
+something else undoes**: the suites originally sat in `libs/providers/flagd/src/e2e/tests/`, where
+the pre-existing `e2e` target's Jest config swept them up through its default `testMatch` for no
+better reason than the directory they were in — and that target _is_ a CI job in this repository,
+which is why the boundary is now a directory with its own Jest project rather than a filename
+pattern. **An exclusion nobody wrote down**: it is now written in three places, this section and a
+"Running the conformance suite" section in each provider's own README.
+
+Appendix F also asks that an excluded suite still **compile** in the default build, and JavaScript
+does not deliver that for the two adoptions. `nx package providers-flagd` typechecks against
+`tsconfig.lib.json`, which excludes `./src/e2e` wholesale; `nx test providers-flagd` ignores
+`/e2e/`; and ESLint in this repository is not type-aware, so `nx lint` does not compile anything.
+`npx nx tck providers-flagd` is therefore the only thing that compiles its own suite. Stated rather
+than papered over. What would close it is a `tsc --noEmit -p libs/providers/flagd/tsconfig.spec.json`
+step — that config does include `./src/e2e` — but it would also make this suite's branch answerable
+for the pre-existing non-TCK e2e files in the same directory, so it is flagged for the provider's
+owners rather than done here.
+
+The harness's own suites are in the opposite position and do satisfy it: `nx test tck` runs them
+through ts-jest with diagnostics on, so `controllable.testkit.ts` and every `.spec.ts` are
+typechecked by the default build even where they are excluded from the package.
+
+One JavaScript-specific cost worth naming: a conformance run pins its claim to an exact backend
+image, so the image tag is part of the result. That is why the Compose files pin their tag instead of
+following a submodule.
 
 ## A note in JavaScript's favour
 
@@ -738,8 +806,17 @@ by every language's TCK.
   API now marks the endpoint `[OPTIONAL]` for that reason. What would bring it back is a `@caching`
   scenario asserting what a stale provider serves _during_ an outage: that needs `/restart`'s
   preservation of flag state, which `/start` on reconnect does not give.
+- **`@stale` has no Docker-free coverage**, and it is now the only capability that does not.
+  `controllable.spec.ts` gave the lifecycle scenarios a suite that needs no container, but its
+  in-process store can refuse an _initialisation_ — which is what `@unavailable` needs — and cannot
+  take a store away from a running provider and give it back, which is what `@stale` needs. Closing
+  it means that provider detecting a loss and emitting `PROVIDER_STALE` itself. The same gap exists
+  in the other three languages.
 - Caching, hooks and flag metadata are not covered. Provider metadata is, but only as far as a
-  non-empty name.
+  non-empty name. `@caching` is a reserved tag with no scenarios yet, and [Appendix F's caching
+  entry][appendix-f] now carries the constraint whoever writes them will need — a provider may cache
+  on the client side and rewrite the reason when it does, so a scenario that evaluates the same flag
+  twice sees a different reason the second time from a provider that is behaving correctly.
 
 [appendix-a]: https://github.com/open-feature/spec/blob/main/specification/appendix-a-included-utilities.md
 [flagd-testbed]: https://github.com/open-feature/flagd-testbed
