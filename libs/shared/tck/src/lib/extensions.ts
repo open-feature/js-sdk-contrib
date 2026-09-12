@@ -60,7 +60,7 @@ export function resolveExtensionFeatures(
 
     if (!existsSync(path)) {
       throw new Error(
-        `provider-tck: extensionFeatures names ${path}, which does not exist. It is resolved against ` +
+        `tck: extensionFeatures names ${path}, which does not exist. It is resolved against ` +
           `the working directory, so pass an absolute path -- join(__dirname, 'features') rather ` +
           `than a workspace-relative one, which resolves differently depending on where the runner ` +
           `was started.`,
@@ -70,21 +70,19 @@ export function resolveExtensionFeatures(
     const directory = statSync(path).isDirectory();
 
     if (!directory && extname(path) !== '.feature') {
-      throw new Error(
-        `provider-tck: extensionFeatures names ${path}, which is neither a directory nor a .feature file.`,
-      );
+      throw new Error(`tck: extensionFeatures names ${path}, which is neither a directory nor a .feature file.`);
     }
 
     const files = directory ? featureFileNames(path).map((entry) => join(path, entry)) : [path];
 
     if (!files.length) {
-      throw new Error(`provider-tck: extensionFeatures names the directory ${path}, which contains no .feature files.`);
+      throw new Error(`tck: extensionFeatures names the directory ${path}, which contains no .feature files.`);
     }
 
     for (const file of files) {
       if (isInside(canonicalRoot, file)) {
         throw new Error(
-          `provider-tck: extensionFeatures names ${file}, which is inside the canonical asset directory ` +
+          `tck: extensionFeatures names ${file}, which is inside the canonical asset directory ` +
             `${canonicalRoot}. The canonical features are always loaded; naming them again would run ` +
             `them twice and record two outcomes for one scenario.`,
         );
@@ -94,7 +92,7 @@ export function resolveExtensionFeatures(
 
       if (canonicalNames.has(feature)) {
         throw new Error(
-          `provider-tck: the extension feature ${file} is named ${feature}.feature, which is the ` +
+          `tck: the extension feature ${file} is named ${feature}.feature, which is the ` +
             `name of a canonical feature. This name identifies the feature a scenario came from, ` +
             `so the two would be indistinguishable and an adopter's scenario would be read as a ` +
             `canonical one. Rename it, and keep extension features in a directory of their own -- ` +
@@ -105,7 +103,7 @@ export function resolveExtensionFeatures(
       const already = claimed.get(feature);
       if (already) {
         throw new Error(
-          `provider-tck: two extension features are named ${feature}.feature -- ${already} and ` +
+          `tck: two extension features are named ${feature}.feature -- ${already} and ` +
             `${file}. This name identifies a scenario's feature, so it has to be unique.`,
         );
       }

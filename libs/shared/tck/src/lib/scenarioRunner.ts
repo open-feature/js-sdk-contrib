@@ -79,7 +79,7 @@ export function scenarioRunner(featureTitle: string, planned: readonly PlannedSc
 
   const describeFeature = (title: string, body: FeatureBody): void => {
     if (title !== featureTitle) {
-      throw new Error(`provider-tck: expected feature "${featureTitle}" but jest-cucumber defined "${title}"`);
+      throw new Error(`tck: expected feature "${featureTitle}" but jest-cucumber defined "${title}"`);
     }
 
     index = 0;
@@ -94,13 +94,12 @@ export function scenarioRunner(featureTitle: string, planned: readonly PlannedSc
 
     if (!scenario) {
       throw new Error(
-        `provider-tck: "${featureTitle}" defined more scenarios than the harness planned for; ` +
-          `the extra one is "${title}"`,
+        `tck: "${featureTitle}" defined more scenarios than the harness planned for; the extra one is "${title}"`,
       );
     }
     if (scenario.title !== title) {
       throw new Error(
-        `provider-tck: expected scenario "${scenario.title}" in "${featureTitle}" but jest-cucumber ` +
+        `tck: expected scenario "${scenario.title}" in "${featureTitle}" but jest-cucumber ` +
           `defined "${title}". A skip reason cannot be trusted when the plan and the run disagree, ` +
           `so the suite fails instead.`,
       );

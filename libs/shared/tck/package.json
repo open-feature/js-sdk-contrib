@@ -1,10 +1,10 @@
 {
-  "name": "@openfeature/provider-tck",
+  "name": "@openfeature/tck",
   "version": "0.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-feature/js-sdk-contrib.git",
-    "directory": "libs/shared/provider-tck"
+    "directory": "libs/shared/tck"
   },
   "license": "Apache-2.0",
   "scripts": {

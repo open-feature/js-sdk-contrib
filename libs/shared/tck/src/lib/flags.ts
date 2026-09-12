@@ -62,28 +62,28 @@ function withoutComments(entries: Record<string, unknown>): Record<string, unkno
  */
 function flagDefinition(key: string, raw: unknown): FlagDefinition {
   if (!isRecord(raw)) {
-    throw new Error(`provider-tck: canonical flag '${key}' is not an object`);
+    throw new Error(`tck: canonical flag '${key}' is not an object`);
   }
 
   const { state, variants, defaultVariant } = withoutComments(raw);
 
   if (state !== ENABLED && state !== DISABLED) {
     throw new Error(
-      `provider-tck: canonical flag '${key}' has state ${JSON.stringify(state)}, which is neither ` +
+      `tck: canonical flag '${key}' has state ${JSON.stringify(state)}, which is neither ` +
         `'${ENABLED}' nor '${DISABLED}'`,
     );
   }
   if (!isRecord(variants)) {
-    throw new Error(`provider-tck: canonical flag '${key}' has no variants object`);
+    throw new Error(`tck: canonical flag '${key}' has no variants object`);
   }
   if (typeof defaultVariant !== 'string') {
-    throw new Error(`provider-tck: canonical flag '${key}' has no defaultVariant`);
+    throw new Error(`tck: canonical flag '${key}' has no defaultVariant`);
   }
 
   const named = withoutComments(variants);
   if (!Object.prototype.hasOwnProperty.call(named, defaultVariant)) {
     throw new Error(
-      `provider-tck: canonical flag '${key}' names default variant '${defaultVariant}', which is ` +
+      `tck: canonical flag '${key}' names default variant '${defaultVariant}', which is ` +
         `not one of its variants (${Object.keys(named).join(', ')})`,
     );
   }
@@ -152,12 +152,12 @@ export function canonicalFlagSet(changingVariant: string = CHANGING_BASELINE): F
   const file: CanonicalFlagFile = JSON.parse(canonicalFlagsText);
 
   if (!isRecord(file.flags)) {
-    throw new Error(`provider-tck: ${CANONICAL_FLAGS_PATH} has no 'flags' object`);
+    throw new Error(`tck: ${CANONICAL_FLAGS_PATH} has no 'flags' object`);
   }
 
   const entries = Object.entries(withoutComments(file.flags));
   if (!entries.length) {
-    throw new Error(`provider-tck: ${CANONICAL_FLAGS_PATH} defines no flags`);
+    throw new Error(`tck: ${CANONICAL_FLAGS_PATH} defines no flags`);
   }
 
   const configuration: FlagConfiguration = {};
@@ -174,14 +174,14 @@ export function canonicalFlagSet(changingVariant: string = CHANGING_BASELINE): F
   const changing = configuration[CHANGING_FLAG_KEY];
   if (!changing) {
     throw new Error(
-      `provider-tck: ${CANONICAL_FLAGS_PATH} defines no '${CHANGING_FLAG_KEY}', which is the flag ` +
+      `tck: ${CANONICAL_FLAGS_PATH} defines no '${CHANGING_FLAG_KEY}', which is the flag ` +
         `the change-event scenarios mutate`,
     );
   }
   for (const variant of [CHANGING_BASELINE, CHANGING_CHANGED]) {
     if (!Object.prototype.hasOwnProperty.call(changing.variants, variant)) {
       throw new Error(
-        `provider-tck: '${CHANGING_FLAG_KEY}' in ${CANONICAL_FLAGS_PATH} has no '${variant}' ` +
+        `tck: '${CHANGING_FLAG_KEY}' in ${CANONICAL_FLAGS_PATH} has no '${variant}' ` +
           `variant. CHANGING_BASELINE and CHANGING_CHANGED name the two variants the in-process ` +
           `control flips between, so they have to be the file's.`,
       );
@@ -189,7 +189,7 @@ export function canonicalFlagSet(changingVariant: string = CHANGING_BASELINE): F
   }
   if (!Object.prototype.hasOwnProperty.call(changing.variants, changingVariant)) {
     throw new Error(
-      `provider-tck: canonicalFlagSet was asked for changing variant '${changingVariant}', which ` +
+      `tck: canonicalFlagSet was asked for changing variant '${changingVariant}', which ` +
         `is not a variant of '${CHANGING_FLAG_KEY}' (${Object.keys(changing.variants).join(', ')})`,
     );
   }
