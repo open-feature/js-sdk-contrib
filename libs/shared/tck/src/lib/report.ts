@@ -64,7 +64,17 @@ export interface ConformanceReport {
     specRevision: string;
     specRelease?: string;
   };
-  backend?: { description?: string; controlApi?: 'http' | 'in-process' };
+  /**
+   * What drove the backend, and how.
+   *
+   * Both the block and `controlApi` are required by the schema, and neither is inferred. A run over
+   * the control API and a run through in-process manipulation of a provider that *does* have a
+   * backend are not the same claim, and `controlApi` is the only field that separates them — so an
+   * omitted value would be an unfalsifiable claim rather than no claim. The earlier schema said the
+   * block was "omitted for a provider with no backend", which contradicted the enum whose
+   * `in-process` member exists for exactly that provider.
+   */
+  backend: { description?: string; controlApi: 'http' | 'in-process' };
   /**
    * The capability set this provider claims.
    *
@@ -289,9 +299,12 @@ export class ConformanceRecorder {
         // for at least seven characters; a build with no git says so instead of failing to validate.
         specRevision: SPEC_REVISION || 'unknown',
       },
+      // Written unconditionally. The control states which path it drove -- BackendControl requires
+      // it -- so there is nothing here to guess at and no case where the member is legitimately
+      // absent.
       backend: {
         description: this.context.control.description,
-        ...(this.context.control.controlApi ? { controlApi: this.context.control.controlApi } : {}),
+        controlApi: this.context.control.controlApi,
       },
       declaration: {
         // Reserved capabilities are filtered out rather than trusted to be absent. An adoption

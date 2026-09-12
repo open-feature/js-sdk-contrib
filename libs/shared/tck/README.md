@@ -593,6 +593,7 @@ Install it in the adopting project — `npm i -D testcontainers` — if you use 
 `runProviderTck` remains the path for a provider with no backend, which supplies its own
 `BackendControl`. Compose is an additional path, and now the default one, for a provider that talks
 to something.
+
 ## Conformance reports
 
 Set `PROVIDER_TCK_REPORT_DIR` and each suite writes two files: an envelope at `<dir>/<name>.json`,
@@ -711,9 +712,11 @@ about the run.
   captured at build time because the submodule is not part of the published npm package. Nothing
   else about the artifacts needs asserting: the stream carries every executed feature file verbatim
   as a `Source`, which identifies them by content, covers only what ran, and is under the digest.
-- **`backend.controlApi`** reports how the backend was driven. It is an optional member of
-  `BackendControl`, so adding it broke no existing implementation; a control that omits it omits the
-  field, which claims nothing either way.
+- **`backend.controlApi`** reports how the backend was driven, and both it and the `backend` block
+  it sits in are always written, because the schema requires both. `BackendControl` requires the
+  member, so there is nothing here to infer — see [Controlling the
+  backend](#controlling-the-backend) for why a value that could be absent would be an unfalsifiable
+  claim rather than no claim.
 - **`knownDeviations`** carries whatever [`knownDeviations`](#a-defect-is-not-a-decision-knowndeviations)
   the adoption declared, field for field. **The field is absent when nothing was declared, and never
   emitted as `[]`** — an empty array asserts that deviations were considered and none found, which no
