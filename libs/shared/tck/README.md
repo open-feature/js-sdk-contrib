@@ -596,7 +596,7 @@ to something.
 
 ## Conformance reports
 
-Set `PROVIDER_TCK_REPORT_DIR` and each suite writes two files: an envelope at `<dir>/<name>.json`,
+Set `TCK_REPORT_DIR` and each suite writes two files: an envelope at `<dir>/<name>.json`,
 conforming to the [report schema][report-schema] in the specification, and the results it points at
 at `<dir>/<name>.ndjson`.
 
@@ -607,7 +607,7 @@ the same fact to disagree. The envelope carries only what Messages has no opinio
 tested, and what the provider claims.
 
 ```console
-$ PROVIDER_TCK_REPORT_DIR=./reports npx jest
+$ TCK_REPORT_DIR=./reports npx jest
 $ jq -r 'select(.testStepFinished).testStepFinished.testStepResult.status' reports/in-memory.ndjson \
     | sort | uniq -c
      43 PASSED
