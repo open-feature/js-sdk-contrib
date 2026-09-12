@@ -140,8 +140,17 @@ flagd-testbed image, used because flagd serves OFREP and its launchpad is the re
 implementation of the suite's control API — discovers the mapped ports, and drives the backend over
 that API.
 
-**It is deliberately excluded from the default build, and from CI.** The target is `tck` rather than
-`e2e` for that reason: `npm run e2e` runs every project's `e2e` target and CI has a job for it, so
-this suite would otherwise pull a backend image on every push and pin a conformance claim nobody
-read. Run it by hand before merging a change to this provider or to the suite. The claim is pinned to
-the exact image tag in that Compose file, so a bump is a deliberate act with a result to record.
+**It is deliberately excluded from the default build, and from CI.** The mechanism: the suite lives
+in `src/e2e/tck/` behind a Jest project of its own
+([`src/e2e/tck/jest.config.ts`](./src/e2e/tck/jest.config.ts)), reached only by a `tck` target. The
+name matters — `npm run e2e` is `nx run-many --all --target=e2e` and CI has a job for it, so an `e2e`
+target here would pull a backend image on every push. `npx nx tck providers-ofrep` is the only way
+in; run it by hand before merging a change to this provider or to the suite.
+
+Why an adoption suite is excluded rather than made a required gate is
+[Appendix F, "Running the suite in CI"](https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md).
+Both mistakes it names were live here: this suite originally _created_ an `e2e` target where the
+project had none, and nothing said it was meant to be excluded.
+
+The claim is pinned to the exact image tag in that Compose file, so a bump is a deliberate act with a
+result to record.
