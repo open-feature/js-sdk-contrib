@@ -11,7 +11,7 @@ runFlagdTck({
   resolverType: 'rpc',
 
   /*
-   * Six capabilities, and every omission is derived from the provider's source rather than assumed:
+   * Eight capabilities, and every omission is derived from the provider's source rather than assumed:
    *
    * - Lifecycle is declared: initialisation genuinely reaches flagd. `connect` awaits
    *   `waitForReady` on the gRPC channel (grpc-service.ts:194-202) and `initialize` resolves only
@@ -43,7 +43,24 @@ runFlagdTck({
    * - NumericCoercion is omitted for the reason every JavaScript provider omits it: the language
    *   has no integer type, so the scenario is unsatisfiable by construction rather than by defect.
    *   See "The one place JavaScript cannot answer the shared question" in the TCK README.
-   * - Targeting and Caching are omitted because no scenario carries their tags yet.
+   * - Variants is declared. flagd's evaluation response carries the variant it matched and the
+   *   provider hands it back untouched, so the eight gated rows are a real question asked of this
+   *   provider rather than a formality. Requirement 2.2.4 is only a SHOULD and `types.md` types the
+   *   field optional, which is why the claim is made on a run rather than on having read the
+   *   provider: seven of the eight rows pass. The eighth asks for `large-integer-flag`, which this
+   *   testbed image does not serve at all (flagd-testbed#392) -- the same missing flag that already
+   *   fails the mandatory 2^31 - 1 scenario in this suite, and the reason LargeIntegers is
+   *   undeclared here. No deviation is recorded for it: the gap is in the backend's flag set, not in
+   *   the provider, and a deviation claims the provider gets something wrong.
+   * - Targeting is declared, and it is no longer a reserved name: Appendix F carries three scenarios
+   *   for it, and `targeting-key-flag` is already part of the flagd-testbed image this suite runs, so
+   *   nothing had to be seeded for them. They are what makes context passthrough observable at all —
+   *   every other canonical flag resolves the same way whatever the context, so a provider that
+   *   dropped the context would pass all of them. What is under test is still the provider: the
+   *   flag's rule is flagd's to evaluate, and all three scenarios assert is that the context reached
+   *   it.
+   * - Caching is omitted because it is still reserved: no scenario carries the tag, so declaring it
+   *   could not cause a skip and would put a capability nothing examined into the report.
    */
   capabilities: [
     Capability.Events,
@@ -52,6 +69,8 @@ runFlagdTck({
     Capability.ConfigurationChange,
     Capability.Object,
     Capability.UnavailableInit,
+    Capability.Variants,
+    Capability.Targeting,
   ],
 
   // The RPC resolver asks flagd to resolve each flag, so it is ready as soon as the stream is up.
