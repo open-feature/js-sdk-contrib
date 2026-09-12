@@ -6,7 +6,7 @@ import { resolveAssetDir } from './assets';
 import { expiredReservations } from './capability';
 import { featureFiles, resolveExtensionFeatures } from './extensions';
 import type { TckOptions } from './options';
-import { resolveCapabilities } from './options';
+import { eventTimeout, readyTimeout, resolveCapabilities } from './options';
 import { planScenarios, scenarioRunner } from './scenarioRunner';
 import { TckState } from './state';
 import { eventSteps } from './steps/eventSteps';
@@ -113,6 +113,20 @@ export { CANONICAL_FLAGS_PATH, CONTROL_API_PATH } from './assets';
 export function runProviderTck(options: TckOptions): void {
   const { declared, undeclared, knownDeviations } = resolveCapabilities(options);
   const state = new TckState(options);
+
+  // Jest's own per-test timeout is 5s by default, and every bound this suite works to is longer than
+  // that: `eventTimeoutMs` defaults to 12s, `readyTimeoutMs` to 30s, and `lifecycle.feature` bounds
+  // an error event at 10s. Whichever cap fires first wins, so until this line the harness's own
+  // timeouts -- which exist to fail with a message naming the thing that did not happen -- were
+  // unreachable, and a provider slower than five seconds was reported as "Exceeded timeout of
+  // 5000 ms for a test". Measured rather than reasoned about: a deliberately broken `@unavailable`
+  // scenario, whose step bounds the error event at 10000ms, failed at 5001ms.
+  //
+  // Derived from the suite's own bounds rather than picked: a scenario may wait three times over --
+  // the stale one awaits ready, stale and ready again -- and may make two direct lifecycle calls on
+  // top of registration, each bounded by `readyTimeoutMs`. This is a backstop above all of that,
+  // never the thing that should fire.
+  jest.setTimeout(3 * (eventTimeout(options) + readyTimeout(options)));
 
   // Before anything else observable happens, so an extension step bound below has a suite to read
   // and a second call in the same file is refused with a message rather than by jest-cucumber
