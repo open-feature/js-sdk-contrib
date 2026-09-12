@@ -30,6 +30,14 @@ runFlagdTck({
    * targeted value, including the one @variants row that fails for want of `large-integer-flag`
    * in the testbed image (flagd-testbed#392). See the RPC suite for why no deviation is recorded.
    *
+   * DisabledFlags is declared, and here it is the straightforward case rather than the interesting
+   * one: in-process syncs the ruleset and evaluates it locally, so the caller's default is in hand
+   * at the point the state is read -- flagd-core returns `{value: defaultValue, reason: DISABLED}`
+   * directly (flagd-core.ts:176-181). RPC reaches the same answer the long way round, flagd sending
+   * the type's zero value and the provider substituting (grpc-service.ts:306-312), and the two
+   * agreeing is again the finding: an application switching resolver sees the same four values. All
+   * four rows pass here too, which is what the declaration rests on.
+   *
    * The omissions are the same and have the same reasons: NumericCoercion because JavaScript has
    * no integer type, so the scenario is unsatisfiable by construction (see the TCK README), and
    * Caching because it is still reserved and no scenario carries the tag.
@@ -54,6 +62,7 @@ runFlagdTck({
     Capability.UnavailableInit,
     Capability.Variants,
     Capability.Targeting,
+    Capability.DisabledFlags,
   ],
 
   // In-process syncs the whole ruleset before reporting ready, so it needs longer than RPC.
