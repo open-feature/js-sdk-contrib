@@ -1,10 +1,10 @@
 import { Capability } from '@openfeature/tck';
-import { runFlagdTck } from './tckSuite';
+import { runFlagdTck } from './suite';
 
 /**
  * The OpenFeature Provider Conformance Suite, run against the flagd provider's RPC resolver.
  *
- * One `runProviderTck` call per file — see the note in `tckSuite.ts`.
+ * One `runProviderTck` call per file — see the note in `suite.ts`.
  */
 runFlagdTck({
   name: 'flagd-rpc',
