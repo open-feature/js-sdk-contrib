@@ -11,7 +11,7 @@ runFlagdTck({
   resolverType: 'rpc',
 
   /*
-   * Eight capabilities, and every omission is derived from the provider's source rather than assumed:
+   * Ten capabilities, and every omission is derived from the provider's source rather than assumed:
    *
    * - Lifecycle is declared: initialisation genuinely reaches flagd. `connect` awaits
    *   `waitForReady` on the gRPC channel (grpc-service.ts:194-202) and `initialize` resolves only
@@ -71,6 +71,14 @@ runFlagdTck({
    *   `flags/disabled-flags.json`, and the launchpad already serves them under the `default`
    *   configuration. All four rows pass, which is what the declaration rests on; without the
    *   substitution, three of the four would have failed on the value alone.
+   * - StandardReasons is declared, and it is a claim rather than an exemption: flagd reports the
+   *   standard vocabulary with the standard meanings, so the provider says so and reason.feature
+   *   checks it. All nine scenarios run here -- the tag composes with @targeting and
+   *   @disabled-flags, both of which this suite declares -- and all nine pass: STATIC for the four
+   *   rule-less flags, ERROR for the unknown flag and the type mismatch, TARGETING_MATCH for the
+   *   matching key and DEFAULT for the miss, DISABLED for the disabled flag. STATIC for a rule-less
+   *   flag is the row the specification genuinely leaves open, so it is the one measured rather than
+   *   assumed; flagd answers STATIC and DEFAULT in exactly the two places Appendix F separates them.
    * - Caching is omitted because it is still reserved: no scenario carries the tag, so declaring it
    *   could not cause a skip and would put a capability nothing examined into the report.
    */
@@ -84,6 +92,7 @@ runFlagdTck({
     Capability.Variants,
     Capability.Targeting,
     Capability.DisabledFlags,
+    Capability.StandardReasons,
   ],
 
   // The RPC resolver asks flagd to resolve each flag, so it is ready as soon as the stream is up.
