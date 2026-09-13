@@ -152,5 +152,11 @@ Why an adoption suite is excluded rather than made a required gate is
 Both mistakes it names were live here: this suite originally _created_ an `e2e` target where the
 project had none, and nothing said it was meant to be excluded.
 
+The scenarios come from the `open-feature/spec` submodule under `libs/shared/tck/spec`, so the `tck`
+target depends on `tck:pullSpec` to check that submodule out before Jest starts. Without it a branch
+that moved the submodule pin would run the _previous_ revision's feature files — the working tree
+does not follow a gitlink on its own — and a feature file arriving upstream would silently not be
+collected, leaving a green run that tested less than it claimed.
+
 The claim is pinned to the exact image tag in that Compose file, so a bump is a deliberate act with a
 result to record.
