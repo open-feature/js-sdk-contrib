@@ -4,4 +4,4 @@
 // open-feature/spec submodule and rewrites this file from it.
 
 /** The open-feature/spec commit the conformance artifacts in `spec/` were taken from. */
-export const SPEC_REVISION = '89b1519a08d81c46ba47fc2a54c44d40fdee845d';
+export const SPEC_REVISION = 'aa2ad24f5a14ae2b5756df0b6d23f493f39507e6';

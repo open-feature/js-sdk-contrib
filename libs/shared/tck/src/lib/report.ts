@@ -127,10 +127,13 @@ export interface ConformanceReport {
    * states that rule, and the other three implementations obey it the same way: Go with
    * `omitempty`, Python on a truthiness check, Java by mapping empty to null.
    *
-   * This is the field that makes a defect legible as a defect. A withheld capability and a broken
-   * one produce identical results -- scenarios skipped -- so without this a provider that withholds
-   * `@stale` because it never leaves `STALE` once it gets there is indistinguishable from one whose
-   * backend simply cannot be lost. It cannot name a capability this SDK is unable to ask about:
+   * This is the field that makes a defect legible as a defect. A capability withheld by choice and
+   * one withheld for a gap the adopter knows about produce identical results -- scenarios skipped
+   * -- so without this a provider that cannot be asked about `@stale` at all is indistinguishable
+   * from one whose backend simply cannot be lost. Where the provider *does* attempt the behaviour
+   * and gets it wrong, the capability stays declared and the scenario fails: the entry then says a
+   * visible failure is known rather than replacing it with a skip. It cannot name a capability this
+   * SDK is unable to ask about:
    * those scenarios were never put to the provider, so an entry would report a language property as
    * this provider's defect, and `resolveCapabilities` refuses it.
    */
