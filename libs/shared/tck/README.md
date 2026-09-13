@@ -206,6 +206,7 @@ call is made. See [`src/lib/scenarioRunner.ts`](./src/lib/scenarioRunner.ts).
 | `Capability.NumericCoercion`     | `@numeric-coercion`     | coerces between integer and float only when lossless, else `TYPE_MISMATCH` — **see below**                               |
 | `Capability.LargeIntegers`       | `@large-integers`       | resolves integers up to 2^53 − 1 exactly; leave undeclared where the transport rounds it                                 |
 | `Capability.Targeting`           | `@targeting`            | resolves a flag differently for a matching evaluation context                                                            |
+| `Capability.StandardReasons`     | `@standard-reasons`     | reports the standard resolution reasons, with the standard meanings — **see below**                                      |
 | `Capability.Caching`             | `@caching`              | reserved; **not declarable** — no scenarios yet                                                                          |
 
 Untagged scenarios are mandatory and always run. `capabilities` defaults to every _declarable_
@@ -374,14 +375,13 @@ The suite was asserting a `MUST` neither of them states.
 The variant assertions are therefore consolidated into a single gated Scenario Outline of eight
 rows. Declare `@variants` where your backend names its variants and they run; leave it undeclared
 and they are skipped with that reason rather than passed. Nothing else changes either way — the
-value and reason assertions for the same flags are untagged, requirement 2.2.3 making the value a
-`MUST`.
+value assertions for the same flags are untagged, requirement 2.2.3 making the value a `MUST`.
 
-The `reason` assertions are the deliberate exception, and Appendix F states it as a decision rather
-than leaving it as an oversight: requirement 2.2.5 is also a `SHOULD` and even permits _"some other
-string"_, yet the suite pins a specific reason anyway, because a wrong reason is its cheapest
-diagnosis of a provider quietly falling back to the code default. Read a reason failure differently
-from a value failure: the value rests on a `MUST`, the reason on a house rule.
+The `reason` assertions used to be the deliberate exception to that reasoning — pinned across three
+feature files even though 2.2.5 is a `SHOULD` that permits _"some other string"_, on the grounds
+that a wrong reason was the cheapest diagnosis of a provider quietly falling back. They are not an
+exception any more: they are consolidated behind `@standard-reasons`, on the same footing as
+`@variants`, and the section on that tag below says why.
 
 ### `@targeting` stopped being a reservation
 
@@ -452,6 +452,54 @@ returns the configured value and is caught on the value alone, which rests on re
 other string"_. No variant is asserted either: a disabled flag resolved no variant, so there is none
 to name, and `@disabled-flags` and `@variants` do not compose. That is also why the four rows are
 scalar-only — a row needing both `@object` and this tag could not be one row of a single outline.
+`DISABLED` _is_ pinned, in `reason.feature`, for providers that declare `@standard-reasons` and so
+opt into the standard meanings.
+
+### `@standard-reasons` is a claim, not an exemption
+
+[Requirement 2.2.5][spec-providers] is a `SHOULD`, and it goes further than 2.2.4 does: it lets a
+provider populate `reason` with one of the listed values _"or some other string indicating the
+semantic reason for the returned flag value"_. A provider whose backend reports vendor-specific
+reasons is therefore conformant, and asserting an exact reason against it would fail it for
+something the specification permits.
+
+An earlier revision of this suite did exactly that, in thirteen places across three feature files. It
+bought very little: every canonical flag resolves to a value distinct from the caller's default, so a
+provider that silently falls back is already caught by the value assertion, and the reason only said
+_why_ it failed.
+
+So the reasons live in `reason.feature`, gated as a whole. **Declaring `@standard-reasons` is a
+provider saying "I use the standard vocabulary with the standard meanings", and that file is what
+checks the claim.** A provider that does not declare it **loses nothing**: its values, variants and
+error codes are asserted everywhere else, on `MUST` requirements. What the declaration adds is
+something a report's reader can act on — anyone building telemetry, dashboards or debugging on
+`reason` can see that the vocabulary was verified rather than assumed.
+
+| Situation                                                              | Reason            |
+| ---------------------------------------------------------------------- | ----------------- |
+| The flag was resolved from configuration and carries no targeting rule | `STATIC`          |
+| A targeting rule matched the evaluation context                        | `TARGETING_MATCH` |
+| A targeting rule exists and did not match                              | `DEFAULT`         |
+| The flag is disabled in the management system                          | `DISABLED`        |
+| The evaluation failed, and an error code is reported with it           | `ERROR`           |
+
+`STATIC` for the first row is the call worth flagging. `types.md` types `DEFAULT` as _"no dynamic
+evaluation occurred **or** dynamic evaluation yielded no result"_, which a rule-less flag satisfies
+as readily as `STATIC` does — two providers can disagree here and both conform. A provider that
+answers `DEFAULT` for a rule-less flag is not defective; it does not use the standard meanings, and
+should not declare the tag.
+
+**Tags compose, and here that is load-bearing.** `TARGETING_MATCH` cannot be observed without
+targeting and `DISABLED` cannot be observed unless the backend distinguishes a disabled flag, so
+three of the nine entries carry `@targeting` or `@disabled-flags` as well. A provider declaring
+`@standard-reasons` alone runs the other six and skips those three with their reason — naming both
+missing capabilities, not the first.
+
+**This is not the other JavaScript impossibility.** The section below is about `@numeric-coercion`,
+which no provider in this language can be asked about at all. `@standard-reasons` is nothing like
+it: a reason is a string on the resolution details, and all five situations above are observable
+through `getBooleanDetails` and its siblings whatever the accessor's arithmetic. Both in-memory
+suites here declare it and pass, measured rather than assumed.
 
 ## The one place JavaScript cannot answer the shared question
 
@@ -823,4 +871,5 @@ by every language's TCK.
 [coercion-adr]: https://github.com/open-feature/flagd/blob/main/docs/architecture-decisions/numeric-coercion.md
 [appendix-f]: https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md
 [spec]: https://github.com/open-feature/spec
+[spec-providers]: https://github.com/open-feature/spec/blob/main/specification/sections/02-providers.md
 [tracking]: https://github.com/open-feature/spec/issues/417

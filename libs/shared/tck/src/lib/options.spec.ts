@@ -130,6 +130,45 @@ describe('the @variants capability', () => {
   });
 });
 
+describe('the @standard-reasons capability', () => {
+  // Requirement 2.2.5 is a SHOULD that goes further than 2.2.4 does: it lets a provider populate
+  // `reason` with one of the listed values "or some other string indicating the semantic reason for
+  // the returned flag value". A provider reporting vendor-specific reasons is conformant, so the
+  // tag is a claim the provider makes rather than an excuse it needs -- and the one thing a suite
+  // must not do is declare it and record a deviation, which reports a sanctioned choice as a defect.
+  it('is declarable, a standard reason being a claim rather than a requirement', () => {
+    expect(DECLARABLE_CAPABILITIES).toContain(Capability.StandardReasons);
+    expect(isReserved(Capability.StandardReasons)).toBe(false);
+  });
+
+  it('resolves from the tag reason.feature carries at feature level', () => {
+    expect(capabilityForTag('@standard-reasons')).toBe(Capability.StandardReasons);
+  });
+
+  it('is left out when a suite narrows the default, without needing a deviation', () => {
+    const { declared, undeclared, knownDeviations } = resolveCapabilities(
+      optionsFor({ capabilities: [Capability.Events] }),
+    );
+
+    expect(declared.has(Capability.StandardReasons)).toBe(false);
+    expect(undeclared).toContain(Capability.StandardReasons);
+    expect(knownDeviations).toEqual([]);
+  });
+
+  it('is independent of @numeric-coercion, the capability this language genuinely cannot have', () => {
+    // Worth pinning because the two arrive at the same place from opposite directions. JavaScript
+    // has one numeric type, so @numeric-coercion cannot be asked of any provider here; a reason is
+    // a string on the resolution details and is observable whatever the accessor's arithmetic. A
+    // suite that lumped them together would withhold a claim it could have made.
+    const { declared } = resolveCapabilities(
+      optionsFor({ capabilities: [Capability.Events, Capability.StandardReasons] }),
+    );
+
+    expect(declared.has(Capability.StandardReasons)).toBe(true);
+    expect(declared.has(Capability.NumericCoercion)).toBe(false);
+  });
+});
+
 describe('the @reinitialization capability', () => {
   // Requirement 2.5.2 says a provider SHOULD revert to its uninitialized state after shutdown, and
   // that "some providers MAY allow reinitialization from this state". Permitted, not required — so
