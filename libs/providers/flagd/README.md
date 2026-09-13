@@ -263,5 +263,12 @@ The directory boundary is what it is because of the first mistake named there: t
 in `src/e2e/tests/`, where the pre-existing `e2e` target's default `testMatch` swept them up, and
 that target _is_ a CI job here.
 
+The scenarios themselves come from the `open-feature/spec` submodule under `libs/shared/tck/spec`,
+not from this project, so the `tck` target depends on `tck:pullSpec` to check that submodule out
+before Jest starts. Without it a branch that moved the submodule pin would run the _previous_
+revision's feature files — the working tree does not follow a gitlink on its own — and a feature file
+arriving upstream would silently not be collected. That is a green run that tested less than it
+claimed, which is the one failure mode a conformance suite must not have.
+
 A conformance result pins its claim to the exact backend image in that Compose file, so a bump to the
 tag is a deliberate act with a result to record.
