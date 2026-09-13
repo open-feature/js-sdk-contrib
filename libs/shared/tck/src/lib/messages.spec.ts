@@ -230,12 +230,14 @@ describe('the results stream', () => {
     }
   });
 
-  it('says why every skipped scenario was skipped, in one wording for every kind of skip', () => {
-    // Both kinds are skips: a status a consumer has to special-case is a status that gets read as a
-    // pass by something. One reason, naming the tags that were missing, is the whole mechanism --
-    // and there is deliberately no second wording for a capability that cannot hold in the language
-    // at all, so nothing here can dress a gap up as an impossibility. @numeric-coercion is in this
-    // set, undeclared like any other, and it reads exactly as the rest do.
+  it('says why every skipped scenario was skipped, and says which kind of skip it was', () => {
+    // Both kinds are one status: a status a consumer has to special-case is a status that gets read
+    // as a pass by something, and there is no second one here or in the schema. The *reason* is what
+    // separates them, because a report's reader cannot otherwise -- "this provider does not declare
+    // it" is a fact about this adoption, and "no provider in this SDK can be asked" is a fact about
+    // JavaScript that holds for every adoption. An adoption cannot reach the second wording: it is
+    // keyed on the capability, not on anything a suite declares, so nothing here can dress a gap up
+    // as an impossibility.
     const statuses = statusByPickle(envelopes);
     const gated = planned.filter(({ scenario }) => scenario.missing.length);
 
@@ -244,13 +246,16 @@ describe('the results stream', () => {
 
     for (const { scenario } of gated) {
       const reason = statuses.get(scenario.pickleId)?.message ?? '';
+      const unaskable = scenario.missing.includes(Capability.NumericCoercion);
 
-      expect(reason).toContain('which this provider does not declare');
+      expect(reason).toContain(
+        unaskable ? 'which no provider in this SDK can be asked about' : 'which this provider does not declare',
+      );
       for (const capability of scenario.missing) {
         expect(reason).toContain(capability);
       }
-      // The removed second wording. Asserted absent rather than merely unused, because its return
-      // would be a report claiming an impossibility the schema no longer has a place for.
+      // The removed second *status*. Asserted absent rather than merely unused, because its return
+      // would be a report claiming an impossibility the schema has no place for.
       expect(reason).not.toContain('cannot hold');
     }
   });

@@ -376,16 +376,17 @@ describe('the capability gate', () => {
     // No canonical scenario is in this position today, which is exactly why it is worth pinning: a
     // scenario is gated by *every* capability tag that applies to it, so an upstream file that
     // composed @numeric-coercion with an ordinary tag must not lose either half of the reason.
-    const parsed = synthetic([
-      'Feature: composed gates',
-      '',
-      '  @object @numeric-coercion',
-      '  Scenario: a structured flag asked for as an integer',
-      '    Given a String-flag with key "string-flag" and a default value "x"',
-      '',
-    ]);
-
-    const [planned] = planFeature('composed', parsed, [], new Set([Capability.Events])).scenarios;
+    const [planned] = synthetic(
+      [
+        'Feature: composed gates',
+        '',
+        '  @object @numeric-coercion',
+        '  Scenario: a structured flag asked for as an integer',
+        '    Given a String-flag with key "string-flag" and a default value "x"',
+        '',
+      ],
+      [Capability.Events],
+    );
     const name = skipDisplayName(planned);
 
     expect(planned.missing).toEqual([Capability.Object, Capability.NumericCoercion]);

@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { TestStepResultStatus, version as messagesVersion } from '@cucumber/messages';
 import type { Capability } from './capability';
-import { isReserved } from './capability';
+import { inexpressibleReason, isInexpressible, isReserved } from './capability';
 import type { BackendControl } from './control';
 import type { KnownDeviation } from './deviation';
 import type { CompleteTestCase, ConformanceMessages, Outcome } from './messages';
@@ -87,9 +87,10 @@ export interface ConformanceReport {
    *
    * There is deliberately no parallel not-applicable member. A capability that cannot hold in a
    * *language* at all — `@numeric-coercion` where there is one numeric type, `@large-integers` on a
-   * 32-bit accessor — is a property of the SDK rather than of the provider, so it is recorded once
-   * in Appendix F instead of restated in every report; in a run it is simply undeclared, and the
-   * skip carries the reason.
+   * 32-bit accessor — is a property of the SDK rather than of the provider, so the implementation
+   * refuses it outright rather than emitting a per-report field about it: it can never reach
+   * `declared`, its scenarios are gated in every run, and the skip carries the reason in words that
+   * name the SDK rather than the provider.
    */
   declaration: {
     /**
@@ -128,8 +129,10 @@ export interface ConformanceReport {
    *
    * This is the field that makes a defect legible as a defect. A withheld capability and a broken
    * one produce identical results -- scenarios skipped -- so without this a provider that withholds
-   * `@numeric-coercion` because it narrows `0.5` to `0` is indistinguishable from one that simply
-   * chose not to support it.
+   * `@stale` because it never leaves `STALE` once it gets there is indistinguishable from one whose
+   * backend simply cannot be lost. It cannot name a capability this SDK is unable to ask about:
+   * those scenarios were never put to the provider, so an entry would report a language property as
+   * this provider's defect, and `resolveCapabilities` refuses it.
    */
   knownDeviations?: KnownDeviation[];
 }
@@ -342,20 +345,37 @@ export class ConformanceRecorder {
   /**
    * Why a scenario was skipped.
    *
-   * One skip carrying this reason is the whole mechanism. A capability the provider chose not to
-   * declare and one that cannot hold for it at all are both skips, and a second status or a
-   * parallel declaration member would say nothing this sentence and the scenario's own tags do not.
-   * Where the impossibility is a property of the language rather than of the provider --
-   * `@numeric-coercion` has no answer in JavaScript, there being one numeric type -- it is recorded
-   * against {@link Capability.NumericCoercion} and in Appendix F, once, rather than repeated here
-   * on every provider's behalf.
+   * One skip *status* is the whole mechanism: a second status, or a parallel declaration member,
+   * would say nothing this sentence and the scenario's own tags do not, and a status a consumer has
+   * to special-case is a status that gets read as a pass by something.
+   *
+   * **The sentence itself has to distinguish two things, because a report's reader cannot.** A
+   * capability the provider declined says something about the provider. A capability
+   * {@link isInexpressible} says this SDK cannot ask about says nothing about it at all -- it is
+   * true of every provider written against this SDK and will stay true until the Evaluation API
+   * changes. Reading "does not declare @numeric-coercion" off a JavaScript report and concluding
+   * anything about the provider would be reading a language property as a product decision, so the
+   * message names the SDK instead, in the same words the run's own skip does.
    */
   private skipReason(missing: readonly Capability[]): string {
     if (missing.length === 0) {
       return 'skipped by the capability gate, which named no capability';
     }
 
-    return `requires ${missing.join(' ')}, which this provider does not declare`;
+    const undeclared = missing.filter((capability) => !isInexpressible(capability));
+    const inexpressible = missing.filter(isInexpressible);
+
+    const reasons: string[] = [];
+    if (undeclared.length) {
+      reasons.push(`requires ${undeclared.join(' ')}, which this provider does not declare`);
+    }
+    for (const capability of inexpressible) {
+      reasons.push(
+        `requires ${capability}, which no provider in this SDK can be asked about: ${inexpressibleReason(capability)}`,
+      );
+    }
+
+    return reasons.join('; ');
   }
 }
 
