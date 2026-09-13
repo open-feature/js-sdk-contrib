@@ -108,7 +108,11 @@ runContainerizedProviderTck({
    *   seven of the eight rows pass. The eighth asks for `large-integer-flag`, which this testbed
    *   image does not serve at all (flagd-testbed#392) -- the same missing flag that already fails
    *   the mandatory 2^31 - 1 scenario here. No deviation is recorded for it: the gap is in the
-   *   backend's flag set, not in the provider.
+   *   backend's flag set, not in the provider. Withholding @large-integers is the right call on
+   *   Appendix F's rule that the unit of a declaration decision is the scenario rather than the tag
+   *   -- it gates exactly one, so a backend without its flag leaves nothing about the capability
+   *   establishable. That also makes this omission temporary: it goes away when the testbed serves
+   *   the flag, which is what flagd-testbed#392 is for, and it should be revisited then.
    *
    * - Targeting IS declared, and it is no longer a reserved name: Appendix F carries three scenarios
    *   for it. They are the only ones in the suite that ask this provider to serialise an evaluation
