@@ -143,10 +143,37 @@ runContainerizedProviderTck({
    *   rows through no fault of the provider. That is why the tag is gated, and why withholding it
    *   elsewhere would need no `knownDeviations` entry.
    *
+   * - StandardReasons IS declared, and it is worth measuring here rather than reasoning about,
+   *   because for a stateless provider the reason is the server's word carried through untouched.
+   *   The brief expected this one to be uncertain: the reason OFREP reports is whatever the server
+   *   sends, and this provider does nothing to it. Both halves held. flagd's OFREP handler answers
+   *   with the standard vocabulary, and `toResolutionDetails` copies `reason` onto the resolution
+   *   details unchanged (ofrep-api.ts:235-263), so all nine scenarios run -- the tag composes with
+   *   @targeting and @disabled-flags, both declared above -- and all nine pass: STATIC for the four
+   *   rule-less flags, ERROR for the unknown flag and the type mismatch, TARGETING_MATCH and
+   *   DEFAULT for the two targeting halves, DISABLED for the disabled flag.
+   *
+   *   The DISABLED row is the one that could not have been predicted from the provider alone, and
+   *   it falls out of the same response shape that earns @disabled-flags: flagd omits `value`
+   *   entirely and sends `{"key":"disabled-boolean-flag","reason":"DISABLED","metadata":{}}`, so
+   *   the caller's default is substituted client-side *and* the server's reason survives the
+   *   substitution. A provider that reported ERROR for a response with no value would fail this row
+   *   while still passing the @disabled-flags rows, which is why the two scenarios are separate.
+   *
+   *   The claim is about this provider against this backend, as the others here are. An OFREP
+   *   server reporting vendor-specific reasons is conformant -- 2.2.5 expressly permits "some other
+   *   string" -- and a run against it would fail these scenarios through no fault of the provider,
+   *   which is exactly why the tag is gated rather than the assertions being ungated.
    * - Caching is omitted because it is still reserved: no scenario carries the tag, so declaring it
    *   could not cause a skip and would put a capability nothing examined into the report.
    */
-  capabilities: [Capability.Object, Capability.Variants, Capability.Targeting, Capability.DisabledFlags],
+  capabilities: [
+    Capability.Object,
+    Capability.Variants,
+    Capability.Targeting,
+    Capability.DisabledFlags,
+    Capability.StandardReasons,
+  ],
 
   // The SDK synthesises READY as soon as registration completes, since the provider has no
   // initialisation step. This is headroom for a loaded machine, not an expected latency.
