@@ -237,6 +237,56 @@ export enum Capability {
   Targeting = '@targeting',
 
   /**
+   * Provider reports the standard resolution reasons, with the meanings Appendix F gives them.
+   *
+   * **A claim, not an exemption.**
+   * [Requirement 2.2.5](https://github.com/open-feature/spec/blob/main/specification/sections/02-providers.md)
+   * is a `SHOULD`, and it goes further than 2.2.4 does: it lets a provider populate `reason` with
+   * one of the listed values *"or some other string indicating the semantic reason for the returned
+   * flag value"*. A provider whose backend reports vendor-specific reasons is therefore conformant,
+   * and asserting an exact reason against it would fail it for something the specification permits.
+   *
+   * An earlier revision of this suite did exactly that, in thirteen places across three feature
+   * files. It bought very little: every canonical flag resolves to a value distinct from the
+   * caller's default, so a provider that silently falls back is already caught by the value
+   * assertion, and the reason only said *why* it failed.
+   *
+   * So the reasons live in `reason.feature`, gated as a whole. Declaring this is a provider saying
+   * *"I use the standard vocabulary with the standard meanings"*, and that file is what checks the
+   * claim. A provider that does not declare it **loses nothing**: its values, variants and error
+   * codes are asserted everywhere else, on `MUST` requirements. What the declaration adds is
+   * something a report's reader can act on — anyone building telemetry, dashboards or debugging on
+   * `reason` can see that the vocabulary was verified rather than assumed.
+   *
+   * The meanings are the content of the claim, and constrain nobody who does not make it:
+   *
+   * | Situation | Reason |
+   * | --- | --- |
+   * | The flag was resolved from configuration and carries no targeting rule | `STATIC` |
+   * | A targeting rule matched the evaluation context | `TARGETING_MATCH` |
+   * | A targeting rule exists and did not match | `DEFAULT` |
+   * | The flag is disabled in the management system | `DISABLED` |
+   * | The evaluation failed, and an error code is reported with it | `ERROR` |
+   *
+   * `STATIC` for the first row is the call worth flagging. `types.md` types `DEFAULT` as *"no
+   * dynamic evaluation occurred **or** dynamic evaluation yielded no result"*, which a rule-less
+   * flag satisfies as readily as `STATIC` does — two providers can disagree here and both conform.
+   * A provider that answers `DEFAULT` for a rule-less flag is not defective; it does not use the
+   * standard meanings, and should not declare the tag.
+   *
+   * **Tags compose, and here that is load-bearing.** `TARGETING_MATCH` cannot be observed without
+   * targeting, and `DISABLED` cannot be observed unless the backend distinguishes a disabled flag,
+   * so those scenarios carry {@link Targeting} and {@link DisabledFlags} as well. A provider
+   * declaring this alone runs the rest and skips those two with their reason.
+   *
+   * Unlike {@link NumericCoercion}, **this one is reachable in JavaScript**. The single numeric type
+   * makes the coercion contract unaskable here, but a reason is a string on the resolution details
+   * and every one of the five situations above is observable through `getBooleanDetails` and its
+   * siblings, whatever the accessor's arithmetic.
+   */
+  StandardReasons = '@standard-reasons',
+
+  /**
    * Reserved; no scenario carries this tag yet.
    *
    * Reserved means **not declarable**; see {@link RESERVED_CAPABILITIES}.
