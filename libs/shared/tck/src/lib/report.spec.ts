@@ -178,6 +178,7 @@ describe('scenario accounting', () => {
       'events',
       'lifecycle',
       'metadata',
+      'reason',
     ]);
   });
 
