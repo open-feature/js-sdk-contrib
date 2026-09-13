@@ -48,7 +48,12 @@ runFlagdTck({
    *   testbed image does not serve at all (flagd-testbed#392) -- the same missing flag that already
    *   fails the mandatory 2^31 - 1 scenario in this suite, and the reason LargeIntegers is
    *   undeclared here. No deviation is recorded for it: the gap is in the backend's flag set, not in
-   *   the provider, and a deviation claims the provider gets something wrong.
+   *   the provider, and a deviation claims the provider gets something wrong. Withholding is the
+   *   right call on Appendix F's rule that the unit of a declaration decision is the scenario rather
+   *   than the tag -- @large-integers gates exactly one, so a backend without its flag leaves
+   *   nothing about the capability establishable. That also makes this omission temporary in a way
+   *   the others here are not: it goes away when the testbed serves the flag, which is what
+   *   flagd-testbed#392 is for, and it should be revisited then rather than left standing.
    * - Targeting is declared, and it is no longer a reserved name: Appendix F carries three scenarios
    *   for it, and `targeting-key-flag` is already part of the flagd-testbed image this suite runs, so
    *   nothing had to be seeded for them. They are what makes context passthrough observable at all —
