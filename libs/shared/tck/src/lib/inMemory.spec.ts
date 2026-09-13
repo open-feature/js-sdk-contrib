@@ -25,8 +25,8 @@ runProviderTck({
   newProvider: () => control.newProvider(),
 
   /*
-   * Five capabilities declared, and every omission is a fact about the provider or the language
-   * rather than a convenience:
+   * Seven capabilities declared, and every omission is a fact about this provider rather than a
+   * convenience:
    *
    * - Stale and UnavailableInit are omitted because there is no connection to lose. InProcessControl
    *   does not implement ConnectionControl for the same reason, and the two omissions keep each
@@ -89,18 +89,4 @@ runProviderTck({
     Capability.DisabledFlags,
     Capability.StandardReasons,
   ],
-
-  /*
-   * NumericCoercion is left undeclared, so its three scenarios are skipped with that reason.
-   *
-   * **JavaScript has no integer type.** `typeof 10` and `typeof 0.5` are both 'number', the
-   * Evaluation API exposes only getNumberDetails, and the in-memory provider type-checks with
-   * `typeof value != typeof defaultValue`. Asking for float-flag as an Integer is therefore
-   * indistinguishable from asking for it as a Float, so neither half of the coercion contract can
-   * be put to a provider in this language — not because of a defect, but because the distinction
-   * does not exist here.
-   *
-   * That is a property of the language rather than of this provider, so it is stated once against
-   * Capability.NumericCoercion and in Appendix F rather than restated in this suite's report.
-   */
 });

@@ -1,6 +1,6 @@
 import type { IJestLike, loadFeature } from 'jest-cucumber';
 import type { Capability } from './capability';
-import { capabilityForTag } from './capability';
+import { capabilityForTag, inexpressibleReason, isInexpressible } from './capability';
 
 /** What `loadFeature` hands back. jest-cucumber does not export the type, so it is derived. */
 type ParsedFeature = ReturnType<typeof loadFeature>;
@@ -137,12 +137,17 @@ export function scenarioRunner(featureTitle: string, planned: readonly PlannedSc
  * The reason travels in the name because Jest has nowhere else to put it, and a suite that quietly
  * goes green on scenarios it did not run is worse than no suite at all.
  *
- * One skip carrying its reason is the whole mechanism. "Does not declare it" and "cannot hold for
- * it at all" are both skips, and a second wording for the second case tells a reader nothing this
- * one does not: the scenario's own tags say what was asked and the declaration says whether it was
- * claimed. Where a capability cannot hold in the language at all — `@numeric-coercion` here — that
- * is a property of the SDK rather than of the provider, and it is recorded once against
- * {@link Capability.NumericCoercion} and in Appendix F instead of restated in every run.
+ * One skip *status* is the whole mechanism — Appendix F is explicit that a second status, or a
+ * parallel declaration field, would tell a reader nothing the reason does not. **The reason itself
+ * must distinguish the two cases**, and that is the other half of the same rule: a capability the
+ * provider declined to declare says something about the provider, and one this SDK cannot express
+ * says nothing about it at all. A reader seeing a capability absent from a report has to be able to
+ * tell those apart, so the wordings differ and the second carries the language property with it —
+ * which is why it is one lookup shorter than it used to be, rather than one lookup away in
+ * `Capability`'s documentation.
+ *
+ * A scenario can be in both positions at once — it is gated by *every* capability tag that applies
+ * to it — so both clauses are emitted when both apply, each naming its own capabilities.
  */
 export function skipDisplayName(scenario: PlannedScenario): string {
   if (!scenario.missing.length) {
@@ -151,5 +156,16 @@ export function skipDisplayName(scenario: PlannedScenario): string {
     return `${scenario.title} — SKIPPED: for a reason the TCK did not ask for`;
   }
 
-  return `${scenario.title} — SKIPPED: provider does not declare ${scenario.missing.join(' ')}`;
+  const undeclared = scenario.missing.filter((capability) => !isInexpressible(capability));
+  const inexpressible = scenario.missing.filter(isInexpressible);
+
+  const reasons: string[] = [];
+  if (undeclared.length) {
+    reasons.push(`provider does not declare ${undeclared.join(' ')}`);
+  }
+  for (const capability of inexpressible) {
+    reasons.push(`this SDK cannot ask ${capability} of any provider: ${inexpressibleReason(capability)}`);
+  }
+
+  return `${scenario.title} — SKIPPED: ${reasons.join('; ')}`;
 }
