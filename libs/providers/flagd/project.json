@@ -78,7 +78,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/libs/providers/flagd"],
       "options": {
-        "jestConfig": "libs/providers/flagd/src/e2e/tck/jest.config.ts",
+        "jestConfig": "libs/providers/flagd/src/tck/jest.config.ts",
         "runInBand": true,
         "passWithNoTests": false
       },

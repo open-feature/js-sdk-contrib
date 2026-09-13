@@ -1,8 +1,8 @@
 import { join } from 'node:path';
 import type { Capability } from '@openfeature/tck';
 import { runContainerizedProviderTck } from '@openfeature/tck';
-import type { ResolverType } from '../../lib/configuration';
-import { FlagdProvider } from '../../lib/flagd-provider';
+import type { ResolverType } from '../lib/configuration';
+import { FlagdProvider } from '../lib/flagd-provider';
 
 /**
  * The shared body of the two flagd conformance suites.
@@ -16,18 +16,25 @@ import { FlagdProvider } from '../../lib/flagd-provider';
  * definitions in module state, so two suites in one file would register the vocabulary twice and
  * every step would report as ambiguous.
  *
- * The existing e2e suites in `../tests` are untouched, and so is flagd-testbed. The suite drives the
- * testbed's launchpad through the standardised control API, which the launchpad already implements,
- * and brings the stack up itself from `docker-compose.yaml` beside this file.
+ * The existing e2e suites in `../e2e/tests` are untouched, and so is flagd-testbed. The suite drives
+ * the testbed's launchpad through the standardised control API, which the launchpad already
+ * implements, and brings the stack up itself from `docker-compose.yaml` beside this file.
  *
- * ## Why this lives in its own directory, with its own Jest config and Nx target
+ * ## Why this lives beside `../e2e`, not inside it, with its own Jest config and Nx target
+ *
+ * The two suites answer different questions. The e2e suites test this provider against flagd's own
+ * harness and are expected green; this one tests it against the OpenFeature provider contract and
+ * fails scenarios by design wherever a `knownDeviation` is declared. Nesting it under `e2e/` would
+ * have filed it as a kind of e2e test, which is the conflation the separate target exists to undo —
+ * and it made selection a matter of one config ignoring a subdirectory of another. A sibling
+ * directory selects by path: a file is in `src/tck/` or it is not.
  *
  * Docker-gated and excluded from the default build, run by hand before merge. `nx tck
  * providers-flagd` is the only thing that runs it: `npm run e2e` is `nx run-many --all
- * --target=e2e`, and CI has a job for exactly that, so a conformance spec left in `../tests` would
- * be swept into a CI job by Jest's default testMatch for no better reason than the directory it sat
- * in. A conformance run pins its claim to an exact backend image, and a claim nobody reads is cost
- * without signal.
+ * --target=e2e`, and CI has a job for exactly that, so a conformance spec left in `../e2e/tests`
+ * would be swept into a CI job by Jest's default testMatch for no better reason than the directory
+ * it sat in. A conformance run pins its claim to an exact backend image, and a claim nobody reads is
+ * cost without signal.
  */
 export interface FlagdTckSuite {
   /** Identifies the suite in test output and scopes its OpenFeature domain. */
