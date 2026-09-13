@@ -124,7 +124,8 @@ const canonicalFlagsText = readFileSync(CANONICAL_FLAGS_PATH, 'utf8');
  *
  * - `missing-flag` is absent, which is what the `FLAG_NOT_FOUND` scenario tests. Adding it turns
  *   that scenario green for the wrong reason.
- * - no flag carries a `contextEvaluator`, so every evaluation reports reason `STATIC` — the TCK
+ * - no flag carries a `contextEvaluator`, so every enabled flag resolves statically — which is what
+ *   `reason.feature`'s `STATIC` rows assert of a provider declaring `@standard-reasons`. The TCK
  *   tests a provider's mapping of a response, not a backend's evaluation logic. Nothing here can
  *   introduce one: the format has no way to express it. `targeting-key-flag` is the one flag with a
  *   targeting rule and it is no exception, because the rule is *data* in the file and an

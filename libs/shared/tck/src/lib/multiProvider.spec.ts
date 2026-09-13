@@ -5,16 +5,18 @@ import { runProviderTck } from './runProviderTck';
 
 /**
  * NOT CURRENTLY RUN -- excluded via `testPathIgnorePatterns` in this project's jest.config.ts,
- * because the SDK's MultiProvider does not pass it. It fails 16 of the 43 scenarios it runs -- 56
- * in the canonical set, 13 skipped by the declaration below -- and every one of them comes from a
+ * because the SDK's MultiProvider does not pass it. It fails 18 of the 50 scenarios it runs -- 65
+ * in the canonical set, 15 skipped by the declaration below -- and every one of them comes from a
  * single root cause: the multi-provider replaces the child's error code with `GENERAL`
- * (15x TYPE_MISMATCH, 1x FLAG_NOT_FOUND). The information is not lost so much as thrown away --
+ * (16x TYPE_MISMATCH, 2x FLAG_NOT_FOUND). The information is not lost so much as thrown away --
  * `collectProviderErrors` builds an `ErrorWithCode` carrying the child's real code, and
  * `constructAggregateError` then wraps it in an `AggregateError extends GeneralError`, so the code
  * survives only inside `originalErrors[].error.code`, which nothing reads.
  *
  * Everything else passes, which is the useful half of the result: evaluation, variants, reasons,
- * disabled flags and configuration-change events all survive delegation intact.
+ * disabled flags and configuration-change events all survive delegation intact. The two new
+ * failures since `reason.feature` arrived are that same error code and not a reason: both scenarios
+ * assert the pair, the reason `ERROR` reaches the caller and the code beside it does not.
  *
  * This is kept, not deleted, because it is the regression test -- re-enabling it is deleting one
  * line of jest.config.ts.
@@ -65,7 +67,10 @@ runProviderTck({
   // because the child substitutes locally and the multi-provider delegates to it, which makes the
   // rows another transparency question: a disabled flag is a resolution the child declined, and a
   // wrapper that treated "no value" as an error rather than as the caller's default would be caught
-  // here and nowhere else.
+  // here and nowhere else. StandardReasons is declared for the same transparency reason, and it is
+  // the one this file's own opening sentence names: a reason rewritten to DEFAULT on the way
+  // through is exactly what delegation drops on the floor, and with the reasons consolidated behind
+  // the tag, withholding it would stop anything checking that at all.
   capabilities: [
     Capability.Events,
     Capability.ConfigurationChange,
@@ -73,6 +78,7 @@ runProviderTck({
     Capability.LargeIntegers,
     Capability.Variants,
     Capability.DisabledFlags,
+    Capability.StandardReasons,
   ],
 
   // NumericCoercion is left undeclared: JavaScript has no integer type, so the capability is
