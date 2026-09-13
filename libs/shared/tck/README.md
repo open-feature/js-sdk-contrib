@@ -196,10 +196,21 @@ adoption gets a **target of its own** that no CI job invokes — `npx nx tck pro
 `npx nx tck providers-ofrep` — run deliberately before merging a change to the suite or to a
 provider it covers; why it is not a required gate is
 [Appendix F, "Running the suite in CI"][appendix-f]. The exclusion is a Jest project of its own
-under `src/e2e/tck/`, reached only by that target: flagd's pre-existing `e2e` project ignores the
-directory (`testPathIgnorePatterns: ['<rootDir>/tck/']`), and OFREP, which has no `e2e` target,
-ignores `/e2e/` in its unit project. Both `tck` targets set `passWithNoTests: false`, overriding the
-workspace default, so a run that collects nothing fails rather than going green.
+under **`src/tck/`**, a sibling of the provider's `src/e2e/` rather than a child of it, reached only
+by that target: each provider's unit project ignores `/src/tck/`, and flagd's pre-existing `e2e`
+project no longer needs an ignore pattern at all, because the directory is no longer inside it.
+
+A conformance suite is not a kind of e2e test, and the directory should not say it is. The two
+answer different questions — the e2e suite tests the provider against its vendor's own harness, this
+one tests it against the OpenFeature provider contract — and they mean different things by failure:
+an e2e suite is expected green, while a conformance suite fails scenarios by design wherever a
+`knownDeviation` is declared. The practical effect is that selection stops being a convention: a
+file is in `src/tck/` or it is not, where before it depended on one Jest config remembering to
+ignore a subdirectory of another.
+
+Both `tck` targets set `passWithNoTests: false`, overriding the workspace default, so a run that
+collects nothing fails rather than going green — the failure mode a relocated suite has, and the
+reason the setting is worth more after a move than before.
 
 ## Extending the suite
 
@@ -281,13 +292,33 @@ Three are worth naming here because the appendix does not:
 - **`POST /restart` is unused**, so `ConnectionControl` has no `disconnectFor`: no current scenario
   needs a bounded outage. What would bring it back is a `@caching` scenario asserting what a stale
   provider serves _during_ an outage, which needs `/restart`'s preservation of flag state.
-- **An excluded adoption suite does not compile in the default build**, which Appendix F asks for.
-  `nx package` typechecks against each provider's `tsconfig.lib.json`, and the two adoptions fall
-  outside it by different routes — flagd's excludes `./src/e2e` wholesale, while OFREP's never
-  mentions `src/e2e` and excludes the adoption as a `src/**/*.spec.ts`. `nx test` ignores `/e2e/` in
-  both and ESLint here is not type-aware, so `npx nx tck providers-<name>` is the only thing that
-  compiles its own suite. A `tsc --noEmit -p <provider>/tsconfig.spec.json` step would close it, at
-  the cost of making this suite answerable for the pre-existing e2e files beside it.
+- **Neither adoption suite compiles in the default build**, which Appendix F asks for — two of two,
+  by one mechanism each. `nx package` typechecks against the provider's `tsconfig.lib.json`; OFREP's
+  adoption is a single `*.spec.ts` and falls out under `src/**/*.spec.ts`, while flagd's is named by
+  `./src/tck` in that file's `exclude`. `nx test` ignores `/src/tck/` in both and ESLint here is not
+  type-aware, so `npx nx tck providers-<name>` is the only thing that compiles its own suite.
+
+  flagd's exclusion is explicit because moving the adoption out of `src/e2e/` made it necessary, and
+  that is worth recording because it is the shape of the gap rather than an accident of it. The
+  wholesale `./src/e2e` exclusion stopped covering the suite, `suite.ts` fell _into_ the library
+  build, and the build failed with thirteen errors — none in the adoption's own code. A library
+  build compiles what gets published, so it sets `types: []` and `module: ES6`; the conformance
+  harness is a test library whose exported entry point calls `describe`, `test` and `jest`. An
+  adoption cannot join a library build, so "compiles in the default build" cannot mean `nx package`
+  here, however the directories are arranged.
+
+  Note which way that failed. A path-based boundary changes what a build _contains_, as a side
+  effect of where files sit; here it added the suite to a build that cannot compile it, and said so.
+  The same hazard in the other direction is silent — a suite dropped out of every build typechecks
+  nowhere and nothing fails — which is what makes the loud version the lucky one.
+
+  What "compiles in the default build" can mean here is a
+  `tsc --noEmit -p <provider>/tsconfig.spec.json` step, and the move makes a narrower one possible:
+  the conformance suite is now a directory nothing else is in, so a config over `src/tck` alone
+  expresses "typecheck the adoption" — where before, the smallest thing that covered it was
+  `./src/e2e`, which took answerability for the pre-existing e2e files with it. That was the cost
+  this bullet used to name, and it is no longer forced. Both adoptions pass
+  `tsc --noEmit -p tsconfig.spec.json` today; nothing in the default build runs it.
 
 [appendix-f]: https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md
 [spec]: https://github.com/open-feature/spec
