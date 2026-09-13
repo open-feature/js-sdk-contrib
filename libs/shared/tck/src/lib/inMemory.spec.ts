@@ -68,6 +68,17 @@ runProviderTck({
    * state through, so the four flags really are disabled underneath. Whether the SDK's
    * InMemoryProvider honours the flag rather than serving its configured value anyway is not
    * something reading it would settle, so it was measured: the four rows pass.
+   *
+   * StandardReasons is declared, which is a claim rather than an exemption: the provider says it
+   * uses the standard reason vocabulary with the standard meanings, and reason.feature checks it.
+   * Seven of its nine scenarios run here and all seven pass — STATIC for the four rule-less flags,
+   * ERROR for the unknown flag and the type mismatch, DISABLED for the disabled one. The two
+   * @targeting scenarios skip, because the tags compose and Targeting is undeclared above.
+   *
+   * STATIC is the row worth naming. `types.md` types DEFAULT as "no dynamic evaluation occurred or
+   * dynamic evaluation yielded no result", which a rule-less flag satisfies as readily, so a
+   * provider answering DEFAULT here would be conformant and simply not use the standard meanings.
+   * This one answers STATIC, measured rather than read off the SDK.
    */
   capabilities: [
     Capability.Events,
@@ -76,6 +87,7 @@ runProviderTck({
     Capability.LargeIntegers,
     Capability.Variants,
     Capability.DisabledFlags,
+    Capability.StandardReasons,
   ],
 
   /*

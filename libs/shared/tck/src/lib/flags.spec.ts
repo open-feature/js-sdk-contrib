@@ -206,8 +206,9 @@ describe('the properties the canonical file calls load-bearing', () => {
     // fixture written for the occasion instead of a provider.
     //
     // "Enabled", because the four disabled-* flags resolve no variant at all and so report whatever
-    // their provider reports for a flag it declined to evaluate. The untagged scenarios that pin
-    // STATIC name enabled flags only, and the @disabled-flags rows assert no reason.
+    // their provider reports for a flag it declined to evaluate. The only scenarios that pin STATIC
+    // are reason.feature's four outline rows, behind @standard-reasons, and they name enabled flags
+    // only; the disabled flag has its own row there, pinning DISABLED.
     for (const flag of Object.values(canonicalFlagSet())) {
       expect(flag.contextEvaluator).toBeUndefined();
     }
