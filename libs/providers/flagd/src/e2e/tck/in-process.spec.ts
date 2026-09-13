@@ -11,7 +11,7 @@ runFlagdTck({
   resolverType: 'in-process',
 
   /*
-   * The same eight capabilities as the RPC suite, and that identity is the finding rather than a
+   * The same ten capabilities as the RPC suite, and that identity is the finding rather than a
    * copy-paste: in Go the two resolvers differ over PROVIDER_STALE (go-sdk-contrib#939), here they
    * cannot, because both report a lost connection through the same `disconnectCallback` seam —
    * src/lib/service/in-process/grpc/grpc-fetch.ts:197 here, src/lib/service/grpc/grpc-service.ts:274
@@ -38,6 +38,12 @@ runFlagdTck({
    * agreeing is again the finding: an application switching resolver sees the same four values. All
    * four rows pass here too, which is what the declaration rests on.
    *
+   * StandardReasons is declared, as in RPC, and the two resolvers agreeing is again the finding
+   * rather than a copy: RPC passes flagd's reason through from the evaluation response, in-process
+   * gets it from flagd-core evaluating the synced ruleset, and all nine scenarios pass either way.
+   * An application switching resolver sees the same reason as well as the same value, which is the
+   * only thing that makes a reason worth building telemetry on.
+   *
    * The omissions are the same and have the same reasons: NumericCoercion because JavaScript has
    * no integer type, so the scenario is unsatisfiable by construction (see the TCK README), and
    * Caching because it is still reserved and no scenario carries the tag.
@@ -63,6 +69,7 @@ runFlagdTck({
     Capability.Variants,
     Capability.Targeting,
     Capability.DisabledFlags,
+    Capability.StandardReasons,
   ],
 
   // In-process syncs the whole ruleset before reporting ready, so it needs longer than RPC.
