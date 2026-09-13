@@ -241,6 +241,13 @@ Which capabilities are reserved is decided upstream, in Appendix F, and recorded
 fails if a reservation has expired — a scenario arriving upstream is what makes a capability
 declarable, and an out-of-date list would go on making a testable capability unclaimable.
 
+The opposite mistake is checked too, in this library's own tests: a **declarable** capability that no
+canonical scenario carries gates nothing, so declaring it cannot cause a skip and puts an unexamined
+claim in a report. It is also the one failure a scenario count cannot see, because the assets and
+this library move on separate mechanisms — a submodule gitlink and a packaging asset glob — and a
+stale asset set is internally consistent with itself: the suite still collects, still plans and still
+passes, with the new capability gating nothing.
+
 A capability whose question cannot be put to your provider _at all_ is simply left undeclared, like
 any other, and its scenarios are skipped. There is no second field and no second status: one skip
 carrying its reason says everything a parallel representation would, and where the impossibility is
