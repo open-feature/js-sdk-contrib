@@ -1,5 +1,5 @@
 import { loadFeatures, parseFeature } from 'jest-cucumber';
-import { Capability } from './capability';
+import { Capability, DECLARABLE_CAPABILITIES } from './capability';
 import { planScenarios, skipDisplayName } from './scenarioRunner';
 import { FEATURES_GLOB } from './runProviderTck';
 
@@ -99,6 +99,23 @@ describe('the capability gate', () => {
       'Provider metadata',
       'Provider resolution reasons',
     ]);
+  });
+
+  it('has a canonical scenario for every declarable capability, so none of them gates nothing', () => {
+    // The mirror of the reserved-expiry check the harness makes at run time. That one catches a tag
+    // this library still calls reserved after a scenario for it arrived upstream; this one catches
+    // the opposite -- a capability an adopter may declare that no canonical scenario carries, which
+    // gates nothing and puts an unexamined claim in a report. Reserved capabilities are excluded
+    // because carrying no scenario is what reserved *means*.
+    //
+    // It is also the only guard that catches a stale copy of the assets, which is the one failure a
+    // count cannot see: an out-of-date asset set is internally consistent with itself, so the suite
+    // still collects, still plans and still passes -- with the new capability gating nothing at all.
+    // Worth pinning because the assets and this file move on separate mechanisms: a submodule
+    // gitlink and a rollup asset glob, either of which can be updated without the other.
+    const carried = new Set(plansWithout().flatMap((scenario) => scenario.tags));
+
+    expect(DECLARABLE_CAPABILITIES.filter((capability) => !carried.has(capability))).toEqual([]);
   });
 
   it('gates both halves of @numeric-coercion on the tag, not only the lossy one', () => {
