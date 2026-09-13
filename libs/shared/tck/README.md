@@ -213,6 +213,83 @@ Both `tck` targets set `passWithNoTests: false`, overriding the workspace defaul
 collects nothing fails rather than going green — the failure mode a relocated suite has, and the
 reason the setting is worth more after a move than before.
 
+## Conformance reports
+
+Set `TCK_REPORT_DIR` and each suite writes two files: an envelope at `<dir>/<name>.json`, conforming
+to the [report schema][report-schema] in the specification, and the results it points at, at
+`<dir>/<name>.ndjson`. Unset means no report, which is not an error; several suites in one run write
+their own pair each, so flagd's two resolvers do not collide. It is an environment variable rather
+than a `TckOptions` field so that emitting a report is a property of the _run_ rather than of the
+code: whoever wants one sets it, and no adopter changes a line to publish one.
+
+```console
+$ TCK_REPORT_DIR=./reports npx jest
+$ jq -r 'select(.testStepFinished).testStepFinished.testStepResult.status' reports/in-memory.ndjson \
+    | sort | uniq -c
+     43 PASSED
+     13 SKIPPED
+```
+
+**The results are [Cucumber Messages][messages], not a format this project defines** — per-scenario
+outcomes, tags, Scenario Outline row identity and the executed feature source are all specified
+there already. The envelope carries only what Messages has no opinion about: what was tested, and
+what the provider claims. The stream is written first and the envelope second, carrying a `sha256`
+digest of it, so an envelope never names results that have moved on.
+
+**Every scenario appears exactly once**, whatever its outcome, including every scenario the
+capability gate skipped — which is what makes Appendix F's rule checkable by a consumer rather than
+dependent on the runner's summary. The harness checks that accounting at the end of every run,
+report or no report. It also fails a run in which a canonical scenario never reached a decision: a
+filtered run — `jest -t`, a stray ignore pattern, a mistake in the extension wiring — otherwise
+satisfies the accounting and goes green while its report supports nothing. Working on one scenario
+with `-t` therefore ends in a failed suite, which is the intended cost.
+
+### Reading it
+
+| Question                | Where the answer is                                                            |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| what was in the suite   | one `Pickle` per scenario, one `TestCase` per pickle                           |
+| the outcome             | `TestStepFinished.testStepResult.status`                                       |
+| why it was skipped      | `TestStepFinished.testStepResult.message`                                      |
+| the tags it carried     | `Pickle.tags`, `Examples`-block tags included                                  |
+| which row of an outline | `Pickle.astNodeIds` — the second id is the `TableRow` in the `GherkinDocument` |
+| what actually ran       | `Source`, verbatim                                                             |
+
+`SKIPPED` is the only status either kind of skip gets — a second one is a status something
+eventually reads as a pass — so **the message says which kind it was**, and a consumer reads that
+rather than the status:
+
+```
+requires @stale, which this provider does not declare
+requires @numeric-coercion, which no provider in this SDK can be asked about: JavaScript has a
+single numeric type, so "a float requested as an integer" is not expressible
+```
+
+Only the first says anything about the provider, which is also why the envelope has no
+`notApplicable` member: a capability that cannot hold in the _language_ is recorded once in
+[Appendix F][appendix-f] rather than in every report.
+
+A canonical scenario is identified in the stream by its path relative to the spec's asset directory
+— `gherkin/errors.feature`, not a path relative to any repository root — and an extension scenario
+under the reserved `extensions/` prefix. That partition is what a report consumer reads to tell the
+two apart, and it is why extension scenarios do not count towards conformance.
+
+In the envelope: `provider.name` is what the provider reports through its own metadata, while the
+suite `name` is the _configuration_ tested, so one provider with two materially different modes
+produces two reports that are not interchangeable. `declaration` is an input to reading the results
+rather than a summary of them — given it and a scenario's tags, the reason for a skip follows — and
+reserved capabilities are filtered out of `declared`, so no route into a declared set can write one
+down. `knownDeviations` carries what the adoption declared, field for field, and is **absent when
+nothing was declared, never emitted as `[]`**: stating none asserts that deviations were considered
+and none found, which no suite can know on the adopter's behalf. `tck.specRevision` comes from
+[`src/lib/revision.ts`](./src/lib/revision.ts), generated from the submodule at build time because
+the submodule is not part of the published package.
+
+There is no per-capability verdict, deliberately. A roll-up is derivable from the declaration and
+the stream, and a consumer computing one should count only test cases that _ran_: every scenario
+carrying a capability can be skipped for a _different_ one, so counting tag presence reports a green
+result for a question nobody asked.
+
 ## Extending the suite
 
 A vendor usually has behaviour outside the shared contract — flagd's `fractional` targeting is the
@@ -273,7 +350,10 @@ they are the language-agnostic artifacts under `specification/assets/provider-tc
 [open-feature/spec][spec], consumed through a git submodule at `spec/` and **never copied**, so
 changes belong upstream. Adopters need none of it — `nx package` copies them into the published
 library — while contributors run `git submodule update --init libs/shared/tck/spec`, which the
-`pullSpec` target behind `nx test tck` and `nx package tck` does for you.
+`pullSpec` target behind `nx test tck` and `nx package tck` does for you. That target also
+regenerates [`src/lib/revision.ts`](./src/lib/revision.ts), so the revision a report names is
+refreshed by the same command that checks the artifacts out; the file is committed, because a plain
+`jest` invocation does not go through Nx.
 
 That dependency is a build-graph edge rather than an immutable fetch: it makes a stale checkout
 impossible to run _past_, not impossible to have. The failure it exists to stop happened here once
@@ -319,5 +399,7 @@ appendix does not:
   `tsc --noEmit -p tsconfig.spec.json` today; nothing in the default build runs it.
 
 [appendix-f]: https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md
+[messages]: https://github.com/cucumber/messages
+[report-schema]: https://github.com/open-feature/spec/blob/main/specification/assets/provider-tck/report/conformance-report.schema.json
 [spec]: https://github.com/open-feature/spec
 [tracking]: https://github.com/open-feature/spec/issues/417
