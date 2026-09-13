@@ -170,8 +170,14 @@ export enum Capability {
    * The rule is borrowed, not normative. The specification has a single numeric type and says
    * nothing about what a provider owes a value that does not fit the accessor it was asked through
    * (open-feature/spec#430), so a provider that behaves differently is not violating it and this
-   * capability is genuinely optional. A provider withholding it should still say which it is — a
-   * deliberate choice, or a tracked defect.
+   * capability is genuinely optional.
+   *
+   * Optional does not make withholding the default answer. A provider that *can* attempt the
+   * coercion declares the capability and lets the scenario fail, with a
+   * {@link TckOptions.knownDeviations} entry beside it: it does coerce and gets one direction
+   * wrong, which is exactly what a skip cannot say. Withholding is for a provider that cannot
+   * attempt the distinction at all — and in this language that is every provider, so the choice
+   * never reaches an adopter here.
    *
    * Both halves have scenarios. The lossy one asks for `float-flag` (`0.5`) as an integer and
    * expects `TYPE_MISMATCH`; the lossless ones ask for `integral-float-flag` (`10.0`) as an integer
@@ -197,6 +203,15 @@ export enum Capability {
    * JavaScript's `number` represents every integer up to 2^53 − 1 exactly, so it is an ordinary
    * declarable capability here: a provider declares it whenever its backend and transport carry the
    * value without rounding. Nothing above 2^53 − 1 is asked for: JavaScript cannot represent it.
+   *
+   * It is also the clearest case of the rule that the unit of a declaration decision is the
+   * *scenario*. That rule applies once a provider is attempting the capability at all — whether it
+   * owes an answer is a separate question that comes first — and here it does: a JavaScript provider
+   * either carries the value or rounds it. This capability gates exactly one scenario, so a backend
+   * that does not serve that scenario's flag leaves nothing establishable and withholding is right.
+   * That is a fact about a deployment, meant to be revisited when the backend gains the fixture, and
+   * formally a different thing from the refusal above, which is a fact about the language and will
+   * not change until the Evaluation API does.
    */
   LargeIntegers = '@large-integers',
 
@@ -353,6 +368,15 @@ export function isReserved(capability: Capability): boolean {
  * declined"* from *"no provider in this language can be asked"*, because only the first says
  * anything about the provider. That is why the refusals are separate predicates with separate
  * messages rather than one shared "not declarable".
+ *
+ * **Four reasons a capability can be absent, and only two of them are this library's.** A provider
+ * may simply **decline** one the specification lets it decline — {@link Capability.Reinitialization}
+ * is the clearest, requirement 2.5.2 permitting reuse rather than requiring it — and nothing is
+ * broken. A backend may not serve a **fixture** some scenario needs — {@link Capability.LargeIntegers}
+ * against a testbed without its flag — which is that deployment's gap, temporary, and meant to be
+ * revisited. Both of those are the adopter's to state and neither is refused here. The other two
+ * are the library's: **reserved**, and **inexpressible** as here. Reading any of the four as
+ * another is how a report acquires a claim nobody made.
  *
  * Refusing centrally is the point of the mechanism. This was documentation until pass 6: three
  * suites in this package each left the capability undeclared with its own comment restating the same
