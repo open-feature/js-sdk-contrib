@@ -57,11 +57,32 @@ runContainerizedProviderTck({
   // Capability.DisabledFlags is withheld too, but unlike @variants it is a defect rather than a
   // permitted absence — see the deviation below. Go and Java both declare it and pass.
   //
+  // Capability.StandardReasons is withheld, and like DisabledFlags it is a defect rather than a
+  // permitted absence -- see the deviations below.
+  //
+  // Capability.NumericCoercion carries NO deviation here, deliberately, and the TCK refuses one:
+  // JavaScript has a single numeric type, so "a float requested as an integer" is not expressible
+  // and nothing was ever put to this provider. The Go, Java and Python adoptions do record one,
+  // because in those languages the question can be asked and the answer is wrong. Recording it
+  // here would claim a failure at something never asked.
+  //
   // The lifecycle and event capabilities are withheld because this provider has no observable
   // initialisation for the suite to assert against.
   capabilities: [Capability.Object, Capability.LargeIntegers, Capability.Targeting],
 
   knownDeviations: [
+    KnownDeviation.untracked(
+      Capability.StandardReasons,
+      'The reason is reported as `flag.enabled ? TARGETING_MATCH : DISABLED` -- taken from the ' +
+        'enabled state alone, with no targeting involved and without consulting the evaluation ' +
+        'context at all. So every enabled flag reports TARGETING_MATCH, telling the caller a ' +
+        'targeting rule matched when the canonical set carries exactly one rule and the flag in ' +
+        'question has none. 2.2.5 makes the reason a SHOULD, which is why this is a withheld ' +
+        'claim rather than a failure, but TARGETING_MATCH for an untargeted flag is not defensible ' +
+        'on SHOULD grounds -- it is a wrong answer rather than a missing one. The Go Flagsmith ' +
+        'provider reports STATIC, DISABLED and TARGETING_MATCH correctly against the identical ' +
+        'backend. Withholding turns ten failures into skips carrying this reason.',
+    ),
     KnownDeviation.untracked(
       Capability.DisabledFlags,
       'A disabled flag raises GeneralError rather than resolving to the caller default with no ' +
@@ -72,14 +93,6 @@ runContainerizedProviderTck({
         'disabled flag differs from the default the scenario passes in. The Go and Java Flagsmith ' +
         'providers return the caller default with reason DISABLED and no error code, which is ' +
         'what the tag asserts, and both declare the capability.',
-    ),
-    KnownDeviation.untracked(
-      Capability.NumericCoercion,
-      'Withheld pending the run, recorded as a prediction rather than a measurement. Flagsmith ' +
-        'stores floats and objects as strings, because feature_state_value is natively boolean, ' +
-        'integer or string only. Go compensates by parsing the string in its Float accessor; ' +
-        'Python and Java do not, and cannot read a Flagsmith float at all. This provider checks ' +
-        '`typeof typedValue !== flagType`, which suggests it behaves like Python and Java.',
     ),
   ],
 
