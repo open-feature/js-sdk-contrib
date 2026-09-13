@@ -2,9 +2,12 @@ import {
   ALL_CAPABILITIES,
   Capability,
   DECLARABLE_CAPABILITIES,
+  INEXPRESSIBLE_CAPABILITIES,
   RESERVED_CAPABILITIES,
   capabilityForTag,
   expiredReservations,
+  inexpressibleReason,
+  isInexpressible,
   isReserved,
 } from './capability';
 import type { BackendControl } from './control';
@@ -34,7 +37,9 @@ describe('the reserved capabilities', () => {
     // files is checked by the harness on every run, against what actually ran.
     expect(RESERVED_CAPABILITIES).toEqual([Capability.Caching]);
     expect(DECLARABLE_CAPABILITIES).not.toContain(Capability.Caching);
-    expect(DECLARABLE_CAPABILITIES.length).toBe(ALL_CAPABILITIES.length - RESERVED_CAPABILITIES.length);
+    expect(DECLARABLE_CAPABILITIES.length).toBe(
+      ALL_CAPABILITIES.length - RESERVED_CAPABILITIES.length - Object.keys(INEXPRESSIBLE_CAPABILITIES).length,
+    );
   });
 
   it('are still recognised as tags, because a tag has to be recognised to be refused', () => {
@@ -65,6 +70,89 @@ describe('the reserved capabilities', () => {
     // Deduplicated, since the tags come from every scenario of every executed feature and a tag
     // carried twice is not two expiries.
     expect(expiredReservations([Capability.Caching, Capability.Caching])).toEqual([Capability.Caching]);
+  });
+});
+
+describe('the capabilities this SDK cannot express', () => {
+  // Appendix F's fifth declaring rule: a capability the language's SDK cannot express is refused by
+  // the implementation, not left to adopters. It replaced three per-suite omissions in this package,
+  // each with its own comment restating the same property of JavaScript -- three places to get it
+  // right before a single external adopter arrived, and a single wrong one would put a claim in a
+  // report that no scenario could have verified.
+  it('is @numeric-coercion and nothing else, the language having one numeric type', () => {
+    expect(Object.keys(INEXPRESSIBLE_CAPABILITIES)).toEqual([Capability.NumericCoercion]);
+    expect(isInexpressible(Capability.NumericCoercion)).toBe(true);
+    expect(DECLARABLE_CAPABILITIES).not.toContain(Capability.NumericCoercion);
+  });
+
+  it('is a different thing from a reservation, and neither predicate answers for the other', () => {
+    // The distinction Appendix F insists on. A reservation is global and temporary -- no scenario
+    // anywhere carries the tag, and it expires the moment the specification adds one. This is one
+    // language's and permanent: the scenarios exist and pass in Go, Java and Python. Collapsing them
+    // into one "not declarable" predicate is the shortcut the rule exists to forbid.
+    expect(isReserved(Capability.NumericCoercion)).toBe(false);
+    expect(isInexpressible(Capability.Caching)).toBe(false);
+    expect(ALL_CAPABILITIES).toContain(Capability.NumericCoercion);
+  });
+
+  it('refuses a suite that declares one, naming the SDK property rather than the rule', () => {
+    // The error is the point: an adopter should not be able to make an unverifiable claim, and
+    // should not have to know this about their language in the first place.
+    expect(() =>
+      resolveCapabilities(optionsFor({ capabilities: [Capability.Events, Capability.NumericCoercion] })),
+    ).toThrow(/@numeric-coercion, which no provider written against this SDK can be asked about/);
+    expect(() => resolveCapabilities(optionsFor({ capabilities: [Capability.NumericCoercion] }))).toThrow(
+      /JavaScript has a single numeric type/,
+    );
+  });
+
+  it('keeps the two refusals distinguishable, because only one of them ever expires', () => {
+    // A reader of either message has to be able to tell "no scenario carries this yet" from "this
+    // SDK cannot ask the question". One wording for both would send an adopter looking upstream for
+    // a gap that is not there -- or waiting for a reservation that will never expire.
+    const inexpressible = () => resolveCapabilities(optionsFor({ capabilities: [Capability.NumericCoercion] }));
+    const reserved = () => resolveCapabilities(optionsFor({ capabilities: [Capability.Caching] }));
+
+    expect(inexpressible).toThrow(/will not expire/);
+    expect(inexpressible).not.toThrow(/reserved/);
+    expect(reserved).toThrow(/reserved name held open/);
+    expect(reserved).not.toThrow(/SDK/);
+  });
+
+  it('gates its scenarios in every run, which is what the per-suite omissions used to do', () => {
+    // The half that makes the refusal safe. It cannot be declared, so it is never in `declared`, so
+    // it is always in `undeclared` and always in the tag filter -- for a suite that narrows the
+    // default and for one that takes it whole. No suite has to remember anything.
+    const narrowed = resolveCapabilities(optionsFor({ capabilities: [Capability.Events] }));
+    const whole = resolveCapabilities(optionsFor({ newUnavailableProvider: () => ({}) as never }));
+
+    expect(narrowed.declared.has(Capability.NumericCoercion)).toBe(false);
+    expect(narrowed.undeclared).toContain(Capability.NumericCoercion);
+    expect(whole.declared.has(Capability.NumericCoercion)).toBe(false);
+    expect(whole.undeclared).toContain(Capability.NumericCoercion);
+  });
+
+  it('refuses a deviation against one, which would assert a defect that cannot exist', () => {
+    // Unlike the reserved case there *are* scenarios to deviate from, so the reason differs: none of
+    // them was ever put to this provider, and an entry would report a language property as this
+    // provider's defect.
+    expect(() =>
+      resolveCapabilities(
+        optionsFor({
+          knownDeviations: [KnownDeviation.untracked(Capability.NumericCoercion, 'narrows 0.5 to 0')],
+        }),
+      ),
+    ).toThrow(/which this SDK cannot ask of any provider/);
+  });
+
+  it('states the reason once, so the refusal and the skip cannot word it differently', () => {
+    // One accessor for one sentence. It is quoted verbatim in the configuration-time error and in
+    // every skipped scenario's name -- see scenarioRunner.spec.ts, which asserts the same string.
+    const reason = inexpressibleReason(Capability.NumericCoercion);
+
+    expect(reason).toBe(INEXPRESSIBLE_CAPABILITIES[Capability.NumericCoercion]);
+    expect(reason).toMatch(/single numeric type/);
+    expect(inexpressibleReason(Capability.StandardReasons)).toBeUndefined();
   });
 });
 
@@ -155,17 +243,23 @@ describe('the @standard-reasons capability', () => {
     expect(knownDeviations).toEqual([]);
   });
 
-  it('is independent of @numeric-coercion, the capability this language genuinely cannot have', () => {
-    // Worth pinning because the two arrive at the same place from opposite directions. JavaScript
-    // has one numeric type, so @numeric-coercion cannot be asked of any provider here; a reason is
-    // a string on the resolution details and is observable whatever the accessor's arithmetic. A
-    // suite that lumped them together would withhold a claim it could have made.
+  it('survives the single numeric type, which costs this SDK exactly one capability', () => {
+    // Worth pinning because the two arrive at the same place from opposite directions, and the
+    // temptation is to generalise from one to the other. @numeric-coercion cannot be asked of any
+    // provider here; a reason is a string on the resolution details and is observable whatever the
+    // accessor's arithmetic, so this one is declarable and both in-memory suites declare it.
+    //
+    // Before the refusal moved into the library this was pinned as "a suite declaring one does not
+    // get the other", which a suite could no longer get wrong: @numeric-coercion is refused outright.
+    // What can still go wrong is the list growing by association, so that is what is pinned now.
+    expect(isInexpressible(Capability.StandardReasons)).toBe(false);
+    expect(Object.keys(INEXPRESSIBLE_CAPABILITIES)).toHaveLength(1);
+
     const { declared } = resolveCapabilities(
       optionsFor({ capabilities: [Capability.Events, Capability.StandardReasons] }),
     );
 
     expect(declared.has(Capability.StandardReasons)).toBe(true);
-    expect(declared.has(Capability.NumericCoercion)).toBe(false);
   });
 });
 
@@ -197,15 +291,20 @@ describe('the @reinitialization capability', () => {
 });
 
 describe('resolving a suite capabilities', () => {
-  it('declares every declarable capability by default, and no reserved one', () => {
+  it('declares every declarable capability by default, and neither undeclarable kind', () => {
     // "Declare everything" is the recommended starting point for a new adoption, and it must not
     // mean "declare things nothing tested" -- which is exactly how a real Java report came to
-    // assert @targeting and @caching, back when both were reserved.
+    // assert @targeting and @caching, back when both were reserved. Nor, now, "declare things no
+    // provider in this language could be asked": the default is the declarable set, and that set is
+    // where both exclusions are applied.
     const { declared } = resolveCapabilities(optionsFor({ newUnavailableProvider: () => ({}) as never }));
 
     expect([...declared].sort()).toEqual([...DECLARABLE_CAPABILITIES].sort());
     for (const capability of RESERVED_CAPABILITIES) {
       expect(declared.has(capability)).toBe(false);
+    }
+    for (const capability of Object.keys(INEXPRESSIBLE_CAPABILITIES)) {
+      expect(declared.has(capability as Capability)).toBe(false);
     }
   });
 
@@ -226,17 +325,20 @@ describe('resolving a suite capabilities', () => {
     );
   });
 
-  it('gates on the declarable capabilities a suite left out', () => {
+  it('gates on every capability a scenario carries that a suite left out', () => {
     const { undeclared } = resolveCapabilities(optionsFor({ capabilities: [Capability.Events] }));
 
     // A reserved capability is absent from the gate, and its absence gates nothing: no scenario
     // carries it, so there is nothing for 'not @caching' to exclude. @targeting is no longer in that
-    // position -- it has scenarios, so leaving it out genuinely gates them.
+    // position -- it has scenarios, so leaving it out genuinely gates them. @numeric-coercion is in
+    // a third position again: it has scenarios and cannot be declared, so it is gated here whatever
+    // the suite asked for.
     expect(undeclared).not.toContain(Capability.Events);
     expect(undeclared).not.toContain(Capability.Caching);
     expect(undeclared).toContain(Capability.Targeting);
     expect(undeclared).toContain(Capability.Stale);
-    expect(undeclared.length).toBe(DECLARABLE_CAPABILITIES.length - 1);
+    expect(undeclared).toContain(Capability.NumericCoercion);
+    expect(undeclared.length).toBe(DECLARABLE_CAPABILITIES.length - 1 + Object.keys(INEXPRESSIBLE_CAPABILITIES).length);
   });
 
   it('refuses @unavailable without a provider pointed at a backend that does not exist', () => {

@@ -203,7 +203,7 @@ call is made. See [`src/lib/scenarioRunner.ts`](./src/lib/scenarioRunner.ts).
 | `Capability.Variants`            | `@variants`             | names the variant it resolved, which requirement 2.2.4 makes a `SHOULD` and `types.md` types as optional — **see below** |
 | `Capability.DisabledFlags`       | `@disabled-flags`       | resolves a flag disabled in the management system to the caller's default — **see below**                                |
 | `Capability.UnavailableInit`     | `@unavailable`          | reports an error state instead of hanging against a dead backend                                                         |
-| `Capability.NumericCoercion`     | `@numeric-coercion`     | coerces between integer and float only when lossless, else `TYPE_MISMATCH` — **see below**                               |
+| `Capability.NumericCoercion`     | `@numeric-coercion`     | coerces between integer and float only when lossless, else `TYPE_MISMATCH`; **not declarable** here — **see below**      |
 | `Capability.LargeIntegers`       | `@large-integers`       | resolves integers up to 2^53 − 1 exactly; leave undeclared where the transport rounds it                                 |
 | `Capability.Targeting`           | `@targeting`            | resolves a flag differently for a matching evaluation context                                                            |
 | `Capability.StandardReasons`     | `@standard-reasons`     | reports the standard resolution reasons, with the standard meanings — **see below**                                      |
@@ -246,14 +246,18 @@ canonical scenario carries gates nothing, so declaring it cannot cause a skip an
 claim in a report. It is also the one failure a scenario count cannot see, because the assets and
 this library move on separate mechanisms — a submodule gitlink and a packaging asset glob — and a
 stale asset set is internally consistent with itself: the suite still collects, still plans and still
-passes, with the new capability gating nothing.
+passes, with the new capability gating nothing. The same check covers `@numeric-coercion`, and there
+it is load-bearing for a second reason: scenarios existing is exactly what separates a capability
+this SDK cannot express from a reservation, so one that stopped being carried would leave the library
+refusing nothing.
 
-A capability whose question cannot be put to your provider _at all_ is simply left undeclared, like
-any other, and its scenarios are skipped. There is no second field and no second status: one skip
-carrying its reason says everything a parallel representation would, and where the impossibility is
-a property of the _language_ rather than of the provider it is recorded once — against the
-capability and in Appendix F — instead of restated in every report. In JavaScript that case is
-`@numeric-coercion`, and it is the subject of a section of its own below.
+A capability whose question cannot be put to _your provider_ is simply left undeclared, like any
+other, and its scenarios are skipped. There is no second field and no second status: one skip
+carrying its reason says everything a parallel representation would.
+
+A capability whose question **this SDK** cannot put to any provider is different, and you do not
+leave it out — the library refuses it, the way it refuses a reserved one. `@numeric-coercion` is the
+only one, and it is the subject of a section of its own below.
 
 ### A defect is not a decision: `knownDeviations`
 
@@ -506,7 +510,8 @@ missing capabilities, not the first.
 which no provider in this language can be asked about at all. `@standard-reasons` is nothing like
 it: a reason is a string on the resolution details, and all five situations above are observable
 through `getBooleanDetails` and its siblings whatever the accessor's arithmetic. Both in-memory
-suites here declare it and pass, measured rather than assumed.
+suites here declare it and pass, measured rather than assumed. The single numeric type costs this
+SDK exactly one capability, and the library's tests pin that it is one and not a category.
 
 ## The one place JavaScript cannot answer the shared question
 
@@ -524,41 +529,63 @@ this language**: there is no lossless coercion to permit, because `10.0` and `10
 and nothing is narrowed, and no lossy one to reject, because `0.5` asked for as an Integer is
 indistinguishable from a valid Float request. Not a defect — the distinction does not exist here.
 
-Both halves of the rule now have scenarios: `float-flag` (`0.5`) as an integer must be rejected, and
+Both halves of the rule have scenarios: `float-flag` (`0.5`) as an integer must be rejected, and
 `integral-float-flag` (`10.0`) as an integer and `integer-flag` (`10`) as a float must succeed. All
 three are gated on the one tag, so all three are skipped here, for the same reason. Accessor width
 is modelled separately, as `@large-integers`: JavaScript represents 2^53 − 1 exactly, so a provider
 declares it unless its transport rounds the value on the way.
 
-So every JavaScript suite simply leaves the capability out of `capabilities`, and its scenarios are
-skipped:
+**You do not have to know any of that, and you cannot get it wrong.** The library refuses the
+capability at configuration time and gates its scenarios in every run, so there is nothing for a
+suite to declare, omit or remember:
 
 ```ts
 runProviderTck({
   // ...
   capabilities: [Capability.Events, Capability.ConfigurationChange, Capability.Object],
-  // @numeric-coercion is left undeclared. See below for why that is not a gap.
 });
 ```
 
 ```
-○ skipped A float flag is not silently narrowed to an integer — SKIPPED: provider does not declare @numeric-coercion
+○ skipped A float flag is not silently narrowed to an integer — SKIPPED: this SDK cannot ask
+  @numeric-coercion of any provider: JavaScript has a single numeric type, so "a float requested as
+  an integer" is not expressible
 ```
 
-**Where that sentence about the language lives.** Not in the report, and not in the skip. The
-impossibility is a property of the _SDK_ — true of every provider written against it, and for as
-long as the Evaluation API has a single numeric accessor — so it is stated once in the TSDoc on
-`Capability.NumericCoercion`, once in this section, and once upstream in
-[Appendix F][appendix-f]. A per-report field would repeat a language fact on each provider's behalf
-and would still say nothing in a run where no scenario carried the tag; four implementations built
-such a field and no adoption in any of them populated it, which is why the report schema dropped it.
+Naming it anyway is an error rather than a quiet correction, and the error says why:
 
-The consequence is worth stating plainly: read only the skip line, or only a report's declaration,
-and you learn that `@numeric-coercion` was not declared but not why it could not be. That is
-deliberate — the reason is one lookup away, in the two places above, rather than duplicated per
-scenario — but it does mean the _why_ is documentation rather than run output. A JavaScript provider
-that withheld the tag for some other reason, such as a real narrowing defect, must therefore say so
-through `knownDeviations`, which is exactly what that field is for.
+```
+capabilities names @numeric-coercion, which no provider written against this SDK can be asked
+about: @numeric-coercion -- JavaScript has a single numeric type, so "a float requested as an
+integer" is not expressible. This is not a reservation and it will not expire: the scenarios exist
+and pass in other languages, and this is a property of the SDK rather than of your provider.
+```
+
+This is [Appendix F][appendix-f]'s fifth declaring rule: _a capability the language's SDK cannot
+express is refused by the implementation, not left to adopters._ It replaced three per-suite
+omissions in this package, each with its own comment restating the same property of JavaScript —
+three places to get right before a single external adopter arrived, and a single wrong one would put
+a claim in a report that no scenario could have verified. There are two instances of the rule across
+all four languages: this one, and `@large-integers` in Java, whose integer accessor is a 32-bit
+`Integer`.
+
+**It is not a reservation, and the two refusals are deliberately different.** `@caching` is reserved
+everywhere and expires the moment the specification writes a scenario for it; `@numeric-coercion` has
+scenarios that pass in Go, Java and Python, and will not become declarable here until the Evaluation
+API changes. A reader who sees a capability absent from a report has to be able to tell _"this
+provider declined"_ from _"no provider in this language can be asked"_, because only the first says
+anything about the provider — so the skip reasons differ too, and the language property travels in
+the skip rather than sitting one lookup away.
+
+What is still not in the report is a _field_ for it. The skip carries the reason and Appendix F
+carries the rule; a per-report field would repeat a language fact on each provider's behalf and would
+still say nothing in a run where no scenario carried the tag. Four implementations built such a field
+and no adoption in any of them populated it, which is why the report schema dropped it.
+
+A JavaScript provider that has a real narrowing defect has nothing to withhold here, so it says so
+through `knownDeviations` against the capability whose scenarios catch it — never against
+`@numeric-coercion`, which is refused there too, for the neighbouring reason: those scenarios were
+never put to it.
 
 The capability's meaning being language-dependent is worth flagging upstream regardless, since the
 specification does not currently acknowledge it. Raised on [spec#417][tracking].
@@ -843,6 +870,17 @@ The two audiences are deliberately different:
 
   `nx test tck` and `nx package tck` depend on the `pullSpec` target, which runs
   that for you. CI checks out with `submodules: recursive`.
+
+  **What that dependency guarantees, and what it does not.** It is a build-graph edge, not an
+  immutable fetch: the assets are still a working tree that a human could edit or leave behind, and
+  the guarantee is only that Nx re-runs `git submodule update` before the suite does anything. That
+  is enough for the failure it exists to stop — a rebase moves the gitlink and leaves the working
+  tree on the previous pin, and a suite that ran anyway would report byte-identical numbers against
+  the wrong assets, which is exactly what happened here once before the edge existed. Go's TCK sits
+  at the other end of the spectrum: it consumes the artifacts as a nested Go module, so there is no
+  second copy to go stale, the module cache is read-only and checksum-verified, and the only way to
+  substitute one is a `replace` line that is visible in `go.mod`. Ours cannot make that claim; it can
+  only make the stale checkout impossible to run _past_, not impossible to have.
 
 Prettier is pointed away from `spec/` so it never rewrites artifacts that are consumed byte for byte
 by every language's TCK.
