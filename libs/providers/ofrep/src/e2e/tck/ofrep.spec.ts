@@ -101,13 +101,6 @@ runContainerizedProviderTck({
    *   scenarios describe. `newUnavailableProvider` is therefore left unset, which runProviderTck
    *   requires to be consistent with the capability.
    *
-   * - NumericCoercion is omitted for the reason every JavaScript provider omits it, not for
-   *   anything specific to OFREP: the language has no integer type, so asking for float-flag as an
-   *   Integer is indistinguishable from asking for it as a Float and the scenario is unsatisfiable
-   *   by construction. See "The one place JavaScript cannot answer the shared question" in the TCK
-   *   README. This is where the JS declaration is narrower than Go's and Java's, which do declare it
-   *   on otherwise identical, equally stateless OFREP providers.
-   *
    * - Variants IS declared. The OFREP evaluation response carries a `variant` field and
    *   `toResolutionDetails` copies it onto the resolution details (ofrep-api.ts:235-263), so the
    *   eight gated rows ask a real question of the provider. Requirement 2.2.4 is only a SHOULD and
