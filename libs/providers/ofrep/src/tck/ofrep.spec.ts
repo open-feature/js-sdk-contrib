@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { Capability, runContainerizedProviderTck } from '@openfeature/tck';
-import { OFREPProvider } from '../../lib/ofrep-provider';
+import { OFREPProvider } from '../lib/ofrep-provider';
 
 /**
  * The OpenFeature Provider Conformance Suite, run against the OFREP provider.
@@ -24,7 +24,9 @@ import { OFREPProvider } from '../../lib/ofrep-provider';
  * `npx nx tck providers-ofrep`, with a Docker daemon, and never in CI. The target is deliberately
  * not called `e2e`: `npm run e2e` runs every project's `e2e` target and CI has a job for it, so this
  * suite would otherwise pull a backend image on every push and pin a conformance claim nobody read.
- * See the provider README.
+ * The directory is `src/tck/` for the same reason the target is not `e2e`: an e2e suite is expected
+ * green, while this one fails scenarios by design wherever a `knownDeviation` is declared, and this
+ * project has no e2e suite for it to have been a kind of. See the provider README.
  */
 
 /** The container-internal port flagd serves OFREP on. */

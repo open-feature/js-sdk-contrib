@@ -33,7 +33,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/libs/providers/ofrep"],
       "options": {
-        "jestConfig": "libs/providers/ofrep/src/e2e/tck/jest.config.ts",
+        "jestConfig": "libs/providers/ofrep/src/tck/jest.config.ts",
         "runInBand": true,
         "passWithNoTests": false
       },
