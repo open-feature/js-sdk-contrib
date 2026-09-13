@@ -135,17 +135,23 @@ npx nx tck providers-ofrep
 ```
 
 It needs a **Docker daemon**. The suite brings up
-[`src/e2e/tck/docker-compose.yaml`](./src/e2e/tck/docker-compose.yaml) itself — a pinned
-flagd-testbed image, used because flagd serves OFREP and its launchpad is the reference
-implementation of the suite's control API — discovers the mapped ports, and drives the backend over
-that API.
+[`src/tck/docker-compose.yaml`](./src/tck/docker-compose.yaml) itself — a pinned flagd-testbed
+image, used because flagd serves OFREP and its launchpad is the reference implementation of the
+suite's control API — discovers the mapped ports, and drives the backend over that API.
 
-**It is deliberately excluded from the default build, and from CI.** The mechanism: the suite lives
-in `src/e2e/tck/` behind a Jest project of its own
-([`src/e2e/tck/jest.config.ts`](./src/e2e/tck/jest.config.ts)), reached only by a `tck` target. The
-name matters — `npm run e2e` is `nx run-many --all --target=e2e` and CI has a job for it, so an `e2e`
-target here would pull a backend image on every push. `npx nx tck providers-ofrep` is the only way
-in; run it by hand before merging a change to this provider or to the suite.
+**The suite lives in `src/tck/`, a directory of its own.** A conformance suite is not a kind of e2e
+test: an e2e suite is expected green, while this one fails scenarios by design wherever a
+`knownDeviation` is declared. This project has no e2e suite at all, so the `src/e2e/` directory the
+adoption first sat in existed only to hold it — filing under a name for something that was not there.
+
+**It is deliberately excluded from the default build, and from CI**, and the directory is what does
+the excluding. The suite sits behind a Jest project of its own
+([`src/tck/jest.config.ts`](./src/tck/jest.config.ts)), reached only by a `tck` target, and the
+provider's unit config ignores `/src/tck/`. The target's name matters — `npm run e2e` is
+`nx run-many --all --target=e2e` and CI has a job for it, so an `e2e` target here would pull a
+backend image on every push. `npx nx tck providers-ofrep` is the only way in; run it by hand before
+merging a change to this provider or to the suite. The target sets `passWithNoTests: false`, so a
+glob that stops matching fails loudly instead of reporting a green run that collected nothing.
 
 Why an adoption suite is excluded rather than made a required gate is
 [Appendix F, "Running the suite in CI"](https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md).
