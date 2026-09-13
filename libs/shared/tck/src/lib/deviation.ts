@@ -4,12 +4,20 @@ import type { Capability } from './capability';
  * A gap the provider is known to have against something the specification does not treat as
  * optional.
  *
- * Distinct from an undeclared capability, which is a *choice*. A provider that does not declare
- * `@configuration-change` has no streaming transport and is not pretending otherwise; a provider
- * that does not declare {@link Capability.NumericCoercion} because it narrows `0.5` to `0` with no
- * error code has a bug. Both look identical in the results — scenarios skipped, reason recoverable
- * from the declaration — so the difference has to be stated, or a consumer cannot tell a design
- * decision from a defect.
+ * Distinct from an undeclared capability, which is a *choice* — and the same absence can mean more
+ * than one thing. {@link Capability.LargeIntegers} is missing from the adoptions in this repository
+ * because the reference backend does not serve the flag its one scenario asks for: the backend's
+ * gap, and temporary. The same capability would be missing from a provider whose transport rounds
+ * above 2^53 − 1, which is permanent and about that provider. Identical skips, different claims, and
+ * neither is a defect — nothing in the specification requires either.
+ *
+ * This type is the third case, and the only one that says something is *wrong*. A provider that
+ * reports no variant for a flag whose backend names one has a bug — and note which way round it is
+ * declared: it **keeps** {@link Capability.Variants} and lets the scenario fail, because withdrawing
+ * it would replace the failure with a skip indistinguishable from the two above. Where a provider
+ * genuinely cannot attempt the behaviour, the skip is all there is, and then the results look the
+ * same whichever it was — scenarios skipped, reason recoverable from the declaration. So the
+ * difference has to be stated here, or a consumer cannot tell a design decision from a defect.
  *
  * The TCK cannot infer it. From the outside, a capability the provider chose to withhold and one it
  * withheld because it is broken are the same absence, so only the adopter can say which happened —

@@ -204,7 +204,7 @@ call is made. See [`src/lib/scenarioRunner.ts`](./src/lib/scenarioRunner.ts).
 | `Capability.DisabledFlags`       | `@disabled-flags`       | resolves a flag disabled in the management system to the caller's default — **see below**                                |
 | `Capability.UnavailableInit`     | `@unavailable`          | reports an error state instead of hanging against a dead backend                                                         |
 | `Capability.NumericCoercion`     | `@numeric-coercion`     | coerces between integer and float only when lossless, else `TYPE_MISMATCH`; **not declarable** here — **see below**      |
-| `Capability.LargeIntegers`       | `@large-integers`       | resolves integers up to 2^53 − 1 exactly; leave undeclared where the transport rounds it                                 |
+| `Capability.LargeIntegers`       | `@large-integers`       | resolves integers up to 2^53 − 1 exactly; leave undeclared where the transport rounds it or the backend lacks its flag   |
 | `Capability.Targeting`           | `@targeting`            | resolves a flag differently for a matching evaluation context                                                            |
 | `Capability.StandardReasons`     | `@standard-reasons`     | reports the standard resolution reasons, with the standard meanings — **see below**                                      |
 | `Capability.Caching`             | `@caching`              | reserved; **not declarable** — no scenarios yet                                                                          |
@@ -255,9 +255,40 @@ A capability whose question cannot be put to _your provider_ is simply left unde
 other, and its scenarios are skipped. There is no second field and no second status: one skip
 carrying its reason says everything a parallel representation would.
 
-A capability whose question **this SDK** cannot put to any provider is different, and you do not
-leave it out — the library refuses it, the way it refuses a reserved one. `@numeric-coercion` is the
-only one, and it is the subject of a section of its own below.
+**The unit of that decision is the scenario, not the tag** — but only once you have settled a prior
+question. [Appendix F][appendix-f] states the rule with the condition it turns on: _once a provider
+is attempting a capability_, declare it when at least one scenario gating it can actually be put to
+the provider, and withhold only when none can. The rule decides whether the **question is askable**.
+Whether the provider owes an answer at all is a different question and it comes first: where the
+specification permits declining, withholding is the honest report however askable the scenarios are,
+and applying this rule there manufactures a failure out of a permitted choice.
+
+Once you are past that, the case the rule is for is a backend that does not serve a flag some
+scenario needs. `@large-integers` has exactly one scenario, so a backend without that flag leaves
+nothing about the capability establishable and withholding it is right. `@numeric-coercion` has
+three, and a backend missing one flag could still be asked the other two — withholding it _for that
+reason_ would hide two answers to save one failure.
+
+Two consequences, both easy to get wrong. A scenario that fails because the backend cannot serve its
+fixture is **not** a provider defect and must not be recorded as one: either withhold the capability
+and record nothing, or say plainly in the deviation's summary that the gap is the backend's, or the
+report accuses the provider of it. And a capability withheld for a backend gap is **temporary** in a
+way one withheld by choice is not — note why, with the issue that will close it, or the omission
+outlives its reason and nobody remembers to revisit it.
+
+**Four reasons a capability can be absent, and a report's reader has to tell them apart.** All four
+are live in this package, which is why they are listed rather than left to context:
+
+| absence                                                  | example here                                                                   | who decides           | lifetime                                      |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------- | --------------------------------------------- |
+| the provider **declines**, and the specification lets it | `@reinitialization` — requirement 2.5.2 permits reuse rather than requiring it | the adopter           | the provider's, until it changes              |
+| the backend cannot serve a scenario's **fixture**        | `@large-integers` against a testbed that does not serve its flag               | the adopter           | temporary; revisit when the backend gains it  |
+| the capability is **reserved**                           | `@caching` — no scenario anywhere carries the tag                              | this library, refused | expires when the specification adds scenarios |
+| this SDK cannot **express** it                           | `@numeric-coercion` — one numeric type, so neither half can be asked           | this library, refused | permanent until the Evaluation API changes    |
+
+Only the first two are yours to state, and only the first says anything about the provider's design.
+The last two you do not leave out: the library refuses them, and the two refusals carry different
+skip reasons on purpose. `@numeric-coercion` is the subject of a section of its own below.
 
 ### A defect is not a decision: `knownDeviations`
 
@@ -288,7 +319,7 @@ import { Capability, KnownDeviation, runProviderTck } from '@openfeature/tck';
 
 runProviderTck({
   // ...
-  capabilities: [Capability.Stale, Capability.LargeIntegers /* ... */],
+  capabilities: [Capability.Stale, Capability.Variants /* ... */],
   knownDeviations: [
     KnownDeviation.untracked(
       Capability.Stale,
@@ -296,13 +327,18 @@ runProviderTck({
         'returns, so it serves cached values indefinitely',
     ),
     KnownDeviation.tracked(
-      Capability.LargeIntegers,
-      'https://github.com/open-feature/flagd-testbed/pull/392',
-      'the testbed has no large-integer-flag, so the 2^53 - 1 scenario cannot pass yet',
+      Capability.Variants,
+      'https://github.com/acme/acme-openfeature-provider/issues/42',
+      'the backend names a variant for every flag and the provider drops it, so the gated rows ' +
+        'resolve the right value under no variant at all',
     ),
   ],
 });
 ```
+
+Both entries keep their capability **declared**. That is what makes them deviations rather than
+disappearances: the scenarios run, the failures stay in the results, and the entry says the failure
+is known and why.
 
 `summary` is required: an entry with no summary records that something is wrong without saying what,
 which is worth less than the bare skip or failure it accompanies. The issue is optional — use
@@ -561,7 +597,7 @@ integer" is not expressible. This is not a reservation and it will not expire: t
 and pass in other languages, and this is a property of the SDK rather than of your provider.
 ```
 
-This is [Appendix F][appendix-f]'s fifth declaring rule: _a capability the language's SDK cannot
+This is one of [Appendix F][appendix-f]'s declaring rules: _a capability the language's SDK cannot
 express is refused by the implementation, not left to adopters._ It replaced three per-suite
 omissions in this package, each with its own comment restating the same property of JavaScript —
 three places to get right before a single external adopter arrived, and a single wrong one would put
@@ -792,6 +828,16 @@ asserts about the child alone, so any difference is attributable to the multi-pr
 else — a variant that does not survive the hop, a reason rewritten to `DEFAULT`, an error code
 flattened to `GENERAL`, an event that never reaches the client. The Java equivalent found a real bug
 this way ([java-sdk#1882](https://github.com/open-feature/java-sdk/issues/1882)).
+
+**None of these suites withholds a capability to stay green**, and that is worth saying because
+[Appendix F][appendix-f] would let them. A TCK implementation's own self-tests are the one place the
+carve-out applies: they are a fixture for the harness rather than a report about a third party, and
+they run in the ordinary build, where a permanently failing scenario is a broken build and not a
+finding — so one may leave a capability undeclared for a defect it has identified, on the condition
+that the defect is pinned by a test of its own. Every omission in the table above is instead "there
+is nothing to ask": no connection to lose, no initialisation to observe, no `contextEvaluator` the
+canonical flag-definition format can express. An adoption has no such licence either way — a skip
+there is a claim about the provider it reports on.
 
 ### What CI runs, and what it does not
 
