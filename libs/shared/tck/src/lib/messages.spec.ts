@@ -193,6 +193,7 @@ describe('the results stream', () => {
       'gherkin/events.feature',
       'gherkin/lifecycle.feature',
       'gherkin/metadata.feature',
+      'gherkin/reason.feature',
     ]);
     for (const source of sources) {
       expect(source.data).toContain('Feature:');
