@@ -178,20 +178,8 @@ export enum Capability {
    * and for `integer-flag` (`10`) as a float, and expect both to succeed. Rejecting every float is
    * an easy way to pass the first, and the other two are what stop it.
    *
-   * **JavaScript has no integer type, so this is the one capability that cannot hold here at all.**
-   * `typeof 10` and `typeof 0.5` are both `'number'` and the Evaluation API exposes only
-   * `getNumberDetails`, so requesting a flag as an Integer is indistinguishable from requesting it
-   * as a Float. Neither half of the contract can be put to a provider in this language: there is no
-   * lossless coercion to permit, because `10.0` and `10` are the same value and nothing is
-   * narrowed, and no lossy one to reject with `TYPE_MISMATCH`, because `0.5` asked for as an
-   * Integer is indistinguishable from a perfectly valid Float request.
-   *
-   * A JavaScript suite therefore leaves this undeclared, and its three scenarios are skipped with
-   * that reason. **This paragraph is where the impossibility is recorded**, together with Appendix
-   * F upstream — not a field in every report. It is a property of the SDK rather than of any one
-   * provider: true of every provider written against this SDK, and for as long as the Evaluation
-   * API has a single numeric accessor. Stating it per run would repeat a language fact on each
-   * provider's behalf and still say nothing in a run where no scenario carried the tag.
+   * **This SDK cannot express it, so it is refused rather than left to adopters** — see
+   * {@link INEXPRESSIBLE_CAPABILITIES}, which is where the language property is recorded and why.
    */
   NumericCoercion = '@numeric-coercion',
 
@@ -202,11 +190,13 @@ export enum Capability {
    * apart from {@link NumericCoercion}. Every language's integer accessor can ask for 2^31 − 1, so
    * that precision scenario is untagged and mandatory. Only some can ask for 2^53 − 1: Java's
    * accessor is a 32-bit `Integer`, and a provider cannot resolve a value the accessor has no room
-   * for, so a provider on a 32-bit accessor leaves this undeclared.
+   * for. That makes this capability Java's instance of the rule
+   * {@link INEXPRESSIBLE_CAPABILITIES} implements here — the Java implementation refuses it rather
+   * than leaving every Java adopter to know the width of their own accessor.
    *
-   * JavaScript's `number` represents every integer up to 2^53 − 1 exactly, so a provider here can
-   * declare it whenever its backend and transport carry the value without rounding. Nothing above
-   * 2^53 − 1 is asked for: JavaScript cannot represent it.
+   * JavaScript's `number` represents every integer up to 2^53 − 1 exactly, so it is an ordinary
+   * declarable capability here: a provider declares it whenever its backend and transport carry the
+   * value without rounding. Nothing above 2^53 − 1 is asked for: JavaScript cannot represent it.
    */
   LargeIntegers = '@large-integers',
 
@@ -279,10 +269,12 @@ export enum Capability {
    * so those scenarios carry {@link Targeting} and {@link DisabledFlags} as well. A provider
    * declaring this alone runs the rest and skips those two with their reason.
    *
-   * Unlike {@link NumericCoercion}, **this one is reachable in JavaScript**. The single numeric type
-   * makes the coercion contract unaskable here, but a reason is a string on the resolution details
-   * and every one of the five situations above is observable through `getBooleanDetails` and its
-   * siblings, whatever the accessor's arithmetic.
+   * Unlike {@link NumericCoercion}, **this one is expressible in JavaScript** and so is declarable
+   * here. The single numeric type makes the coercion contract unaskable, but a reason is a string on
+   * the resolution details and every one of the five situations above is observable through
+   * `getBooleanDetails` and its siblings, whatever the accessor's arithmetic. The two reach the same
+   * place from opposite directions, which is why {@link INEXPRESSIBLE_CAPABILITIES} names one
+   * capability and not a category.
    */
   StandardReasons = '@standard-reasons',
 
@@ -327,24 +319,97 @@ export function isReserved(capability: Capability): boolean {
 }
 
 /**
- * Every capability the TCK recognises as a tag, reserved ones included.
+ * The capabilities this SDK cannot put to a provider at all, each mapped to the reason it cannot.
+ *
+ * **This is the one place the language property is written down.** A capability here is refused at
+ * configuration time, exactly as a reserved one is, and its scenarios are skipped in every run with
+ * the reason below carried in the skip. Appendix F requires it of every implementation: *a
+ * capability the language's SDK cannot express is refused by the implementation, not left to
+ * adopters.*
+ *
+ * `@numeric-coercion` is the only one, and it is the whole of the JavaScript case. The
+ * specification has a single numeric type —
+ * [`number`](https://github.com/open-feature/spec/blob/main/specification/types.md#number) is *"a
+ * numeric value of unspecified type or size"*, which an implementation language **may** differentiate
+ * further *"as idioms dictate"* — and this one does not: `typeof 10` and `typeof 0.5` are both
+ * `'number'`, so the Evaluation API exposes the one `getNumberDetails` accessor. Requesting
+ * `float-flag` as an Integer is therefore indistinguishable from requesting it as a Float, and
+ * neither half of {@link Capability.NumericCoercion}'s contract can be asked — there is no lossless
+ * coercion to permit, `10.0` and `10` being the same value with nothing narrowed, and no lossy one
+ * to reject with `TYPE_MISMATCH`, `0.5` asked for as an Integer being a perfectly valid Float
+ * request. Not a defect in any provider: the distinction the contract is about does not exist here.
+ *
+ * **This is not a reservation, and the two must not be read as one.** They differ in every way but
+ * the refusal:
+ *
+ * | | reserved ({@link RESERVED_CAPABILITIES}) | inexpressible (here) |
+ * | --- | --- | --- |
+ * | Why | no scenario anywhere carries the tag | scenarios exist, and pass in other languages |
+ * | Scope | every language | this one |
+ * | Lifetime | expires when the specification adds scenarios | permanent until the SDK changes |
+ * | The skip says | the capability has no scenarios yet | this SDK cannot ask the question |
+ *
+ * A reader who sees a capability absent from a report has to be able to tell *"this provider
+ * declined"* from *"no provider in this language can be asked"*, because only the first says
+ * anything about the provider. That is why the refusals are separate predicates with separate
+ * messages rather than one shared "not declarable".
+ *
+ * Refusing centrally is the point of the mechanism. This was documentation until pass 6: three
+ * suites in this package each left the capability undeclared with its own comment restating the same
+ * property of the language, and every future adoption would have owed a fourth. One wrong one puts a
+ * claim in a report that no scenario could have verified — the failure the reserved rules exist to
+ * prevent, reached by another route. An adopter should not have to know this about their language,
+ * and should not be able to get it wrong if they do not.
+ *
+ * The reason strings are short on purpose: each is quoted verbatim in the configuration-time refusal
+ * and in every skipped scenario's name, so a reader of a run sees *why* without a lookup.
+ */
+export const INEXPRESSIBLE_CAPABILITIES: Readonly<Partial<Record<Capability, string>>> = Object.freeze({
+  [Capability.NumericCoercion]:
+    'JavaScript has a single numeric type, so "a float requested as an integer" is not expressible',
+});
+
+/** Whether a capability is one this SDK cannot express, and so cannot be declared here. */
+export function isInexpressible(capability: Capability): boolean {
+  return INEXPRESSIBLE_CAPABILITIES[capability] !== undefined;
+}
+
+/**
+ * Why this SDK cannot express a capability, or `undefined` where it can.
+ *
+ * One accessor for one sentence, so the refusal and the skip cannot word it differently.
+ */
+export function inexpressibleReason(capability: Capability): string | undefined {
+  return INEXPRESSIBLE_CAPABILITIES[capability];
+}
+
+/**
+ * Every capability the TCK recognises as a tag, reserved and inexpressible ones included.
  *
  * This is the vocabulary, not the set an adopter may declare — for that see
- * {@link DECLARABLE_CAPABILITIES}. Reserved tags belong here because a tag still has to be
- * recognised to be refused.
+ * {@link DECLARABLE_CAPABILITIES}. Both kinds of undeclarable tag belong here because a tag still
+ * has to be recognised to be refused, and an inexpressible one has to be recognised to be *gated*:
+ * its scenarios exist and must be skipped with their reason.
  */
 export const ALL_CAPABILITIES: readonly Capability[] = Object.freeze(Object.values(Capability));
 
 /**
- * Every capability an adoption may declare: {@link ALL_CAPABILITIES} without the reserved ones.
+ * Every capability an adoption may declare: {@link ALL_CAPABILITIES} without the two kinds it may
+ * not — the reserved ones, and the ones {@link INEXPRESSIBLE_CAPABILITIES} says this SDK cannot ask.
  *
  * A reasonable starting point for a new adoption: declare all of these, run the suite, and remove
  * only what the provider genuinely cannot do. Narrowing from the full set surfaces gaps; widening
  * towards it hides them. It is also what {@link TckOptions.capabilities} defaults to, so
- * "declare everything" cannot mean "declare things nothing tested".
+ * "declare everything" cannot mean "declare things nothing tested" — nor, since pass 6, "declare
+ * things no provider in this language could be asked".
+ *
+ * The two exclusions differ in what they leave behind. A reserved capability gates nothing, so its
+ * absence from this list is invisible at run time. An inexpressible one gates three scenarios that
+ * are skipped in every run of every JavaScript suite, which is why it is excluded here and *not*
+ * from the capability gate.
  */
 export const DECLARABLE_CAPABILITIES: readonly Capability[] = Object.freeze(
-  ALL_CAPABILITIES.filter((capability) => !isReserved(capability)),
+  ALL_CAPABILITIES.filter((capability) => !isReserved(capability) && !isInexpressible(capability)),
 );
 
 /**

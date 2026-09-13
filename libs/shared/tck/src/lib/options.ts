@@ -1,6 +1,14 @@
 import type { StepDefinitions } from 'jest-cucumber';
 import type { Provider } from '@openfeature/server-sdk';
-import { Capability, DECLARABLE_CAPABILITIES, RESERVED_CAPABILITIES, isReserved } from './capability';
+import {
+  ALL_CAPABILITIES,
+  Capability,
+  DECLARABLE_CAPABILITIES,
+  RESERVED_CAPABILITIES,
+  inexpressibleReason,
+  isInexpressible,
+  isReserved,
+} from './capability';
 import type { BackendControl } from './control';
 import type { KnownDeviation } from './deviation';
 
@@ -68,8 +76,12 @@ export interface TckOptions {
    * test name — never as passed. Defaults to every *declarable* capability; narrow it rather than
    * widening it.
    *
-   * A reserved capability — one no scenario carries, see {@link RESERVED_CAPABILITIES} — cannot be
-   * declared, and naming one here is rejected rather than passed through to the report.
+   * Two kinds of capability cannot be declared, and naming either here is rejected rather than
+   * passed through to the report. A **reserved** one — see {@link RESERVED_CAPABILITIES} — is a name
+   * no scenario carries yet, in any language. An **inexpressible** one — see
+   * {@link INEXPRESSIBLE_CAPABILITIES} — has scenarios, which pass in other languages, that this
+   * SDK has no way to put to a provider. The refusals say which, because only the first is
+   * temporary and neither says anything about your provider.
    */
   capabilities?: readonly Capability[];
 
@@ -116,8 +128,10 @@ export interface TckOptions {
    * the two forms, and naming an untracked defect is still what separates it from a choice.
    *
    * A deviation may also concern no capability at all — pass `undefined` — when the gap is against a
-   * mandatory, ungated scenario. It may not concern a reserved one: there is no scenario to deviate
-   * *from*, so the statement would be about nothing, exactly as for {@link capabilities}.
+   * mandatory, ungated scenario. It may concern neither of the two kinds {@link capabilities}
+   * refuses, for the two reasons those are refused: a reserved capability has no scenario to deviate
+   * *from*, and an inexpressible one has scenarios that were never put to this provider, so the entry
+   * would assert a defect that cannot exist.
    *
    * Declaring one changes nothing about what runs. It is a statement about the provider, carried
    * through to whatever reads the declaration.
@@ -203,10 +217,15 @@ export interface ResolvedCapabilities {
   /** What the provider claims, and so what the conformance report declares. */
   declared: Set<Capability>;
   /**
-   * Declarable capabilities this suite does not declare, which is what the tag filter gates on.
+   * Every capability a scenario can be gated by that this suite does not declare, which is what the
+   * tag filter gates on.
    *
    * Reserved capabilities are absent, and their absence changes nothing: no scenario carries one, so
    * excluding it from the filter excludes it from nothing.
+   *
+   * Inexpressible ones are always present, which is the mechanism the central refusal rests on. No
+   * suite can declare one, so its scenarios are gated in every run — and because that happens here
+   * rather than in each suite's options, no suite has to remember to leave it out.
    */
   undeclared: Capability[];
   /** The gaps the suite named, checked and in declaration order. */
@@ -254,6 +273,25 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
     );
   }
 
+  // The second refusal, and deliberately not folded into the first. Both end in a throw, and that is
+  // the only thing they share: a reservation is global and expires, while this is one language's and
+  // permanent, and the scenarios it gates exist and pass elsewhere. Telling an adopter "no scenario
+  // carries this" when three do, in Go, Java and Python, would send them looking for a gap upstream
+  // that is not there. Appendix F requires the distinction to survive into the skip reasons too --
+  // see `skipDisplayName`.
+  const inexpressible = [...new Set(options.capabilities ?? [])].filter(isInexpressible);
+  if (inexpressible.length) {
+    throw new Error(
+      `capabilities names ${inexpressible.join(' ')}, which no provider written against this SDK ` +
+        `can be asked about: ` +
+        `${inexpressible.map((capability) => `${capability} -- ${inexpressibleReason(capability)}`).join('; ')}. ` +
+        `This is not a reservation and it will not expire: the scenarios exist and pass in other ` +
+        `languages, and this is a property of the SDK rather than of your provider. Remove it. ` +
+        `Its scenarios are skipped with that reason in every run here, whatever you declare, so ` +
+        `there is nothing for you to do and no deviation to record.`,
+    );
+  }
+
   const knownDeviations = options.knownDeviations ?? [];
 
   // Checked here, with the rest of the declaration's shape, rather than further down with the rules
@@ -271,6 +309,23 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
       `knownDeviations names ${[...new Set(reservedDeviations)].join(' ')}, which no scenario ` +
         `carries. A deviation is a gap against a scenario, so a reserved capability leaves nothing ` +
         `to deviate from. Name the capability whose scenarios the gap is against, or none at all.`,
+    );
+  }
+
+  // And the same rule for an inexpressible one, for a different reason. Here there *are* scenarios,
+  // so the gap would be against something -- but no provider in this language was ever asked, so a
+  // deviation would assert a defect that cannot exist and put it in a report as this provider's.
+  const inexpressibleDeviations = knownDeviations.flatMap((deviation) =>
+    deviation.capability && isInexpressible(deviation.capability) ? [deviation.capability] : [],
+  );
+  if (inexpressibleDeviations.length) {
+    const named = [...new Set(inexpressibleDeviations)];
+    throw new Error(
+      `knownDeviations names ${named.join(' ')}, which this SDK cannot ask of any provider: ` +
+        `${named.map((capability) => `${capability} -- ${inexpressibleReason(capability)}`).join('; ')}. ` +
+        `A deviation says this provider fails something it is required to do, and nothing here was ` +
+        `ever put to it. If the gap you mean is a real one -- a narrowing defect, say -- record it ` +
+        `against the capability whose scenarios catch it, or against none at all.`,
     );
   }
 
@@ -295,7 +350,12 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
 
   return {
     declared,
-    undeclared: DECLARABLE_CAPABILITIES.filter((capability) => !declared.has(capability)),
+    // Everything a scenario can be gated by, less what this suite declared -- which is wider than
+    // the declarable set by exactly the inexpressible capabilities. They can never be in `declared`,
+    // so they are always gated, which is how one list here replaces an omission in every suite.
+    // Reserved ones are excluded because no scenario carries them: `not @caching` would exclude
+    // nothing and only make the filter longer.
+    undeclared: ALL_CAPABILITIES.filter((capability) => !isReserved(capability) && !declared.has(capability)),
     knownDeviations,
   };
 }

@@ -80,7 +80,4 @@ runProviderTck({
     Capability.DisabledFlags,
     Capability.StandardReasons,
   ],
-
-  // NumericCoercion is left undeclared: JavaScript has no integer type, so the capability is
-  // unsatisfiable in the language rather than unimplemented by the provider. See inMemory.spec.ts.
 });
