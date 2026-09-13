@@ -74,8 +74,8 @@ describe('the reserved capabilities', () => {
 });
 
 describe('the capabilities this SDK cannot express', () => {
-  // Appendix F's fifth declaring rule: a capability the language's SDK cannot express is refused by
-  // the implementation, not left to adopters. It replaced three per-suite omissions in this package,
+  // One of Appendix F's declaring rules: a capability the language's SDK cannot express is refused
+  // by the implementation, not left to adopters. It replaced three per-suite omissions in this package,
   // each with its own comment restating the same property of JavaScript -- three places to get it
   // right before a single external adopter arrived, and a single wrong one would put a claim in a
   // report that no scenario could have verified.
