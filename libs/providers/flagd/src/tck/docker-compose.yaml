@@ -10,11 +10,11 @@
 # them after startup -- a pinned host port would make the suite unrunnable in parallel and would
 # collide with a developer's own flagd.
 #
-# Note also there is no /flags volume, unlike test-harness/docker-compose.yaml next door. The
-# launchpad writes the configuration it is asked for into the container's own /flags from the
-# rawflags baked into the image, so a bind mount buys nothing here and costs isolation: the
-# neighbouring e2e suites share one host directory through that mount, and with two containers up
-# at once each rewrites the other's flags. The damage does not read as a race -- a scenario resolves
+# Note also there is no /flags volume, unlike the docker-compose.yaml in the flagd-core test-harness
+# submodule that the e2e suites in ../e2e use. The launchpad writes the configuration it is asked
+# for into the container's own /flags from the rawflags baked into the image, so a bind mount buys
+# nothing here and costs isolation: those e2e suites share one host directory through that mount,
+# and with two containers up at once each rewrites the other's flags. The damage does not read as a race -- a scenario resolves
 # a flag another suite has just replaced and reports a plainly wrong answer -- which is the worst
 # thing a conformance suite can get wrong. Omitting the mount removes the shared resource rather
 # than scheduling around it.

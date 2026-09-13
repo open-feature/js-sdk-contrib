@@ -11,7 +11,9 @@ module.exports = {
     ],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
-  // ignore e2e path
-  testPathIgnorePatterns: ['/e2e/'],
+  // ignore the e2e and conformance paths: both are Docker-gated and have targets of their own
+  // (`nx e2e providers-flagd`, `nx tck providers-flagd`). `/src/tck/` is anchored so it cannot
+  // match a `tck` directory under `lib/`.
+  testPathIgnorePatterns: ['/e2e/', '/src/tck/'],
   coverageDirectory: '../../../coverage/libs/providers/flagd',
 };
