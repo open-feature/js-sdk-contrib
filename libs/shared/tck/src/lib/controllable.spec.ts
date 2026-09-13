@@ -38,7 +38,7 @@ runProviderTck({
   newUnavailableProvider: () => control.newUnavailableProvider(),
 
   /*
-   * `inMemory.spec.ts`'s six, plus the three this suite exists for. Each addition is a fact about
+   * `inMemory.spec.ts`'s seven, plus the three this suite exists for. Each addition is a fact about
    * ControllableProvider rather than a convenience:
    *
    * - Lifecycle, because initialisation reaches a store this provider does not already hold and can
@@ -66,8 +66,6 @@ runProviderTck({
    * - Targeting is omitted for the delegate's reason: InMemoryProvider takes its rules from a
    *   contextEvaluator function and the canonical flag file has no way to express one, so
    *   targeting-key-flag resolves its default variant whatever the context.
-   * - NumericCoercion is omitted because JavaScript has no integer type — see Capability's own
-   *   documentation, where that language fact is recorded once rather than per suite.
    * - Caching is reserved rather than optional, so it is not declarable and leaving it out skips
    *   nothing.
    */

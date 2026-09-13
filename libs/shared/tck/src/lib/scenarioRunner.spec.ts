@@ -1,5 +1,5 @@
 import { loadFeatures, parseFeature } from 'jest-cucumber';
-import { Capability, DECLARABLE_CAPABILITIES } from './capability';
+import { Capability, DECLARABLE_CAPABILITIES, INEXPRESSIBLE_CAPABILITIES, inexpressibleReason } from './capability';
 import { planScenarios, skipDisplayName } from './scenarioRunner';
 import { FEATURES_GLOB } from './runProviderTck';
 
@@ -19,7 +19,7 @@ describe('the capability gate', () => {
 
     expect(gated.length).toBeGreaterThan(0);
     for (const scenario of gated) {
-      expect(skipDisplayName(scenario)).toContain('SKIPPED: provider does not declare');
+      expect(skipDisplayName(scenario)).toContain('SKIPPED: ');
       for (const capability of scenario.missing) {
         expect(skipDisplayName(scenario)).toContain(capability);
       }
@@ -116,6 +116,12 @@ describe('the capability gate', () => {
     const carried = new Set(plansWithout().flatMap((scenario) => scenario.tags));
 
     expect(DECLARABLE_CAPABILITIES.filter((capability) => !carried.has(capability))).toEqual([]);
+
+    // The inexpressible ones are held to the same requirement, and it is the requirement that tells
+    // them apart from a reservation: their scenarios *exist*, and pass in other languages. One that
+    // stopped being carried would make the refusal in options.ts a refusal of nothing -- a
+    // reservation in all but name, and one this library would be wrong to keep refusing.
+    expect(Object.keys(INEXPRESSIBLE_CAPABILITIES).filter((capability) => !carried.has(capability))).toEqual([]);
   });
 
   it('gates both halves of @numeric-coercion on the tag, not only the lossy one', () => {
@@ -133,7 +139,7 @@ describe('the capability gate', () => {
     ]);
     for (const scenario of gated) {
       expect(scenario.missing).toEqual([Capability.NumericCoercion]);
-      expect(skipDisplayName(scenario)).toContain('SKIPPED: provider does not declare');
+      expect(skipDisplayName(scenario)).toContain('SKIPPED: this SDK cannot ask');
     }
   });
 
@@ -250,21 +256,57 @@ describe('the capability gate', () => {
     expect(untargeted?.missing).toEqual([]);
   });
 
-  it('gives an undeclared capability one skip wording, whatever the reason it went undeclared', () => {
-    // One skip carrying its reason is the whole mechanism. A capability the provider chose not to
-    // declare and one that cannot hold in the language at all are both skips, and the scenario's
-    // own tags already say what was asked -- so there is no second wording to get wrong, and no
-    // way for an adoption to dress a gap up as an impossibility.
-    const gated = plansWithout(Capability.Events).filter((scenario) =>
+  it('words the skip so a reader can tell a declined capability from an unaskable one', () => {
+    // One skip *status* is the whole mechanism -- Appendix F is explicit that a second status would
+    // tell a reader nothing the reason does not. The reason has to carry the distinction instead,
+    // because only one of the two says anything about the provider: "the provider declined" is a
+    // fact about this adoption, and "no provider in this language can be asked" is a fact about the
+    // SDK that is true of every adoption and will not change until the Evaluation API does.
+    const declined = plansWithout(Capability.Events).filter((scenario) => scenario.missing.includes(Capability.Object));
+    const unaskable = plansWithout(Capability.Events).filter((scenario) =>
       scenario.missing.includes(Capability.NumericCoercion),
     );
 
-    expect(gated.length).toBeGreaterThan(0);
-    for (const scenario of gated) {
-      expect(skipDisplayName(scenario)).toBe(
-        `${scenario.title} — SKIPPED: provider does not declare ${Capability.NumericCoercion}`,
-      );
+    expect(declined.length).toBeGreaterThan(0);
+    for (const scenario of declined) {
+      expect(skipDisplayName(scenario)).toContain(`SKIPPED: provider does not declare ${Capability.Object}`);
     }
+
+    expect(unaskable).toHaveLength(3);
+    for (const scenario of unaskable) {
+      expect(skipDisplayName(scenario)).toBe(
+        `${scenario.title} — SKIPPED: this SDK cannot ask ${Capability.NumericCoercion} of any ` +
+          `provider: ${inexpressibleReason(Capability.NumericCoercion)}`,
+      );
+      // The language property travels with the skip rather than sitting one lookup away in the
+      // capability's documentation, which is what three per-suite comments used to be for.
+      expect(skipDisplayName(scenario)).toContain('single numeric type');
+      expect(skipDisplayName(scenario)).not.toContain('does not declare');
+    }
+  });
+
+  it('emits both clauses for a scenario gated by one of each, naming its own capabilities to each', () => {
+    // No canonical scenario is in this position today, which is exactly why it is worth pinning: a
+    // scenario is gated by *every* capability tag that applies to it, so an upstream file that
+    // composed @numeric-coercion with an ordinary tag must not lose either half of the reason.
+    const parsed = parseFeature(
+      [
+        'Feature: composed gates',
+        '',
+        '  @object @numeric-coercion',
+        '  Scenario: a structured flag asked for as an integer',
+        '    Given a String-flag with key "string-flag" and a default value "x"',
+        '',
+      ].join('\n'),
+    );
+
+    const [planned] = planScenarios(parsed, new Set([Capability.Events]));
+    const name = skipDisplayName(planned);
+
+    expect(planned.missing).toEqual([Capability.Object, Capability.NumericCoercion]);
+    expect(name).toContain(`provider does not declare ${Capability.Object}`);
+    expect(name).toContain(`this SDK cannot ask ${Capability.NumericCoercion}`);
+    expect(name.indexOf('does not declare')).toBeLessThan(name.indexOf('cannot ask'));
   });
 
   it('names every capability a scenario is missing, not only the first', () => {
