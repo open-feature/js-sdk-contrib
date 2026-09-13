@@ -40,9 +40,6 @@ runFlagdTck({
    * - ConfigurationChange is declared, and the event carries the changed keys —
    *   grpc-service.ts:243 derives them from the flagd change message and flagd-provider.ts:151
    *   puts them in the payload as `flagsChanged`, which the suite asserts on.
-   * - NumericCoercion is omitted for the reason every JavaScript provider omits it: the language
-   *   has no integer type, so the scenario is unsatisfiable by construction rather than by defect.
-   *   See "The one place JavaScript cannot answer the shared question" in the TCK README.
    * - Variants is declared. flagd's evaluation response carries the variant it matched and the
    *   provider hands it back untouched, so the eight gated rows are a real question asked of this
    *   provider rather than a formality. Requirement 2.2.4 is only a SHOULD and `types.md` types the

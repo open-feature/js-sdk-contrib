@@ -44,9 +44,8 @@ runFlagdTck({
    * An application switching resolver sees the same reason as well as the same value, which is the
    * only thing that makes a reason worth building telemetry on.
    *
-   * The omissions are the same and have the same reasons: NumericCoercion because JavaScript has
-   * no integer type, so the scenario is unsatisfiable by construction (see the TCK README), and
-   * Caching because it is still reserved and no scenario carries the tag.
+   * The omissions are the same and have the same reasons: Caching because it is still reserved and
+   * no scenario carries the tag.
    *
    * Reinitialization is left undeclared, as in RPC and for the same reason -- and it is the same
    * code shape: `disconnect` calls `this._syncClient.close()` (grpc-fetch.ts:95-99) and nothing
