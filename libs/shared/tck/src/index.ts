@@ -24,8 +24,11 @@ export {
   ALL_CAPABILITIES,
   Capability,
   DECLARABLE_CAPABILITIES,
+  INEXPRESSIBLE_CAPABILITIES,
   RESERVED_CAPABILITIES,
   capabilityForTag,
+  inexpressibleReason,
+  isInexpressible,
   isReserved,
 } from './lib/capability';
 export {
