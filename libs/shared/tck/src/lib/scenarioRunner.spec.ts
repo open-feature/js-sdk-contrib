@@ -97,6 +97,7 @@ describe('the capability gate', () => {
       'Provider flag evaluation',
       'Provider lifecycle',
       'Provider metadata',
+      'Provider resolution reasons',
     ]);
   });
 
@@ -136,7 +137,7 @@ describe('the capability gate', () => {
     // untagged evaluation scenarios, which failed a backend with no variant concept ten times over
     // for something requirement 2.2.4 only SHOULDs. They are now one outline of eight rows, so a
     // provider leaving the tag undeclared sees eight skips and no failures -- and, just as
-    // important, the value and reason scenarios it shares flags with still run.
+    // important, the value scenarios it shares flags with still run.
     const gated = plansWithout(Capability.Events).filter((scenario) => scenario.missing.includes(Capability.Variants));
 
     expect(gated).toHaveLength(8);
@@ -145,10 +146,10 @@ describe('the capability gate', () => {
       expect(scenario.missing).toEqual([Capability.Variants]);
     }
 
-    // The flags the outline covers are still asserted for value and reason by scenarios that are
-    // untagged, so withdrawing @variants withdraws the variant claim and nothing else.
+    // The flags the outline covers are still asserted for value by scenarios that are untagged, so
+    // withdrawing @variants withdraws the variant claim and nothing else.
     const mandatory = plansWithout(Capability.Events).filter((scenario) => !scenario.missing.length);
-    expect(mandatory.map((scenario) => scenario.title)).toContain('Resolve values with reason');
+    expect(mandatory.map((scenario) => scenario.title)).toContain('Resolve values');
     expect(mandatory.map((scenario) => scenario.title)).toContain('A falsy value is a value, not an absence');
   });
 
@@ -156,16 +157,67 @@ describe('the capability gate', () => {
     // @targeting was a reserved name until Appendix F carried scenarios for it. All three are
     // needed: a matching context, a non-matching one -- without which a provider that always
     // returned the targeted value would pass -- and no context at all.
-    const gated = plansWithout(Capability.Events).filter((scenario) => scenario.missing.includes(Capability.Targeting));
+    // Filtered on @targeting being the *only* thing missing, because reason.feature composes it
+    // with @standard-reasons — see the composition test below.
+    const gated = plansWithout(Capability.Events).filter(
+      (scenario) => scenario.missing.length === 1 && scenario.missing[0] === Capability.Targeting,
+    );
 
     expect(gated.map((scenario) => scenario.title).sort()).toEqual([
       'A matching evaluation context resolves the targeted variant',
       'A non-matching evaluation context resolves the default variant',
       'No evaluation context resolves the default variant',
     ]);
-    for (const scenario of gated) {
-      expect(scenario.missing).toEqual([Capability.Targeting]);
+  });
+
+  it('gates the whole of reason.feature on @standard-reasons, and nothing else on it', () => {
+    // The tag is on the Feature rather than on any scenario, which is the one shape a plan keyed on
+    // scenario tags alone would miss: `planScenarios` unions the feature's tags into every
+    // scenario's, and this is the only canonical file that relies on it. Nine entries -- the
+    // four-row STATIC outline plus five plain scenarios.
+    const gated = plansWithout(Capability.Events).filter((scenario) =>
+      scenario.missing.includes(Capability.StandardReasons),
+    );
+
+    expect(gated).toHaveLength(9);
+    expect(
+      gated.filter((scenario) => scenario.title === 'A flag with no targeting rules resolves statically'),
+    ).toHaveLength(4);
+
+    // And withdrawing it withdraws only the reason claim: every scenario that asserted a reason
+    // before the suite consolidated them is untagged and still mandatory.
+    const mandatory = plansWithout()
+      .filter((scenario) => !scenario.missing.length)
+      .map((scenario) => scenario.title);
+    expect(mandatory).toContain('Resolve values');
+    expect(mandatory).toContain('An unknown flag key returns the code default');
+  });
+
+  it('composes @standard-reasons with the capability each reason needs to be observable', () => {
+    // TARGETING_MATCH cannot be observed without targeting and DISABLED cannot be observed unless
+    // the backend distinguishes a disabled flag, so three of the nine carry a second tag. A
+    // provider declaring @standard-reasons alone runs the other six and skips these with their
+    // reason -- which is the whole point of naming every missing capability rather than the first.
+    const composed = plansWithout(Capability.Events, Capability.StandardReasons).filter(
+      (scenario) => scenario.missing.length,
+    );
+    const inReasonFeature = composed.filter((scenario) => scenario.tags.includes(Capability.StandardReasons));
+
+    expect(inReasonFeature.map((scenario) => scenario.title).sort()).toEqual([
+      'A disabled flag reports that it is disabled',
+      'A matching targeting rule reports a targeting match',
+      'A targeting rule that does not match reports the default',
+    ]);
+    for (const scenario of inReasonFeature) {
+      expect(scenario.missing).not.toContain(Capability.StandardReasons);
+      expect(skipDisplayName(scenario)).toContain(scenario.missing[0]);
     }
+
+    // The remaining six run on the declaration alone.
+    const running = plansWithout(Capability.Events, Capability.StandardReasons).filter(
+      (scenario) => scenario.tags.includes(Capability.StandardReasons) && !scenario.missing.length,
+    );
+    expect(running).toHaveLength(6);
   });
 
   it('leaves the untargeted-context scenario mandatory, no capability gating it', () => {
