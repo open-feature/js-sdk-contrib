@@ -32,6 +32,12 @@
     "tck": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/libs/providers/ofrep"],
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/jest.preset.js",
+        "{workspaceRoot}/libs/shared/tck-backend/**/*"
+      ],
       "options": {
         "jestConfig": "libs/providers/ofrep/src/tck/jest.config.ts",
         "runInBand": true,
