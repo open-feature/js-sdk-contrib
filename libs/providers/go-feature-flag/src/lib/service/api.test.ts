@@ -374,6 +374,47 @@ describe('GoFeatureFlagApi', () => {
       expect(result.flags).toEqual({});
     });
 
+    it.each([
+      ['an array', '{"flags":{},"evaluationContextEnrichment":[]}'],
+      ['a populated array', '{"flags":{},"evaluationContextEnrichment":[{"env":"production"}]}'],
+      ['a string', '{"flags":{},"evaluationContextEnrichment":"oops"}'],
+      ['a number', '{"flags":{},"evaluationContextEnrichment":42}'],
+      ['a boolean', '{"flags":{},"evaluationContextEnrichment":true}'],
+    ])('should treat a 200 with %s as the evaluation context enrichment as a failed refresh', async (_label, body) => {
+      const api = new GoFeatureFlagApi(baseOptions);
+      mockFetch.setResponse(
+        'http://localhost:8080/v1/flag/configuration',
+        new MockResponse(200, body, { etag: '"newer-etag"' }),
+      );
+      await expect(api.retrieveFlagConfiguration()).rejects.toThrow(ImpossibleToRetrieveConfigurationException);
+    });
+
+    it('should treat a null evaluation context enrichment as no enrichment', async () => {
+      const api = new GoFeatureFlagApi(baseOptions);
+      mockFetch.setResponse(
+        'http://localhost:8080/v1/flag/configuration',
+        new MockResponse(200, '{"flags":{},"evaluationContextEnrichment":null}', { etag: '"123456789"' }),
+      );
+
+      // A nil Go map marshals to `null`, and an absent enrichment is a legitimate configuration -
+      // unlike a null flag map, which carries no configuration at all.
+      const result = expectConfiguration(await api.retrieveFlagConfiguration());
+
+      expect(result.evaluationContextEnrichment).toEqual({});
+    });
+
+    it('should default an absent evaluation context enrichment to an empty object', async () => {
+      const api = new GoFeatureFlagApi(baseOptions);
+      mockFetch.setResponse(
+        'http://localhost:8080/v1/flag/configuration',
+        new MockResponse(200, '{"flags":{}}', { etag: '"123456789"' }),
+      );
+
+      const result = expectConfiguration(await api.retrieveFlagConfiguration());
+
+      expect(result.evaluationContextEnrichment).toEqual({});
+    });
+
     it('should handle invalid last-modified header', async () => {
       const api = new GoFeatureFlagApi(baseOptions);
       mockFetch.setResponse(

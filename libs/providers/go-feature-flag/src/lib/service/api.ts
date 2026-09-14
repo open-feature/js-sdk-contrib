@@ -224,8 +224,11 @@ export class GoFeatureFlagApi {
    * @param response HTTP response.
    * @param body String of the body.
    * @returns A FlagConfigResponse object.
-   * @throws ImpossibleToRetrieveConfigurationException if the body cannot be parsed, or carries no
-   * flag map.
+   * The evaluation context enrichment gets the same treatment. It is merged into the context of
+   * every evaluation, so a value that is not an object poisons every flag rather than one, and once
+   * stored it is preserved by every 304 that follows.
+   * @throws ImpossibleToRetrieveConfigurationException if the body cannot be parsed, carries no
+   * flag map, or carries an evaluation context enrichment that is not an object.
    */
   private handleFlagConfigurationSuccess(response: Response, body: string): FlagConfigResponse {
     const etagHeader = response.headers.get(HTTP_HEADER_ETAG) || undefined;
@@ -255,11 +258,23 @@ export class GoFeatureFlagApi {
       );
     }
 
+    // `null` is accepted as "no enrichment": the relay proxy builds the field from a Go map, and a
+    // nil map marshals to `null`. That differs from a null flag map, which carries no configuration.
+    const evaluationContextEnrichment = goffResp?.evaluationContextEnrichment;
+    if (
+      evaluationContextEnrichment != null &&
+      (typeof evaluationContextEnrichment !== 'object' || Array.isArray(evaluationContextEnrichment))
+    ) {
+      throw new ImpossibleToRetrieveConfigurationException(
+        'retrieve flag configuration error: the response contains an invalid evaluation context enrichment',
+      );
+    }
+
     return {
       etag: etagHeader,
       lastUpdated,
       flags,
-      evaluationContextEnrichment: goffResp?.evaluationContextEnrichment || {},
+      evaluationContextEnrichment: evaluationContextEnrichment ?? {},
     };
   }
 }
