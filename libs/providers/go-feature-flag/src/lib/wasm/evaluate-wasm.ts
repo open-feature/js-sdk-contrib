@@ -136,6 +136,15 @@ export class EvaluateWasm {
   }
 
   public async dispose(): Promise<void> {
+    const pending = this.initialization;
+    if (pending) {
+      try {
+        await pending;
+      } catch {
+        // Nothing was stored; the clearing below is still the right end state.
+      }
+    }
+
     try {
       // Clean up WASM memory and resources
       if (this.wasmExports && this.wasmExports['free']) {

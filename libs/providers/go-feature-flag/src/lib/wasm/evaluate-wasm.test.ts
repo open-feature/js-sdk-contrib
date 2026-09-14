@@ -1,6 +1,9 @@
 import { EvaluateWasm, unpackEvaluateResult } from './evaluate-wasm';
 import { WasmFunctionNotFoundException } from '../exception';
 
+/** Captured before any test spies on it, so a spy can still delegate to the real thing. */
+const realInstantiate = WebAssembly.instantiate.bind(WebAssembly);
+
 /**
  * These tests instantiate the real WASM module copied in by the `copy-wasm` target, because the
  * behaviour under test is the module's lifecycle rather than the evaluator's use of it.
@@ -115,6 +118,49 @@ describe('EvaluateWasm', () => {
 
       const result = await engine.evaluate(sampleInput);
       expect(result.value).toBe(true);
+    });
+  });
+
+  describe('dispose', () => {
+    /** Holds `WebAssembly.instantiate` until released, so a disposal can be slotted in while it runs. */
+    const gateInstantiation = () => {
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      instantiateSpy.mockImplementationOnce(async (buffer: BufferSource, imports?: WebAssembly.Imports) => {
+        await gate;
+        return realInstantiate(buffer, imports);
+      });
+      return release;
+    };
+
+    const stateOf = () => engine as unknown as { wasmExports: unknown; wasmMemory: unknown };
+
+    it('should not publish an instance when disposed during initialization', async () => {
+      const release = gateInstantiation();
+      const initialization = engine.initialize();
+      const disposal = engine.dispose();
+      release();
+      await Promise.all([initialization, disposal]);
+
+      // The pending instantiation stores the instance when it resolves. Clearing the fields before
+      // it settles leaves a live Go runtime behind a provider that has been closed.
+      expect(stateOf().wasmExports).toBeNull();
+      expect(stateOf().wasmMemory).toBeNull();
+    });
+
+    it('should rebuild after being disposed during initialization', async () => {
+      const release = gateInstantiation();
+      const initialization = engine.initialize();
+      const disposal = engine.dispose();
+      release();
+      await Promise.all([initialization, disposal]);
+
+      await engine.initialize();
+      const result = await engine.evaluate(sampleInput);
+
+      expect(instantiateSpy).toHaveBeenCalledTimes(2);
+      expect(result.value).toBe(true);
+      expect(result.errorCode).toBeFalsy();
     });
   });
 
