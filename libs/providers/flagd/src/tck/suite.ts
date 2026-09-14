@@ -16,25 +16,8 @@ import { FlagdProvider } from '../lib/flagd-provider';
  * definitions in module state, so two suites in one file would register the vocabulary twice and
  * every step would report as ambiguous.
  *
- * The existing e2e suites in `../e2e/tests` are untouched, and so is flagd-testbed. The suite drives
- * the testbed's launchpad through the standardised control API, which the launchpad already
- * implements, and brings the stack up itself from `docker-compose.yaml` beside this file.
- *
- * ## Why this lives beside `../e2e`, not inside it, with its own Jest config and Nx target
- *
- * The two suites answer different questions. The e2e suites test this provider against flagd's own
- * harness and are expected green; this one tests it against the OpenFeature provider contract and
- * fails scenarios by design wherever a `knownDeviation` is declared. Nesting it under `e2e/` would
- * have filed it as a kind of e2e test, which is the conflation the separate target exists to undo —
- * and it made selection a matter of one config ignoring a subdirectory of another. A sibling
- * directory selects by path: a file is in `src/tck/` or it is not.
- *
- * Docker-gated and excluded from the default build, run by hand before merge. `nx tck
- * providers-flagd` is the only thing that runs it: `npm run e2e` is `nx run-many --all
- * --target=e2e`, and CI has a job for exactly that, so a conformance spec left in `../e2e/tests`
- * would be swept into a CI job by Jest's default testMatch for no better reason than the directory
- * it sat in. A conformance run pins its claim to an exact backend image, and a claim nobody reads is
- * cost without signal.
+ * Docker-gated, excluded from the default build and run by hand before merge; why, and why the
+ * directory rather than a target name does the excluding, is in this provider's README.
  */
 export interface FlagdTckSuite {
   /** Identifies the suite in test output and scopes its OpenFeature domain. */
@@ -55,6 +38,15 @@ const RESOLVER_PORT: Record<ResolverType, number> = {
   rpc: 8013,
   'in-process': 8015,
 };
+
+/**
+ * The backend stack, shared with the OFREP adoption.
+ *
+ * One file for the repository rather than a copy per provider — see its header. It exposes more
+ * ports than either suite uses, which costs nothing: the harness maps container ports to
+ * dynamically assigned host ones and looks them up by container port.
+ */
+const COMPOSE_FILE = join(__dirname, '..', '..', '..', '..', 'shared', 'tck-backend', 'docker-compose.yaml');
 
 /**
  * How long to wait for a provider event.
@@ -92,16 +84,11 @@ export function runFlagdTck(suite: FlagdTckSuite): void {
     name: suite.name,
 
     // The suite owns the stack: started once before the first scenario and never restarted, with
-    // scenario isolation coming from the control API instead. See the no-container-restart
-    // invariant in the control API specification.
-    composeFile: join(__dirname, 'docker-compose.yaml'),
+    // scenario isolation coming from the control API instead.
+    composeFile: COMPOSE_FILE,
     backendPorts: [backendPort],
     startupTimeoutMs: STACK_TIMEOUT_MS,
 
-    // The endpoint carries the dynamically mapped host port, which does not exist until the stack
-    // is up -- hence a factory. It stays valid for the whole suite because nothing restarts a
-    // container.
-    //
     // The timings other than the grace period are the ones the neighbouring flagd e2e suites
     // already use, where they are described as optimised for test speed and stability.
     newProvider: (endpoint) =>
@@ -116,11 +103,11 @@ export function runFlagdTck(suite: FlagdTckSuite): void {
         retryGracePeriod: RETRY_GRACE_PERIOD_SECONDS,
       }),
 
-    // Pointed at a closed port on localhost, never at the backend under test — that has to stay up,
-    // and simulated outages belong to the control API. The deadlines are deliberately short: the
-    // scenario asserts that failure is reported promptly, so a provider that took 30 seconds to give
-    // up would pass a test about eventual failure and fail the one that matters. A one-second grace
-    // period is what turns the initial STALE into the ERROR the scenario waits for.
+    // Pointed at a closed port on localhost, never at the backend under test. The deadlines are
+    // deliberately short: the scenario asserts that failure is reported promptly, so a provider that
+    // took 30 seconds to give up would pass a test about eventual failure and fail the one that
+    // matters. A one-second grace period is what turns the initial STALE into the ERROR the scenario
+    // waits for.
     newUnavailableProvider: () =>
       new FlagdProvider({
         resolverType: suite.resolverType,
