@@ -11,78 +11,56 @@ runFlagdTck({
   resolverType: 'rpc',
 
   /*
-   * Ten capabilities, and every omission is derived from the provider's source rather than assumed:
+   * Why this resolver declares or withholds each capability, on evidence from running the suite.
+   * What the rules are is Appendix F, "Rules for declaring"; below is what they decided here.
    *
-   * - Lifecycle is declared: initialisation genuinely reaches flagd. `connect` awaits
-   *   `waitForReady` on the gRPC channel (grpc-service.ts:194-202) and `initialize` resolves only
-   *   once the stream is up, so READY against a healthy backend and ERROR against an unreachable
-   *   one are both observable rather than synthesised by the SDK. Withholding it would have hidden
-   *   six scenarios that Java runs against the same provider.
-   * - Reinitialization is NOT declared, and this is a choice rather than a defect. Requirement
-   *   2.5.2 says a provider SHOULD revert to its uninitialized state after shutdown and that "some
-   *   providers MAY allow reinitialization from this state" -- permitted, not required. Here
-   *   `onClose` delegates to `disconnect`, which calls `this._client.close()`
-   *   (grpc-service.ts:140-143), and `connect` never constructs a new client -- so the provider
-   *   releases its channel for good and declines reuse. That is the option the specification
-   *   offers it, so the scenario is reported as skipped and NO deviation is recorded against it.
-   *   Recording one would report a sanctioned choice as a defect.
-   * - Stale IS declared, and that is worth stating plainly because the Go provider is different. In
-   *   Go, the RPC resolver never emits PROVIDER_STALE while in-process does
-   *   (go-sdk-contrib#939). Here there is no such asymmetry: both resolvers report a lost connection
-   *   through the same `disconnectCallback` seam — src/lib/service/grpc/grpc-service.ts:274 for RPC,
-   *   src/lib/service/in-process/grpc/grpc-fetch.ts:197 for in-process — and the single handler
-   *   behind it, src/lib/flagd-provider.ts:130-148, emits PROVIDER_STALE immediately
-   *   (flagd-provider.ts:136) and escalates to PROVIDER_ERROR only once `retryGracePeriod` expires
-   *   (flagd-provider.ts:144). The staleness contract is implemented once, in the provider, so it
-   *   cannot differ between resolvers.
-   * - UnavailableInit is declared: an unreachable backend rejects out of
-   *   `waitForReady` (grpc-service.ts:194-202), which rejects `connect` and therefore `initialize`.
-   * - ConfigurationChange is declared, and the event carries the changed keys —
-   *   grpc-service.ts:243 derives them from the flagd change message and flagd-provider.ts:151
-   *   puts them in the payload as `flagsChanged`, which the suite asserts on.
-   * - Variants is declared. flagd's evaluation response carries the variant it matched and the
-   *   provider hands it back untouched, so the eight gated rows are a real question asked of this
-   *   provider rather than a formality. Requirement 2.2.4 is only a SHOULD and `types.md` types the
-   *   field optional, which is why the claim is made on a run rather than on having read the
-   *   provider: seven of the eight rows pass. The eighth asks for `large-integer-flag`, which this
-   *   testbed image does not serve at all (flagd-testbed#392) -- the same missing flag that already
-   *   fails the mandatory 2^31 - 1 scenario in this suite, and the reason LargeIntegers is
-   *   undeclared here. No deviation is recorded for it: the gap is in the backend's flag set, not in
-   *   the provider, and a deviation claims the provider gets something wrong. Withholding is the
-   *   right call on Appendix F's rule that the unit of a declaration decision is the scenario rather
-   *   than the tag -- @large-integers gates exactly one, so a backend without its flag leaves
-   *   nothing about the capability establishable. That also makes this omission temporary in a way
-   *   the others here are not: it goes away when the testbed serves the flag, which is what
-   *   flagd-testbed#392 is for, and it should be revisited then rather than left standing.
-   * - Targeting is declared, and it is no longer a reserved name: Appendix F carries three scenarios
-   *   for it, and `targeting-key-flag` is already part of the flagd-testbed image this suite runs, so
-   *   nothing had to be seeded for them. They are what makes context passthrough observable at all —
-   *   every other canonical flag resolves the same way whatever the context, so a provider that
-   *   dropped the context would pass all of them. What is under test is still the provider: the
-   *   flag's rule is flagd's to evaluate, and all three scenarios assert is that the context reached
-   *   it.
-   * - DisabledFlags is declared, and the RPC resolver earns it despite the evaluation happening
-   *   remotely — which is the interesting part, because an OFREP provider in the same position
-   *   cannot. flagd answers a disabled flag with `reason: DISABLED`, an empty variant and the
-   *   *type's zero value* rather than the caller's, since the request never carried one: the wire
-   *   response for `disabled-integer-flag` is `{"value":"0","reason":"DISABLED","variant":""}`. What
-   *   closes the gap is that the provider substitutes locally — grpc-service.ts:306-312 replaces the
-   *   value with the caller's default when the variant is empty and the reason is DEFAULT or
-   *   DISABLED — so flagd's protocol keeps the decision remote while the default stays client-side.
-   *   Nothing had to be seeded: the four flags are flagd-testbed's own, from
-   *   `flags/disabled-flags.json`, and the launchpad already serves them under the `default`
-   *   configuration. All four rows pass, which is what the declaration rests on; without the
-   *   substitution, three of the four would have failed on the value alone.
-   * - StandardReasons is declared, and it is a claim rather than an exemption: flagd reports the
-   *   standard vocabulary with the standard meanings, so the provider says so and reason.feature
-   *   checks it. All nine scenarios run here -- the tag composes with @targeting and
-   *   @disabled-flags, both of which this suite declares -- and all nine pass: STATIC for the four
-   *   rule-less flags, ERROR for the unknown flag and the type mismatch, TARGETING_MATCH for the
-   *   matching key and DEFAULT for the miss, DISABLED for the disabled flag. STATIC for a rule-less
-   *   flag is the row the specification genuinely leaves open, so it is the one measured rather than
-   *   assumed; flagd answers STATIC and DEFAULT in exactly the two places Appendix F separates them.
-   * - Caching is omitted because it is still reserved: no scenario carries the tag, so declaring it
-   *   could not cause a skip and would put a capability nothing examined into the report.
+   * - Lifecycle: initialisation genuinely reaches flagd. `connect` awaits `waitForReady` on the
+   *   gRPC channel (grpc-service.ts:194-202) and `initialize` resolves only once the stream is up,
+   *   so READY against a healthy backend and ERROR against an unreachable one are both observable
+   *   rather than synthesised by the SDK.
+   * - UnavailableInit: an unreachable backend rejects out of the same `waitForReady`, which rejects
+   *   `connect` and therefore `initialize`.
+   * - Stale: both resolvers report a lost connection through one `disconnectCallback` seam —
+   *   grpc-service.ts:274 here, service/in-process/grpc/grpc-fetch.ts:197 for in-process — and the
+   *   single handler behind it (flagd-provider.ts:130-148) emits PROVIDER_STALE immediately (:136)
+   *   and escalates to PROVIDER_ERROR only once `retryGracePeriod` expires (:144). The staleness
+   *   contract is implemented once, in the provider, so it cannot differ between resolvers.
+   * - ConfigurationChange: the event carries the changed keys — grpc-service.ts:243 derives them
+   *   from flagd's change message and flagd-provider.ts:151 puts them in `flagsChanged`.
+   * - Variants: flagd's evaluation response names the variant it matched and the provider hands it
+   *   back untouched, so the eight gated rows are a real question rather than a formality. Seven
+   *   pass; the eighth asks for `large-integer-flag` (see LargeIntegers below).
+   * - Targeting: all three scenarios pass, and `targeting-key-flag` is already in the testbed image
+   *   so nothing had to be seeded.
+   * - DisabledFlags: the RPC resolver earns it *despite* the evaluation happening remotely, which is
+   *   the interesting part. flagd answers a disabled flag with `reason: DISABLED`, an empty variant
+   *   and the **type's** zero value rather than the caller's, the request never having carried one:
+   *   the wire response for `disabled-integer-flag` is
+   *   `{"value":"0","reason":"DISABLED","variant":""}`. What closes the gap is that the provider
+   *   substitutes locally — grpc-service.ts:306-312 replaces the value with the caller's default
+   *   when the variant is empty and the reason is DEFAULT or DISABLED — so flagd's protocol keeps
+   *   the decision remote while the default stays client-side. All four rows pass, which is what
+   *   the declaration rests on; without the substitution three of the four would have failed on the
+   *   value alone.
+   * - StandardReasons: all nine scenarios run — the tag composes with @targeting and
+   *   @disabled-flags, both declared here — and all nine pass: STATIC for the four rule-less flags,
+   *   ERROR for the unknown flag and the type mismatch, TARGETING_MATCH for the matching key and
+   *   DEFAULT for the miss, DISABLED for the disabled flag. STATIC for a rule-less flag is the row
+   *   the specification genuinely leaves open, so it is measured rather than assumed.
+   *
+   * Withheld:
+   *
+   * - Reinitialization, and this is a choice rather than a defect. `onClose` delegates to
+   *   `disconnect`, which calls `this._client.close()` (grpc-service.ts:140-143), and `connect`
+   *   never constructs a new client — so the provider releases its channel for good and declines
+   *   reuse, which requirement 2.5.2 permits. The scenario is skipped and NO deviation is recorded:
+   *   recording one would report a sanctioned choice as a defect.
+   * - LargeIntegers, because this testbed image does not serve `large-integer-flag` at all
+   *   (open-feature/flagd-testbed#392) — the same gap that fails the mandatory 2^31 - 1 scenario and
+   *   the eighth @variants row. The tag gates exactly one scenario, so a backend without its flag
+   *   leaves nothing about the capability establishable. No deviation either: the gap is in the
+   *   backend's flag set, not in the provider. Unlike the others this omission is **temporary**, and
+   *   should be revisited when #392 lands rather than left standing.
    */
   capabilities: [
     Capability.Events,
