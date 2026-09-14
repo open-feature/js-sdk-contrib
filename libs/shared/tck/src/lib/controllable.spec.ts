@@ -11,13 +11,9 @@ import { runProviderTck } from './runProviderTck';
  * pass against it having demonstrated nothing — which is why that suite withholds
  * {@link Capability.Lifecycle}, and why it is right to.
  *
- * The consequence, until this file existed, was that **the shutdown and re-initialisation steps only
- * ever executed through the flagd adoption** — Docker-gated and excluded from CI, so in a normal run
- * nothing exercised them. Everything they assert had no coverage: that shutdown releases what
- * initialisation acquired, that it can be repeated, that it returns promptly against a backend that
- * is gone, and that a provider offering reuse really is reusable. A break in those step definitions
- * surfaced first inside a containerised provider suite, where a TCK defect looks like a provider
- * defect.
+ * Without it the shutdown and re-initialisation steps execute only through the flagd adoption, which
+ * is Docker-gated and excluded from CI — so a break in them would surface first inside a
+ * containerised provider suite, where a TCK defect looks like a provider defect.
  *
  * `ControllableProvider` closes that gap by acquiring its flag store at `initialize()` time from a
  * store that may refuse it. The store is in this process rather than over a socket, so this is not a
@@ -59,15 +55,13 @@ runProviderTck({
    * - Stale is omitted. This provider's backend can refuse an *initialisation*, which is what
    *   @unavailable needs, but it cannot take a store away from a running provider and give it back,
    *   which is what @stale needs. So this control does not implement ConnectionControl, the scenario
-   *   is skipped before any step can reach an operation the control cannot perform, and @stale
-   *   remains the one capability with no Docker-free coverage in any language. Adding it would mean
-   *   this provider detecting a loss and emitting PROVIDER_STALE itself — worth doing, and a
-   *   separate piece of work from covering the lifecycle steps.
+   *   is skipped before any step can reach an operation the control cannot perform. @stale is
+   *   therefore the one capability with no Docker-free coverage here, which is Appendix F's known
+   *   gap rather than this file's: closing it would mean this provider detecting a loss and emitting
+   *   PROVIDER_STALE itself, a separate piece of work from covering the lifecycle steps.
    * - Targeting is omitted for the delegate's reason: InMemoryProvider takes its rules from a
    *   contextEvaluator function and the canonical flag file has no way to express one, so
    *   targeting-key-flag resolves its default variant whatever the context.
-   * - Caching is reserved rather than optional, so it is not declarable and leaving it out skips
-   *   nothing.
    */
   capabilities: [
     Capability.Events,

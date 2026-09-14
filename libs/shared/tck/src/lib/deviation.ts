@@ -4,38 +4,16 @@ import type { Capability } from './capability';
  * A gap the provider is known to have against something the specification does not treat as
  * optional.
  *
- * Distinct from an undeclared capability, which is a *choice* — and the same absence can mean more
- * than one thing. {@link Capability.LargeIntegers} is missing from the adoptions in this repository
- * because the reference backend does not serve the flag its one scenario asks for: the backend's
- * gap, and temporary. The same capability would be missing from a provider whose transport rounds
- * above 2^53 − 1, which is permanent and about that provider. Identical skips, different claims, and
- * neither is a defect — nothing in the specification requires either.
+ * **An entry says: this provider fails to do something it is required to do.** Which shape to reach
+ * for — capability declared and the scenario left failing, or capability withheld and the scenarios
+ * skipped — is
+ * [Appendix F, "Rules for declaring"](https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md),
+ * and it is the most consequential thing about this field. Read it before writing one.
  *
- * This type is the third case, and the only one that says something is *wrong*. A provider that
- * reports no variant for a flag whose backend names one has a bug — and note which way round it is
- * declared: it **keeps** {@link Capability.Variants} and lets the scenario fail, because withdrawing
- * it would replace the failure with a skip indistinguishable from the two above. Where a provider
- * genuinely cannot attempt the behaviour, the skip is all there is, and then the results look the
- * same whichever it was — scenarios skipped, reason recoverable from the declaration. So the
- * difference has to be stated here, or a consumer cannot tell a design decision from a defect.
- *
- * The TCK cannot infer it. From the outside, a capability the provider chose to withhold and one it
- * withheld because it is broken are the same absence, so only the adopter can say which happened —
- * which is why this is declared through {@link TckOptions.knownDeviations}, along
+ * The TCK cannot infer any of it. From the outside, a capability the provider chose to withhold and
+ * one it withheld because it is broken are the same absence, so only the adopter can say which
+ * happened — which is why this is declared through {@link TckOptions.knownDeviations}, alongside
  * {@link TckOptions.capabilities}.
- *
- * Legitimate in two shapes, and a report's results already distinguish them. Either the capability
- * is **declared**, the scenario runs and it fails, with the deviation saying the failure is known
- * and why — prefer this, because the failure stays visible — or the capability is **withheld** and
- * its scenarios skip, with the deviation explaining the absence. The second is legitimate only
- * where the provider cannot attempt the behaviour at all, so that running the scenario would
- * establish nothing; withdrawing a capability *in order to* turn a failing scenario into a skip is
- * the failure mode this type exists to prevent.
- *
- * Either way, the gap has to be against something the specification requires — a numbered `MUST`,
- * or a rule the implementation bound itself to elsewhere. Where the specification permits the
- * choice, withholding the capability is the whole of the honest report and a deviation would assert
- * a defect that does not exist.
  *
  * Part of the declaration vocabulary rather than of any one consumer of it. This is something an
  * adopter *writes*, so it belongs to the suite an adopter adopts; whatever reads the declaration —
@@ -43,7 +21,7 @@ import type { Capability } from './capability';
  * widen it.
  *
  * The field names are Java's (`capability`, `issue`, `summary`) rather than paraphrases of them, so
- * that two languages' reports of the same flagd defect are comparable without a translation table.
+ * that two languages' reports of the same defect are comparable without a translation table.
  */
 export interface KnownDeviation {
   /** The capability tag the deviation concerns, absent when it maps to none. */

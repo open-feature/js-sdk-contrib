@@ -8,19 +8,11 @@
  *
  * ## Which implementation is right for your provider
  *
- * If your provider talks to a backend — a server, a service, anything out of process — drive it over
- * the HTTP control API described in `openapi/control-api.yaml`. That API is the normative contract
- * for those providers, and it is what makes a conformance claim portable: another language's TCK
- * drives the same endpoints against the same stack and must get the same answers.
- *
- * **Do not** write an in-process control that reaches into an external backend through a side
- * channel — a test-only admin client, a shared database handle, a hook inside the provider. It will
- * pass, and it will prove nothing, because the path it exercised is not the path the contract
- * describes.
- *
- * In-process control exists for providers that have *no* backend to contract with: in-memory,
- * environment-variable and file-based providers, where "the backend" is a data structure in the same
- * process. See {@link InProcessControl}.
+ * A provider that talks to a backend drives it over the HTTP control API — `openapi/control-api.yaml`
+ * — and gets one from {@link runContainerizedProviderTck} without writing a control at all. A
+ * provider with *no* backend to contract with (in-memory, environment-variable, file-based) uses
+ * {@link InProcessControl}. Appendix F's "Providers with no backend" says why that second path is a
+ * narrow allowance and not a shortcut for the first.
  */
 export interface BackendControl {
   /**
@@ -48,20 +40,14 @@ export interface BackendControl {
    * How the backend was driven, for the conformance report's `backend.controlApi`.
    *
    * `'http'` means the normative control API; `'in-process'` is the narrow allowance for providers
-   * with no backend, and a report claiming it for a provider that has one should be treated with
-   * suspicion.
+   * with no backend.
    *
-   * Required, closed to those two values, with no default and no inference from the control's
-   * concrete type. The same scenarios passing over the control API and passing through in-process
-   * manipulation of a provider that *does* have a backend are not the same claim, and this is the
-   * only field that separates them. An absent value would therefore not be "no claim made" but an
-   * unfalsifiable one: every control either drives a real backend over HTTP or manipulates an
-   * in-process one, so there is no third case an empty value legitimately covers.
-   *
-   * Requiring it costs an implementor nothing, because almost nobody implements this interface. A
-   * provider with a backend gets {@link HttpControl} from the Compose harness and writes no control
-   * at all; a provider with none gets {@link InProcessControl}. The only implementor is whoever
-   * writes a control by hand — precisely the case where the value cannot be inferred.
+   * Required, closed to those two values, with no default and **no inference from the control's
+   * concrete type** — Appendix F requires the control to state it, and inferring it is right about
+   * the two built-in controls and silently wrong about an adopter's custom one, which is the case
+   * where the answer matters. It costs an implementor nothing: almost nobody implements this
+   * interface, since a provider with a backend gets {@link HttpControl} from the Compose harness and
+   * one without gets {@link InProcessControl}.
    */
   readonly controlApi: 'http' | 'in-process';
 }
