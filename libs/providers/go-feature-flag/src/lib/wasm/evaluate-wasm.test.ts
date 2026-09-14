@@ -1,5 +1,5 @@
 import { EvaluateWasm, unpackEvaluateResult } from './evaluate-wasm';
-import { WasmFunctionNotFoundException } from '../exception';
+import { WasmFunctionNotFoundException, WasmNotLoadedException } from '../exception';
 
 /** Captured before any test spies on it, so a spy can still delegate to the real thing. */
 const realInstantiate = WebAssembly.instantiate.bind(WebAssembly);
@@ -207,6 +207,64 @@ describe('EvaluateWasm', () => {
       // every call and failed much later with "WASM memory not available".
       expect((engine as unknown as { wasmExports: unknown }).wasmExports).toBeNull();
       expect((engine as unknown as { wasmMemory: unknown }).wasmMemory).toBeNull();
+    });
+  });
+
+  describe('when the Go runtime traps at startup', () => {
+    /** Instantiates to a stub module with every required export whose `_start` traps. */
+    const instantiateTrappingAtStartup = (once = false) => {
+      const exports = {
+        memory: new WebAssembly.Memory({ initial: 1 }),
+        malloc: () => 1,
+        free: () => undefined,
+        evaluate: () => BigInt(0),
+        _start: () => {
+          throw new WebAssembly.RuntimeError('unreachable');
+        },
+      };
+      const source = { instance: { exports } as unknown as WebAssembly.Instance, module: {} as WebAssembly.Module };
+      if (once) {
+        instantiateSpy.mockResolvedValueOnce(source);
+      } else {
+        instantiateSpy.mockResolvedValue(source);
+      }
+    };
+
+    const stateOf = () => engine as unknown as { wasmExports: unknown; wasmMemory: unknown };
+
+    it('should fail initialization', async () => {
+      instantiateTrappingAtStartup();
+
+      // `Go.run` rethrows anything that is not its own exit signal, and it is async, so a trap
+      // inside `_start` becomes a rejected promise. Left unobserved, Node treats that as an
+      // unhandled rejection and exits the process - after the poisoned instance has been published.
+      await expect(engine.initialize()).rejects.toThrow(WasmNotLoadedException);
+    });
+
+    it('should name the fault in the error', async () => {
+      instantiateTrappingAtStartup();
+
+      await expect(engine.initialize()).rejects.toThrow(/unreachable/);
+    });
+
+    it('should leave no instance behind', async () => {
+      instantiateTrappingAtStartup();
+
+      await expect(engine.initialize()).rejects.toThrow();
+
+      expect(stateOf().wasmExports).toBeNull();
+      expect(stateOf().wasmMemory).toBeNull();
+    });
+
+    it('should allow a retry on the next initialization', async () => {
+      instantiateTrappingAtStartup(true);
+      await expect(engine.initialize()).rejects.toThrow();
+
+      await engine.initialize();
+      const result = await engine.evaluate(sampleInput);
+
+      expect(result.value).toBe(true);
+      expect(result.errorCode).toBeFalsy();
     });
   });
 

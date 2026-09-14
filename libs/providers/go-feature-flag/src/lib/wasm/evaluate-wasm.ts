@@ -118,8 +118,8 @@ export class EvaluateWasm {
         throw new WasmFunctionNotFoundException(missing.join(', '));
       }
 
-      // Run the Go runtime
-      go.run(wasm.instance);
+      const running = go.run(wasm.instance);
+      await Promise.race([running, Promise.resolve()]);
 
       // Store the instance, its runtime and its exports together: they only make sense as a set.
       this.go = go;
