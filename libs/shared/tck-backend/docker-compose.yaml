@@ -1,0 +1,19 @@
+# The backend stack every OpenFeature conformance suite in this repository runs against: one
+# unmodified flagd-testbed image serving flagd's evaluation transports and the launchpad control
+# API. One file rather than one per provider, because a per-project copy is how two suites come to
+# ask the same questions of two different backends. Each suite asks the harness only for the ports
+# it uses; the rest cost nothing, there being no host bindings to collide.
+#
+# Not the compose file the flagd e2e suites use, from the flagd-core test-harness submodule: that
+# one bind-mounts ${FLAGS_DIR} into a shared host directory, so two stacks up at once rewrite each
+# other's flags, and it runs an Envoy sidecar for gRPC transport cases. Neither is wanted here.
+#
+# The tag is pinned, and a conformance claim is pinned to it -- see the provider READMEs.
+services:
+  backend:
+    image: ghcr.io/open-feature/flagd-testbed:v3.10.1
+    ports:
+      - 8013 # flagd RPC evaluation (gRPC) -- providers-flagd, rpc resolver
+      - 8015 # flagd in-process sync (gRPC) -- providers-flagd, in-process resolver
+      - 8016 # flagd OFREP over HTTP -- providers-ofrep
+      - 8080 # launchpad control API -- every suite
