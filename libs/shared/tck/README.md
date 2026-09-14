@@ -282,13 +282,10 @@ and the suite ran anyway, reporting byte-identical numbers against the wrong ass
 ## Known gaps
 
 [Appendix F][appendix-f] carries the suite's gaps — context passthrough beyond the targeting key,
-per-flag control operations, caching, hooks, flag metadata, and the requirements not yet covered.
-Three are worth naming here because the appendix does not:
+per-flag control operations, caching, hooks, flag metadata, `@stale`'s lack of Docker-free coverage
+in any language, and the requirements not yet covered. Two are worth naming here because the
+appendix does not:
 
-- **`@stale` has no Docker-free coverage**, and it is now the only capability that does not.
-  `controllable.spec.ts` gives the lifecycle scenarios a container-free suite, but its in-process
-  store can refuse an _initialisation_, which is what `@unavailable` needs, and cannot take a store
-  away from a running provider and give it back. The same gap exists in the other three languages.
 - **`POST /restart` is unused**, so `ConnectionControl` has no `disconnectFor`: no current scenario
   needs a bounded outage. What would bring it back is a `@caching` scenario asserting what a stale
   provider serves _during_ an outage, which needs `/restart`'s preservation of flag state.
