@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.4.0...go-feature-flag-provider-v2.0.0) (2026-09-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **go-feature-flag:** Provider optimisation and fixes  ([#1600](https://github.com/open-feature/js-sdk-contrib/issues/1600))
+
+### ✨ New Features
+
+* **go-feature-flag:** Provider optimisation and fixes  ([#1600](https://github.com/open-feature/js-sdk-contrib/issues/1600)) ([8b980e5](https://github.com/open-feature/js-sdk-contrib/commit/8b980e5fe5a2d44d50757785b1d61c867e3ce677))
+
 ## [1.4.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v1.3.1...go-feature-flag-provider-v1.4.0) (2026-07-02)
 
 
