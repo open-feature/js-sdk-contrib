@@ -204,10 +204,6 @@ export class GoFeatureFlagProvider implements Provider, Tracking {
       validateUrlOption('dataCollectorBaseURL', options.dataCollectorBaseURL);
     }
 
-    if (options.flagChangePollingIntervalMs !== undefined && options.flagChangePollingIntervalMs <= 0) {
-      throw new InvalidOptionsException('flagChangePollingIntervalMs must be greater than zero');
-    }
-
     if (options.timeout !== undefined && options.timeout <= 0) {
       throw new InvalidOptionsException('timeout must be greater than zero');
     }

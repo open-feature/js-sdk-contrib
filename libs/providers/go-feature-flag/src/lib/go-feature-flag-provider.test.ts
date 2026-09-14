@@ -439,24 +439,19 @@ describe('GoFeatureFlagProvider', () => {
       ).not.toThrow();
     });
 
-    it('should throw InvalidOptionsException when flagChangePollingIntervalMs is zero', () => {
+    it.each([
+      ['zero', 0],
+      ['negative', -1000],
+    ])('should accept a %s flagChangePollingIntervalMs as opting out of polling', (_label, interval) => {
+      // Zero or less is the supported way to switch polling off, not a misconfiguration, so it has
+      // to construct. That it actually stops the polling is asserted in inprocess-evaluator.test.ts.
       expect(
         () =>
           new GoFeatureFlagProvider({
             endpoint: 'https://gofeatureflag.org',
-            flagChangePollingIntervalMs: 0,
+            flagChangePollingIntervalMs: interval,
           }),
-      ).toThrow(InvalidOptionsException);
-    });
-
-    it('should throw InvalidOptionsException when flagChangePollingIntervalMs is negative', () => {
-      expect(
-        () =>
-          new GoFeatureFlagProvider({
-            endpoint: 'https://gofeatureflag.org',
-            flagChangePollingIntervalMs: -1000,
-          }),
-      ).toThrow(InvalidOptionsException);
+      ).not.toThrow();
     });
 
     it('should accept valid flagChangePollingIntervalMs', () => {

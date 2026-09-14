@@ -55,6 +55,16 @@ export class InProcessEvaluator implements IEvaluator {
    */
   private readonly pollingIntervalMs: number;
   /**
+   * Whether the configuration is refreshed after start-up.
+   *
+   * Polling is the default, because a provider that reads the configuration only once serves its
+   * start-up snapshot for the lifetime of the process and never learns about a flag change. An
+   * explicit `flagChangePollingIntervalMs` of zero or less is the supported way to opt out — for a
+   * short-lived process, or a deployment that redeploys on every configuration change — and is
+   * distinct from leaving the option unset, which polls at the default interval.
+   */
+  private readonly pollingEnabled: boolean;
+  /**
    * Flag keys to request, or undefined for the whole configuration. An empty list is normalised to
    * undefined, because the relay proxy reads an empty `flags` array as "send everything" — so
    * storing it as-is would make an explicitly empty option indistinguishable from an unset one only
@@ -111,6 +121,10 @@ export class InProcessEvaluator implements IEvaluator {
     this.eventChannel = eventChannel;
     this.logger = logger;
     this.evaluationEngine = new EvaluateWasm(logger, options.wasmBinaryPath);
+    // An explicit zero or negative switches polling off; unset falls back to the default interval.
+    // The two cases have to be told apart before the `> 0` test, or opting out would be read as
+    // "unset" and poll at the default - the opposite of what was asked for.
+    this.pollingEnabled = options.flagChangePollingIntervalMs === undefined || options.flagChangePollingIntervalMs > 0;
     this.pollingIntervalMs =
       options.flagChangePollingIntervalMs && options.flagChangePollingIntervalMs > 0
         ? options.flagChangePollingIntervalMs
@@ -134,9 +148,14 @@ export class InProcessEvaluator implements IEvaluator {
       // A fresh configuration clears any staleness carried over from a previous initialization.
       this.consecutiveRefreshFailures = 0;
       this.stale = false;
-      // Polling is always on: a provider that only ever reads the configuration once serves its
-      // start-up snapshot for the lifetime of the process, and never learns about a flag change.
-      this.periodicRunner = setTimeout(() => this.poll(), this.nextPollDelayMs());
+      // Polling is on unless the caller explicitly opted out. `periodicRunner` stays undefined when
+      // it is off, which is also what stops `poll` rescheduling, so there is one switch rather than
+      // two that could disagree.
+      if (this.pollingEnabled) {
+        this.periodicRunner = setTimeout(() => this.poll(), this.nextPollDelayMs());
+      } else {
+        this.logger?.info('Flag configuration polling is disabled, the start-up snapshot will be served as-is');
+      }
     } catch (error) {
       this.logger?.error('Failed to initialize evaluator:', error);
       this.configurationState = ConfigurationState.ERROR;

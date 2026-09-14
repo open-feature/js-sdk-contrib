@@ -704,6 +704,25 @@ describe('InProcessEvaluator', () => {
       expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(2);
     });
 
+    it.each([
+      ['zero', 0],
+      ['negative', -1000],
+    ])('should not poll at all when the interval is %s', async (_label, interval) => {
+      pollingEvaluator = new InProcessEvaluator(
+        { ...optionsWithoutInterval, flagChangePollingIntervalMs: interval },
+        mockApi,
+        new OpenFeatureEventEmitter(),
+        mockLogger,
+      );
+      await pollingEvaluator.initialize();
+
+      // Well past the default interval: an opt-out that silently fell back to the default would
+      // poll here, which is the failure this pins. The one call is the start-up load.
+      await jest.advanceTimersByTimeAsync(DEFAULT_POLLING_INTERVAL_MS * 3);
+
+      expect(mockApi.retrieveFlagConfiguration).toHaveBeenCalledTimes(1);
+    });
+
     it('should not start a second polling chain when initialized twice', async () => {
       pollingEvaluator = new InProcessEvaluator(
         optionsWithoutInterval,
