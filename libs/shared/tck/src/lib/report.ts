@@ -68,12 +68,8 @@ export interface ConformanceReport {
   /**
    * What drove the backend, and how.
    *
-   * Both the block and `controlApi` are required by the schema, and neither is inferred. A run over
-   * the control API and a run through in-process manipulation of a provider that *does* have a
-   * backend are not the same claim, and `controlApi` is the only field that separates them — so an
-   * omitted value would be an unfalsifiable claim rather than no claim. The earlier schema said the
-   * block was "omitted for a provider with no backend", which contradicted the enum whose
-   * `in-process` member exists for exactly that provider.
+   * Both the block and `controlApi` are required by the schema, and neither is inferred — Appendix F
+   * makes stating it the control's job, and {@link BackendControl.controlApi} says why.
    */
   backend: { description?: string; controlApi: 'http' | 'in-process' };
   /**
@@ -85,21 +81,12 @@ export interface ConformanceReport {
    * provider declines the capability. Given the declaration and a scenario's tags, the reason for
    * any skip follows without being transported per scenario.
    *
-   * There is deliberately no parallel not-applicable member. A capability that cannot hold in a
-   * *language* at all — `@numeric-coercion` where there is one numeric type, `@large-integers` on a
-   * 32-bit accessor — is a property of the SDK rather than of the provider, so the implementation
-   * refuses it outright rather than emitting a per-report field about it: it can never reach
-   * `declared`, its scenarios are gated in every run, and the skip carries the reason in words that
-   * name the SDK rather than the provider.
+   * There is deliberately no parallel not-applicable member: a capability the *language* cannot
+   * express is refused at configuration time rather than reported per run, so it can never reach
+   * `declared` and its skips carry a reason naming the SDK rather than the provider.
    */
   declaration: {
-    /**
-     * Capabilities the provider declares *and* that the executed suite gates on.
-     *
-     * A reserved capability — one no executed scenario carries — must never appear here, however
-     * genuinely the provider supports it: it cannot produce a skip, so it plays no part in reading
-     * the results, and listing it invites a reader to believe it was verified.
-     */
+    /** Capabilities the provider declares *and* that the executed suite gates on. */
     declared: string[];
   };
   results: {
@@ -123,19 +110,14 @@ export interface ConformanceReport {
    *
    * Optional, and **an empty array is a different claim from an absent field**. Stating none asserts
    * that deviations were considered and none found, which no suite can know on the adopter's behalf
-   * -- so this is omitted entirely when the list is empty rather than emitted as `[]`. Appendix F
-   * states that rule, and the other three implementations obey it the same way: Go with
-   * `omitempty`, Python on a truthiness check, Java by mapping empty to null.
+   * -- so this is omitted entirely when the list is empty rather than emitted as `[]`, which is the
+   * rule Appendix F states and all four implementations obey.
    *
-   * This is the field that makes a defect legible as a defect. A capability withheld by choice and
-   * one withheld for a gap the adopter knows about produce identical results -- scenarios skipped
-   * -- so without this a provider that cannot be asked about `@stale` at all is indistinguishable
-   * from one whose backend simply cannot be lost. Where the provider *does* attempt the behaviour
-   * and gets it wrong, the capability stays declared and the scenario fails: the entry then says a
-   * visible failure is known rather than replacing it with a skip. It cannot name a capability this
-   * SDK is unable to ask about:
-   * those scenarios were never put to the provider, so an entry would report a language property as
-   * this provider's defect, and `resolveCapabilities` refuses it.
+   * This is the field that makes a defect legible as a defect: a capability withheld by choice and
+   * one withheld for a known gap produce identical results, so without it a provider that cannot be
+   * asked about `@stale` is indistinguishable from one whose backend simply cannot be lost. It
+   * cannot name a capability this SDK is unable to ask about -- those scenarios were never put to
+   * the provider, and `resolveCapabilities` refuses it.
    */
   knownDeviations?: KnownDeviation[];
 }
