@@ -11,47 +11,33 @@ runFlagdTck({
   resolverType: 'in-process',
 
   /*
-   * The same ten capabilities as the RPC suite, and that identity is the finding rather than a
-   * copy-paste: in Go the two resolvers differ over PROVIDER_STALE (go-sdk-contrib#939), here they
-   * cannot, because both report a lost connection through the same `disconnectCallback` seam —
-   * src/lib/service/in-process/grpc/grpc-fetch.ts:197 here, src/lib/service/grpc/grpc-service.ts:274
-   * for RPC — and the single handler behind it, src/lib/flagd-provider.ts:130-148, emits
-   * PROVIDER_STALE (flagd-provider.ts:136) before escalating to PROVIDER_ERROR
-   * (flagd-provider.ts:144).
+   * The same ten capabilities as the RPC suite, and the identity is the finding rather than a
+   * copy-paste: an application switching resolver sees the same values, variants and reasons. Where
+   * a reason differs from RPC's, it is recorded here; where it does not, see `rpc.spec.ts`.
    *
-   * Lifecycle is declared for the same reason as in RPC: initialisation genuinely reaches the sync
-   * service, and in-process reaches it harder -- it syncs the whole ruleset before reporting ready,
-   * so READY cannot be synthesised on a provider that did nothing.
+   * - Stale rests on the same single seam: in-process reports a lost connection through
+   *   service/in-process/grpc/grpc-fetch.ts:197 into the one handler at flagd-provider.ts:130-148,
+   *   so the staleness contract cannot differ between resolvers.
+   * - Lifecycle reaches the backend harder than RPC's does: in-process syncs the whole ruleset
+   *   before reporting ready, so READY cannot be synthesised on a provider that did nothing.
+   * - Variants and Targeting are reached by a different route — in-process syncs the ruleset and
+   *   evaluates it locally in flagd-core, where RPC reads both out of flagd's evaluation response —
+   *   and land in the same place, the failing @variants row for `large-integer-flag` included.
+   * - DisabledFlags is the straightforward case here rather than the interesting one: in-process
+   *   evaluates locally, so the caller's default is in hand at the point the state is read and
+   *   flagd-core returns `{value: defaultValue, reason: DISABLED}` directly
+   *   (flagd-core.ts:176-181). RPC reaches the same four values the long way round, and the two
+   *   agreeing is the finding. All four rows pass here too.
+   * - StandardReasons: all nine pass with the reason coming from flagd-core evaluating the synced
+   *   ruleset rather than from a response field. An application switching resolver sees the same
+   *   reason as well as the same value, which is what makes a reason worth building telemetry on.
    *
-   * Variants and Targeting are declared as in RPC, and the resolvers reach them by different routes:
-   * RPC reads the variant and the targeting decision out of flagd's evaluation response, while
-   * in-process syncs the ruleset and evaluates it locally in flagd-core. The identical result is
-   * again the finding — an application switching resolver sees the same variant and the same
-   * targeted value, including the one @variants row that fails for want of `large-integer-flag`
-   * in the testbed image (flagd-testbed#392). See the RPC suite for why no deviation is recorded.
+   * Withheld, as in RPC and for the same shape of reason:
    *
-   * DisabledFlags is declared, and here it is the straightforward case rather than the interesting
-   * one: in-process syncs the ruleset and evaluates it locally, so the caller's default is in hand
-   * at the point the state is read -- flagd-core returns `{value: defaultValue, reason: DISABLED}`
-   * directly (flagd-core.ts:176-181). RPC reaches the same answer the long way round, flagd sending
-   * the type's zero value and the provider substituting (grpc-service.ts:306-312), and the two
-   * agreeing is again the finding: an application switching resolver sees the same four values. All
-   * four rows pass here too, which is what the declaration rests on.
-   *
-   * StandardReasons is declared, as in RPC, and the two resolvers agreeing is again the finding
-   * rather than a copy: RPC passes flagd's reason through from the evaluation response, in-process
-   * gets it from flagd-core evaluating the synced ruleset, and all nine scenarios pass either way.
-   * An application switching resolver sees the same reason as well as the same value, which is the
-   * only thing that makes a reason worth building telemetry on.
-   *
-   * The omissions are the same and have the same reasons: Caching because it is still reserved and
-   * no scenario carries the tag.
-   *
-   * Reinitialization is left undeclared, as in RPC and for the same reason -- and it is the same
-   * code shape: `disconnect` calls `this._syncClient.close()` (grpc-fetch.ts:95-99) and nothing
-   * constructs a new client, so the provider declines reuse. Requirement 2.5.2 permits reuse rather
-   * than requiring it ("some providers MAY allow reinitialization from this state"), so the
-   * scenario is skipped and no deviation is recorded: there is no defect to record.
+   * - Reinitialization: `disconnect` calls `this._syncClient.close()` (grpc-fetch.ts:95-99) and
+   *   nothing constructs a new client, so the provider declines the reuse requirement 2.5.2 permits
+   *   it to decline. Skipped, and no deviation: there is no defect to record.
+   * - LargeIntegers, for the testbed's missing flag — see `rpc.spec.ts`.
    *
    * One in-process detail worth recording: the file/offline fetcher —
    * src/lib/service/in-process/file/file-fetch.ts — never calls `disconnectCallback` and so emits
