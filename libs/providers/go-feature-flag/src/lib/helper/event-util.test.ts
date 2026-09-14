@@ -11,7 +11,7 @@ describe('getContextKind', () => {
     { label: 'boolean true', context: { anonymous: true }, expected: 'anonymousUser' },
     { label: 'boolean false', context: { anonymous: false }, expected: 'user' },
     { label: 'absent', context: { targetingKey: 'user-1' }, expected: 'user' },
-    { label: 'evaluation context absent', context: undefined, expected: 'user' },
+    { label: 'evaluation context absent', context: undefined, expected: 'anonymousUser' },
     { label: 'the string "true"', context: { anonymous: 'true' }, expected: 'user' },
     { label: 'the number 1', context: { anonymous: 1 }, expected: 'user' },
     { label: 'an empty context', context: {}, expected: 'user' },
@@ -19,9 +19,10 @@ describe('getContextKind', () => {
     expect(getContextKind(context as EvaluationContext | undefined)).toBe(expected);
   });
 
-  it('should not treat an absent context as anonymous', () => {
-    // The `!context ||` disjunct used to invert this row, so every event produced without an
-    // evaluation context was mis-bucketed and analytics overstated anonymous traffic.
-    expect(getContextKind()).toBe('user');
+  it('should treat an absent context as anonymous', () => {
+    // Pinned because it is the one row that does not follow from the `anonymous` attribute: there
+    // is no attribute to read. With no context there is no targeting key either, so there is nobody
+    // to attribute the evaluation to and `anonymousUser` is the honest bucket.
+    expect(getContextKind()).toBe('anonymousUser');
   });
 });
