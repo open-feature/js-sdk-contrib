@@ -135,9 +135,21 @@ npx nx tck providers-ofrep
 ```
 
 It needs a **Docker daemon**. The suite brings up
-[`src/tck/docker-compose.yaml`](./src/tck/docker-compose.yaml) itself — a pinned flagd-testbed
-image, used because flagd serves OFREP and its launchpad is the reference implementation of the
-suite's control API — discovers the mapped ports, and drives the backend over that API.
+[`libs/shared/tck-backend/docker-compose.yaml`](../../shared/tck-backend/docker-compose.yaml) itself
+— a pinned flagd-testbed image, used because flagd serves OFREP and its launchpad is the reference
+implementation of the suite's control API, and shared with the flagd adoption so the two cannot
+drift onto different backends — discovers the mapped ports, and drives the backend over that API.
+OFREP is a protocol rather than a product, so any conformant server would do; the claim is pinned to
+that exact image tag, which makes a bump a deliberate act with a result to record.
+
+**Scope: this package only.** [`libs/providers/ofrep-web`](../ofrep-web/README.md) is deliberately
+not adopted. It is the only OFREP provider in this repository with events, a STALE state and a
+failable initialisation — the parts of the contract the suite is most useful for — but none of them
+can be exercised against flagd: flagd's OFREP handler never writes an `ETag` and never reads
+`If-None-Match`, so the `304` path the web provider's polling depends on is unreachable, and its
+bulk response carries no `eventStreams` field, so the SSE path is unreachable too. Adopting it
+against this backend would declare capabilities that the backend, not the provider, makes
+untestable. It waits for a neutral OFREP testbed.
 
 **The suite lives in `src/tck/`, a directory of its own.** A conformance suite is not a kind of e2e
 test: an e2e suite is expected green, while this one fails scenarios by design wherever a
@@ -150,19 +162,14 @@ the excluding. The suite sits behind a Jest project of its own
 provider's unit config ignores `/src/tck/`. The target's name matters — `npm run e2e` is
 `nx run-many --all --target=e2e` and CI has a job for it, so an `e2e` target here would pull a
 backend image on every push. `npx nx tck providers-ofrep` is the only way in; run it by hand before
-merging a change to this provider or to the suite. The target sets `passWithNoTests: false`, so a
-glob that stops matching fails loudly instead of reporting a green run that collected nothing.
+merging a change to this provider or to the suite.
 
 Why an adoption suite is excluded rather than made a required gate is
 [Appendix F, "Running the suite in CI"](https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md).
 Both mistakes it names were live here: this suite originally _created_ an `e2e` target where the
 project had none, and nothing said it was meant to be excluded.
 
-The scenarios come from the `open-feature/spec` submodule under `libs/shared/tck/spec`, so the `tck`
-target depends on `tck:pullSpec` to check that submodule out before Jest starts. Without it a branch
-that moved the submodule pin would run the _previous_ revision's feature files — the working tree
-does not follow a gitlink on its own — and a feature file arriving upstream would silently not be
-collected, leaving a green run that tested less than it claimed.
-
-The claim is pinned to the exact image tag in that Compose file, so a bump is a deliberate act with a
-result to record.
+The `tck` target's wiring — `passWithNoTests: false`, and a `tck:pullSpec` dependency so the suite
+cannot run against the previous pin's feature files — is described in the
+[TCK's own README](../../shared/tck/README.md). Both are guards against a green run that tested less
+than it claimed.
