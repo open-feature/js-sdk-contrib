@@ -111,40 +111,26 @@ const canonicalFlagsText = readFileSync(CANONICAL_FLAGS_PATH, 'utf8');
 /**
  * The canonical flag set, as an in-memory provider configuration.
  *
- * **Parsed out of `flags/canonical-flags.json`, not transcribed from it.** That file is the
- * language-agnostic definition of the flag set every implementation's suite runs against, and the
- * specification exposes it precisely so that an adopter can seed a backend from the definition
- * rather than copy it out by hand — transcription being the usual way the two drift apart. A
- * TypeScript literal here would be exactly that transcription, and the drift it invites is silent
+ * **Parsed out of `flags/canonical-flags.json`, not transcribed from it.** A TypeScript literal here
+ * would be a transcription of the language-agnostic definition, and the drift it invites is silent
  * in the worst way: the in-memory self-test would go green against a flag set that is no longer the
- * canonical one, so the suite would verify itself against the wrong baseline while reporting
- * success. Go's implementation, the reference, decodes the same file; this follows it.
+ * canonical one, verifying itself against the wrong baseline while reporting success.
  *
- * Four properties of that file are load-bearing, and survive the parse:
+ * The file's own load-bearing properties are documented beside it, in
+ * [`specification/assets/provider-tck/README.md`](https://github.com/open-feature/spec/blob/main/specification/assets/provider-tck/README.md).
+ * Three of them meet JavaScript here, and survive the parse:
  *
- * - `missing-flag` is absent, which is what the `FLAG_NOT_FOUND` scenario tests. Adding it turns
- *   that scenario green for the wrong reason.
- * - no flag carries a `contextEvaluator`, so every enabled flag resolves statically — which is what
- *   `reason.feature`'s `STATIC` rows assert of a provider declaring `@standard-reasons`. The TCK
- *   tests a provider's mapping of a response, not a backend's evaluation logic. Nothing here can
- *   introduce one: the format has no way to express it. `targeting-key-flag` is the one flag with a
- *   targeting rule and it is no exception, because the rule is *data* in the file and an
- *   `InMemoryProvider` rule is a *function*. Its `targeting` member is therefore inert for this
- *   decoder — the flag resolves its `miss` default whatever the context — and the in-memory suites
- *   leave `@targeting` undeclared so its scenarios are skipped with that reason. Synthesising an
- *   evaluator to make them pass would test a fixture written for the occasion rather than a
- *   provider, which is the vacuous pass this library exists to prevent.
- * - `boolean-zero-flag`, `integer-zero-flag` and `string-zero-flag` resolve to `false`, `0` and `''`.
- *   They are values, not absences: a `value || default` anywhere on the way turns the falsy-value
- *   scenarios into failures that look like provider defects. `JSON.parse` preserves all three, and
- *   nothing downstream of it tests a variant value for truthiness.
- * - `huge-integer-flag` is 2^53 − 1, which a JavaScript number holds exactly, and which
- *   `JSON.parse` therefore reads without rounding.
- *
- * One thing the Go loader needs and this one does not: Go decodes with `UseNumber` so that `10` and
- * `10.0` stay an int64 and a float64, because `memprovider` type-asserts on them. JavaScript has no
- * integer type — `10.0` *is* `10` — so there is nothing to preserve and no decision to get wrong.
- * That is the same language fact that makes `@numeric-coercion` unaskable here.
+ * - `targeting-key-flag`'s rule is *data* in the file while an `InMemoryProvider` rule is a
+ *   *function*, so its `targeting` member is inert for this decoder — the flag resolves its `miss`
+ *   default whatever the context — and the in-memory suites leave `@targeting` undeclared so its
+ *   scenarios skip with that reason. Synthesising an evaluator to make them pass would test a
+ *   fixture written for the occasion rather than a provider. Nothing here can introduce one anyway:
+ *   the format has no way to express it.
+ * - the falsy `*-zero-flag` values survive `JSON.parse`, and nothing downstream of it tests a
+ *   variant value for truthiness — a `value || default` anywhere on the way would turn those
+ *   scenarios into failures that look like provider defects.
+ * - `huge-integer-flag` is 2^53 − 1, which a JavaScript number holds exactly and `JSON.parse`
+ *   therefore reads without rounding.
  *
  * @param changingVariant which variant `changing-flag` resolves to. The in-process control flips it
  *   to produce a real configuration change; every other flag comes from the file untouched.

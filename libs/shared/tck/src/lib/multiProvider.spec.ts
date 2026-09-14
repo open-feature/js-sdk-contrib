@@ -28,22 +28,13 @@ import { runProviderTck } from './runProviderTck';
  * error code flattened to `GENERAL`, an event that never reaches the client. Wrapping exactly one
  * child makes each of those observable, because the correct answer is precisely what the in-memory
  * suite already asserts about the child on its own. Any difference between the two suites is
- * attributable to the multi-provider and nothing else.
- *
- * That framing is why this belongs here rather than in the multi-provider's own tests: it is not a
- * test of aggregation across several backends, it is a test that delegation is transparent.
+ * attributable to the multi-provider and nothing else -- which is why this belongs here rather than
+ * in the multi-provider's own tests: it is not a test of aggregation across several backends, it is
+ * a test that delegation is transparent.
  *
  * The subject is deliberately `@openfeature/server-sdk`'s MultiProvider and not this repository's
- * `@openfeature/multi-provider`, which is deprecated in favour of it. Conformance-testing a package
- * nobody should adopt would prove little, and the same choice is made in the other languages: Go
- * tests `go-sdk/openfeature/multi` and Java tests `dev.openfeature.sdk.multiprovider`, both of whose
- * contrib equivalents are likewise deprecated. Python has no multi-provider in either place and so
- * has no such suite.
- *
- * The equivalent Java suite has to leave ConfigurationChange undeclared, because Java's
- * MultiProvider never subscribes to its children and swallows their events
- * (open-feature/java-sdk#1882). Whether this one forwards them is exactly what this suite is here to
- * find out.
+ * `@openfeature/multi-provider`, which is deprecated in favour of it: conformance-testing a package
+ * nobody should adopt would prove little.
  */
 const control = new InProcessControl();
 
@@ -52,25 +43,20 @@ runProviderTck({
   control,
   newProvider: () => new MultiProvider([{ provider: control.newProvider() }]),
 
-  // Same reasoning as the in-memory suite: no connection to lose, no backend for initialisation to
-  // reach. Lifecycle stays undeclared for the same reason it does there — neither the multi-provider
-  // nor its in-memory child does anything on startup, so the readiness scenario was passing
-  // vacuously on synthesised PROVIDER_READY rather than on any behaviour of this provider.
-  // ConfigurationChange is declared because the child emits it — if the multi-provider does not
-  // forward it, this suite fails and that is the finding. LargeIntegers likewise: the child resolves
-  // 2^53 - 1 exactly, so a rounded value on the way through would be the multi-provider's doing.
-  // Variants is declared on the same footing and asks a real question of this provider in
-  // particular: a multi-provider assembles its own resolution details from a child's, and dropping
-  // the variant while carrying the value across is an easy thing to do. Targeting stays undeclared
-  // because the child cannot have it — the canonical flag format cannot express an InMemoryProvider
-  // contextEvaluator, so targeting-key-flag's rule is inert underneath. DisabledFlags is declared
-  // because the child substitutes locally and the multi-provider delegates to it, which makes the
-  // rows another transparency question: a disabled flag is a resolution the child declined, and a
-  // wrapper that treated "no value" as an error rather than as the caller's default would be caught
-  // here and nowhere else. StandardReasons is declared for the same transparency reason, and it is
-  // the one this file's own opening sentence names: a reason rewritten to DEFAULT on the way
-  // through is exactly what delegation drops on the floor, and with the reasons consolidated behind
-  // the tag, withholding it would stop anything checking that at all.
+  // The same set as the in-memory suite, and every declaration here is a transparency question: the
+  // child's answer is already asserted there, so a difference is the multi-provider's doing.
+  // ConfigurationChange, because the child emits it and a wrapper that does not forward it fails
+  // here. LargeIntegers, because the child resolves 2^53 - 1 exactly and a rounded value on the way
+  // through would be the wrapper's. Variants, because a multi-provider assembles its own resolution
+  // details from a child's and dropping the variant while carrying the value is an easy thing to do.
+  // DisabledFlags, because a disabled flag is a resolution the child declined, and a wrapper
+  // treating "no value" as an error rather than as the caller's default is caught here and nowhere
+  // else. StandardReasons, because a reason rewritten to DEFAULT on the way through is exactly what
+  // delegation drops on the floor.
+  //
+  // Stale, UnavailableInit, Lifecycle and Targeting are undeclared for the child's reasons -- see
+  // the in-memory suite; neither the wrapper nor its child has a connection, an initialisation or a
+  // contextEvaluator.
   capabilities: [
     Capability.Events,
     Capability.ConfigurationChange,

@@ -70,11 +70,9 @@ export type ContainerizedProviderFactory = (endpoint: BackendEndpoint) => Provid
  * built against the stack's control API. `control` is therefore absent — the suite owns it — and
  * `newProvider` receives a {@link BackendEndpoint} instead of nothing.
  *
- * The HTTP control API in `openapi/control-api.yaml` is the normative contract here, and that is
- * the point: another language's suite drives the same endpoints against the same stack and must get
- * the same answers. Substituting an in-process control that manipulates an external backend through
- * a side channel bypasses it — see {@link BackendControl} for why that is not an acceptable adoption
- * path.
+ * The HTTP control API in `openapi/control-api.yaml` is the normative contract here; substituting an
+ * in-process control that manipulates an external backend through a side channel bypasses it — see
+ * {@link BackendControl}.
  */
 export interface ContainerizedTckOptions extends Omit<TckOptions, 'control' | 'newProvider'> {
   /**
@@ -85,9 +83,8 @@ export interface ContainerizedTckOptions extends Omit<TckOptions, 'control' | 'n
    * runner's working directory, which is the workspace root rather than your test file's directory.
    * A relative path is accepted and resolved that way, and the failure message says so.
    *
-   * The stack must not pin host ports. Docker assigns them dynamically and the suite discovers them
-   * after startup; a pinned port would make the suite unrunnable in parallel and would collide with
-   * a developer's own backend on the same machine.
+   * The stack must not pin host ports: they are assigned dynamically and the suite discovers them
+   * after startup.
    */
   composeFile: string;
 

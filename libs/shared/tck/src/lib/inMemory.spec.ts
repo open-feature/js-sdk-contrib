@@ -25,60 +25,37 @@ runProviderTck({
   newProvider: () => control.newProvider(),
 
   /*
-   * Seven capabilities declared, and every omission is a fact about this provider rather than a
-   * convenience:
+   * Seven capabilities, each declared on a run rather than on reading the SDK, and every omission a
+   * fact about this provider:
+   *
+   * - ConfigurationChange: `putConfiguration` emits PROVIDER_CONFIGURATION_CHANGED, which is the
+   *   reference behaviour Appendix A describes.
+   * - LargeIntegers: a JavaScript number holds 2^53 - 1 exactly and the provider hands the value
+   *   back untouched — there is no transport to round it on the way.
+   * - Variants: the flag file gives every canonical flag its variants and the provider reports the
+   *   matched one.
+   * - DisabledFlags: with no backend to defer to, the caller's default is the only value the
+   *   provider could return for a flag it declined to evaluate, and the decoder carries the state
+   *   through so the four flags really are disabled underneath. Whether InMemoryProvider honours the
+   *   state rather than serving the configured value anyway is not something reading it settles: the
+   *   four rows pass.
+   * - StandardReasons: seven of the nine scenarios run and all seven pass — STATIC for the four
+   *   rule-less flags, ERROR for the unknown flag and the type mismatch, DISABLED for the disabled
+   *   one. The two @targeting scenarios skip, the tags composing and Targeting being undeclared.
+   *   STATIC for a rule-less flag is the row the specification leaves open, so it is measured.
    *
    * - Stale and UnavailableInit are omitted because there is no connection to lose. InProcessControl
    *   does not implement ConnectionControl for the same reason, and the two omissions keep each
-   *   other honest: the scenarios are skipped before any step can reach an operation the control
-   *   cannot perform.
-   * - Lifecycle is omitted because there is no backend to reach. InMemoryProvider has no
-   *   initialisation step, so the SDK synthesises PROVIDER_READY for it and the readiness scenario
-   *   would pass without demonstrating anything — a NoOpProvider passes it identically. It was
-   *   passing vacuously while lifecycle.feature was gated by @events; now the skip says so. The
-   *   shutdown scenarios go with it: InMemoryProvider has no onClose and no initialize, so calling
-   *   them directly would prove as little as the readiness scenario did.
-   * - Targeting is omitted because the in-memory provider cannot have it from this flag file.
-   *   InMemoryProvider takes its rules from a `contextEvaluator` function, and the canonical
-   *   flag-definition format has no way to express one — so targeting-key-flag's `targeting` member
-   *   is inert here and the flag resolves its default variant whatever the context. Leaving the
-   *   capability undeclared is the honest report, and the right one: a KnownDeviation would assert a
-   *   defect, and nothing here is broken. Synthesising a contextEvaluator to make the scenarios pass
-   *   would be worse still — it would test a fixture written for the occasion rather than a
-   *   provider, which is the vacuous pass this suite exists to prevent.
-   * - Caching is absent because it is reserved rather than optional: no scenario carries the tag, so
-   *   declaring it could not cause a skip and would put a capability nothing examined into the
-   *   report. Naming it here is refused.
-   *
-   * ConfigurationChange *is* declared, and that is worth stating plainly: the JS in-memory provider
-   * has putConfiguration and emits PROVIDER_CONFIGURATION_CHANGED, which the Go and Python SDKs'
-   * equivalents do not. It is the reference behaviour Appendix A describes.
-   *
-   * LargeIntegers is declared because a JavaScript number holds 2^53 - 1 exactly and the in-memory
-   * provider hands the value back untouched: there is no transport to round it on the way.
-   *
-   * Variants is declared because InMemoryProvider resolves through a named variant and reports the
-   * name: the flag file gives every canonical flag its variants, and the provider hands the matched
-   * one back. Requirement 2.2.4 is only a SHOULD, so this is a claim rather than a given — and it is
-   * made on the run below going green, not on having read the SDK.
-   *
-   * DisabledFlags is declared for the reason the capability exists: the substitution happens here.
-   * An in-memory provider has no backend to defer to, so the default the caller passed in is the
-   * only value it could return for a flag it declined to evaluate — and the decoder carries the
-   * state through, so the four flags really are disabled underneath. Whether the SDK's
-   * InMemoryProvider honours the flag rather than serving its configured value anyway is not
-   * something reading it would settle, so it was measured: the four rows pass.
-   *
-   * StandardReasons is declared, which is a claim rather than an exemption: the provider says it
-   * uses the standard reason vocabulary with the standard meanings, and reason.feature checks it.
-   * Seven of its nine scenarios run here and all seven pass — STATIC for the four rule-less flags,
-   * ERROR for the unknown flag and the type mismatch, DISABLED for the disabled one. The two
-   * @targeting scenarios skip, because the tags compose and Targeting is undeclared above.
-   *
-   * STATIC is the row worth naming. `types.md` types DEFAULT as "no dynamic evaluation occurred or
-   * dynamic evaluation yielded no result", which a rule-less flag satisfies as readily, so a
-   * provider answering DEFAULT here would be conformant and simply not use the standard meanings.
-   * This one answers STATIC, measured rather than read off the SDK.
+   *   other honest: the scenarios are skipped before a step can reach an operation it cannot
+   *   perform.
+   * - Lifecycle is omitted because there is no backend to reach: InMemoryProvider has no
+   *   initialisation step and no onClose, so the SDK synthesises PROVIDER_READY and the readiness
+   *   and shutdown scenarios would pass without demonstrating anything.
+   * - Targeting is omitted because InMemoryProvider takes its rules from a `contextEvaluator`
+   *   function and the canonical flag-definition format has no way to express one, so
+   *   targeting-key-flag's `targeting` member is inert here. No KnownDeviation: nothing is broken.
+   *   Synthesising a contextEvaluator to make the scenarios pass would test a fixture written for
+   *   the occasion rather than a provider.
    */
   capabilities: [
     Capability.Events,

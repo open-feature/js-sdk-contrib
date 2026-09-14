@@ -12,21 +12,12 @@ import { CHANGING_BASELINE, CHANGING_CHANGED, canonicalFlagSet } from './flags';
  * provider, so the event the suite awaits is the provider's own `PROVIDER_CONFIGURATION_CHANGED`
  * rather than one the TCK synthesised.
  *
- * **This is not a shortcut for providers that do have a backend.** Reaching into an external backend
- * from inside the test process — a test-only admin client, a shared database handle, a hook in the
- * provider — produces a suite that passes while proving nothing, because the path it exercised is
- * not the path the contract describes. Those providers drive the HTTP control API instead.
+ * **This is not a shortcut for providers that do have a backend** — see Appendix F, "Providers with
+ * no backend", for why that is a narrow allowance. Those providers drive the HTTP control API.
  *
- * ## Connection control
- *
- * `InProcessControl` deliberately does not implement {@link ConnectionControl}. An in-memory
- * provider has no connection to lose, and pretending otherwise with a no-op would report the
- * `@stale` scenarios as passed. A suite using it leaves {@link Capability.Stale} and
- * {@link Capability.UnavailableInit} undeclared, and those scenarios are reported as skipped.
- *
- * {@link Capability.Lifecycle} goes undeclared for the neighbouring reason: with no backend, there
- * is no initialisation to reach one. The SDK synthesises `PROVIDER_READY` for such a provider, so
- * declaring it would report the readiness scenario as passed without anything having been proved.
+ * It deliberately does not implement {@link ConnectionControl}: an in-memory provider has no
+ * connection to lose, so a suite using it leaves {@link Capability.Stale} and
+ * {@link Capability.UnavailableInit} undeclared and those scenarios are skipped with the reason.
  *
  * ## Ownership of the provider
  *

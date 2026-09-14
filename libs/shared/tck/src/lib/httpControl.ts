@@ -53,18 +53,12 @@ export interface HttpControlOptions {
  * A {@link BackendControl} that drives a backend under test over the HTTP control API defined in
  * `openapi/control-api.yaml`.
  *
- * This is the normative control path for any provider with a real backend, and it is what makes a
- * conformance claim portable: another language's TCK drives the same endpoints against the same
- * stack and must get the same answers. It uses the global `fetch`, so it adds no dependency.
+ * This is the normative control path for any provider with a real backend. It uses the global
+ * `fetch`, so it adds no dependency.
  *
- * ## What it never does
- *
- * It never stops, kills or recreates a container. Unavailability is simulated inside the running
- * stack, through `POST /stop`, because container orchestrators assign host ports dynamically and
- * cannot reliably preserve them across a restart — a restarted backend generally comes back on a
- * different host port, silently invalidating every provider already pointed at the old one, and the
- * resulting failure looks like a flaky provider. Starting and stopping the stack itself belongs to
- * the adopting suite, once per suite.
+ * It never stops, kills or recreates a container: unavailability is simulated inside the running
+ * stack through `POST /stop`, which is the control API's no-container-restart invariant. Starting
+ * and stopping the stack itself belongs to the adopting suite, once per suite.
  *
  * ## Scenario isolation
  *
@@ -184,14 +178,11 @@ export class HttpControl implements BackendControl, ConnectionControl {
    * deliberately unreachable during the outage scenarios while the control API has to stay up,
    * otherwise the suite could not end the outage.
    *
-   * There is deliberately no settle delay after a control call to pair with this. Every
-   * state-changing endpoint — `/start`, `/change`, `/reset` — is specified not to return until the
-   * new state is actually being served, so a fixed sleep afterwards would cover a window the API
-   * says is not there. It is the control API's promise to keep, and a suite that slept instead of
-   * holding the backend to it would stop being able to detect when it breaks. How long the
-   * *provider* then takes to notice is a property of its transport, which is what the event timeout
-   * is for; conflating the two makes the provider's detection latency unmeasurable, because the
-   * clock starts before there is anything to detect.
+   * There is deliberately no settle delay after a control call to pair with this — see the control
+   * API's invariants, which make every state-changing endpoint answer only once the new state is
+   * being served. How long the *provider* then takes to notice is a property of its transport, which
+   * is what the event timeout is for; conflating the two makes the provider's detection latency
+   * unmeasurable, because the clock starts before there is anything to detect.
    */
   async awaitReady(timeoutMs: number): Promise<void> {
     const deadline = Date.now() + timeoutMs;

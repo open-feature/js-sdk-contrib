@@ -77,10 +77,8 @@ export interface TckOptions {
    * widening it.
    *
    * Two kinds of capability cannot be declared, and naming either here is rejected rather than
-   * passed through to the report. A **reserved** one — see {@link RESERVED_CAPABILITIES} — is a name
-   * no scenario carries yet, in any language. An **inexpressible** one — see
-   * {@link INEXPRESSIBLE_CAPABILITIES} — has scenarios, which pass in other languages, that this
-   * SDK has no way to put to a provider. The refusals say which, because only the first is
+   * passed through: a **reserved** one ({@link RESERVED_CAPABILITIES}) and an **inexpressible** one
+   * ({@link INEXPRESSIBLE_CAPABILITIES}). The refusals say which, because only the first is
    * temporary and neither says anything about your provider.
    */
   capabilities?: readonly Capability[];
@@ -88,28 +86,10 @@ export interface TckOptions {
   /**
    * Gaps this provider is known to have, each named rather than merely absent.
    *
-   * **An entry says: this provider fails to do something it is required to do.** The requirement
-   * must be a numbered `MUST`, or a rule the implementation bound itself to elsewhere. Where the
-   * specification *permits* the choice, withholding the capability **is** the honest report and a
-   * deviation would assert a defect that does not exist — `@reinitialization` is exactly that case,
-   * and the README says why at length.
-   *
-   * {@link capabilities} cannot express any of this on its own. A capability left out reads as a
-   * decision — a design one, or a language one recorded against the capability itself — and both a
-   * defect and a decision produce the same skip, so a consumer comparing providers reads one as the
-   * other unless something says which happened.
-   *
-   * It is legitimate in two shapes, and a report's results already distinguish them:
-   *
-   * 1. **The capability is declared, the scenario runs, and it fails.** Prefer this. The failure
-   *    stays visible and the deviation says it is known and why.
-   * 2. **The capability is withheld, and its scenarios skip.** Legitimate only when the provider
-   *    cannot attempt the behaviour at all, so running the scenario would establish nothing. The
-   *    deviation then explains the absence, so a reader can tell a defect from a design decision.
-   *
-   * Withdrawing a capability *in order to* turn a failing scenario into a skip is the failure mode
-   * this field exists to prevent. If the provider attempts the behaviour and gets it wrong, shape 1
-   * is the honest report:
+   * **An entry says: this provider fails to do something it is required to do**, in one of the two
+   * shapes Appendix F's "Rules for declaring" sets out. {@link capabilities} cannot express that on
+   * its own: a capability left out reads as a decision, and a defect and a decision produce the same
+   * skip.
    *
    * ```ts
    * capabilities: [Capability.Lifecycle, Capability.Reinitialization],
@@ -122,16 +102,12 @@ export interface TckOptions {
    * ]
    * ```
    *
-   * {@link KnownDeviation.summary} is required: an entry with no summary records that something is
-   * wrong without saying what, which is worth less than the bare skip or failure it accompanies.
-   * The issue is optional — {@link KnownDeviation.tracked} and {@link KnownDeviation.untracked} are
-   * the two forms, and naming an untracked defect is still what separates it from a choice.
-   *
-   * A deviation may also concern no capability at all — pass `undefined` — when the gap is against a
-   * mandatory, ungated scenario. It may concern neither of the two kinds {@link capabilities}
-   * refuses, for the two reasons those are refused: a reserved capability has no scenario to deviate
-   * *from*, and an inexpressible one has scenarios that were never put to this provider, so the entry
-   * would assert a defect that cannot exist.
+   * {@link KnownDeviation.summary} is required and the issue is not —
+   * {@link KnownDeviation.tracked} and {@link KnownDeviation.untracked} are the two forms. Pass
+   * `undefined` as the capability when the gap is against a mandatory, ungated scenario. It may name
+   * neither of the two kinds {@link capabilities} refuses, for the two reasons those are refused: a
+   * reserved capability has no scenario to deviate *from*, and an inexpressible one has scenarios
+   * that were never put to this provider.
    *
    * Declaring one changes nothing about what runs. It is a statement about the provider, carried
    * through to whatever reads the declaration.
@@ -254,14 +230,11 @@ function listReserved(): string {
  * rule that regresses quietly.
  */
 export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
-  // Refused rather than dropped, and refused before anything else is checked. A reserved capability
-  // reaching `declaration.declared` is how a real Java report came to assert two capabilities that
-  // no scenario examined, and silently filtering it here would leave the adopter believing the claim
-  // was made. A warning would be nearer the letter of the schema, but this is a suite whose entire
-  // purpose is that unverified claims are loud: a console line in a Jest run competes with the
-  // runner's own output, is invisible in CI unless someone reads the log of a green build, and would
-  // have to be re-emitted per suite. The fix is a one-line edit, so failing costs the adopter
-  // nothing and guarantees they see it.
+  // Refused rather than dropped, and refused before anything else is checked. Silently filtering a
+  // reserved capability here would leave the adopter believing the claim was made. A warning would
+  // be nearer the letter of the schema, but a console line in a Jest run competes with the runner's
+  // own output and is invisible in the log of a green build. The fix is a one-line edit, so failing
+  // costs the adopter nothing and guarantees they see it.
   const reserved = [...new Set(options.capabilities ?? [])].filter(isReserved);
   if (reserved.length) {
     throw new Error(
@@ -273,12 +246,11 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
     );
   }
 
-  // The second refusal, and deliberately not folded into the first. Both end in a throw, and that is
-  // the only thing they share: a reservation is global and expires, while this is one language's and
-  // permanent, and the scenarios it gates exist and pass elsewhere. Telling an adopter "no scenario
-  // carries this" when three do, in Go, Java and Python, would send them looking for a gap upstream
-  // that is not there. Appendix F requires the distinction to survive into the skip reasons too --
-  // see `skipDisplayName`.
+  // The second refusal, and deliberately not folded into the first: a reservation is global and
+  // expires, while this is one language's and permanent, and the scenarios it gates exist and pass
+  // elsewhere. Telling an adopter "no scenario carries this" would send them looking for a gap
+  // upstream that is not there. Appendix F requires the distinction to survive into the skip reasons
+  // too -- see `skipDisplayName`.
   const inexpressible = [...new Set(options.capabilities ?? [])].filter(isInexpressible);
   if (inexpressible.length) {
     throw new Error(
