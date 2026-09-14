@@ -246,8 +246,11 @@ npx nx tck providers-flagd
 ```
 
 It needs a **Docker daemon**. The suite brings up
-[`src/tck/docker-compose.yaml`](./src/tck/docker-compose.yaml) itself — a pinned flagd-testbed
-image — discovers the mapped ports, and drives the backend over the testbed's control API.
+[`libs/shared/tck-backend/docker-compose.yaml`](../../shared/tck-backend/docker-compose.yaml) itself
+— a pinned flagd-testbed image, shared with the OFREP adoption so the two cannot drift onto
+different backends — discovers the mapped ports, and drives the backend over the testbed's control
+API. A conformance result pins its claim to that exact image tag, so a bump is a deliberate act with
+a result to record.
 
 **The suites live in `src/tck/`, a sibling of `src/e2e/` rather than a child of it.** The two answer
 different questions: the e2e suites test this provider against flagd's own harness and are expected
@@ -261,8 +264,7 @@ the excluding. The suites sit behind a Jest project of their own
 config ignores `/src/tck/` and `src/e2e/jest.config.ts` never sees it. So `nx test providers-flagd`
 and `nx e2e providers-flagd` do not run them, and neither does any workflow —
 `npx nx tck providers-flagd` is the only way in. Run it by hand before merging a change to this
-provider or to the suite. The target sets `passWithNoTests: false`, so a glob that stops matching
-fails loudly instead of reporting a green run that collected nothing.
+provider or to the suite.
 
 Why an adoption suite is excluded rather than made a required gate is
 [Appendix F, "Running the suite in CI"](https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md).
@@ -270,12 +272,7 @@ The directory boundary is what it is because of the first mistake named there: t
 in `src/e2e/tests/`, where the pre-existing `e2e` target's default `testMatch` swept them up, and
 that target _is_ a CI job here.
 
-The scenarios themselves come from the `open-feature/spec` submodule under `libs/shared/tck/spec`,
-not from this project, so the `tck` target depends on `tck:pullSpec` to check that submodule out
-before Jest starts. Without it a branch that moved the submodule pin would run the _previous_
-revision's feature files — the working tree does not follow a gitlink on its own — and a feature file
-arriving upstream would silently not be collected. That is a green run that tested less than it
-claimed, which is the one failure mode a conformance suite must not have.
-
-A conformance result pins its claim to the exact backend image in that Compose file, so a bump to the
-tag is a deliberate act with a result to record.
+The `tck` target's wiring — `passWithNoTests: false`, and a `tck:pullSpec` dependency so the suite
+cannot run against the previous pin's feature files — is described in the
+[TCK's own README](../../shared/tck/README.md). Both are guards against a green run that tested less
+than it claimed.
