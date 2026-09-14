@@ -57,8 +57,11 @@ runContainerizedProviderTck({
   // Capability.DisabledFlags is withheld too, but unlike @variants it is a defect rather than a
   // permitted absence — see the deviation below. Go and Java both declare it and pass.
   //
-  // Capability.StandardReasons is withheld, and like DisabledFlags it is a defect rather than a
-  // permitted absence -- see the deviations below.
+  // Capability.StandardReasons and Capability.DisabledFlags are both DECLARED and both fail, which
+  // is the shape Appendix F prefers. An earlier pass withheld them, and that was the move
+  // knownDeviations exists to discourage: withholding a capability in order to turn a failing
+  // scenario into a skip. This provider does report a reason and does handle a disabled flag -- it
+  // gets both wrong -- so the scenarios run and the failures stay in the results.
   //
   // Capability.NumericCoercion carries NO deviation here, deliberately, and the TCK refuses one:
   // JavaScript has a single numeric type, so "a float requested as an integer" is not expressible
@@ -68,9 +71,28 @@ runContainerizedProviderTck({
   //
   // The lifecycle and event capabilities are withheld because this provider has no observable
   // initialisation for the suite to assert against.
-  capabilities: [Capability.Object, Capability.LargeIntegers, Capability.Targeting],
+  capabilities: [
+    Capability.Object,
+    Capability.LargeIntegers,
+    Capability.Targeting,
+    Capability.StandardReasons,
+    Capability.DisabledFlags,
+  ],
 
   knownDeviations: [
+    KnownDeviation.untracked(
+      undefined,
+      'float-flag requested as a String resolves to "0.5" rather than reporting TYPE_MISMATCH, in ' +
+        'an untagged row of the wrong-type outline, and object-flag as a String resolves to the ' +
+        'raw JSON text beside it. Flagsmith has no float type and no object type -- ' +
+        'feature_state_value is natively boolean, integer or string -- so on this backend both ' +
+        'really are strings and neither request is a type mismatch. Recorded because the ' +
+        'scenarios are mandatory and fail, not because the provider is wrong: whether the ' +
+        'type-mismatch matrix is satisfiable against a backend with a coarser type system is an ' +
+        'open question for the suite. All four language adoptions fail these two rows. Separately ' +
+        'and only here, boolean-flag and integer-flag as a String return "true" and "10" rather ' +
+        'than TYPE_MISMATCH -- those are genuine mismatches and a defect in this provider alone.',
+    ),
     KnownDeviation.untracked(
       Capability.StandardReasons,
       'The reason is reported as `flag.enabled ? TARGETING_MATCH : DISABLED` -- taken from the ' +
