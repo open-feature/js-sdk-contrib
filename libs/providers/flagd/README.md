@@ -34,6 +34,8 @@ Options can be defined in the constructor or as environment variables. Construct
 | tls                   | FLAGD_TLS                      | boolean  | false                                                          |                                              |
 | socketPath            | FLAGD_SOCKET_PATH              | string   | -                                                              |                                              |
 | certPath              | FLAGD_SERVER_CERT_PATH         | string   | -                                                              |                                              |
+| clientCertPath        | FLAGD_CLIENT_CERT_PATH         | string   | -                                                              | mTLS; requires clientKeyPath and tls         |
+| clientKeyPath         | FLAGD_CLIENT_KEY_PATH          | string   | -                                                              | mTLS; requires clientCertPath and tls        |
 | resolverType          | FLAGD_RESOLVER                 | string   | rpc                                                            | rpc, in-process                              |
 | offlineFlagSourcePath | FLAGD_OFFLINE_FLAG_SOURCE_PATH | string   | -                                                              |                                              |
 | selector              | FLAGD_SOURCE_SELECTOR          | string   | -                                                              | rpc & in-process (see [Selector](#selector)) |

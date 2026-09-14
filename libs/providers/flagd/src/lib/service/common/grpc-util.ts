@@ -27,17 +27,33 @@ export const closeStreamIfDefined = (stream: ClientReadableStream<unknown> | und
 
 /**
  * Creates gRPC channel credentials based on TLS and certificate path configuration.
+ *
+ * When both `clientCertPath` and `clientKeyPath` are provided, mutual TLS (mTLS) is used: the
+ * client presents its certificate and key for authentication. `certPath` (the CA / root cert) is
+ * optional and independent — when omitted, the system trust store verifies the server.
+ *
  * @returns Channel credentials for gRPC connection
  */
-export const createChannelCredentials = (tls: boolean, certPath?: string): ChannelCredentials => {
+export const createChannelCredentials = (
+  tls: boolean,
+  certPath?: string,
+  clientCertPath?: string,
+  clientKeyPath?: string,
+): ChannelCredentials => {
   if (!tls) {
     return credentials.createInsecure();
   }
-  if (certPath && existsSync(certPath)) {
-    const rootCerts = readFileSync(certPath);
-    return credentials.createSsl(rootCerts);
+
+  const rootCerts = certPath && existsSync(certPath) ? readFileSync(certPath) : null;
+
+  // Mutual TLS: present the client certificate and key. Both paths are required together.
+  if (clientCertPath && existsSync(clientCertPath) && clientKeyPath && existsSync(clientKeyPath)) {
+    const privateKey = readFileSync(clientKeyPath);
+    const certChain = readFileSync(clientCertPath);
+    return credentials.createSsl(rootCerts, privateKey, certChain);
   }
-  return credentials.createSsl();
+
+  return credentials.createSsl(rootCerts);
 };
 
 /**
