@@ -1,25 +1,15 @@
 /**
  * The OpenFeature Provider Conformance Suite against the Flagsmith **JavaScript** provider.
  *
- * One of four language adoptions running against the same container. Go reports 35 pass / 2 fail /
- * 19 skip, Java 24 / 12 / 20, Python 28 / 5 / 19 — the same backend, the same scenarios, four
- * providers written by different people against one API, and the reasons for their failures barely
- * overlap.
- *
- * The backend is https://github.com/aepfli/flagsmith-tck-testbed — the Flagsmith Edge Proxy with a
- * launchpad implementing the control API. Nothing about it is language-specific, and it needed no
- * changes for any of the four adoptions.
+ * The backend, and how the four language adoptions compare against it, are documented once in
+ * https://github.com/aepfli/flagsmith-tck-testbed rather than restated in each adoption.
  */
 import { join } from 'node:path';
 import { Capability, KnownDeviation, runContainerizedProviderTck } from '@openfeature/tck';
 import { FlagsmithOpenFeatureProvider } from '../lib/flagsmith-provider';
 import { Flagsmith } from 'flagsmith-nodejs';
 
-/**
- * Fixed by the testbed. The control API has no way to communicate connection parameters —
- * `POST /start` returns a bare 200 with no body — so every adoption hardcodes these, exactly as a
- * flagd adoption hardcodes a port.
- */
+/** Fixed by the testbed, because the control API cannot hand connection parameters to a provider. */
 const SERVER_SIDE_KEY = 'ser.provider-tck-server-key';
 
 const PROXY_PORT = 8000;
@@ -57,11 +47,8 @@ runContainerizedProviderTck({
   // Capability.DisabledFlags is withheld too, but unlike @variants it is a defect rather than a
   // permitted absence — see the deviation below. Go and Java both declare it and pass.
   //
-  // Capability.StandardReasons and Capability.DisabledFlags are both DECLARED and both fail, which
-  // is the shape Appendix F prefers. An earlier pass withheld them, and that was the move
-  // knownDeviations exists to discourage: withholding a capability in order to turn a failing
-  // scenario into a skip. This provider does report a reason and does handle a disabled flag -- it
-  // gets both wrong -- so the scenarios run and the failures stay in the results.
+  // StandardReasons and DisabledFlags are declared and both fail: this provider does report a
+  // reason and does handle a disabled flag, and gets both wrong.
   //
   // Capability.NumericCoercion carries NO deviation here, deliberately, and the TCK refuses one:
   // JavaScript has a single numeric type, so "a float requested as an integer" is not expressible
