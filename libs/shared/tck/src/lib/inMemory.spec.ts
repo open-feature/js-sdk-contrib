@@ -43,6 +43,11 @@ runProviderTck({
    *   rule-less flags, ERROR for the unknown flag and the type mismatch, DISABLED for the disabled
    *   one. The two @targeting scenarios skip, the tags composing and Targeting being undeclared.
    *   STATIC for a rule-less flag is the row the specification leaves open, so it is measured.
+   * - StringTyping: the flag file gives every canonical flag a typed value and InMemoryProvider
+   *   resolves per accessor, so `getStringDetails` on a boolean, a number or a structure is a
+   *   TYPE_MISMATCH rather than that value's string representation. This is the capability's easy
+   *   direction — there is no transport to stringify on the way — and it is measured rather than
+   *   read off the provider: all four scenarios pass.
    *
    * - Stale and UnavailableInit are omitted because there is no connection to lose. InProcessControl
    *   does not implement ConnectionControl for the same reason, and the two omissions keep each
@@ -65,5 +70,6 @@ runProviderTck({
     Capability.Variants,
     Capability.DisabledFlags,
     Capability.StandardReasons,
+    Capability.StringTyping,
   ],
 });
