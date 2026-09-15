@@ -47,6 +47,14 @@ runFlagdTck({
    *   ERROR for the unknown flag and the type mismatch, TARGETING_MATCH for the matching key and
    *   DEFAULT for the miss, DISABLED for the disabled flag. STATIC for a rule-less flag is the row
    *   the specification genuinely leaves open, so it is measured rather than assumed.
+   * - StringTyping: flagd's flag definitions are typed and the RPC resolver reads the type off the
+   *   evaluation response, so `getStringDetails` on a boolean, a number or a structure is a
+   *   TYPE_MISMATCH rather than that value's string representation. All four scenarios pass.
+   *
+   *   Worth declaring rather than leaving out, because this is the capability's *other* side: these
+   *   four rows were mandatory until Appendix F moved them, on the grounds that a backend storing
+   *   flag values as strings has no mismatch to report. flagd is not such a backend, and a run that
+   *   left the tag undeclared would say nothing about a property flagd demonstrably has.
    *
    * Withheld:
    *
@@ -73,6 +81,7 @@ runFlagdTck({
     Capability.Targeting,
     Capability.DisabledFlags,
     Capability.StandardReasons,
+    Capability.StringTyping,
   ],
 
   // The RPC resolver asks flagd to resolve each flag, so it is ready as soon as the stream is up.
