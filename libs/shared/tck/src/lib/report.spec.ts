@@ -225,11 +225,11 @@ describe('scenario accounting', () => {
   });
 
   it('catches one dropped example row rather than letting its siblings cover for it', () => {
-    // The reason the accounting is keyed on the pickle and not on the name. Eleven rows share the
+    // The reason the accounting is keyed on the pickle and not on the name. Eight rows share the
     // name 'Requesting the wrong type returns the code default'; keyed on the name alone, dropping
-    // one and duplicating another would tally as eleven expected and eleven recorded.
+    // one and duplicating another would tally as eight expected and eight recorded.
     const matrix = planned.filter((entry) => entry.name === 'Requesting the wrong type returns the code default');
-    expect(matrix).toHaveLength(11);
+    expect(matrix).toHaveLength(8);
 
     const swapped = planned.filter((entry) => entry !== matrix[0]).concat(matrix[1]);
 
