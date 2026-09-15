@@ -139,6 +139,7 @@ declares what it supports (each name below is a member of `Capability`):
 | `LargeIntegers`       | `@large-integers`       | resolves integers up to 2^53 − 1 exactly                     |
 | `Targeting`           | `@targeting`            | resolves differently for a matching evaluation context       |
 | `StandardReasons`     | `@standard-reasons`     | uses the standard reasons with the standard meanings         |
+| `StringTyping`        | `@string-typing`        | a non-string flag through the string accessor is a mismatch  |
 | `NumericCoercion`     | `@numeric-coercion`     | **not declarable here** — [see below](#javascript-notes)     |
 | `Caching`             | `@caching`              | reserved; **not declarable** — no scenarios yet              |
 

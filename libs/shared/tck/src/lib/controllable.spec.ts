@@ -74,6 +74,7 @@ runProviderTck({
     Capability.DisabledFlags,
     Capability.LargeIntegers,
     Capability.StandardReasons,
+    Capability.StringTyping,
   ],
 
   /*

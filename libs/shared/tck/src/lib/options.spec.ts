@@ -263,6 +263,49 @@ describe('the @standard-reasons capability', () => {
   });
 });
 
+describe('the @string-typing capability', () => {
+  // The only normative statement near this is requirement 1.3.4, a SHOULD on the *client* rather
+  // than on the provider. A backend that stores flag values as strings satisfies the string
+  // accessor for every flag and has no mismatch to report, and requirement 2.2.3 asks it for the
+  // resolved flag value -- which is what it returned. So the four scenarios are a capability
+  // question rather than a conformance one, and withholding the tag is a declaration decision.
+  it('is declarable, unlike @numeric-coercion, the string accessor being its own accessor', () => {
+    // The contrast worth pinning. Both gate a question the specification leaves open, and only one
+    // of them is inexpressible here: JavaScript collapses integer and float onto one accessor, but
+    // getStringDetails is as distinct from getBooleanDetails as any pair of accessors gets. A
+    // capability gated for the same *reason* is not thereby gated by the same *mechanism*.
+    expect(DECLARABLE_CAPABILITIES).toContain(Capability.StringTyping);
+    expect(isReserved(Capability.StringTyping)).toBe(false);
+    expect(isInexpressible(Capability.StringTyping)).toBe(false);
+    expect(inexpressibleReason(Capability.StringTyping)).toBeUndefined();
+  });
+
+  it('resolves from the tag the gated outline and the structured scenario carry', () => {
+    expect(capabilityForTag('@string-typing')).toBe(Capability.StringTyping);
+  });
+
+  it('is left out when a suite narrows the default, without needing a deviation', () => {
+    // An untyped backend is the case this exists for, and it must not have to file a deviation to
+    // say so -- the same rule @variants and @standard-reasons follow. Declaring it and recording a
+    // deviation would report a sanctioned choice as a defect.
+    const { declared, undeclared, knownDeviations } = resolveCapabilities(
+      optionsFor({ capabilities: [Capability.Events] }),
+    );
+
+    expect(declared.has(Capability.StringTyping)).toBe(false);
+    expect(undeclared).toContain(Capability.StringTyping);
+    expect(knownDeviations).toEqual([]);
+  });
+
+  it('is accepted by a suite whose backend preserves types', () => {
+    const { declared } = resolveCapabilities(
+      optionsFor({ capabilities: [Capability.Events, Capability.StringTyping] }),
+    );
+
+    expect(declared.has(Capability.StringTyping)).toBe(true);
+  });
+});
+
 describe('the @reinitialization capability', () => {
   // Requirement 2.5.2 says a provider SHOULD revert to its uninitialized state after shutdown, and
   // that "some providers MAY allow reinitialization from this state". Permitted, not required — so
