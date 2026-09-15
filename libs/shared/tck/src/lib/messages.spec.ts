@@ -261,8 +261,8 @@ describe('the results stream', () => {
   });
 
   it('gives every row of a Scenario Outline its own identity', () => {
-    // The eleven rows of errors.feature's type-mismatch matrix share a name -- and share their
-    // expanded name too, because the outline's title has no placeholders in it. The row is
+    // The eight rows of errors.feature's mandatory type-mismatch matrix share a name -- and share
+    // their expanded name too, because the outline's title has no placeholders in it. The row is
     // identified by the AST node the pickle points at, which is the TableRow in the
     // GherkinDocument.
     const matrix = pickles(envelopes).filter(
@@ -270,9 +270,9 @@ describe('the results stream', () => {
         pickle.uri.endsWith('errors.feature') && pickle.name === 'Requesting the wrong type returns the code default',
     );
 
-    expect(matrix).toHaveLength(11);
+    expect(matrix).toHaveLength(8);
     expect(new Set(matrix.map((pickle) => pickle.name)).size).toBe(1);
-    expect(new Set(matrix.map((pickle) => pickle.astNodeIds[1])).size).toBe(11);
+    expect(new Set(matrix.map((pickle) => pickle.astNodeIds[1])).size).toBe(8);
     for (const pickle of matrix) {
       expect(pickle.astNodeIds).toHaveLength(2);
       expect(statusByPickle(envelopes).get(pickle.id)?.status).toBe(TestStepResultStatus.PASSED);
@@ -303,13 +303,10 @@ describe('the results stream', () => {
       ['string-flag', 'Integer', '1'],
       ['string-flag', 'Float', '0.1'],
       ['wrong-flag', 'Boolean', 'false'],
-      ['boolean-flag', 'String', 'fallback'],
       ['boolean-flag', 'Integer', '1'],
       ['boolean-flag', 'Float', '0.1'],
       ['integer-flag', 'Boolean', 'false'],
-      ['integer-flag', 'String', 'fallback'],
       ['float-flag', 'Boolean', 'false'],
-      ['float-flag', 'String', 'fallback'],
     ]);
   });
 
