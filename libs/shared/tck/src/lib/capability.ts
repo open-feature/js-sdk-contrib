@@ -119,6 +119,33 @@ export enum Capability {
   StandardReasons = '@standard-reasons',
 
   /**
+   * Provider reports `TYPE_MISMATCH` for a non-string flag requested through the string accessor.
+   *
+   * Gated for the same reason as {@link NumericCoercion}: the answer depends on the backend rather
+   * than on provider quality, and the specification does not settle it. Every value has a string
+   * representation, so a backend that stores flag values as strings satisfies the string accessor
+   * for every flag and has no mismatch to report — requirement 2.2.3 asks it for the resolved flag
+   * value, and a string is what it holds. The only normative statement anywhere near this is
+   * requirement 1.3.4, a `SHOULD` on the **client** rather than on the provider.
+   *
+   * So a provider over an untyped backend withholds the tag, sees the four scenarios skipped, and
+   * is not thereby non-conformant. That is a declaration decision, not a deviation: nothing is
+   * broken, so a {@link KnownDeviation} against this tag would report a sanctioned choice as a
+   * defect.
+   *
+   * Four scenarios: three scalar rows requesting `boolean-flag`, `integer-flag` and `float-flag` as
+   * `String`, and one that composes with {@link Object} for `object-flag` — a structure serialises
+   * to a string as readily as a scalar does, but a provider with no structured values cannot be
+   * asked the question at all. All four were rows of the mandatory mismatch matrix until Appendix F
+   * moved them behind this tag.
+   *
+   * Unlike {@link NumericCoercion} this **is** expressible here: `getStringDetails` is a distinct
+   * accessor from `getBooleanDetails`, so the question can be put to a provider whatever
+   * JavaScript's numeric type does.
+   */
+  StringTyping = '@string-typing',
+
+  /**
    * Reserved; no scenario carries this tag yet.
    *
    * Reserved means **not declarable**; see {@link RESERVED_CAPABILITIES}.
