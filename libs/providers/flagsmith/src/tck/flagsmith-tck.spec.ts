@@ -44,11 +44,8 @@ runContainerizedProviderTck({
   // rather than defective — 2.2.4 makes the variant a SHOULD and types.md marks the field optional
   // — so it carries no deviation entry.
   //
-  // Capability.DisabledFlags is withheld too, but unlike @variants it is a defect rather than a
-  // permitted absence — see the deviation below. Go and Java both declare it and pass.
-  //
   // StandardReasons and DisabledFlags are declared and both fail: this provider does report a
-  // reason and does handle a disabled flag, and gets both wrong.
+  // reason and does handle a disabled flag, and gets both wrong. Go and Java pass DisabledFlags.
   //
   // Capability.NumericCoercion carries NO deviation here, deliberately, and the TCK refuses one:
   // JavaScript has a single numeric type, so "a float requested as an integer" is not expressible
@@ -90,7 +87,8 @@ runContainerizedProviderTck({
         'claim rather than a failure, but TARGETING_MATCH for an untargeted flag is not defensible ' +
         'on SHOULD grounds -- it is a wrong answer rather than a missing one. The Go Flagsmith ' +
         'provider reports STATIC, DISABLED and TARGETING_MATCH correctly against the identical ' +
-        'backend. Withholding turns ten failures into skips carrying this reason.',
+        'backend. Ten scenarios fail on this, and the capability is declared rather than withheld ' +
+        'so those failures stay in the results.',
     ),
     KnownDeviation.untracked(
       Capability.DisabledFlags,
