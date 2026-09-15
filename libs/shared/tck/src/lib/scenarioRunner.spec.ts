@@ -28,14 +28,20 @@ describe('the capability gate', () => {
 
   it('reaches the example rows of a Scenario Outline, which scenarioNameTemplate does not', () => {
     // The regression this guards. jest-cucumber applies `scenarioNameTemplate` to an outline's own
-    // title and then defines each example row under its *expanded* title instead, so the four
-    // @object rows in errors.feature were being skipped with no reason shown at all.
-    const objectScenarios = plansWithout(Capability.Events).filter((scenario) =>
+    // title and then defines each example row under its *expanded* title instead, so the three
+    // @object rows in errors.feature's scalar-mismatch outline were being skipped with no reason
+    // shown at all.
+    //
+    // @string-typing is declared so that @object is the only capability missing from any of these:
+    // errors.feature's structured-as-JSON-text scenario carries both, and this test is about the
+    // reason reaching an example row rather than about how two reasons compose — which
+    // 'names every capability a scenario is missing' covers instead.
+    const objectScenarios = plansWithout(Capability.Events, Capability.StringTyping).filter((scenario) =>
       scenario.tags.includes(Capability.Object),
     );
 
-    // Two outlines carry @object: four example rows in errors.feature and one scenario in
-    // evaluation.feature.
+    // @object is carried by errors.feature's three scalar-mismatch rows and its structured-as-JSON
+    // scenario, and by one scenario in evaluation.feature.
     expect(objectScenarios.length).toBeGreaterThan(1);
     for (const scenario of objectScenarios) {
       expect(scenario.missing).toContain(Capability.Object);
@@ -46,12 +52,16 @@ describe('the capability gate', () => {
   });
 
   it('plans one entry per example row, not one per outline', () => {
-    // errors.feature's type-mismatch matrix is 11 example rows under one Scenario Outline. A plan
-    // that collapsed them would skip or run ten scenarios without saying so.
+    // errors.feature's mandatory type-mismatch matrix is 8 example rows under one Scenario Outline.
+    // A plan that collapsed them would skip or run seven scenarios without saying so.
+    //
+    // It was 11 until Appendix F moved the three "requested as String" rows behind
+    // @string-typing: an untyped backend satisfies the string accessor for every flag, so those
+    // rows are a capability question rather than a mismatch no backend can satisfy.
     const all = plansWithout(...Object.values(Capability));
     const matrix = all.filter((scenario) => scenario.title === 'Requesting the wrong type returns the code default');
 
-    expect(matrix).toHaveLength(11);
+    expect(matrix).toHaveLength(8);
   });
 
   it('gates one Examples block of an outline without gating the others', () => {
@@ -153,6 +163,35 @@ describe('the capability gate', () => {
       Capability.LargeIntegers,
     ]);
     expect(titled('A large integer resolves without loss of precision')?.missing).toEqual([]);
+  });
+
+  it('gates the four @string-typing scenarios and leaves the rest of the matrix mandatory', () => {
+    // The tag arrived by *narrowing* the mandatory matrix rather than by adding coverage, which is
+    // the shape worth pinning: three rows and one @object scenario moved out of "Requesting the
+    // wrong type returns the code default", and the eight rows left behind must still be mandatory.
+    // A registration that gated the wrong rows would quietly excuse a real mismatch.
+    const gated = plansWithout(Capability.Events).filter((scenario) =>
+      scenario.missing.includes(Capability.StringTyping),
+    );
+
+    expect(gated.map((scenario) => scenario.title).sort()).toEqual([
+      'A non-string flag is not returned as its string representation',
+      'A non-string flag is not returned as its string representation',
+      'A non-string flag is not returned as its string representation',
+      'A structured flag is not returned as its JSON text',
+    ]);
+
+    // The scalar rows are gated on this tag alone; only the structured one composes with @object,
+    // a provider with no structured values having no way to be asked the question at all.
+    const composed = gated.filter((scenario) => scenario.missing.includes(Capability.Object));
+    expect(composed.map((scenario) => scenario.title)).toEqual(['A structured flag is not returned as its JSON text']);
+
+    // And withdrawing it withdraws only the string-accessor claim: every remaining row of the
+    // mismatch matrix is untagged and still runs.
+    const mandatory = plansWithout()
+      .filter((scenario) => !scenario.missing.length)
+      .map((scenario) => scenario.title);
+    expect(mandatory.filter((title) => title === 'Requesting the wrong type returns the code default')).toHaveLength(8);
   });
 
   it('gates every variant assertion on @variants, and gates nothing else on it', () => {
