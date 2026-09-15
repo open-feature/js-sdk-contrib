@@ -60,7 +60,7 @@ runContainerizedProviderTck({
    * Why this provider declares or withholds each capability, on evidence from running the suite.
    * What the rules are is Appendix F, "Rules for declaring"; below is what they decided here.
    *
-   * Five capabilities, the smallest declaration of any provider in this repo, and that is the
+   * Seven capabilities, the smallest declaration of any provider in this repo, and that is the
    * finding: `OFREPProvider` is stateless. Its entire surface is a constructor, `onClose`, and four
    * `resolve*Evaluation` methods that each POST to `/ofrep/v1/evaluate/flags/{key}` —
    * src/lib/ofrep-provider.ts:15-111. There is no `initialize`, no `events` emitter, no `status`,
@@ -111,6 +111,28 @@ runContainerizedProviderTck({
    *   vendor-specific reasons is conformant — 2.2.5 expressly permits "some other string" — so a
    *   run against it would fail these scenarios through no fault of the provider, which is why the
    *   tag is gated rather than the assertions being ungated.
+   * - StringTyping and FullyTypedValues, declared together: the same `typeof` guard that earns
+   *   @object earns both, from the other side. `toResolutionDetails` compares `typeof result.value`
+   *   against `typeof defaultValue` (ofrep-api.ts:249-257), a String request carries a string
+   *   default, and flagd answers boolean-flag with a JSON boolean, float-flag with a JSON number
+   *   and object-flag with a JSON object — so the comparison fails and all four scenarios pass.
+   *   Named rather than counted: the two rows of "A non-string flag is not returned as its string
+   *   representation" (`boolean-flag` and `integer-flag`), "A float flag is not returned as its
+   *   string representation", and "A structured flag is not returned as its JSON text". The typing
+   *   comes out of the wire format rather than out of anything this provider had to add, which is
+   *   why one guard covers all of it.
+   *
+   *   The split between the two tags is a fact about the store, and JSON has a number type and an
+   *   object type as surely as it has a boolean one — so there is nothing here for the split to
+   *   separate and both halves fall to that single guard. **Both are named explicitly because this
+   *   adoption declares by an allow-list**: the capability the split introduced is undeclared here
+   *   until it is written down, so registering it upstream without adding it would have turned the
+   *   float and structured scenarios from passes into skips, with nothing in the results saying a
+   *   question this pair answers had stopped being asked.
+   *
+   *   Like @standard-reasons this stays a claim about the pair: an OFREP server that serialised
+   *   every flag value to a string would fail these four through no fault of the provider, which is
+   *   exactly why Appendix F gates the question instead of making it mandatory.
    *
    * Withheld:
    *
@@ -140,6 +162,8 @@ runContainerizedProviderTck({
     Capability.Targeting,
     Capability.DisabledFlags,
     Capability.StandardReasons,
+    Capability.StringTyping,
+    Capability.FullyTypedValues,
   ],
 
   // The SDK synthesises READY as soon as registration completes, since the provider has no
