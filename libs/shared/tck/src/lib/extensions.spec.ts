@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
-import { featureFiles, resolveExtensionFeatures } from './extensions';
+import { EXTENSION_URI_PREFIX, featureFiles, resolveExtensionFeatures } from './extensions';
 import { loadExtensionFeatures, loadTckFeatures } from './runProviderTck';
 
 /** The canonical feature names, read the same way the harness reads them. */
@@ -169,11 +169,20 @@ describe('loading extension features', () => {
     expect(vendor.parsed.scenarios.map(({ title }) => title)).toContain(
       'A vendor rule resolves through the provider under test',
     );
+    // How a report consumer tells an adopter's scenario from a canonical one: a canonical feature is
+    // named by its path relative to the spec's asset directory, which an extension has no claim to.
+    for (const { pickle } of vendor.messages.planned) {
+      expect(pickle.uri).toBe(`${EXTENSION_URI_PREFIX}/vendor.feature`);
+    }
   });
 
-  it('leaves every canonical feature canonical', () => {
+  it('leaves every canonical feature canonical, named relative to the asset directory', () => {
     for (const feature of loadTckFeatures(undefined)) {
       expect(feature.canonical).toBe(true);
+      // Appendix F's form, asserted literally rather than through a helper: `gherkin/<name>.feature`
+      // and nothing longer. A repository-relative path is what this implementation emitted before,
+      // and it is the reason a consumer could not join these results against another language's.
+      expect(feature.messages.planned[0].pickle.uri).toBe(`gherkin/${feature.feature}.feature`);
     }
   });
 
