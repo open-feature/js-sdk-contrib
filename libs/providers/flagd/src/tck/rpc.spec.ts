@@ -47,6 +47,27 @@ runFlagdTck({
    *   ERROR for the unknown flag and the type mismatch, TARGETING_MATCH for the matching key and
    *   DEFAULT for the miss, DISABLED for the disabled flag. STATIC for a rule-less flag is the row
    *   the specification genuinely leaves open, so it is measured rather than assumed.
+   * - StringTyping and FullyTypedValues, declared together: flagd's flag definitions are typed and
+   *   the RPC resolver reads the type off the evaluation response, so `getStringDetails` on a
+   *   boolean, a number or a structure is a TYPE_MISMATCH rather than that value's string
+   *   representation. All four scenarios pass, and they are named rather than counted: the two rows
+   *   of "A non-string flag is not returned as its string representation" (`boolean-flag` and
+   *   `integer-flag`), "A float flag is not returned as its string representation", and "A
+   *   structured flag is not returned as its JSON text".
+   *
+   *   Worth declaring rather than leaving out, because this is the capability's *other* side: these
+   *   four rows were mandatory until Appendix F moved them, on the grounds that a backend storing
+   *   flag values as strings has no mismatch to report. flagd is not such a backend, and a run that
+   *   left the tag undeclared would say nothing about a property flagd demonstrably has.
+   *
+   *   The two tags are separate because a store can record a boolean and an integer natively while
+   *   keeping a float or a structure as text. A flagd flag definition carries a JSON type for all
+   *   four, so the split has nothing to separate over this backend and both halves are earned by
+   *   the same mechanism. **Both are named explicitly because this adoption declares by an
+   *   allow-list**: a capability that arrives upstream is undeclared here until it is written down,
+   *   so registering @fully-typed-values without adding it would have turned two passing scenarios
+   *   into skips, with nothing in the results saying that a property flagd demonstrably has went
+   *   unasserted.
    *
    * Withheld:
    *
@@ -73,6 +94,8 @@ runFlagdTck({
     Capability.Targeting,
     Capability.DisabledFlags,
     Capability.StandardReasons,
+    Capability.StringTyping,
+    Capability.FullyTypedValues,
   ],
 
   // The RPC resolver asks flagd to resolve each flag, so it is ready as soon as the stream is up.
