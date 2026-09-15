@@ -11,7 +11,7 @@ runFlagdTck({
   resolverType: 'in-process',
 
   /*
-   * The same ten capabilities as the RPC suite, and the identity is the finding rather than a
+   * The same eleven capabilities as the RPC suite, and the identity is the finding rather than a
    * copy-paste: an application switching resolver sees the same values, variants and reasons. Where
    * a reason differs from RPC's, it is recorded here; where it does not, see `rpc.spec.ts`.
    *
@@ -31,6 +31,14 @@ runFlagdTck({
    * - StandardReasons: all nine pass with the reason coming from flagd-core evaluating the synced
    *   ruleset rather than from a response field. An application switching resolver sees the same
    *   reason as well as the same value, which is what makes a reason worth building telemetry on.
+   * - StringTyping and FullyTypedValues: the same four scenarios pass here too, by the in-process
+   *   route — flagd-core reads the type off the synced flag definition rather than off a response
+   *   field, and refuses the string accessor for a non-string flag. The two resolvers agreeing is
+   *   again the finding: a backend whose values were really strings would fail these four whichever
+   *   resolver asked. Both tags, for the reason `rpc.spec.ts` gives at length — a synced flag
+   *   definition types a float and a structure as readily as a boolean, so the split between the
+   *   two tags has nothing to separate over this backend, and an allow-list declaration has to name
+   *   the new half or lose two scenarios to silent skips.
    *
    * Withheld, as in RPC and for the same shape of reason:
    *
@@ -55,6 +63,8 @@ runFlagdTck({
     Capability.Targeting,
     Capability.DisabledFlags,
     Capability.StandardReasons,
+    Capability.StringTyping,
+    Capability.FullyTypedValues,
   ],
 
   // In-process syncs the whole ruleset before reporting ready, so it needs longer than RPC.
