@@ -119,7 +119,8 @@ export enum Capability {
   StandardReasons = '@standard-reasons',
 
   /**
-   * Provider reports `TYPE_MISMATCH` for a non-string flag requested through the string accessor.
+   * Provider reports `TYPE_MISMATCH` for a boolean or integer flag requested through the string
+   * accessor, rather than that value's string representation.
    *
    * Gated for the same reason as {@link NumericCoercion}: the answer depends on the backend rather
    * than on provider quality, and the specification does not settle it. Every value has a string
@@ -128,22 +129,46 @@ export enum Capability {
    * value, and a string is what it holds. The only normative statement anywhere near this is
    * requirement 1.3.4, a `SHOULD` on the **client** rather than on the provider.
    *
-   * So a provider over an untyped backend withholds the tag, sees the four scenarios skipped, and
-   * is not thereby non-conformant. That is a declaration decision, not a deviation: nothing is
-   * broken, so a {@link KnownDeviation} against this tag would report a sanctioned choice as a
-   * defect.
+   * So a provider over an untyped backend withholds the tag, sees its scenarios skipped, and is not
+   * thereby non-conformant. That is a declaration decision, not a deviation: nothing is broken, so
+   * a {@link KnownDeviation} against this tag would report a sanctioned choice as a defect.
    *
-   * Four scenarios: three scalar rows requesting `boolean-flag`, `integer-flag` and `float-flag` as
-   * `String`, and one that composes with {@link Object} for `object-flag` — a structure serialises
-   * to a string as readily as a scalar does, but a provider with no structured values cannot be
-   * asked the question at all. All four were rows of the mandatory mismatch matrix until Appendix F
-   * moved them behind this tag.
+   * **Two scenarios, not four** — one outline with a `boolean-flag` row and an `integer-flag` row.
+   * The float and structured cases moved out to {@link FullyTypedValues}, and that split came out of
+   * measuring this suite against the others rather than out of reading the specification: over one
+   * Flagsmith backend, Go and Java report `TYPE_MISMATCH` for `boolean-flag` and `integer-flag` as
+   * `String` while this SDK's Flagsmith provider returns `"true"` and `"10"`. Under one tag covering
+   * all four, that provider withheld and its own defect was reported as a permitted backend
+   * absence. These two rows are the ones a partially typed store can still answer, so a provider
+   * failing them is failing on its own code.
    *
    * Unlike {@link NumericCoercion} this **is** expressible here: `getStringDetails` is a distinct
    * accessor from `getBooleanDetails`, so the question can be put to a provider whatever
    * JavaScript's numeric type does.
    */
   StringTyping = '@string-typing',
+
+  /**
+   * Backend records a native type for float and structured values too, so {@link StringTyping}'s
+   * question can be put to those as well.
+   *
+   * An ordinary declarable capability, and the finer half of a split {@link StringTyping} describes
+   * the measurement behind. A store can type a boolean and an integer natively and still keep a
+   * float or a structure as text — Flagsmith's `feature_state_value` is exactly that, natively
+   * boolean, integer or string and nothing else — so `float-flag` and `object-flag` requested as
+   * `String` genuinely are strings there and neither request is a mismatch to report.
+   *
+   * Two scenarios: the float one carries this tag alone, and the structured one composes it with
+   * {@link Object}, a provider with no structured values having no way to be asked at all.
+   *
+   * **Declared together with {@link StringTyping} by a fully typed backend, and withheld alone by a
+   * partially typed one.** Withholding it is a declaration decision about the backend and carries no
+   * deviation; declaring {@link StringTyping} and failing it is a defect in the provider, and that
+   * asymmetry is the whole reason the two tags are separate. The general rule Appendix F draws from
+   * it: a capability coarser than the variation providers actually show hides defects inside
+   * permitted absences.
+   */
+  FullyTypedValues = '@fully-typed-values',
 
   /**
    * Reserved; no scenario carries this tag yet.
@@ -237,13 +262,46 @@ export const DECLARABLE_CAPABILITIES: readonly Capability[] = Object.freeze(
 );
 
 /**
- * Maps a Gherkin tag onto the capability it gates, or `undefined` if it gates nothing.
+ * Maps a Gherkin tag onto the capability it gates, or `undefined` if this vocabulary does not know
+ * it.
  *
- * A tag that gates nothing is ignored, which is what lets the canonical feature files carry
- * organisational tags freely.
+ * An unknown tag gates nothing. For a canonical scenario that is a run-integrity failure rather
+ * than something to ignore — see {@link unknownCapabilityTags}.
  */
 export function capabilityForTag(tag: string): Capability | undefined {
   return ALL_CAPABILITIES.find((capability) => capability === tag);
+}
+
+/**
+ * Tags carried by the canonical scenarios that this vocabulary cannot resolve to a capability.
+ *
+ * A non-empty answer means the assets have moved ahead of {@link Capability} — a new capability
+ * arrived upstream and was not registered here. **Appendix F makes failing the run on this a
+ * `MUST`, and it is the easy one to leave out**: an unknown tag gates nothing, so its scenarios stay
+ * *mandatory for every adopter*. A suite that has not learned a new capability does not report a new
+ * capability; it silently goes on demanding the old behaviour. The symptom is a provider that
+ * legitimately withholds the new tag showing unexplained failures while every other provider stays
+ * green, with nothing in the results saying why.
+ *
+ * Measured here rather than assumed: registering `@fully-typed-values` was preceded by a run at the
+ * new revision with the enum untouched, in which the newly split float scenario ran for every
+ * in-repository suite and *passed*, those backends being fully typed. Nothing failed and nothing
+ * was reported — the hole is silent exactly until it reaches the one adoption the tag exists for.
+ *
+ * This is {@link expiredReservations}' own direction reversed: that one catches a tag this library
+ * still calls reserved after a scenario for it arrived, this one catches a tag it does not know at
+ * all. Both are checked against the features that actually ran, because both facts are decided
+ * upstream.
+ *
+ * **Canonical scenarios only**, for the reason {@link expiredReservations} is canonical-only: an
+ * adopter's extension feature is that adopter's own file, and an organisational tag in it is not
+ * news about the specification. Every tag in the canonical set is a capability tag, so the rule can
+ * be this strict there and no looser test could tell an unregistered capability from a label.
+ */
+export function unknownCapabilityTags(tags: Iterable<string>): string[] {
+  return Array.from(new Set(tags))
+    .filter((tag) => capabilityForTag(tag) === undefined)
+    .sort();
 }
 
 /**
