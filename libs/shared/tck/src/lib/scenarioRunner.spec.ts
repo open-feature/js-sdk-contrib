@@ -32,13 +32,15 @@ describe('the capability gate', () => {
     // @object rows in errors.feature's scalar-mismatch outline were being skipped with no reason
     // shown at all.
     //
-    // @string-typing is declared so that @object is the only capability missing from any of these:
-    // errors.feature's structured-as-JSON-text scenario carries both, and this test is about the
-    // reason reaching an example row rather than about how two reasons compose — which
-    // 'names every capability a scenario is missing' covers instead.
-    const objectScenarios = plansWithout(Capability.Events, Capability.StringTyping).filter((scenario) =>
-      scenario.tags.includes(Capability.Object),
-    );
+    // @string-typing and @fully-typed-values are declared so that @object is the only capability
+    // missing from any of these: errors.feature's structured-as-JSON-text scenario carries all
+    // three, and this test is about the reason reaching an example row rather than about how
+    // several reasons compose — which 'names every capability a scenario is missing' covers instead.
+    const objectScenarios = plansWithout(
+      Capability.Events,
+      Capability.StringTyping,
+      Capability.FullyTypedValues,
+    ).filter((scenario) => scenario.tags.includes(Capability.Object));
 
     // @object is carried by errors.feature's three scalar-mismatch rows and its structured-as-JSON
     // scenario, and by one scenario in evaluation.feature.
@@ -165,23 +167,27 @@ describe('the capability gate', () => {
     expect(titled('A large integer resolves without loss of precision')?.missing).toEqual([]);
   });
 
-  it('gates the four @string-typing scenarios and leaves the rest of the matrix mandatory', () => {
+  it('gates the four string-accessor scenarios and leaves the rest of the matrix mandatory', () => {
     // The tag arrived by *narrowing* the mandatory matrix rather than by adding coverage, which is
     // the shape worth pinning: three rows and one @object scenario moved out of "Requesting the
     // wrong type returns the code default", and the eight rows left behind must still be mandatory.
     // A registration that gated the wrong rows would quietly excuse a real mismatch.
+    //
+    // All four still carry @string-typing after the split — @fully-typed-values narrows two of them
+    // further rather than taking them away, so a provider withholding both sees all four skipped
+    // exactly as it did before.
     const gated = plansWithout(Capability.Events).filter((scenario) =>
       scenario.missing.includes(Capability.StringTyping),
     );
 
     expect(gated.map((scenario) => scenario.title).sort()).toEqual([
-      'A non-string flag is not returned as its string representation',
+      'A float flag is not returned as its string representation',
       'A non-string flag is not returned as its string representation',
       'A non-string flag is not returned as its string representation',
       'A structured flag is not returned as its JSON text',
     ]);
 
-    // The scalar rows are gated on this tag alone; only the structured one composes with @object,
+    // The outline rows are gated on this tag alone; only the structured one composes with @object,
     // a provider with no structured values having no way to be asked the question at all.
     const composed = gated.filter((scenario) => scenario.missing.includes(Capability.Object));
     expect(composed.map((scenario) => scenario.title)).toEqual(['A structured flag is not returned as its JSON text']);
@@ -192,6 +198,32 @@ describe('the capability gate', () => {
       .filter((scenario) => !scenario.missing.length)
       .map((scenario) => scenario.title);
     expect(mandatory.filter((title) => title === 'Requesting the wrong type returns the code default')).toHaveLength(8);
+  });
+
+  it('splits the float and structured cases onto @fully-typed-values, and the two outline rows not', () => {
+    // The split this suite exists to make measurable, and the asymmetry is the whole point: a
+    // partially typed backend declares @string-typing and withholds @fully-typed-values, so the
+    // boolean and integer rows must *run* for it while the float and structured ones skip. A
+    // registration that put the outline behind both tags would restore the coarse gate the split
+    // removed, and a provider's own stringification defect would go back to reading as a permitted
+    // backend absence.
+    const declaredStringTypingOnly = plansWithout(Capability.Events, Capability.Object, Capability.StringTyping);
+
+    const gated = declaredStringTypingOnly.filter((scenario) => scenario.missing.includes(Capability.FullyTypedValues));
+    expect(gated.map((scenario) => scenario.title).sort()).toEqual([
+      'A float flag is not returned as its string representation',
+      'A structured flag is not returned as its JSON text',
+    ]);
+
+    // The two rows a partially typed store can still answer, which must be left running. These are
+    // the rows the JavaScript Flagsmith provider fails on its own code rather than on its backend,
+    // and keeping them ungated here is what keeps that failure in the results.
+    const running = declaredStringTypingOnly
+      .filter((scenario) => !scenario.missing.length)
+      .map((scenario) => scenario.title);
+    expect(
+      running.filter((title) => title === 'A non-string flag is not returned as its string representation'),
+    ).toHaveLength(2);
   });
 
   it('gates every variant assertion on @variants, and gates nothing else on it', () => {

@@ -139,7 +139,8 @@ declares what it supports (each name below is a member of `Capability`):
 | `LargeIntegers`       | `@large-integers`       | resolves integers up to 2^53 − 1 exactly                     |
 | `Targeting`           | `@targeting`            | resolves differently for a matching evaluation context       |
 | `StandardReasons`     | `@standard-reasons`     | uses the standard reasons with the standard meanings         |
-| `StringTyping`        | `@string-typing`        | a non-string flag through the string accessor is a mismatch  |
+| `StringTyping`        | `@string-typing`        | a boolean or integer flag as a string is a mismatch          |
+| `FullyTypedValues`    | `@fully-typed-values`   | the backend types floats and structures natively too         |
 | `NumericCoercion`     | `@numeric-coercion`     | **not declarable here** — [see below](#javascript-notes)     |
 | `Caching`             | `@caching`              | reserved; **not declarable** — no scenarios yet              |
 
@@ -163,6 +164,16 @@ reader has to tell them apart:
 | this SDK cannot **express** it                | `@numeric-coercion` — one numeric type          | this library, refused | until the Evaluation API |
 
 Only the first two are yours to state, and only the first says anything about the provider's design.
+
+**`@string-typing` and `@fully-typed-values` are a pair, and the point of the pair is that you can
+declare one and withhold the other.** A backend that records a boolean and an integer natively but
+keeps floats and structures as text — Flagsmith's `feature_state_value` is exactly that — declares
+`@string-typing` and withholds `@fully-typed-values`. The two rows it can answer then run, and a
+provider that stringifies them anyway fails in the results where it belongs; the two rows its store
+genuinely cannot answer skip as a permitted absence. A fully typed backend declares both. One tag
+over all four cases hid a real provider defect inside the permitted absence, which is why Appendix F
+split them, and the general rule it drew from that is worth carrying: **a capability coarser than
+the variation providers actually show will hide defects inside permitted absences.**
 
 ### `knownDeviations`
 

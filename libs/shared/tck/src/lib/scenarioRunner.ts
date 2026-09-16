@@ -39,8 +39,10 @@ export function planScenarios(parsed: ParsedFeature, declared: ReadonlySet<Capab
 
     for (const tag of tags) {
       const capability = capabilityForTag(tag);
-      // A tag that gates nothing is ignored, which is what lets the canonical feature files carry
-      // organisational tags freely.
+      // A tag this vocabulary does not know gates nothing, so it cannot make a scenario skip. For a
+      // canonical scenario that is a run-integrity failure rather than something to ignore, and the
+      // harness raises it from the planned tags -- see `unknownCapabilityTags`. Planning stays
+      // total either way, so the failure names every offending tag at once instead of the first.
       if (capability && !declared.has(capability)) {
         missing.push(capability);
       }
