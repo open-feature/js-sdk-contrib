@@ -78,7 +78,15 @@
       "options": {
         "jestConfig": "libs/providers/flagsmith/src/tck/jest.config.ts",
         "parallel": false
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": [
+            "tck"
+          ],
+          "target": "pullSpec"
+        }
+      ]
     }
   }
 }
