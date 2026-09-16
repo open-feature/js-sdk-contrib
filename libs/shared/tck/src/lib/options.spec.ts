@@ -9,6 +9,7 @@ import {
   inexpressibleReason,
   isInexpressible,
   isReserved,
+  unknownCapabilityTags,
 } from './capability';
 import type { BackendControl } from './control';
 import { KnownDeviation } from './deviation';
@@ -70,6 +71,43 @@ describe('the reserved capabilities', () => {
     // Deduplicated, since the tags come from every scenario of every executed feature and a tag
     // carried twice is not two expiries.
     expect(expiredReservations([Capability.Caching, Capability.Caching])).toEqual([Capability.Caching]);
+  });
+});
+
+describe('a canonical tag this vocabulary does not know', () => {
+  // Appendix F's third run-integrity MUST, and the one it says is easy to leave out -- all four
+  // reference implementations ignored an unknown tag rather than failing. The failure mode is the
+  // reason: an unknown tag gates nothing, so its scenarios stay *mandatory for every adopter*, and a
+  // suite that has not learned a new capability silently goes on demanding the old behaviour.
+  it('is detected, because an unknown tag gates nothing and so stays mandatory', () => {
+    expect(unknownCapabilityTags(['@events', '@object'])).toEqual([]);
+    expect(unknownCapabilityTags(['@events', '@not-a-capability'])).toEqual(['@not-a-capability']);
+  });
+
+  it('includes reserved and inexpressible tags in what it considers known', () => {
+    // Both kinds are in the vocabulary and both gate their scenarios -- an inexpressible tag has to
+    // be recognised precisely so its scenarios can be skipped with their reason. Calling either
+    // unknown would fail every run in this package.
+    expect(unknownCapabilityTags([...RESERVED_CAPABILITIES, ...Object.keys(INEXPRESSIBLE_CAPABILITIES)])).toEqual([]);
+    expect(unknownCapabilityTags(ALL_CAPABILITIES)).toEqual([]);
+  });
+
+  it('reports every offending tag once, sorted, rather than the first one found', () => {
+    // The tags arrive from every scenario of every executed feature, so a tag carried by four rows
+    // is one problem. Sorted so the message is stable enough to assert on.
+    expect(unknownCapabilityTags(['@zeta', '@alpha', '@zeta'])).toEqual(['@alpha', '@zeta']);
+  });
+
+  it('knows @fully-typed-values, the capability that motivated the check', () => {
+    // Registered when the split landed. Before it was, the newly separated float scenario ran for
+    // every suite in this package and passed -- those backends being fully typed -- so nothing
+    // failed and nothing was reported. The hole is silent until it reaches the adoption whose
+    // backend types a boolean but not a float, which then sees unexplained failures.
+    expect(unknownCapabilityTags([Capability.FullyTypedValues])).toEqual([]);
+    expect(capabilityForTag('@fully-typed-values')).toBe(Capability.FullyTypedValues);
+    expect(DECLARABLE_CAPABILITIES).toContain(Capability.FullyTypedValues);
+    expect(isReserved(Capability.FullyTypedValues)).toBe(false);
+    expect(isInexpressible(Capability.FullyTypedValues)).toBe(false);
   });
 });
 
@@ -267,8 +305,11 @@ describe('the @string-typing capability', () => {
   // The only normative statement near this is requirement 1.3.4, a SHOULD on the *client* rather
   // than on the provider. A backend that stores flag values as strings satisfies the string
   // accessor for every flag and has no mismatch to report, and requirement 2.2.3 asks it for the
-  // resolved flag value -- which is what it returned. So the four scenarios are a capability
-  // question rather than a conformance one, and withholding the tag is a declaration decision.
+  // resolved flag value -- which is what it returned. So the scenarios are a capability question
+  // rather than a conformance one, and withholding the tag is a declaration decision.
+  //
+  // It gates two rows since the split: the boolean and integer ones a partially typed store can
+  // still answer. The float and structured cases are @fully-typed-values' -- see below.
   it('is declarable, unlike @numeric-coercion, the string accessor being its own accessor', () => {
     // The contrast worth pinning. Both gate a question the specification leaves open, and only one
     // of them is inexpressible here: JavaScript collapses integer and float onto one accessor, but
@@ -303,6 +344,39 @@ describe('the @string-typing capability', () => {
     );
 
     expect(declared.has(Capability.StringTyping)).toBe(true);
+  });
+});
+
+describe('the @fully-typed-values capability', () => {
+  // The finer half of the split, and the asymmetry between the two halves is what it exists for: a
+  // partially typed store withholds this one as a permitted absence while declaring @string-typing
+  // and failing it, which is a defect in the provider. One tag covering both could express only the
+  // absence, so the defect was being reported as sanctioned.
+  it('composes with @string-typing rather than replacing it, and both are ordinary declarations', () => {
+    const { declared, undeclared, knownDeviations } = resolveCapabilities(
+      optionsFor({ capabilities: [Capability.StringTyping] }),
+    );
+
+    // The shape the Flagsmith adoption takes: the coarse claim declared, the fine one withheld, and
+    // no deviation owed for the withholding itself.
+    expect(declared.has(Capability.StringTyping)).toBe(true);
+    expect(declared.has(Capability.FullyTypedValues)).toBe(false);
+    expect(undeclared).toContain(Capability.FullyTypedValues);
+    expect(undeclared).not.toContain(Capability.StringTyping);
+    expect(knownDeviations).toEqual([]);
+  });
+
+  it('is in the default declaration, so "declare everything" includes it', () => {
+    // DECLARABLE_CAPABILITIES is what TckOptions.capabilities defaults to. A new capability missing
+    // from it would be withheld by every adoption that never named a set, which is the quiet
+    // opposite of the hole the unknown-tag check closes. Asserted on the list rather than through
+    // resolveCapabilities, which the default set cannot reach without a newUnavailableProvider.
+    const { declared } = resolveCapabilities(
+      optionsFor({ capabilities: [Capability.StringTyping, Capability.FullyTypedValues] }),
+    );
+
+    expect(DECLARABLE_CAPABILITIES).toContain(Capability.FullyTypedValues);
+    expect(declared.has(Capability.FullyTypedValues)).toBe(true);
   });
 });
 
