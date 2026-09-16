@@ -75,6 +75,7 @@ runProviderTck({
     Capability.LargeIntegers,
     Capability.StandardReasons,
     Capability.StringTyping,
+    Capability.FullyTypedValues,
   ],
 
   /*

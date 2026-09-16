@@ -3,7 +3,7 @@ import type { StepDefinitions } from 'jest-cucumber';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import { OpenFeature } from '@openfeature/server-sdk';
 import { resolveAssetDir } from './assets';
-import { expiredReservations } from './capability';
+import { expiredReservations, unknownCapabilityTags } from './capability';
 import { featureFiles, resolveExtensionFeatures } from './extensions';
 import type { TckOptions } from './options';
 import { eventTimeout, readyTimeout, resolveCapabilities } from './options';
@@ -156,9 +156,34 @@ export function runProviderTck(options: TckOptions): void {
   // written would otherwise go on making a testable capability undeclarable -- the opposite mistake,
   // and just as quiet. Only the canonical set can expire a reservation: an adopter's own feature
   // reaching for a reserved tag is a mistake in that file, not news about the specification.
-  const expired = expiredReservations(
-    plans.flatMap((plan, position) => (features[position].canonical ? plan.flatMap((scenario) => scenario.tags) : [])),
+  const canonicalTags = plans.flatMap((plan, position) =>
+    features[position].canonical ? plan.flatMap((scenario) => scenario.tags) : [],
   );
+
+  // The same fact as the reservation check below, from the other end, and the one Appendix F says is
+  // easy to leave out: a canonical tag this library's vocabulary does not know. It gates nothing, so
+  // its scenarios stay mandatory for every adopter -- a suite that has not learned a new capability
+  // does not report a new capability, it silently goes on demanding the old behaviour. Measured
+  // before it was written: at the revision that split @string-typing, with the enum untouched, the
+  // new @fully-typed-values float scenario ran for every suite in this repository and passed, those
+  // backends being fully typed. Nothing failed here at all -- the hole only bites the adoption that
+  // legitimately withholds the tag, which sees unexplained failures while everyone else stays green.
+  //
+  // Checked here rather than only in this library's own tests, because Appendix F requires the
+  // integrity checks to be in force *where the scenarios execute*: an adopter runs the canonical set
+  // from its own build, and a guarantee that holds only in `nx test tck` does not cover that run.
+  const unknown = unknownCapabilityTags(canonicalTags);
+  if (unknown.length) {
+    throw new Error(
+      `tck [${options.name}]: the canonical feature files carry ${unknown.join(' ')}, which this ` +
+        `library's Capability vocabulary does not know, so nothing gates those scenarios and they ` +
+        `are mandatory for every adopter. Register the capability in Capability -- the assets have ` +
+        `moved ahead of this library. Every tag in the canonical set is a capability tag, so an ` +
+        `unrecognised one is never merely organisational.`,
+    );
+  }
+
+  const expired = expiredReservations(canonicalTags);
   if (expired.length) {
     throw new Error(
       `tck [${options.name}]: ${expired.join(' ')} is reserved here, but the executed ` +
