@@ -371,6 +371,25 @@ impossible to run _past_, not impossible to have. The failure it exists to stop 
 before the edge existed — a rebase moved the gitlink, the working tree stayed on the previous pin,
 and the suite ran anyway, reporting byte-identical numbers against the wrong assets.
 
+**The edge has to be on every target that executes scenarios, not only on this library's.** It was
+missing from the Flagsmith adoption's `tck` target while flagd's and OFREP's had it, so that suite
+could run against whatever the submodule happened to hold and name whatever `revision.ts` happened
+to say. Appendix F now states this as a `MUST`: the revision check belongs where the scenarios
+execute, not only in the TCK implementation's own tests.
+
+**Two things here still decline rather than fail, and both are recorded rather than fixed.**
+`write-revision.js` returns without writing — and exits zero — when git is absent, when the
+submodule is not checked out, or when git resolves some other repository; it then keeps the
+committed revision, which is the right call for a source tree with no git metadata and the wrong one
+for a linked worktree, where the answer it keeps can be a commit the assets on disk are not from.
+And nothing compares the assets against the pin at run time at all: the closest guard is
+[`scenarioRunner.spec.ts`](./src/lib/scenarioRunner.spec.ts)' "a canonical scenario for every
+declarable capability", which catches a stale asset set only from `nx test tck` — the implementation's
+own suite, not an adopter's run. What _is_ in force at execution time is the pair of vocabulary
+checks in [`runProviderTck.ts`](./src/lib/runProviderTck.ts): a canonical tag this library does not
+know fails the run, and so does a reserved tag a canonical scenario has started carrying. Those
+catch assets that moved **ahead** of the vocabulary; neither catches assets that lag behind it.
+
 ## Known gaps
 
 [Appendix F][appendix-f] carries the suite's gaps — context passthrough beyond the targeting key,
