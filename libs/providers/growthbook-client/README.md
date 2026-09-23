@@ -35,6 +35,29 @@ const initOptions: InitOptions = {
 OpenFeature.setProvider(new GrowthbookClientProvider(gbContext, initOptions));
 ```
 
+### Evaluation reasons
+
+GrowthBook's evaluation `source` is mapped onto the standard OpenFeature reasons,
+and the raw source is kept in flag metadata:
+
+| GrowthBook source        | OpenFeature reason | Error code       |
+| ------------------------ | ------------------ | ---------------- |
+| `experiment`             | `SPLIT`            |                  |
+| `force`                  | `TARGETING_MATCH`  |                  |
+| `override`               | `STATIC`           |                  |
+| `prerequisite` (blocked) | `DEFAULT`          |                  |
+| `defaultValue`           | `DEFAULT`          |                  |
+| `unknownFeature`         | `ERROR`            | `FLAG_NOT_FOUND` |
+| `cyclicPrerequisite`     | `ERROR`            | `PARSE_ERROR`    |
+
+The `force` mapping is lossy by necessity: GrowthBook reports `force` for forced rules whether or not the rule carried conditions or rollout coverage, and the result does not include the rule definition. Consumers needing the distinction can read `flagMetadata.source` and the rule id. A prerequisite-blocked feature returns the caller's default value, which is why it reports `DEFAULT` rather than an error.
+
+```typescript
+const details = await client.getBooleanDetails('my-flag', false, context);
+details.reason; // 'SPLIT'
+details.flagMetadata.source; // 'experiment'
+```
+
 ## Building
 
 Run `nx package providers-growthbook-client` to build the library.
