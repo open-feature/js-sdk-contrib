@@ -35,6 +35,7 @@
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.205.0",
     "@opentelemetry/semantic-conventions": "^1.37.0",
+    "@optimizely/optimizely-sdk": "^6.6.0",
     "@protobuf-ts/grpc-transport": "^2.9.0",
     "@protobuf-ts/runtime-rpc": "^2.9.0",
     "@swc/helpers": "0.5.21",
