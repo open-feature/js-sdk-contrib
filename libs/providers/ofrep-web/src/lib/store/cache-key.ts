@@ -2,13 +2,7 @@ import type { OFREPProviderBaseOptions } from '@openfeature/ofrep-core';
 import type { EvaluationContext } from '@openfeature/web-sdk';
 
 /** Header names treated as auth credentials for cache key derivation (matched case-insensitively). */
-const AUTH_HEADER_NAMES = new Set([
-  'authorization',
-  'api-key',
-  'x-api-key',
-  'x-auth-token',
-  'x-access-token',
-]);
+const AUTH_HEADER_NAMES = new Set(['authorization', 'api-key', 'x-api-key', 'x-auth-token', 'x-access-token']);
 
 export type CacheKeyGeneratorInput = {
   url: string;
