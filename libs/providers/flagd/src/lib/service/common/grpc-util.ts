@@ -40,6 +40,10 @@ export const createChannelCredentials = (tls: boolean, certPath?: string): Chann
   return credentials.createSsl();
 };
 
+// Use supplied credentials before credentials from the TLS options.
+export const getChannelCredentials = (config: Config): ChannelCredentials =>
+  config.channelCredentials ?? createChannelCredentials(config.tls, config.certPath);
+
 /**
  * Mapping of configuration options to gRPC client options.
  */

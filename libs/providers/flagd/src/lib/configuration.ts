@@ -1,4 +1,5 @@
 import { DEFAULT_MAX_BACKOFF_MS, DEFAULT_MAX_CACHE_SIZE, DEFAULT_RETRY_GRACE_PERIOD } from './constants';
+import type { ChannelCredentials } from '@grpc/grpc-js';
 import type { EvaluationContext } from '@openfeature/server-sdk';
 
 export type CacheOption = 'lru' | 'disabled';
@@ -46,6 +47,9 @@ export interface Config {
    * @example "/etc/cert/ca.crt"
    */
   certPath?: string;
+
+  // Supplied gRPC credentials take precedence over tls and certPath.
+  channelCredentials?: ChannelCredentials;
 
   /**
    * Resolver type to use by the provider.

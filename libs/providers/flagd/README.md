@@ -27,24 +27,25 @@ Options can be defined in the constructor or as environment variables. Construct
 
 ### Available Configuration Options
 
-| Option name           | Environment variable name      | Type     | Default                                                        | Supported values                             |
-| --------------------- | ------------------------------ | -------- | -------------------------------------------------------------- | -------------------------------------------- |
-| host                  | FLAGD_HOST                     | string   | localhost                                                      |                                              |
-| port                  | FLAGD_PORT                     | number   | [resolver specific defaults](#resolver-type-specific-defaults) |                                              |
-| tls                   | FLAGD_TLS                      | boolean  | false                                                          |                                              |
-| socketPath            | FLAGD_SOCKET_PATH              | string   | -                                                              |                                              |
-| certPath              | FLAGD_SERVER_CERT_PATH         | string   | -                                                              |                                              |
-| resolverType          | FLAGD_RESOLVER                 | string   | rpc                                                            | rpc, in-process                              |
-| offlineFlagSourcePath | FLAGD_OFFLINE_FLAG_SOURCE_PATH | string   | -                                                              |                                              |
-| selector              | FLAGD_SOURCE_SELECTOR          | string   | -                                                              | rpc & in-process (see [Selector](#selector)) |
-| cache                 | FLAGD_CACHE                    | string   | lru                                                            | lru, disabled                                |
-| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | int      | 1000                                                           |                                              |
-| defaultAuthority      | FLAGD_DEFAULT_AUTHORITY        | string   | -                                                              | rpc, in-process                              |
-| keepAliveTime         | FLAGD_KEEP_ALIVE_TIME_MS       | number   | 0                                                              | rpc, in-process                              |
-| retryBackoffMs        | FLAGD_RETRY_BACKOFF_MS         | int      | 1000                                                           | in-process                                   |
-| retryBackoffMaxMs     | FLAGD_RETRY_BACKOFF_MAX_MS     | int      | 120000                                                         | in-process                                   |
-| retryGracePeriod      | FLAGD_RETRY_GRACE_PERIOD       | int      | 5                                                              |                                              |
-| fatalStatusCodes      | FLAGD_FATAL_STATUS_CODES       | string[] | -                                                              |                                              |
+| Option name           | Environment variable name      | Type               | Default                                                        | Supported values                             |
+| --------------------- | ------------------------------ | ------------------ | -------------------------------------------------------------- | -------------------------------------------- |
+| host                  | FLAGD_HOST                     | string             | localhost                                                      |                                              |
+| port                  | FLAGD_PORT                     | number             | [resolver specific defaults](#resolver-type-specific-defaults) |                                              |
+| tls                   | FLAGD_TLS                      | boolean            | false                                                          |                                              |
+| socketPath            | FLAGD_SOCKET_PATH              | string             | -                                                              |                                              |
+| certPath              | FLAGD_SERVER_CERT_PATH         | string             | -                                                              |                                              |
+| channelCredentials    | -                              | ChannelCredentials | -                                                              | rpc, in-process; overrides tls and certPath  |
+| resolverType          | FLAGD_RESOLVER                 | string             | rpc                                                            | rpc, in-process                              |
+| offlineFlagSourcePath | FLAGD_OFFLINE_FLAG_SOURCE_PATH | string             | -                                                              |                                              |
+| selector              | FLAGD_SOURCE_SELECTOR          | string             | -                                                              | rpc & in-process (see [Selector](#selector)) |
+| cache                 | FLAGD_CACHE                    | string             | lru                                                            | lru, disabled                                |
+| maxCacheSize          | FLAGD_MAX_CACHE_SIZE           | int                | 1000                                                           |                                              |
+| defaultAuthority      | FLAGD_DEFAULT_AUTHORITY        | string             | -                                                              | rpc, in-process                              |
+| keepAliveTime         | FLAGD_KEEP_ALIVE_TIME_MS       | number             | 0                                                              | rpc, in-process                              |
+| retryBackoffMs        | FLAGD_RETRY_BACKOFF_MS         | int                | 1000                                                           | in-process                                   |
+| retryBackoffMaxMs     | FLAGD_RETRY_BACKOFF_MAX_MS     | int                | 120000                                                         | in-process                                   |
+| retryGracePeriod      | FLAGD_RETRY_GRACE_PERIOD       | int                | 5                                                              |                                              |
+| fatalStatusCodes      | FLAGD_FATAL_STATUS_CODES       | string[]           | -                                                              |                                              |
 
 > [!NOTE]
 > The `selector` option automatically uses the `flagd-selector` header (the preferred approach per [flagd#1814](https://github.com/open-feature/flagd/issues/1814)) while maintaining backward compatibility with older flagd versions. See [Selector](#selector) for details.
@@ -68,6 +69,21 @@ OpenFeature.setProvider(new FlagdProvider());
 ```
 
 In the above example, the provider expects flagd to be available at `localhost:8013` (default host and port).
+
+Use `channelCredentials` to supply custom gRPC credentials, such as mutual TLS (mTLS) credentials. This option takes precedence over `tls` and `certPath`. Create a new provider when you need to replace the credentials.
+
+```ts
+import { credentials } from '@grpc/grpc-js';
+import { readFileSync } from 'node:fs';
+
+const channelCredentials = credentials.createSsl(
+  readFileSync('/etc/cert/ca.crt'),
+  readFileSync('/etc/cert/client.key'),
+  readFileSync('/etc/cert/client.crt'),
+);
+
+OpenFeature.setProvider(new FlagdProvider({ channelCredentials }));
+```
 
 Alternatively, you can use socket paths to connect to flagd.
 
