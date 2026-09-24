@@ -37,8 +37,8 @@ import { FlagdProvider } from '../../flagd-provider';
 import {
   buildClientOptions,
   closeStreamIfDefined,
-  createChannelCredentials,
   createFatalStatusCodesSet,
+  getChannelCredentials,
   handleFatalStatusCodeError,
   isFatalStatusCodeError,
 } from '../common';
@@ -98,9 +98,9 @@ export class GRPCService implements Service {
     client?: ServiceClient,
     private logger?: Logger,
   ) {
-    const { host, port, tls, socketPath, certPath } = config;
+    const { host, port, socketPath } = config;
     const clientOptions = buildClientOptions(config);
-    const channelCredentials = createChannelCredentials(tls, certPath);
+    const channelCredentials = getChannelCredentials(config);
 
     this._maxBackoffMs = config.retryBackoffMaxMs || DEFAULT_MAX_BACKOFF_MS;
     this._client = client
