@@ -1,8 +1,22 @@
 import fetchMock from 'fetch-mock-jest';
 import { GoffApiController } from './goff-api';
-import type { GoFeatureFlagWebProviderOptions } from '../model';
+import type { FeatureEvent, GoFeatureFlagWebProviderOptions } from '../model';
 
 describe('Collect Data API', () => {
+  const events: FeatureEvent<boolean>[] = [
+    {
+      key: 'flagKey',
+      contextKind: 'user',
+      creationDate: 1733138237486,
+      default: false,
+      kind: 'feature',
+      userKey: 'toto',
+      value: true,
+      variation: 'varA',
+    },
+  ];
+  const metadata = { provider: 'open-feature-js-sdk' };
+
   beforeEach(() => {
     fetchMock.mockClear();
     fetchMock.mockReset();
@@ -110,6 +124,59 @@ describe('Collect Data API', () => {
         meta: { provider: 'open-feature-js-sdk' },
       }),
     );
+  });
+
+  it.each([
+    ['not configured', undefined],
+    ['zero', 0],
+  ])('should not schedule a timeout when apiTimeout is %s', async (_, apiTimeout) => {
+    fetchMock.post('https://gofeatureflag.org/v1/data/collector', 200);
+    const setTimeoutSpy = jest.spyOn(globalThis, 'setTimeout');
+    const options: GoFeatureFlagWebProviderOptions = {
+      endpoint: 'https://gofeatureflag.org',
+      apiTimeout,
+    };
+    const goff = new GoffApiController(options);
+
+    await goff.collectData(events, metadata);
+
+    expect(setTimeoutSpy).not.toHaveBeenCalled();
+    setTimeoutSpy.mockRestore();
+  });
+
+  it('should schedule and clear a configured apiTimeout', async () => {
+    fetchMock.post('https://gofeatureflag.org/v1/data/collector', 200);
+    const setTimeoutSpy = jest.spyOn(globalThis, 'setTimeout');
+    const clearTimeoutSpy = jest.spyOn(globalThis, 'clearTimeout');
+    const options: GoFeatureFlagWebProviderOptions = {
+      endpoint: 'https://gofeatureflag.org',
+      apiTimeout: 1000,
+    };
+    const goff = new GoffApiController(options);
+
+    await goff.collectData(events, metadata);
+
+    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), options.apiTimeout);
+    expect(clearTimeoutSpy).toHaveBeenCalledWith(setTimeoutSpy.mock.results[0].value);
+    setTimeoutSpy.mockRestore();
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it('should clear a configured apiTimeout when the request fails', async () => {
+    fetchMock.post('https://gofeatureflag.org/v1/data/collector', { throws: new Error('network error') });
+    const setTimeoutSpy = jest.spyOn(globalThis, 'setTimeout');
+    const clearTimeoutSpy = jest.spyOn(globalThis, 'clearTimeout');
+    const options: GoFeatureFlagWebProviderOptions = {
+      endpoint: 'https://gofeatureflag.org',
+      apiTimeout: 1000,
+    };
+    const goff = new GoffApiController(options);
+
+    await expect(goff.collectData(events, metadata)).rejects.toThrow('impossible to send the data to the collector');
+
+    expect(clearTimeoutSpy).toHaveBeenCalledWith(setTimeoutSpy.mock.results[0].value);
+    setTimeoutSpy.mockRestore();
+    clearTimeoutSpy.mockRestore();
   });
 
   it('should call the API to collect data with endpoint path', async () => {

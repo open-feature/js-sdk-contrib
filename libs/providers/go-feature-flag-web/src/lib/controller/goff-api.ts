@@ -48,6 +48,7 @@ export class GoffApiController {
       ? endpointURL.pathname + dataCollectorPath
       : endpointURL.pathname + '/' + dataCollectorPath;
 
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
@@ -63,20 +64,25 @@ export class GoffApiController {
       }
 
       const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), this.timeout ?? 10000);
+      if (this.timeout > 0) {
+        timeoutId = setTimeout(() => controller.abort(), this.timeout);
+      }
       const response = await fetch(endpointURL.toString(), {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(request),
         signal: controller.signal,
       });
-      clearTimeout(id);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (e) {
       throw new CollectorError(`impossible to send the data to the collector: ${e}`);
+    } finally {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 }
