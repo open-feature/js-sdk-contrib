@@ -70,6 +70,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
       eventPublisher.addEvent(mockEvent);
 
@@ -121,6 +122,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
 
       // Start the publisher first
@@ -144,6 +146,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
 
       eventPublisher.addEvent(mockEvent);
@@ -178,6 +181,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
 
       // Add events up to the max pending limit
@@ -205,6 +209,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
 
       const publisherWithLogger = new EventPublisher(mockApi, mockOptions, mockLogger);
@@ -223,6 +228,142 @@ describe('EventPublisher', () => {
       await eventPublisher.stop();
 
       expect(mockApi.sendEventToDataCollector).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('buffer robustness', () => {
+    /** Reads the internal buffer: the cap constrains what is *held*, not what is sent. */
+    const bufferOf = (publisher: EventPublisher) => (publisher as unknown as { events: FeatureEvent[] }).events;
+
+    const eventNamed = (key: string): FeatureEvent => ({
+      kind: 'feature',
+      creationDate: 1,
+      contextKind: 'user',
+      key,
+      userKey: 'test-user',
+      default: false,
+      variation: 'test-variation',
+      source: 'INPROCESS',
+    });
+
+    const keysOfBatch = (call: number) =>
+      (mockApi.sendEventToDataCollector.mock.calls[call][0] as FeatureEvent[]).map((event) => event.key);
+
+    /** A POST that never settles, i.e. the collector-outage shape the cap and the guard exist for. */
+    const hangingPost = () => new Promise<void>(() => undefined);
+
+    /** Lets the fire-and-forget flush in `addEvent` run to its first suspension point. */
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 10));
+
+    it('should cap the buffer at twice maxPendingEvents while the collector is unreachable', async () => {
+      mockApi.sendEventToDataCollector.mockImplementation(hangingPost);
+      // maxPendingEvents is 5, so the cap is 10.
+      const publisher = new EventPublisher(mockApi, mockOptions, mockLogger);
+
+      for (let i = 0; i < 40; i++) {
+        publisher.addEvent(eventNamed(`e${i}`));
+      }
+      await settle();
+
+      // The first five drain into the hung POST; the remaining 35 pile up behind it. Uncapped, this
+      // is an unbounded leak for the duration of the outage.
+      expect(bufferOf(publisher)).toHaveLength(10);
+    });
+
+    it('should discard the oldest events on overflow', async () => {
+      mockApi.sendEventToDataCollector.mockImplementation(hangingPost);
+      const publisher = new EventPublisher(mockApi, mockOptions, mockLogger);
+
+      for (let i = 0; i < 40; i++) {
+        publisher.addEvent(eventNamed(`e${i}`));
+      }
+      await settle();
+
+      expect(bufferOf(publisher).map((event) => event.key)).toEqual([
+        'e30',
+        'e31',
+        'e32',
+        'e33',
+        'e34',
+        'e35',
+        'e36',
+        'e37',
+        'e38',
+        'e39',
+      ]);
+      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('discarded'));
+    });
+
+    it('should not start a second publish while one is in flight', async () => {
+      mockApi.sendEventToDataCollector.mockImplementation(hangingPost);
+      const publisher = new EventPublisher(mockApi, mockOptions, mockLogger);
+
+      for (let i = 0; i < 5; i++) {
+        publisher.addEvent(eventNamed(`a${i}`));
+      }
+      for (let i = 0; i < 5; i++) {
+        publisher.addEvent(eventNamed(`b${i}`));
+      }
+      await settle();
+
+      // The second threshold crossing must not open another POST against a collector that is
+      // already struggling.
+      expect(mockApi.sendEventToDataCollector).toHaveBeenCalledTimes(1);
+    });
+
+    it('should re-queue a failed batch ahead of events buffered during the flight', async () => {
+      let rejectFirst: (reason: Error) => void = () => undefined;
+      mockApi.sendEventToDataCollector
+        .mockReturnValueOnce(
+          new Promise<void>((_resolve, reject) => {
+            rejectFirst = reject;
+          }),
+        )
+        .mockResolvedValue(undefined);
+
+      const publisher = new EventPublisher(mockApi, mockOptions, mockLogger);
+      await publisher.start();
+
+      for (let i = 0; i < 5; i++) {
+        publisher.addEvent(eventNamed(`old${i}`));
+      }
+      publisher.addEvent(eventNamed('new0'));
+
+      rejectFirst(new Error('collector down'));
+      await settle();
+      await publisher.stop();
+
+      // `push` would have filed the older batch behind `new0`, sending the collector a batch that
+      // runs backwards in time.
+      expect(keysOfBatch(1)).toEqual(['old0', 'old1', 'old2', 'old3', 'old4', 'new0']);
+    });
+
+    it('should still flush at shutdown when a publish is in flight', async () => {
+      let resolveFirst: () => void = () => undefined;
+      mockApi.sendEventToDataCollector
+        .mockReturnValueOnce(
+          new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+          }),
+        )
+        .mockResolvedValue(undefined);
+
+      const publisher = new EventPublisher(mockApi, mockOptions, mockLogger);
+      await publisher.start();
+
+      for (let i = 0; i < 5; i++) {
+        publisher.addEvent(eventNamed(`a${i}`));
+      }
+      publisher.addEvent(eventNamed('late'));
+
+      const stopped = publisher.stop();
+      resolveFirst();
+      await stopped;
+
+      // Single-flight must not make the shutdown flush a no-op - `stop` joins the in-flight publish
+      // before draining what is left.
+      expect(mockApi.sendEventToDataCollector).toHaveBeenCalledTimes(2);
+      expect(keysOfBatch(1)).toEqual(['late']);
     });
   });
 
@@ -247,12 +388,41 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
       publisher.addEvent(mockEvent);
 
-      // Default should be 10000ms (from constants)
-      jest.advanceTimersByTime(120010);
+      // The normative default is 60000 ms (DEFAULT_FLUSH_INTERVAL_MS).
+      jest.advanceTimersByTime(60010);
 
+      expect(mockApi.sendEventToDataCollector).toHaveBeenCalled();
+
+      jest.useRealTimers();
+      await publisher.stop();
+    });
+
+    it('should not flush before the normative 60s default has elapsed', async () => {
+      const publisher = new EventPublisher(mockApi, { ...mockOptions, dataFlushInterval: undefined });
+
+      jest.useFakeTimers();
+      await publisher.start();
+      publisher.addEvent({
+        kind: 'feature',
+        creationDate: 1,
+        contextKind: 'user',
+        key: 'test-flag',
+        userKey: 'test-user',
+        default: false,
+        variation: 'test-variation',
+        source: 'INPROCESS',
+      });
+
+      // Pins the value, not just "some default fires eventually": the constant was 120000, double
+      // the normative default, so telemetry reached the collector at half the mandated rate.
+      jest.advanceTimersByTime(59000);
+      expect(mockApi.sendEventToDataCollector).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(2000);
       expect(mockApi.sendEventToDataCollector).toHaveBeenCalled();
 
       jest.useRealTimers();
@@ -279,6 +449,7 @@ describe('EventPublisher', () => {
         userKey: 'test-user',
         default: false,
         variation: 'test-variation',
+        source: 'INPROCESS',
       };
 
       const mockTrackingEvent: TrackingEvent = {

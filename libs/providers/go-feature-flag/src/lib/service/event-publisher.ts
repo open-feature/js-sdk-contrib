@@ -19,6 +19,8 @@ export class EventPublisher {
   private intervalId?: ReturnType<typeof setTimeout>;
   /** Whether the event publisher is running. */
   private isRunning = false;
+  /** The publish currently in flight, if any. Held as a promise so `stop` can join it. */
+  private inFlight?: Promise<void>;
   /** The logger to use for logging. */
   private readonly logger?: Logger;
 
@@ -77,8 +79,34 @@ export class EventPublisher {
       clearTimeout(this.intervalId);
       this.intervalId = undefined;
     }
+    // A publish already in flight has to settle before the final flush, or single-flight would turn
+    // that flush into a no-op and drop everything still buffered at shutdown - including the batch
+    // this publish is about to re-queue if it fails.
+    await this.inFlight;
     // Publish any remaining events
     await this.publishEvents();
+  }
+
+  /** The count at which `addEvent` flushes, and half the buffer's hard cap. */
+  private get maxPendingEvents(): number {
+    return this.options.maxPendingEvents || DEFAULT_MAX_PENDING_EVENTS;
+  }
+
+  /**
+   * Trims the buffer to twice `maxPendingEvents`, discarding the oldest events first.
+   *
+   * Without a cap the buffer grows for the whole duration of a collector outage: every failed
+   * publish puts its entire batch back and every evaluation adds another event on top, so the
+   * failing request grows along with the memory it holds.
+   */
+  private enforceCap(): void {
+    const cap = 2 * this.maxPendingEvents;
+    if (this.events.length <= cap) {
+      return;
+    }
+    const discarded = this.events.length - cap;
+    this.events.splice(0, discarded);
+    this.logger?.warn(`Data collector buffer is full, discarded the ${discarded} oldest event(s)`);
   }
 
   /**
@@ -88,7 +116,8 @@ export class EventPublisher {
    */
   addEvent(eventToAdd: ExportEvent): void {
     this.events.push(eventToAdd);
-    if (this.events.length >= (this.options.maxPendingEvents || DEFAULT_MAX_PENDING_EVENTS)) {
+    this.enforceCap();
+    if (this.events.length >= this.maxPendingEvents) {
       // Fire and forget - don't await to avoid blocking
       this.publishEvents().catch((error) => {
         this.logger?.error('Error publishing events:', error);
@@ -102,19 +131,44 @@ export class EventPublisher {
    * @returns {Promise<void>} A promise that resolves when the events have been published.
    */
   private async publishEvents(): Promise<void> {
-    let eventsToPublish: ExportEvent[] = [];
-    // Simple thread-safe check and clear
+    // Single-flight. The periodic runner and the `maxPendingEvents` threshold in `addEvent` are two
+    // independent callers, so without this each threshold crossing starts another POST against a
+    // collector that is already slow - amplifying an outage instead of backing off. A skipped flush
+    // loses nothing: the buffer is still there for the next one.
+    if (this.inFlight) {
+      return;
+    }
     if (this.events.length === 0) {
       return;
     }
-    eventsToPublish = [...this.events];
+    const eventsToPublish = [...this.events];
     this.events.length = 0; // Clear the array
+
+    // Assigned before the first suspension point, so a caller reaching `addEvent` between the drain
+    // and the POST cannot slip a second publish past the guard.
+    this.inFlight = this.sendBatch(eventsToPublish);
+    try {
+      await this.inFlight;
+    } finally {
+      this.inFlight = undefined;
+    }
+  }
+
+  /**
+   * @private
+   * Sends a single batch, returning it to the buffer if the collector rejects it.
+   * @param {ExportEvent[]} eventsToPublish - The batch drained from the buffer.
+   * @returns {Promise<void>} A promise that resolves once the batch has been sent or re-queued.
+   */
+  private async sendBatch(eventsToPublish: ExportEvent[]): Promise<void> {
     try {
       await this.api.sendEventToDataCollector(eventsToPublish, this.options.exporterMetadata ?? new ExporterMetadata());
     } catch (error) {
       this.logger?.error('An error occurred while publishing events:', error);
-      // Re-add events to the collection on failure
-      this.events.push(...eventsToPublish);
+      // At the head, not the tail: anything `addEvent` buffered while this POST was in flight is
+      // newer than this batch, so appending would file the older events behind the newer ones.
+      this.events.unshift(...eventsToPublish);
+      this.enforceCap();
     }
   }
 }
