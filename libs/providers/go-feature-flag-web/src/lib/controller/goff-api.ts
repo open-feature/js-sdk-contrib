@@ -64,9 +64,7 @@ export class GoffApiController {
       }
 
       const controller = new AbortController();
-      if (this.timeout > 0) {
-        timeoutId = setTimeout(() => controller.abort(), this.timeout);
-      }
+      timeoutId = setTimeout(() => controller.abort(), this.timeout > 0 ? this.timeout : 10000);
       const response = await fetch(endpointURL.toString(), {
         method: 'POST',
         headers: headers,
@@ -80,9 +78,7 @@ export class GoffApiController {
     } catch (e) {
       throw new CollectorError(`impossible to send the data to the collector: ${e}`);
     } finally {
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
-      }
+      clearTimeout(timeoutId);
     }
   }
 }
