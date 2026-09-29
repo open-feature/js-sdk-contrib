@@ -1114,6 +1114,34 @@ describe('OFREPWebProvider', () => {
       expect(localStorage.getItem(user1Key)).toBeNull();
     });
 
+    describe('contexts with no targeting key (ADR-0009)', () => {
+      it('does not write a persisted entry when the context has no targeting key', async () => {
+        const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
+        await provider.initialize({ country: 'CA' }, testDomain());
+        expect(localStorage.length).toBe(0);
+      });
+
+      it('does not serve the previous anonymous entry after a context change', async () => {
+        const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
+        await provider.initialize({ country: 'CA' }, testDomain());
+        await provider.onContextChange?.({ country: 'CA' }, { country: 'US' });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((provider as any)._isUsingCache).toBe(false);
+        expect(localStorage.length).toBe(0);
+      });
+
+      it('clears the persisted entry when the targeting key is removed', async () => {
+        const storage = createTestStorage();
+        await storage.store(defaultContext, boolFlagCache, null);
+        expect(localStorage.length).toBe(1);
+
+        const provider = new OFREPWebProvider({ baseUrl: endpointBaseURL, pollInterval: -1 }, new TestLogger());
+        await provider.initialize(defaultContext, testDomain());
+        await provider.onContextChange?.(defaultContext, { country: 'CA' });
+        expect(localStorage.length).toBe(0);
+      });
+    });
+
     describe('network-first', () => {
       it('blocks init on the network and serves fresh flags (STATIC, not CACHED) when the request succeeds', async () => {
         const providerName = expect.getState().currentTestName || 'test-provider';
