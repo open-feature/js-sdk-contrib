@@ -9,8 +9,8 @@ import { DEFAULT_MAX_BACKOFF_MS, FLAGD_SELECTOR_HEADER } from '../../../constant
 import {
   buildClientOptions,
   closeStreamIfDefined,
-  createChannelCredentials,
   createFatalStatusCodesSet,
+  getChannelCredentials,
   handleFatalStatusCodeError,
   isFatalStatusCodeError,
 } from '../../common';
@@ -50,9 +50,9 @@ export class GrpcFetch implements DataFetch {
     syncServiceClient?: FlagSyncServiceClient,
     logger?: Logger,
   ) {
-    const { host, port, tls, socketPath, certPath, selector } = config;
+    const { host, port, socketPath, selector } = config;
     const clientOptions = buildClientOptions(config);
-    const channelCredentials = createChannelCredentials(tls, certPath);
+    const channelCredentials = getChannelCredentials(config);
 
     this._syncClient = syncServiceClient
       ? syncServiceClient
