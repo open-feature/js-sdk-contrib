@@ -422,11 +422,13 @@ export class GoFeatureFlagWebProvider implements Provider {
     changeEvent?: FlagChangeEvent,
   ): data is GoFeatureFlagResolvedFlags {
     if (this.isFlagResult(data)) {
+      // Check if the configuration changed
+      const isConfigurationChange = !!changeEvent || this.isConfigurationChange(this._flags, data);
       // New flags has been loaded, update state
       this._flags.flags = data.flags;
       this._lastFlagChangeEvent = undefined;
       // send a `ConfigurationChanged` when the flags evaluation changed
-      if (this._lastEmittedProviderEvent && (changeEvent || this.isConfigurationChange(this._flags, data))) {
+      if (this._lastEmittedProviderEvent && isConfigurationChange) {
         this.events.emit(ProviderEvents.ConfigurationChanged, {
           message: 'flag configuration have changed',
           flagsChanged: changeEvent
