@@ -14,8 +14,8 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@growthbook/growthbook": "^1.3.1",
-    "@openfeature/server-sdk": "^1.13.0"
+    "@growthbook/growthbook": "^1.4.0",
+    "@openfeature/server-sdk": "^1.16.0"
   },
   "dependencies": {}
 }
