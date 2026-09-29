@@ -150,7 +150,7 @@ export class GoFeatureFlagWebProvider implements Provider {
   constructor(options: GoFeatureFlagWebProviderOptions, logger?: Logger) {
     this._logger = logger;
     this._connectionMode = options?.mode || 'ws'; // default is 'ws' for backward compatibility
-    this._apiTimeout = options.apiTimeout || 0; // default is 0 = no timeout
+    this._apiTimeout = Number.isFinite(options.apiTimeout) && options.apiTimeout! > 0 ? options.apiTimeout! : 10_000; // default is 10 seconds
     this._endpoint = options.endpoint;
     this._retryInitialDelay = options.retryInitialDelay || 100;
     this._retryDelayMultiplier = options.retryDelayMultiplier || 2;
