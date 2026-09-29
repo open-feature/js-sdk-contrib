@@ -192,6 +192,22 @@
           }
         }
       ]
+    },
+    {
+      "key": "flag_default_variant",
+      "name": "flag_default_variant",
+      "description": "",
+      "enabled": true,
+      "type": "VARIANT_FLAG_TYPE",
+      "createdAt": "2023-11-06T20:12:27.831503Z",
+      "updatedAt": "2023-11-06T20:12:27.831503Z",
+      "rules": [],
+      "rollouts": [],
+      "defaultVariant": {
+        "id": "0a15b8ca-b52c-4f35-a466-3a9d8a9f21e1",
+        "key": "variant_default",
+        "attachment": "{\"foo\":\"bar\"}"
+      }
     }
   ]
 }
