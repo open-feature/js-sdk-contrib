@@ -47,6 +47,7 @@ const serviceMock: FlagSyncServiceClient = {
       destroy,
     };
   }),
+  close: jest.fn(),
 } as unknown as FlagSyncServiceClient;
 
 describe('grpc fetch', () => {
@@ -179,6 +180,46 @@ describe('grpc fetch', () => {
     });
 
     onErrorCallback(new Error('Some connection error'));
+  });
+
+  it('should not reconnect after disconnect when an error has scheduled a retry', async () => {
+    const fetch = new GrpcFetch(cfg, jest.fn(), serviceMock);
+    const connectPromise = fetch.connect(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
+    onDataCallback({ flagConfiguration: '{"flags":{}}' });
+    await connectPromise;
+
+    onErrorCallback(new Error('Some connection error'));
+    await fetch.disconnect();
+    expect(jest.getTimerCount()).toBe(0);
+    jest.runOnlyPendingTimers();
+
+    expect(serviceMock.syncFlags).toHaveBeenCalledTimes(1);
+  });
+
+  it('should reject connection when disconnected before the stream emits data', async () => {
+    const fetch = new GrpcFetch(cfg, jest.fn(), serviceMock);
+    const connectPromise = fetch.connect(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
+    const rejection = expect(connectPromise).rejects.toThrow('gRPC client disconnected before connecting');
+
+    await fetch.disconnect();
+
+    await rejection;
+    expect(serviceMock.syncFlags).toHaveBeenCalledTimes(1);
+  });
+
+  it('should reject connection when disconnected before the client is ready', async () => {
+    const pendingServiceMock = {
+      ...serviceMock,
+      waitForReady: jest.fn(() => undefined),
+    } as unknown as FlagSyncServiceClient;
+    const fetch = new GrpcFetch(cfg, jest.fn(), pendingServiceMock);
+    const connectPromise = fetch.connect(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
+    const rejection = expect(connectPromise).rejects.toThrow('gRPC client disconnected before connecting');
+
+    await fetch.disconnect();
+
+    await rejection;
+    expect(pendingServiceMock.syncFlags).not.toHaveBeenCalled();
   });
 
   it('should send selector via flagd-selector metadata header', async () => {
