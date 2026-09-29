@@ -84,9 +84,9 @@ describe('GrowthbookProvider', () => {
       const res = await ofClient.getBooleanDetails(testFlagKey, false);
       expect(res).toEqual({
         flagKey: testFlagKey,
-        flagMetadata: {},
+        flagMetadata: { source: 'experiment' },
         value: true,
-        reason: 'experiment',
+        reason: 'SPLIT',
         variant: 'treatment',
       });
     });
@@ -114,9 +114,9 @@ describe('GrowthbookProvider', () => {
       const res = await ofClient.getStringDetails(testFlagKey, '');
       expect(res).toEqual({
         flagKey: testFlagKey,
-        flagMetadata: {},
+        flagMetadata: { source: 'experiment' },
         value: 'Experiment fearlessly, deliver confidently',
-        reason: 'experiment',
+        reason: 'SPLIT',
         variant: 'treatment',
       });
     });
@@ -144,9 +144,9 @@ describe('GrowthbookProvider', () => {
       const res = await ofClient.getNumberDetails(testFlagKey, 1);
       expect(res).toEqual({
         flagKey: testFlagKey,
-        flagMetadata: {},
+        flagMetadata: { source: 'experiment' },
         value: 12345,
-        reason: 'experiment',
+        reason: 'SPLIT',
         variant: 'treatment',
       });
     });
@@ -174,9 +174,9 @@ describe('GrowthbookProvider', () => {
       const res = await ofClient.getObjectDetails(testFlagKey, {});
       expect(res).toEqual({
         flagKey: testFlagKey,
-        flagMetadata: {},
+        flagMetadata: { source: 'experiment' },
         value: { test: true },
-        reason: 'experiment',
+        reason: 'SPLIT',
         variant: 'treatment',
       });
     });
