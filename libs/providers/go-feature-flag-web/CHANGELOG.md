@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.10](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.9...go-feature-flag-web-provider-v0.2.10) (2026-09-29)
+
+
+### 🐛 Bug Fixes
+
+* **go-feature-flag-web:** apply default collector timeout ([#1633](https://github.com/open-feature/js-sdk-contrib/issues/1633)) ([94574f0](https://github.com/open-feature/js-sdk-contrib/commit/94574f05396797683a7f111cb511b8625e781496))
+
 ## [0.2.9](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.8...go-feature-flag-web-provider-v0.2.9) (2026-03-23)
 
 
