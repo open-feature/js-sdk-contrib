@@ -1,18 +1,39 @@
+# The `branch` lines below are load-bearing, not decorative.
+#
+# Renovate's git-submodules manager reads `branch` as the dependency's current
+# version. With it, a new submodule release arrives as an ordinary version PR
+# that bumps both the pointer and the `branch` value. Without it there is no
+# version to compare against, so Renovate falls back to a digest update against
+# the submodule's default branch -- which does not match the auto-create rule in
+# open-feature/community-tooling and is left sitting on the dependency dashboard
+# where nobody sees it.
+#
+# `json/json-schema-v*` is a release-please component tag. It needs the prefix
+# rule from open-feature/community-tooling#126 to resolve as a version; until
+# that lands the pin is inert, but harmless.
+#
+# So deleting a `branch` line silently switches off updates for that submodule.
+# That has happened several times; see open-feature/flagd-testbed#398. Keep the
+# pin, and let Renovate move it.
 [submodule "libs/providers/flagd/schemas"]
 	path = libs/providers/flagd/schemas
 	url = https://github.com/open-feature/flagd-schemas.git
+	branch = json/json-schema-v0.2.15
 [submodule "libs/providers/flagd-web/schemas"]
 	path = libs/providers/flagd-web/schemas
 	url = https://github.com/open-feature/flagd-schemas.git
+	branch = json/json-schema-v0.2.15
 [submodule "libs/providers/flagd/spec"]
   path = libs/providers/flagd/spec
   url = https://github.com/open-feature/spec.git
 [submodule "libs/shared/flagd-core/flagd-schemas"]
 	path = libs/shared/flagd-core/flagd-schemas
 	url = https://github.com/open-feature/flagd-schemas.git
+	branch = json/json-schema-v0.2.15
 [submodule "libs/shared/flagd-core/test-harness"]
 	path = libs/shared/flagd-core/test-harness
 	url = https://github.com/open-feature/flagd-testbed
+	branch = v3.10.1
 [submodule "libs/shared/flagd-core/spec"]
 	path = libs/shared/flagd-core/spec
 	url = https://github.com/open-feature/spec
