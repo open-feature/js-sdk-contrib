@@ -2,10 +2,14 @@
 module.exports = {
   displayName: 'providers-flagd',
   preset: '../../../jest.preset.js',
+  testEnvironment: 'node',
+  extensionsToTreatAsEsm: ['.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.esm-setup.ts'],
   transform: {
-    '^.+\\.[tj]s$': [
+    '^.+\\.ts$': [
       'ts-jest',
       {
+        useESM: true, // `cborg` dependency (via flagd-core) needs ESM
         tsconfig: '<rootDir>/tsconfig.spec.json',
       },
     ],
