@@ -1,12 +1,16 @@
 import * as path from 'node:path';
 import * as fs from 'fs';
+import { fileURLToPath } from 'node:url';
 import type { StartedDockerComposeEnvironment } from 'testcontainers';
 import { DockerComposeEnvironment, Wait } from 'testcontainers';
 import type { ResolverType } from '../../lib/configuration';
 
+// ESM: __dirname is not available; derive it from import.meta.url.
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+
 export class FlagdComposeContainer {
   private static imageBase = 'ghcr.io/open-feature/flagd-testbed';
-  private static testHarnessDir = path.join(__dirname, './../../../../../shared/flagd-core/test-harness/');
+  private static testHarnessDir = path.join(currentDir, './../../../../../shared/flagd-core/test-harness/');
 
   private environment?: StartedDockerComposeEnvironment;
   private version: string;

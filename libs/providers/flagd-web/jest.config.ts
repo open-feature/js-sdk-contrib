@@ -2,10 +2,14 @@
 module.exports = {
   displayName: 'providers-flagd-web',
   preset: '../../../jest.preset.js',
+  // ESM mode so the ESM-only `cborg` dependency (via flagd-core) loads natively (NODE_OPTIONS=--experimental-vm-modules is set on the project.json test target).
+  extensionsToTreatAsEsm: ['.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.esm-setup.ts'],
   transform: {
-    '^.+\\.[tj]s$': [
+    '^.+\\.ts$': [
       'ts-jest',
       {
+        useESM: true,
         tsconfig: '<rootDir>/tsconfig.spec.json',
       },
     ],
