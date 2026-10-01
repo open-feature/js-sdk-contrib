@@ -3,9 +3,6 @@ import type { CacheOption, ResolverType } from '../../lib/configuration';
 export function mapValueToType(value: string, type: string): any {
   switch (type) {
     case 'String':
-      if (value == 'null') {
-        return undefined;
-      }
       return value;
     case 'Integer':
       return Number.parseInt(value);

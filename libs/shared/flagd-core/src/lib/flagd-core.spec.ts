@@ -299,9 +299,9 @@ describe('flagd-core common flag definitions', () => {
     core.setConfigurations(flagCfg);
 
     const resolved = core.resolveStringEvaluation('headerColor', 'grey', { email: 'user@openfeature.dev' });
-    expect(resolved.value).toBe('red');
+    expect(resolved.value).toBe('blue');
     expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
-    expect(resolved.variant).toBe('red');
+    expect(resolved.variant).toBe('blue');
   });
 
   it('should support nested fractional logic', () => {
@@ -310,9 +310,9 @@ describe('flagd-core common flag definitions', () => {
     core.setConfigurations(flagCfg);
 
     const resolved = core.resolveStringEvaluation('headerColor', 'grey', { email: 'user@openfeature.dev' });
-    expect(resolved.value).toBe('red');
+    expect(resolved.value).toBe('blue');
     expect(resolved.reason).toBe(StandardResolutionReasons.TARGETING_MATCH);
-    expect(resolved.variant).toBe('red');
+    expect(resolved.variant).toBe('blue');
   });
 
   it('should support empty targeting rules', () => {

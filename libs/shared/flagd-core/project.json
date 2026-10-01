@@ -63,6 +63,7 @@
         "generateExportsField": true,
         "umdName": "flagd-core",
         "external": "all",
+        "rollupConfig": "libs/shared/flagd-core/rollup.config.js",
         "format": ["cjs", "esm"],
         "assets": [
           {
