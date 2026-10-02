@@ -10,6 +10,7 @@ type SseContext = {
   source: EventSource;
   closeReason?: 'aborted' | 'disconnect' | 'close';
   signal: AbortSignal;
+  connectingWarningTimer?: ReturnType<typeof setTimeout>;
 };
 
 /**
@@ -30,6 +31,7 @@ export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrateg
 
   private getAbortHandler(ctx: SseContext) {
     return () => {
+      clearTimeout(ctx.connectingWarningTimer);
       ctx.closeReason = 'aborted';
       ctx.source.close();
     };
@@ -60,13 +62,28 @@ export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrateg
       `${this.name}: Trying to connect the SSE EventSource at ${this._sourceUrl.origin}${this._sourceUrl.pathname}`,
     );
     this.buildSourceUrl();
+    const connectingWarningDelayMs =
+      this._options.connectingWarningDelayMs ?? ServerSentEventFlagChangeStrategy._DEFAULT_CONNECTION_TIMEOUT;
     const ctx = (this._ctx = {
       source: new EventSource(this._sourceUrl),
       signal,
     } as SseContext);
     const abortHandler = this.getAbortHandler(ctx);
 
+    // Some browsers (e.g. Firefox) fire `open` only once the first bytes of the body are received,
+    // so a relay-proxy that sends nothing after the headers leaves the EventSource silently connecting.
+    ctx.connectingWarningTimer = setTimeout(() => {
+      if (signal.aborted || this._ctx !== ctx || ctx.source.readyState !== EventSource.CONNECTING) return;
+      this._logger?.warn(
+        `${this.name}: SSE EventSource is still connecting after ${connectingWarningDelayMs} ms without any open or error event. ` +
+          'Some browsers (e.g. Firefox) wait for the first bytes of the stream before opening it: ' +
+          'upgrade GO Feature Flag relay-proxy to a version sending an initial SSE comment on connection. ' +
+          'Flag changes will still be received once the first event is sent.',
+      );
+    }, connectingWarningDelayMs);
+
     ctx.source.onopen = (event) => {
+      clearTimeout(ctx.connectingWarningTimer);
       if (signal.aborted || this._ctx !== ctx) return;
       this._logger?.info(`${this.name}: SSE EventSource to go-feature-flag open: ${event}`);
       this.setStatus('connected');
@@ -93,6 +110,7 @@ export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrateg
     };
 
     ctx.source.onerror = async () => {
+      clearTimeout(ctx.connectingWarningTimer);
       if (signal.aborted || this._ctx !== ctx) return;
       // check if it's an error due closing
       switch (ctx.closeReason) {
@@ -123,6 +141,7 @@ export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrateg
 
   protected async onDisconnect(): Promise<void> {
     if (this._ctx) {
+      clearTimeout(this._ctx.connectingWarningTimer);
       this._ctx.closeReason = 'disconnect';
       this._ctx.source.close();
     }
@@ -131,6 +150,7 @@ export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrateg
 
   protected async onClose(): Promise<void> {
     if (this._ctx) {
+      clearTimeout(this._ctx.connectingWarningTimer);
       this._ctx.closeReason = 'close';
       this._ctx.source.close();
     }

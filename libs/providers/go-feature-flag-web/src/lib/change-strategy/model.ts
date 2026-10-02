@@ -133,4 +133,10 @@ export type WebSocketFlagChangeStrategyOptions = FlagChangeStrategyOptions;
 /**
  * The options to be used with the {@link ServerSentEventFlagChangeStrategy} change strategy
  */
-export type ServerSentEventFlagChangeStrategyOptions = FlagChangeStrategyOptions;
+export interface ServerSentEventFlagChangeStrategyOptions extends FlagChangeStrategyOptions {
+  /**
+   * Delay in milliseconds after which a warning is logged if the EventSource is still connecting.
+   * @default 5000
+   */
+  connectingWarningDelayMs?: number;
+}

@@ -381,5 +381,49 @@ describe('GoFeatureFlagWebProvider => Change Strategy', () => {
         `${EventSourceMock.name}: found required query param 'apiKey' with value '${newKey}'.`,
       );
     });
+
+    const connectingWarningPrefix =
+      'ServerSentEventFlagChangeStrategy: SSE EventSource is still connecting after 50 ms without any open or error event.';
+
+    it(`should log a warning and stay 'connecting' when the EventSource neither opens nor fails`, async () => {
+      const changeStrategy = getChangeStrategy({ connectingWarningDelayMs: 50 });
+      // the source is never ready: no open and no error event (e.g. Firefox waiting for the first bytes of the body)
+      changeStrategy.connect();
+      await awaitableTimeout(100);
+
+      expect(changeStrategy.status).toBe('connecting');
+      expect(logger.inMemoryLogger['warn'].filter((m) => m.startsWith(connectingWarningPrefix))).toHaveLength(1);
+
+      // the EventSource is kept, so the connection completes as soon as the source opens it
+      EventSourceMock.ready();
+      await awaitableTimeout(20);
+      expect(changeStrategy.status).toBe('connected');
+    });
+
+    it(`should not log the connecting warning when the EventSource opens in time`, async () => {
+      const changeStrategy = getChangeStrategy({ connectingWarningDelayMs: 50 });
+      changeStrategy.connect();
+      EventSourceMock.ready();
+      await awaitableTimeout(100);
+
+      expect(changeStrategy.status).toBe('connected');
+      expect(logger.inMemoryLogger['warn'].some((m) => m.startsWith(connectingWarningPrefix))).toBe(false);
+    });
+
+    it(`should not log the connecting warning when the EventSource fails`, async () => {
+      const changeStrategy = getChangeStrategy({
+        connectingWarningDelayMs: 50,
+        maxAttempts: 1,
+        backoff: { minDelayMs: 10, maxDelayMs: 10, multiplier: 1 },
+      });
+      // the source rejects the connection (missing apiKey) and closes the EventSource
+      EventSourceMock.setQueryParam('apiKey', true);
+      changeStrategy.connect();
+      EventSourceMock.ready();
+      await awaitableTimeout(100);
+
+      expect(changeStrategy.status).toBe('error');
+      expect(logger.inMemoryLogger['warn'].some((m) => m.startsWith(connectingWarningPrefix))).toBe(false);
+    });
   });
 });
