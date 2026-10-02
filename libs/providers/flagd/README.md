@@ -236,3 +236,43 @@ Run `nx package providers-flagd` to build the library.
 ## Running Unit Tests
 
 Run `nx test providers-flagd` to execute the unit tests via [Jest](https://jestjs.io).
+
+## Running the conformance suite
+
+This provider adopts the [OpenFeature Provider TCK](../../shared/tck/README.md), once per resolver:
+
+```sh
+npx nx tck providers-flagd
+```
+
+It needs a **Docker daemon**. The suite brings up
+[`libs/shared/tck-backend/docker-compose.yaml`](../../shared/tck-backend/docker-compose.yaml) itself
+— a pinned flagd-testbed image, shared with the OFREP adoption so the two cannot drift onto
+different backends — discovers the mapped ports, and drives the backend over the testbed's control
+API. A conformance result pins its claim to that exact image tag, so a bump is a deliberate act with
+a result to record.
+
+**The suites live in `src/tck/`, a sibling of `src/e2e/` rather than a child of it.** The two answer
+different questions: the e2e suites test this provider against flagd's own harness and are expected
+green, while the conformance suite tests it against the OpenFeature provider contract and fails
+scenarios by design wherever a `knownDeviation` is declared. Filing it under `e2e/` said it was a
+kind of e2e test, which is what a separate target exists to deny.
+
+**It is deliberately excluded from the default build, and from CI**, and the directory is what does
+the excluding. The suites sit behind a Jest project of their own
+([`src/tck/jest.config.ts`](./src/tck/jest.config.ts)) reached only by the `tck` target; the unit
+config ignores `/src/tck/` and `src/e2e/jest.config.ts` never sees it. So `nx test providers-flagd`
+and `nx e2e providers-flagd` do not run them, and neither does any workflow —
+`npx nx tck providers-flagd` is the only way in. Run it by hand before merging a change to this
+provider or to the suite.
+
+Why an adoption suite is excluded rather than made a required gate is
+[Appendix F, "Running the suite in CI"](https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md).
+The directory boundary is what it is because of the first mistake named there: these suites once sat
+in `src/e2e/tests/`, where the pre-existing `e2e` target's default `testMatch` swept them up, and
+that target _is_ a CI job here.
+
+The `tck` target's wiring — `passWithNoTests: false`, and a `tck:pullSpec` dependency so the suite
+cannot run against the previous pin's feature files — is described in the
+[TCK's own README](../../shared/tck/README.md). Both are guards against a green run that tested less
+than it claimed.
