@@ -112,6 +112,7 @@ describe('GoFeatureFlagWebProvider', () => {
 
   beforeAll(() => {
     EventSourceMock.activate();
+    logger.reset();
   });
 
   beforeEach(async () => {
@@ -166,12 +167,74 @@ describe('GoFeatureFlagWebProvider', () => {
 
   afterAll(() => {
     EventSourceMock.deactivate();
+    logger.reset();
   });
 
   describe('provider metadata', () => {
     it('should be and instance of GoFeatureFlagWebProvider', () => {
       expect(defaultProvider).toBeInstanceOf(GoFeatureFlagWebProvider);
     });
+  });
+
+  describe('Flag retrieval', () => {
+    it('should timeout after 10s when apiTimeout is not set', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: undefined,
+      });
+      // Slow down the next fetch so we can timeout
+      fetchMock.post(allFlagsEndpoint, () => awaitableTimeout(12_000).then(() => defaultAllFlagResponse), {
+        overwriteRoutes: true,
+      });
+      await provider.initialize(defaultContext);
+      await websocketMockServer.connected;
+      const logs = logger.timeline(false, false);
+      expect(logs).toContain('GoFeatureFlagWebProvider: fetchAll operation has timed out after 10000ms');
+    }, 15_000);
+
+    it('should timeout after 10s when apiTimeout is set to a negative number', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: -1,
+      });
+      // Slow down the next fetch so we can timeout
+      fetchMock.post(allFlagsEndpoint, () => awaitableTimeout(12_000).then(() => defaultAllFlagResponse), {
+        overwriteRoutes: true,
+      });
+
+      await provider.initialize(defaultContext);
+      await websocketMockServer.connected;
+      const logs = logger.timeline(false, false);
+      expect(logs).toContain('GoFeatureFlagWebProvider: fetchAll operation has timed out after 10000ms');
+    }, 15_000);
+
+    it('should timeout after 3s when apiTimeout is set to 3s', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: 3_000,
+      });
+      // Slow down the next fetch so we can timeout
+      fetchMock.post(allFlagsEndpoint, () => awaitableTimeout(5_000).then(() => defaultAllFlagResponse), {
+        overwriteRoutes: true,
+      });
+
+      await provider.initialize(defaultContext);
+      await websocketMockServer.connected;
+      const logs = logger.timeline(false, false);
+      expect(logs).toContain('GoFeatureFlagWebProvider: fetchAll operation has timed out after 3000ms');
+    }, 10_000);
+
+    it('should not timeout after 3s when apiTimeout is set to 5s', async () => {
+      const provider = newDefaultProvider({
+        apiTimeout: 5_000,
+      });
+      // Slow down the next fetch
+      fetchMock.post(allFlagsEndpoint, () => awaitableTimeout(3_000).then(() => defaultAllFlagResponse), {
+        overwriteRoutes: true,
+      });
+
+      await provider.initialize(defaultContext);
+      await websocketMockServer.connected;
+      const logs = logger.timeline(false, false);
+      expect(logs).not.toContain('GoFeatureFlagWebProvider: fetchAll operation has timed out after 5000ms');
+    }, 10_000);
   });
 
   describe('flag evaluation', () => {

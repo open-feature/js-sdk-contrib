@@ -539,25 +539,24 @@ export class GoFeatureFlagWebProvider implements Provider {
       };
 
       const fetchRequest = fetch(this._fetchAllUrl, request);
-      const apiTimeout =
-        this._apiTimeout > 0
-          ? awaitableTimeout(this._apiTimeout, { signal: requestAbortController.signal })
-          : undefined;
+      const apiTimeout = awaitableTimeout(this._apiTimeout, { signal: requestAbortController.signal });
 
-      const result = await whenAnySettle(apiTimeout ? [fetchRequest, apiTimeout] : [fetchRequest]);
+      const result = await whenAnySettle([fetchRequest, apiTimeout]);
 
       // Let's check if the request has been aborted
       if (sessionSignal.aborted || requestAbortController.signal.aborted) {
         this._logger?.error(`${GoFeatureFlagWebProvider.name}: fetchAll operation was aborted`);
         throw new FetchAbortedError(requestAbortController.signal.reason);
-      } else if (result.promise === apiTimeout) {
-        // The API timed out
+      }
+      // The API timed out
+      else if (result.promise === apiTimeout) {
         this._logger?.error(
           `${GoFeatureFlagWebProvider.name}: fetchAll operation has timed out after ${this._apiTimeout}ms`,
         );
         throw new FetchTimeoutError(this._apiTimeout);
-      } else if (result.error) {
-        // An error occurred during the request, rethrow as-is
+      }
+      // An error occurred during the request, rethrow as-is
+      else if (result.error) {
         throw result.error;
       }
 
