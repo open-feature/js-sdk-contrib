@@ -150,7 +150,7 @@ export class GoFeatureFlagWebProvider implements Provider {
   constructor(options: GoFeatureFlagWebProviderOptions, logger?: Logger) {
     this._logger = logger;
     this._connectionMode = options?.mode || 'ws'; // default is 'ws' for backward compatibility
-    this._apiTimeout = options.apiTimeout || 0; // default is 0 = no timeout
+    this._apiTimeout = Number.isFinite(options.apiTimeout) && options.apiTimeout! > 0 ? options.apiTimeout! : 10_000; // default is 10 seconds
     this._endpoint = options.endpoint;
     this._retryInitialDelay = options.retryInitialDelay || 100;
     this._retryDelayMultiplier = options.retryDelayMultiplier || 2;
@@ -422,11 +422,13 @@ export class GoFeatureFlagWebProvider implements Provider {
     changeEvent?: FlagChangeEvent,
   ): data is GoFeatureFlagResolvedFlags {
     if (this.isFlagResult(data)) {
+      // Check if the configuration changed
+      const isConfigurationChange = !!changeEvent || this.isConfigurationChange(this._flags, data);
       // New flags has been loaded, update state
       this._flags.flags = data.flags;
       this._lastFlagChangeEvent = undefined;
       // send a `ConfigurationChanged` when the flags evaluation changed
-      if (this._lastEmittedProviderEvent && (changeEvent || this.isConfigurationChange(this._flags, data))) {
+      if (this._lastEmittedProviderEvent && isConfigurationChange) {
         this.events.emit(ProviderEvents.ConfigurationChanged, {
           message: 'flag configuration have changed',
           flagsChanged: changeEvent
@@ -537,25 +539,24 @@ export class GoFeatureFlagWebProvider implements Provider {
       };
 
       const fetchRequest = fetch(this._fetchAllUrl, request);
-      const apiTimeout =
-        this._apiTimeout > 0
-          ? awaitableTimeout(this._apiTimeout, { signal: requestAbortController.signal })
-          : undefined;
+      const apiTimeout = awaitableTimeout(this._apiTimeout, { signal: requestAbortController.signal });
 
-      const result = await whenAnySettle(apiTimeout ? [fetchRequest, apiTimeout] : [fetchRequest]);
+      const result = await whenAnySettle([fetchRequest, apiTimeout]);
 
       // Let's check if the request has been aborted
       if (sessionSignal.aborted || requestAbortController.signal.aborted) {
         this._logger?.error(`${GoFeatureFlagWebProvider.name}: fetchAll operation was aborted`);
         throw new FetchAbortedError(requestAbortController.signal.reason);
-      } else if (result.promise === apiTimeout) {
-        // The API timed out
+      }
+      // The API timed out
+      else if (result.promise === apiTimeout) {
         this._logger?.error(
           `${GoFeatureFlagWebProvider.name}: fetchAll operation has timed out after ${this._apiTimeout}ms`,
         );
         throw new FetchTimeoutError(this._apiTimeout);
-      } else if (result.error) {
-        // An error occurred during the request, rethrow as-is
+      }
+      // An error occurred during the request, rethrow as-is
+      else if (result.error) {
         throw result.error;
       }
 
