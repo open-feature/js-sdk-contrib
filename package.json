@@ -6,6 +6,9 @@
     "npm": "^8.0.0"
   },
   "license": "Apache-2.0",
+  "overrides": {
+    "smol-toml": "1.7.1"
+  },
   "scripts": {
     "generate-hook": "nx generate open-feature hook",
     "generate-provider": "nx generate open-feature provider",
