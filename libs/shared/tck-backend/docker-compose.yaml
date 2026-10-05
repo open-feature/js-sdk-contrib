@@ -11,7 +11,7 @@
 # The tag is pinned, and a conformance claim is pinned to it -- see the provider READMEs.
 services:
   backend:
-    image: ghcr.io/open-feature/flagd-testbed:v3.10.1
+    image: ghcr.io/open-feature/flagd-testbed:v3.10.3
     ports:
       - 8013 # flagd RPC evaluation (gRPC) -- providers-flagd, rpc resolver
       - 8015 # flagd in-process sync (gRPC) -- providers-flagd, in-process resolver
