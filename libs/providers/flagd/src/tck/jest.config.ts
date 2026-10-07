@@ -1,12 +1,8 @@
 import type { Config } from 'jest';
 
 /**
- * The OpenFeature Provider Conformance Suite, kept out of the default build on purpose.
- *
- * A Jest project of its own over `src/tck/`, which is what does the selecting: the unit config
- * ignores that directory and the e2e config never sees it, so `npx nx tck providers-flagd` is the
- * only thing that runs these suites. Why they are excluded rather than gated is in this provider's
- * README.
+ * A Jest project of its own over `src/tck/`, so `npx nx tck providers-flagd` is the only thing that
+ * runs the conformance suites. Why they are excluded from the default build is in the README.
  */
 const config: Config = {
   displayName: 'providers-flagd-tck',

@@ -1,12 +1,9 @@
-# The backend stack every OpenFeature conformance suite in this repository runs against: one
-# unmodified flagd-testbed image serving flagd's evaluation transports and the launchpad control
-# API. One file rather than one per provider, because a per-project copy is how two suites come to
-# ask the same questions of two different backends. Each suite asks the harness only for the ports
-# it uses; the rest cost nothing, there being no host bindings to collide.
+# The backend stack every OpenFeature conformance suite in this repository runs against. One file
+# rather than one per provider, so two suites cannot drift onto different backends.
 #
-# Not the compose file the flagd e2e suites use, from the flagd-core test-harness submodule: that
-# one bind-mounts ${FLAGS_DIR} into a shared host directory, so two stacks up at once rewrite each
-# other's flags, and it runs an Envoy sidecar for gRPC transport cases. Neither is wanted here.
+# Deliberately not the compose file the flagd e2e suites use, from the flagd-core test-harness
+# submodule: that one bind-mounts ${FLAGS_DIR} into a shared host directory, so two stacks up at
+# once rewrite each other's flags.
 #
 # The tag is pinned, and a conformance claim is pinned to it -- see the provider READMEs.
 services:
