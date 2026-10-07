@@ -1,12 +1,8 @@
 import type { Config } from 'jest';
 
 /**
- * The OpenFeature Provider Conformance Suite, kept out of the default build on purpose.
- *
- * A Jest project of its own over `src/tck/`, which is what does the selecting: the provider's unit
- * config ignores that directory, so `npx nx tck providers-ofrep` is the only thing that runs this
- * suite. Why the target is not called `e2e`, and why the suite has a directory of its own, is in
- * this provider's README.
+ * A Jest project of its own over `src/tck/`, so `npx nx tck providers-ofrep` is the only thing that
+ * runs the conformance suite. Why it is excluded from the default build is in the README.
  */
 const config: Config = {
   displayName: 'providers-ofrep-tck',
