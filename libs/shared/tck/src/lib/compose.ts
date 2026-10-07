@@ -19,14 +19,10 @@ export const DEFAULT_STARTUP_TIMEOUT_MS = 60_000;
 /**
  * Addresses of the running stack, handed to {@link ContainerizedTckOptions.newProvider}.
  *
- * This type exists because host ports are only known *after* the stack has started. A Compose file
- * under test must not pin them — Docker assigns them dynamically, so a provider cannot be
- * configured until the stack is up, which is why the provider is supplied as a factory rather than
- * as an instance.
- *
- * The mapping is stable for the life of the suite: the stack is started once and never restarted,
- * so a provider built from this endpoint stays valid across every scenario. See the
- * no-container-restart invariant in the control API document.
+ * Host ports are only known *after* the stack has started — Docker assigns them dynamically, and a
+ * Compose file under test must not pin them — which is why the provider is supplied as a factory.
+ * The mapping is stable for the life of the suite, the stack being started once and never restarted,
+ * so a provider built from this endpoint stays valid across every scenario.
  */
 export interface BackendEndpoint {
   /**
@@ -70,18 +66,16 @@ export type ContainerizedProviderFactory = (endpoint: BackendEndpoint) => Provid
  * built against the stack's control API. `control` is therefore absent — the suite owns it — and
  * `newProvider` receives a {@link BackendEndpoint} instead of nothing.
  *
- * The HTTP control API in `openapi/control-api.yaml` is the normative contract here; substituting an
- * in-process control that manipulates an external backend through a side channel bypasses it — see
+ * The HTTP control API in `openapi/control-api.yaml` is the normative contract here — see
  * {@link BackendControl}.
  */
 export interface ContainerizedTckOptions extends Omit<TckOptions, 'control' | 'newProvider'> {
   /**
    * Path to the Docker Compose file describing the backend stack.
    *
-   * **Pass an absolute path** — `join(__dirname, 'docker-compose.yaml')` — for the same reason
-   * {@link TckOptions.extensionFeatures} asks for one: a relative path resolves against the test
-   * runner's working directory, which is the workspace root rather than your test file's directory.
-   * A relative path is accepted and resolved that way, and the failure message says so.
+   * **Pass an absolute path** — `join(__dirname, 'docker-compose.yaml')`: a relative one resolves
+   * against the test runner's working directory, which is the workspace root rather than your test
+   * file's directory. It is accepted and resolved that way, and the failure message says so.
    *
    * The stack must not pin host ports: they are assigned dynamically and the suite discovers them
    * after startup.
@@ -128,10 +122,9 @@ export interface ContainerizedTckOptions extends Omit<TckOptions, 'control' | 'n
    * The named flag configuration of the **backend**, passed to `POST /start`, which seeds the
    * canonical flag set.
    *
-   * The same option as {@link HttpControlOptions.backendConfiguration}, and it defaults the same
-   * way. Named for the backend rather than bare `configuration` because that word is already taken:
-   * in a conformance report `provider.configuration` is which mode of the *provider* was tested, and
-   * {@link TckOptions.name} is what feeds it.
+   * The same option as {@link HttpControlOptions.backendConfiguration}. Named for the backend
+   * rather than bare `configuration` because a report's `provider.configuration` already means which
+   * mode of the *provider* was tested, which {@link TckOptions.name} feeds.
    *
    * @default 'default'
    */
@@ -141,8 +134,7 @@ export interface ContainerizedTckOptions extends Omit<TckOptions, 'control' | 'n
    * How long the stack and its control API have to become reachable.
    *
    * Counts from the moment `docker compose up` is invoked, so on a machine that has not pulled the
-   * images yet it includes the pull. 60 seconds is right for a warm machine; a cold CI runner
-   * pulling a backend image wants considerably more.
+   * images yet it includes the pull. A cold CI runner wants considerably more than the default.
    *
    * @default 60000
    */
@@ -152,10 +144,9 @@ export interface ContainerizedTckOptions extends Omit<TckOptions, 'control' | 'n
 /**
  * Loads Testcontainers on first use rather than on import.
  *
- * `testcontainers` is an optional peer dependency, so a provider with no backend — in-memory,
- * in-process, environment-variable — adopts this library without pulling Docker tooling into its
- * node_modules. A static import at the top of this module would defeat that, because this module is
- * re-exported from the package entry point and so is loaded by every adopter.
+ * It is an optional peer dependency and this module is re-exported from the package entry point, so
+ * a static import would pull Docker tooling into the node_modules of every adopter — including a
+ * provider with no backend at all.
  */
 async function loadTestcontainers(): Promise<typeof Testcontainers> {
   try {
@@ -175,14 +166,12 @@ async function loadTestcontainers(): Promise<typeof Testcontainers> {
  * The ports the suite will resolve, per Compose service.
  *
  * The control port is added to the backend service's set even though it is never listed in
- * `backendPorts`: it is mapped automatically, and refusing to resolve it would make the harness
+ * `backendPorts`: it is mapped automatically, and refusing to resolve it would leave the harness
  * unable to build its own control URL.
  *
- * Exported for the unit tests, which is worth doing because this and {@link requireDeclared} are
- * the whole of the rule that makes `backendPorts` and `additionalPorts` load-bearing in JavaScript.
- * Compose publishes whatever the Compose file lists whether the options mention it or not, so
- * without the rule those two options would be documentation rather than configuration. Not part of
- * the package surface.
+ * Exported for the unit tests, not as package surface. Compose publishes whatever the Compose file
+ * lists whether the options mention it or not, so this and {@link requireDeclared} are the whole of
+ * what makes `backendPorts` and `additionalPorts` configuration rather than documentation.
  */
 export function declaredPorts(options: {
   backendService: string;
@@ -226,11 +215,10 @@ export function requireDeclared(declared: Map<string, Set<number>>, service: str
 /**
  * The Compose stack, started once per suite and never restarted.
  *
- * Never restarted because Testcontainers cannot reliably preserve dynamically mapped host ports
- * across a restart: a restarted service generally comes back on a different host port, silently
- * invalidating every provider already pointed at the old one, and the resulting failure looks like
- * a flaky provider. Backend unavailability is therefore always simulated *inside* the running stack
- * through the control API's `POST /stop`.
+ * Testcontainers cannot preserve dynamically mapped host ports across a restart: a restarted service
+ * generally comes back on a different host port, silently invalidating every provider already pointed
+ * at the old one, and the failure looks like a flaky provider. Backend unavailability is therefore
+ * always simulated *inside* the running stack through the control API's `POST /stop`.
  */
 class ComposeStack {
   private environment: Testcontainers.StartedDockerComposeEnvironment | undefined;
@@ -259,9 +247,8 @@ class ComposeStack {
     // eslint-disable-next-line no-console
     console.log(`tck: starting the Compose stack ${this.composeFile} (once per suite, never restarted)`);
 
-    // No wait strategy of its own: DockerComposeEnvironment already defaults to waiting for every
-    // published port of every service to listen, which is what the control API document says the
-    // suite establishes before the first scenario. `withStartupTimeout` bounds that wait.
+    // No wait strategy of its own: DockerComposeEnvironment already waits for every published port
+    // of every service to listen, and `withStartupTimeout` bounds that wait.
     this.environment = await new DockerComposeEnvironment(dirname(this.composeFile), basename(this.composeFile))
       .withStartupTimeout(this.startupTimeoutMs)
       .up();
@@ -283,11 +270,8 @@ class ComposeStack {
   /**
    * The endpoint handed to the provider factory.
    *
-   * A fresh object, but every accessor on it reads through to the live stack rather than capturing
-   * a value: the endpoint is built once per scenario while the ports it reports belong to the stack,
-   * and a snapshot would be a second place for them to be wrong. `host` is a getter for the same
-   * reason -- it reads better than a method at the call site, and must still not be resolved before
-   * the stack is up.
+   * Every accessor reads through to the live stack rather than capturing a value: a snapshot would
+   * be a second place for the ports to be wrong. `host` is a getter for the same reason.
    */
   endpoint(): BackendEndpoint {
     const backendService = this.backendService;
@@ -319,8 +303,7 @@ class ComposeStack {
    * The started container for a Compose service.
    *
    * Compose names a service's first replica `<service>-1`, and that is the key Testcontainers
-   * registers it under. Hidden here so that neither the harness nor an adopter has to know it: the
-   * options and the endpoint both speak in service names.
+   * registers it under. Hidden here so neither the harness nor an adopter has to know it.
    */
   private container(service: string) {
     try {
@@ -352,9 +335,9 @@ class ComposeStack {
 /**
  * Rejects a configuration the stack could not honour, before Jest schedules anything.
  *
- * Exported for the unit tests, which cannot call {@link runContainerizedProviderTck} on options
- * that pass: the entry point registers hooks and a `describe`, and doing that from inside a test is
- * not something Jest allows. Not part of the package surface.
+ * Exported for the unit tests, not as package surface: they cannot call
+ * {@link runContainerizedProviderTck} on options that pass, because the entry point registers hooks
+ * and a `describe` and Jest does not allow that from inside a test.
  */
 export function checkOptions(options: ContainerizedTckOptions): void {
   const { composeFile, backendPorts } = options;
@@ -400,10 +383,9 @@ export function checkOptions(options: ContainerizedTckOptions): void {
  * Runs the Provider Conformance Suite against a provider whose backend comes up from a Docker
  * Compose file.
  *
- * This is the path for the overwhelming majority of providers. The adopter supplies a Compose file
- * and a factory; the suite starts the stack once, discovers the dynamically mapped host ports,
- * builds the HTTP control against the control API, waits until it accepts commands, constructs a
- * provider per scenario and tears the stack down after the last one.
+ * The adopter supplies a Compose file and a factory; the suite starts the stack once, discovers the
+ * dynamically mapped host ports, builds the HTTP control against the control API, waits until it
+ * accepts commands, constructs a provider per scenario and tears the stack down after the last one.
  *
  * ```ts
  * runContainerizedProviderTck({
@@ -415,9 +397,8 @@ export function checkOptions(options: ContainerizedTckOptions): void {
  * });
  * ```
  *
- * `runProviderTck` remains the path for a provider with **no** backend — in-memory, in-process,
- * environment-variable — which supplies its own {@link BackendControl}. Compose is an additional
- * path, and now the default one, for a provider that talks to something.
+ * `runProviderTck` remains the path for a provider with **no** backend, which supplies its own
+ * {@link BackendControl}.
  *
  * One suite per file, for the same reason as {@link runProviderTck}: jest-cucumber accumulates step
  * definitions in module state. Two resolvers means two files sharing a Compose file.
@@ -447,13 +428,11 @@ export function runContainerizedProviderTck(options: ContainerizedTckOptions): v
   );
 
   // The thunk form, because the control API's host port does not exist until the stack is up while
-  // this call happens at module load. Resolved once, on the first control call, which is safe
-  // precisely because nothing restarts the stack.
+  // this call happens at module load.
   const control = new HttpControl({ baseUrl: () => stack.controlApiUrl(), backendConfiguration });
 
-  // A scenario may await readiness once and then several events, and Jest's own default of five
-  // seconds is never enough for a real backend. Derived from the suite's own timeouts rather than
-  // guessed, and set before the describe block so an adopter can override it after this call.
+  // Jest's own default of five seconds is never enough for a real backend. Derived from the suite's
+  // own bounds, and set before the describe block so an adopter can override it after this call.
   jest.setTimeout(readyTimeout(options) + 4 * eventTimeout(options));
 
   // At the file's root scope, so it runs before the beforeEach that runProviderTck installs inside
@@ -471,8 +450,7 @@ export function runContainerizedProviderTck(options: ContainerizedTckOptions): v
   runProviderTck({
     ...tck,
     control,
-    // Read inside the factory: the mapped ports do not exist until the stack is up. They stay valid
-    // for the whole suite because nothing restarts a container.
+    // Read inside the factory: the mapped ports do not exist until the stack is up.
     newProvider: () => newProvider(stack.endpoint()),
   });
 }

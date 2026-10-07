@@ -4,10 +4,9 @@ import { HttpControl } from './httpControl';
 /**
  * Things the Gherkin cannot assert about itself.
  *
- * The control API's fallback rules are invisible from inside a scenario: a suite whose control
- * client gets them wrong still runs every scenario, and the failures it produces look like provider
- * defects rather than test-harness ones. So the request sequence is pinned here, against a stubbed
- * `fetch`, with no container involved.
+ * The control API's fallback rules are invisible from inside a scenario: a suite that gets them
+ * wrong still runs everything, and its failures look like provider defects. So the request sequence
+ * is pinned here, against a stubbed `fetch`.
  */
 describe('HttpControl', () => {
   const BASE = 'http://localhost:32768';
@@ -30,7 +29,7 @@ describe('HttpControl', () => {
 
   it('uses /reset for every scenario when the backend implements it', async () => {
     // /reset causes no availability blip, so unlike /start it cannot inject a spurious lifecycle
-    // event into the scenario that follows.
+    // event into the next scenario.
     const subject = control();
 
     await subject.prepareScenario();
@@ -40,8 +39,7 @@ describe('HttpControl', () => {
   });
 
   it('falls back to /start when /reset is not implemented, and remembers', async () => {
-    // The normal path rather than an edge case: flagd-testbed's launchpad, the reference
-    // implementation, serves only /start, /restart, /stop and /change, so /reset answers 404.
+    // The usual path rather than an edge case: the reference launchpad does not serve /reset.
     statuses.set('/reset', 404);
     const subject = control();
 
@@ -66,9 +64,8 @@ describe('HttpControl', () => {
   });
 
   it('starts rather than resets after a disconnect', async () => {
-    // The load-bearing one. /reset restores flag state and is not specified to start a stopped
-    // backend, so a scenario following an outage that only reset would run against a backend that is
-    // still down, and every one of its assertions would be reported as a provider defect.
+    // The load-bearing one: /reset is not specified to start a stopped backend, so a scenario
+    // following an outage would run against a backend still down and blame the provider for it.
     const subject = control();
 
     await subject.prepareScenario();
@@ -79,8 +76,7 @@ describe('HttpControl', () => {
   });
 
   it('reconnects by starting the configuration already in effect', async () => {
-    // An outage must be observable as a change in availability and never as a change in flag values,
-    // which is what starting the same configuration guarantees.
+    // An outage must be observable as a change in availability, never in flag values.
     const subject = new HttpControl({ baseUrl: BASE, backendConfiguration: 'ssl' });
 
     await subject.reconnect();
@@ -89,17 +85,16 @@ describe('HttpControl', () => {
   });
 
   it('fails loudly on an unexpected status', async () => {
-    // Silence here would be the worst outcome: the scenario would run against a backend in an
-    // unknown state and report whatever it found as a conformance result.
+    // Silence would leave the scenario running against a backend in an unknown state and reporting
+    // whatever it found as a conformance result.
     statuses.set('/change', 500);
 
     await expect(control().changeFlag()).rejects.toThrow(/returned 500/);
   });
 
   it('resolves the base URL lazily, so a mapped host port need not exist yet', () => {
-    // runProviderTck is called at module load, before any beforeAll has run, while the control
-    // service's host port is only assigned once the stack comes up — which is also when the typical
-    // container helper stops throwing.
+    // runProviderTck is called at module load, while the control service's host port is only
+    // assigned once the stack comes up.
     // Not a const, whatever prefer-const makes of a single assignment: the whole point is that the
     // thunk is called twice and sees a different answer each time, so the value cannot be known at
     // the declaration.
@@ -114,7 +109,7 @@ describe('HttpControl', () => {
       },
     });
 
-    // Constructing it must not have called the thunk, and reporting must not fail because of it.
+    // Constructing it must not call the thunk, and reporting must not fail because of it.
     expect(subject.description).toContain('not resolved yet');
 
     address = 'localhost:32768';
@@ -122,8 +117,8 @@ describe('HttpControl', () => {
   });
 
   it('rejects a base URL with no scheme', async () => {
-    // The mistake this catches is specific: container helpers commonly hand back "host:port", which
-    // URL parsing happily reads as a scheme of its own rather than rejecting.
+    // Container helpers commonly hand back "host:port", which URL parsing happily reads as a scheme
+    // of its own rather than rejecting.
     const subject = new HttpControl({ baseUrl: 'localhost:32768' });
 
     await expect(subject.changeFlag()).rejects.toThrow(/must use http or https/);
@@ -137,9 +132,8 @@ describe('HttpControl', () => {
     });
 
     it('accepts 404, because /healthz is optional and an answer is itself the readiness signal', async () => {
-      // Spelled out in the control API document: readiness falls back to "the control port accepts
-      // a connection", and it just did or this request would not have been answered. The reference
-      // launchpad does not serve the path, so 404 is the common case rather than the edge one.
+      // Readiness falls back to "the control port accepts a connection", and it just did or this
+      // request would not have been answered. The reference launchpad does not serve the path.
       statuses.set('/healthz', 404);
 
       await expect(control().awaitReady(1_000)).resolves.toBeUndefined();
@@ -163,9 +157,8 @@ describe('HttpControl', () => {
     });
 
     it('gives up with the last thing it saw, and says which knob raises the budget', async () => {
-      // The failure this produces has to be distinguishable from a provider defect: at this point
-      // no provider has been constructed, so a message about the control API is the only honest
-      // report -- and the fix is nearly always the timeout rather than the stack.
+      // No provider has been constructed at this point, so a message about the control API is the
+      // only honest report -- and the fix is nearly always the timeout rather than the stack.
       statuses.set('/healthz', 503);
 
       await expect(control().awaitReady(50)).rejects.toThrow(
@@ -175,8 +168,8 @@ describe('HttpControl', () => {
     });
 
     it('treats an unreachable control API as not ready yet rather than as a failure', async () => {
-      // The stack is still coming up. Reporting the connection error immediately would turn the
-      // normal first second of every containerised run into a failed suite.
+      // The stack is still coming up; failing here would turn the first second of every
+      // containerised run into a failed suite.
       let attempts = 0;
       globalThis.fetch = (async () => {
         attempts += 1;
@@ -201,8 +194,8 @@ describe('HttpControl', () => {
   });
 
   it('can simulate an outage', () => {
-    // The mirror of the InProcessControl assertion that it cannot: declaring Capability.Stale is
-    // only honest if the control behind it can actually take the backend away.
+    // The mirror of the InProcessControl assertion that it cannot: Capability.Stale is only honest
+    // if the control behind it can take the backend away.
     expect(asConnectionControl(control())).toBeDefined();
   });
 });

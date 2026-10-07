@@ -6,15 +6,12 @@ import type { LifecycleOperation, TckState } from '../state';
 /**
  * Steps that put a provider under test, and the ones that drive its lifecycle directly.
  *
- * `setProviderAndWait` is used for the healthy case because every scenario that follows assumes a
- * provider that has finished initialising; a suite that started evaluating before that would report
- * races in the TCK as defects in the provider.
+ * `setProviderAndWait` for the healthy case, because a suite that started evaluating before
+ * initialisation finished would report races in the TCK as defects in the provider.
  *
- * The shutdown steps call the provider's own `onClose` and `initialize`, not the SDK's. The SDK
- * shuts a provider down when it is replaced, but going that way would test the registry's
- * bookkeeping as much as the provider, and Appendix B already does that. Calling the instance is
- * also what lets a scenario shut it down twice: the registry only ever does so once per
- * registration.
+ * The shutdown steps call the provider's own `onClose` and `initialize` rather than the SDK's: going
+ * through the registry would test its bookkeeping as much as the provider, and it only shuts a
+ * provider down once per registration, so a scenario could not do it twice.
  */
 export const providerSteps =
   (state: TckState): StepDefinitions =>
@@ -57,39 +54,34 @@ export const providerSteps =
       state.provider = provider;
       const domain = domainFor(state.options);
 
-      // Registration is expected to reject, because the provider cannot reach anything. That is not
-      // a failure: what the contract requires is an observable error state, which the scenario
-      // checks through the event and the client status. Swallowing it here keeps the scenario about
-      // the provider's behaviour rather than about how registration reports it.
+      // Registration is expected to reject, the provider being able to reach nothing. What the
+      // contract requires is an observable error state, which the scenario checks through the event
+      // and the client status, so swallowing it here keeps the scenario about the provider.
       await OpenFeature.setProviderAndWait(domain, provider).catch(() => undefined);
 
       state.client = OpenFeature.getClient(domain);
     });
 
     when('the provider is shut down', async () => {
-      // The registry is not told. The client still points at the same instance, so an evaluation
+      // The registry is not told, so the client still points at the same instance and an evaluation
       // after "the provider is initialized again" reaches the very object that was shut down and
-      // brought back, which is what that scenario asserts. And when the scenario ends the SDK
-      // closes the provider once more on its own -- a second call, which requirement 2.5.3 makes
-      // harmless.
+      // brought back. The SDK closes it once more when the scenario ends, which is harmless.
       const provider = state.requireProvider();
       await recordLifecycleCall(state, 'shutdown', () => provider.onClose?.());
     });
 
     when('the provider is initialized again', async () => {
-      // With an empty context and the domain the provider was registered under, which is what the
-      // SDK handed it the first time. Direct for the same reason as the shutdown step: re-registering
-      // through the SDK would create a new registration around the same instance, and what is under
-      // test is that the instance itself reverts to an initialisable state.
+      // With the empty context and domain the SDK handed it the first time. Direct for the same
+      // reason as the shutdown step: what is under test is that the instance itself reverts to an
+      // initialisable state.
       const provider = state.requireProvider();
       await recordLifecycleCall(state, 'initialize', () => provider.initialize?.({}, domainFor(state.options)));
     });
 
     then(/^the shutdown should have completed within (\d+)ms$/, (millis: string) => {
-      // The scenario using this runs against a backend that will never answer, so what it asserts
-      // is that shutdown returns rather than waiting for a graceful close that cannot happen. A
-      // shutdown that was given up on because it outlasted readyTimeoutMs fails here too: its
-      // recorded duration is however long the suite waited before moving on.
+      // The scenario runs against a backend that will never answer, so this asserts that shutdown
+      // returns rather than waiting for a graceful close that cannot happen. One given up on for
+      // outlasting readyTimeoutMs fails here too, its recorded duration being the wait.
       const record = state.requireShutdown();
       const bound = Number(millis);
       if (record.durationMs > bound) {
@@ -102,9 +94,8 @@ export const providerSteps =
     });
 
     then('the provider metadata name should not be empty', () => {
-      // Asked of the provider rather than of the client's metadata, which would answer for
-      // whatever the registry holds under the domain: the same object here, but the question is
-      // about the provider (requirement 2.1.1).
+      // Asked of the provider rather than of the client's metadata, which answers for whatever the
+      // registry holds under the domain.
       const provider = state.requireProvider();
       const name: unknown = provider.metadata?.name;
       if (typeof name !== 'string' || name.trim() === '') {
@@ -119,13 +110,9 @@ export const providerSteps =
 /**
  * Makes one direct lifecycle call and records how it went, throwing nothing.
  *
- * A throw or rejection is recorded rather than propagated, for the same reason an evaluation's is:
- * "no exception should have been thrown" is a step of its own, and a scenario that wants a throw to
- * fail says so there.
- *
- * A call that outlasts `readyTimeoutMs` is given up on and recorded as a timeout with the time
- * waited, so a hanging shutdown fails its scenario with a message rather than hanging the session
- * until Jest's own timeout fires with a far less useful one.
+ * A throw is recorded rather than propagated, because "no exception should have been thrown" is a
+ * step of its own. A call that outlasts `readyTimeoutMs` is given up on and recorded as a timeout
+ * with the time waited, so a hanging shutdown fails with a message rather than on Jest's own timeout.
  */
 async function recordLifecycleCall(
   state: TckState,
@@ -137,8 +124,8 @@ async function recordLifecycleCall(
   let thrown: unknown;
 
   try {
-    // Wrapped in a promise so a synchronous throw from the provider is recorded like a rejection,
-    // and a provider that has no such function at all counts as having returned at once.
+    // Wrapped so a synchronous throw is recorded like a rejection, and a provider with no such
+    // function counts as having returned at once.
     await withTimeout(
       Promise.resolve().then(call),
       limit,
@@ -146,8 +133,7 @@ async function recordLifecycleCall(
         `the host application; raise readyTimeoutMs only if the provider is genuinely slower than this`,
     );
   } catch (error) {
-    // `undefined` marks a clean call, so a provider that throws literally `undefined` is still
-    // recorded as having thrown something.
+    // `undefined` marks a clean call, so a provider throwing literally `undefined` still records.
     thrown = error === undefined ? new Error(`${operation} threw undefined`) : error;
   }
 

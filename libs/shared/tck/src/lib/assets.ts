@@ -20,24 +20,17 @@ const SPEC_SUBDIR: Record<string, string> = {
  * Locates a directory of conformance assets, resolved from this module rather than from the working
  * directory.
  *
- * That rules out a workspace-relative path: it would resolve against whatever directory the test
- * runner happened to start in, which is the workspace root here and something else entirely for
- * anyone consuming the published package.
+ * A workspace-relative path would resolve against whatever directory the test runner started in,
+ * which is the workspace root here and something else entirely for a consumer of the published
+ * package. Two layouts have to work, so both are tried in order:
  *
- * Two layouts have to work, so both are tried in order:
+ *   - `<pkg>/features` — the published package, whose rollup `assets` globs copy the files next to
+ *     the bundle, so **adopting the TCK never requires a git submodule**;
+ *   - `<lib>/spec/specification/assets/provider-tck/gherkin` — this repository, reading straight out
+ *     of the `open-feature/spec` submodule, where the assets are owned.
  *
- *   - `<pkg>/features` — the published package. The assets ship *inside* the library, so **adopting
- *     the TCK never requires a git submodule**; the rollup `assets` globs copy them out of the
- *     submodule and place them next to the bundle at package time;
- *   - `<lib>/spec/specification/assets/provider-tck/gherkin` — this repository, where the assets are
- *     not vendored at all but read straight out of the `open-feature/spec` submodule. They are
- *     owned there, and a copy in this repository would be a second place for conformance to drift.
- *
- * This lives apart from the harness because it is not only the harness that reads an asset: the
- * canonical flag set is *parsed* out of `flags/canonical-flags.json` rather than transcribed into
- * TypeScript, so {@link canonicalFlagSet} resolves the same directory the same way. A module the
- * harness and the flag fixture both depend on keeps that from becoming an import cycle, the harness
- * having to import the fixture's steps.
+ * Apart from the harness because {@link canonicalFlagSet} resolves the same directory the same way,
+ * and a shared module keeps that from becoming an import cycle.
  */
 export function resolveAssetDir(name: string): string {
   const fromSpec = join(SPEC_ASSET_ROOT, SPEC_SUBDIR[name] ?? name);
@@ -67,9 +60,8 @@ export function resolveAssetDir(name: string): string {
 /**
  * The canonical flag set, as raw JSON, for a suite that seeds a backend from it.
  *
- * One definition of the path, deliberately: the file is both what an adopter seeds a backend from
- * and what this library builds its own in-memory flag configuration out of, and two ways of finding
- * it is the first step towards two versions of it.
+ * One definition of the path: the file is both what an adopter seeds a backend from and what this
+ * library builds its in-memory configuration out of.
  */
 export const CANONICAL_FLAGS_PATH = join(resolveAssetDir('flags'), 'canonical-flags.json');
 
