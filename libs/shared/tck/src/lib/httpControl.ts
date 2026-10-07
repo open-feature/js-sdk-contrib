@@ -5,9 +5,8 @@ import type { BackendControl, ConnectionControl } from './control';
  * canonical flag set.
  *
  * Named for the *backend's* configuration throughout, never bare `configuration`: in a conformance
- * report `provider.configuration` means which mode of the provider was tested — flagd RPC against
- * flagd in-process — which is what {@link TckOptions.name} feeds. Two unrelated things sharing the
- * word is how one language ended up meaning the opposite of another.
+ * report `provider.configuration` means which mode of the provider was tested, which
+ * {@link TckOptions.name} feeds.
  */
 export const DEFAULT_BACKEND_CONFIGURATION = 'default';
 
@@ -25,8 +24,8 @@ export interface HttpControlOptions {
    * The root of the control API, scheme included — for example `http://localhost:32768`.
    *
    * It must be built from the **dynamically mapped host port** of the control service, which does
-   * not exist until the stack is up. `runProviderTck` has to be called at module load, before any
-   * `beforeAll` has run, so a plain string is usually impossible to supply. Hence the thunk form:
+   * not exist until the stack is up, while `runProviderTck` is called at module load — so a plain
+   * string is usually impossible to supply. Hence the thunk form:
    *
    * ```ts
    * const control = new HttpControl({ baseUrl: () => `http://${container.getControlUrl()}` });
@@ -53,37 +52,27 @@ export interface HttpControlOptions {
  * A {@link BackendControl} that drives a backend under test over the HTTP control API defined in
  * `openapi/control-api.yaml`.
  *
- * This is the normative control path for any provider with a real backend. It uses the global
- * `fetch`, so it adds no dependency.
+ * The normative control path for any provider with a real backend. It uses the global `fetch`, so
+ * it adds no dependency.
  *
  * It never stops, kills or recreates a container: unavailability is simulated inside the running
- * stack through `POST /stop`, which is the control API's no-container-restart invariant. Starting
- * and stopping the stack itself belongs to the adopting suite, once per suite.
+ * stack through `POST /stop`. Starting and stopping the stack itself belongs to the adopting suite,
+ * once per suite.
  *
  * ## Scenario isolation
  *
  * {@link prepareScenario} prefers `POST /reset`, which restores the flag baseline with no
- * availability blip and therefore cannot inject a spurious lifecycle event into the next scenario.
- * That operation is optional, and a backend that does not implement it answers `404` or `501`; the
- * TCK then falls back to `POST /start?config=...`, which also resets flag state at the cost of a
- * process restart. The fallback is probed once and remembered for the rest of the suite.
+ * availability blip and so cannot inject a spurious lifecycle event into the next scenario. It is an
+ * optional operation — and unimplemented by the reference launchpad, so the fallback is the usual
+ * path — and a `404` or `501` makes the TCK fall back to `POST /start?config=...`, which resets flag
+ * state at the cost of a process restart. The fallback is probed once and remembered for the suite.
  *
- * The fallback is the normal path today rather than an edge case: flagd-testbed's launchpad — the
- * reference implementation the control API was derived from — serves only `/start`, `/restart`,
- * `/stop` and `/change`.
- *
- * After a disconnect the backend may be down, and `/reset` is specified to reset flag state rather
- * than to start a stopped backend. `HttpControl` tracks that and uses `/start` for the scenario
- * following any disconnect.
+ * `/reset` is specified to reset flag state rather than to start a stopped backend, so the scenario
+ * following any disconnect uses `/start`.
  */
 export class HttpControl implements BackendControl, ConnectionControl {
-  /**
-   * The normative way to drive a backend, which is what this class is.
-   *
-   * Stated rather than left to a reader's inference: `in-process` is a narrow allowance for
-   * providers with nothing to connect to, and a claim of `http` is only worth anything if the
-   * control that makes it is the one that actually spoke HTTP.
-   */
+  /** Stated rather than inferred: a claim of `http` is worth something only from the control that
+   * actually spoke HTTP. */
   readonly controlApi = 'http' as const;
 
   private readonly resolveBaseUrl: () => string;
@@ -118,8 +107,8 @@ export class HttpControl implements BackendControl, ConnectionControl {
   }
 
   get description(): string {
-    // Read while reporting, including in failure messages, which may be before the stack is up.
-    // Reporting an address we do not have yet is not worth failing a test over.
+    // Read while reporting, which may be before the stack is up; an address we do not have yet is
+    // not worth failing a test over.
     let target: string;
     try {
       target = this.base();
@@ -136,8 +125,7 @@ export class HttpControl implements BackendControl, ConnectionControl {
    * disconnect always uses `/start`.
    */
   async prepareScenario(): Promise<void> {
-    // A backend that may be stopped has to be started; /reset is specified to restore flag state,
-    // not to bring a stopped backend back up.
+    // /reset restores flag state; it is not specified to bring a stopped backend back up.
     if (this.backendMaybeDown || this.resetSupported === false) {
       await this.start();
       this.backendMaybeDown = false;
@@ -167,22 +155,18 @@ export class HttpControl implements BackendControl, ConnectionControl {
   /**
    * Waits until the control API will accept commands, or gives up after `timeoutMs`.
    *
-   * A real readiness check against the control API itself, and the only waiting the suite does
-   * around a control call. `GET /healthz` is **optional** in the control API document, which is why
-   * a `404` counts as ready: the path is not implemented, and readiness then falls back to the
-   * control port accepting a connection — which it just did, or this request would not have got an
-   * answer. `503` is the specified "not ready yet", and a connection error is the stack still coming
-   * up; both are retried.
+   * `GET /healthz` is **optional**, which is why a `404` counts as ready: readiness then falls back
+   * to the control port accepting a connection, which it just did or this request would not have got
+   * an answer. `503` is the specified "not ready yet", and a connection error is the stack still
+   * coming up; both are retried.
    *
-   * Note that this reports the health of the *control API*, never of the backend. The backend is
-   * deliberately unreachable during the outage scenarios while the control API has to stay up,
-   * otherwise the suite could not end the outage.
+   * This reports the health of the *control API*, never of the backend, which is deliberately
+   * unreachable during the outage scenarios.
    *
-   * There is deliberately no settle delay after a control call to pair with this — see the control
-   * API's invariants, which make every state-changing endpoint answer only once the new state is
-   * being served. How long the *provider* then takes to notice is a property of its transport, which
-   * is what the event timeout is for; conflating the two makes the provider's detection latency
-   * unmeasurable, because the clock starts before there is anything to detect.
+   * There is deliberately **no settle delay** after a control call to pair with this: every
+   * state-changing endpoint answers only once the new state is being served, and adding a sleep
+   * would start the clock before there is anything to detect, making the provider's detection
+   * latency unmeasurable.
    */
   async awaitReady(timeoutMs: number): Promise<void> {
     const deadline = Date.now() + timeoutMs;
@@ -230,9 +214,7 @@ export class HttpControl implements BackendControl, ConnectionControl {
 
   /**
    * Makes the backend unreachable without touching any container: the backend process inside the
-   * still-running container is stopped.
-   *
-   * See the class documentation for why that distinction is a requirement rather than a preference.
+   * still-running container is stopped. See the class documentation for why.
    */
   async disconnect(): Promise<void> {
     this.backendMaybeDown = true;
@@ -273,9 +255,8 @@ export class HttpControl implements BackendControl, ConnectionControl {
     try {
       const response = await fetch(target, { method: 'POST', signal: controller.signal });
 
-      // The response body is drained and discarded: the control API's bodies are human-readable
-      // messages the TCK is specified never to interpret, and draining releases the connection. It
-      // cannot throw, so it never reaches the catch below.
+      // Drained and discarded: the bodies are human-readable messages the TCK never interprets, and
+      // draining releases the connection.
       await response.arrayBuffer().catch(() => undefined);
 
       return response.status;
@@ -308,8 +289,8 @@ export class HttpControl implements BackendControl, ConnectionControl {
     }
 
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      // "localhost:32768" parses cleanly, as a scheme of 'localhost:', so this is where a container
-      // helper's "host:port" is actually caught rather than by the parse above.
+      // "localhost:32768" parses cleanly, as a scheme of 'localhost:', so a container helper's
+      // "host:port" is caught here rather than by the parse above.
       throw new Error(
         `HttpControlOptions.baseUrl '${raw}' must use http or https, not '${parsed.protocol}'. A ` +
           `container helper that returns "host:port" needs a scheme prepended, for example ` +

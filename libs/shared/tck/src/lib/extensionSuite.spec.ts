@@ -11,24 +11,15 @@ import { clientUnderTest, providerUnderTest } from './underTest';
  * The reference **extension** adoption, and the end-to-end proof that `extensionFeatures` and
  * `extensionSteps` work.
  *
- * `inMemory.spec.ts` is the reference adoption for a provider with nothing extra to say.
- * This file is the one for a vendor that has provider-specific behaviour outside the shared
- * contract — flagd's `fractional` targeting is the motivating case — and it runs the canonical
- * suite and `fixtures/extension-features/vendor.feature` together: one `describe`, one provider
- * lifecycle, one capability declaration.
- *
- * What it demonstrates, and what a reviewer should look for in the output:
+ * Where `inMemory.spec.ts` is the reference adoption for a provider with nothing extra to say, this
+ * is the one for a vendor with provider-specific behaviour outside the shared contract. It runs the
+ * canonical suite and `fixtures/extension-features/vendor.feature` together, and demonstrates that:
  *
  *   - every canonical scenario still runs, unchanged and unfiltered, alongside the vendor ones;
- *   - a vendor scenario mixes vendor steps and canonical steps freely;
- *   - a vendor scenario gets the TCK's `beforeEach`, so it starts from the seeded canonical backend
- *     rather than from whatever the previous scenario left behind;
+ *   - a vendor scenario mixes vendor and canonical steps freely, and gets the TCK's `beforeEach`;
  *   - a vendor step reaches the provider under test through `clientUnderTest()` and
- *     `providerUnderTest()`, which is the whole point of the extension point rather than a detail
- *     of it: without them an adopter's only way to evaluate a flag is a client of its own, which
- *     resolves against a different provider than the suite is testing;
- *   - the capability gate applies to vendor scenarios: the `@stale` one is reported as skipped,
- *     with the reason, exactly as a canonical `@stale` scenario is.
+ *     `providerUnderTest()`, a client of the adopter's own resolving against a different provider;
+ *   - the capability gate applies to vendor scenarios, the `@stale` one skipping with its reason.
  */
 
 /** The in-process control, extended with the one operation the vendor's own steps need. */
@@ -41,10 +32,8 @@ class VendorControl extends InProcessControl {
   }
 
   /**
-   * The provider this scenario's factory produced, for the identity assertion.
-   *
-   * Exposed only so the accessor self-test has something to compare `providerUnderTest()` against
-   * that cannot be faked: the same object, not merely an equivalent one.
+   * The provider this scenario's factory produced, exposed only so the accessor self-test can
+   * compare `providerUnderTest()` against the same object rather than an equivalent one.
    */
   created(): InMemoryProvider {
     if (!this.live) {
@@ -76,15 +65,10 @@ const control = new VendorControl();
 /**
  * The vendor's step definitions.
  *
- * jest-cucumber's own shape, bound in the same call as the canonical steps. A matcher that also
- * matched a canonical step would be rejected as ambiguous, so this cannot redefine one.
- *
- * The two `then` steps are the accessor self-test. They are deliberately the only place in this
- * file that reaches the provider under test, and they reach it the way an adopter has to — through
- * the package's public accessors, with nothing handed to `StepDefinitions` but jest-cucumber's own
- * `given`/`when`/`then`. The `given` above, by contrast, reaches into this file's own control
- * object, which is exactly why it proves nothing about the extension point: it would still pass
- * with `clientUnderTest()` broken.
+ * The two `then` steps are the accessor self-test, and deliberately the only place here that reaches
+ * the provider under test — through the package's public accessors, the way an adopter has to. The
+ * `given` reaches into this file's own control object, which is why it proves nothing about the
+ * extension point: it would still pass with `clientUnderTest()` broken.
  */
 const vendorSteps: StepDefinitions = ({ given, then }) => {
   given(/^the vendor rule serves "([^"]*)" for "([^"]*)"$/, (value: string, key: string) => {
@@ -92,9 +76,8 @@ const vendorSteps: StepDefinitions = ({ given, then }) => {
   });
 
   then(/^the suite's own client resolves "([^"]*)" for "([^"]*)"$/, async (expected: string, key: string) => {
-    // The suite's client, in the suite's own domain. A client built here would sit in the default
-    // domain behind a NoOpProvider and answer the default value, so the assertion distinguishes
-    // the two rather than merely checking that something answered.
+    // A client built here would sit in the default domain behind a NoOpProvider and answer the
+    // default value, so this distinguishes the two rather than checking that something answered.
     expect(await clientUnderTest().getStringValue(key, 'none')).toBe(expected);
   });
 
@@ -107,9 +90,7 @@ runProviderTck({
   name: 'in-memory-with-extension',
   control,
   newProvider: () => control.newProvider(),
-  // The in-memory suite's declaration, for the same reasons: see inMemory.spec.ts. Targeting stays
-  // undeclared because the canonical flag format cannot express an InMemoryProvider
-  // contextEvaluator, so targeting-key-flag's rule is inert here.
+  // The in-memory suite's declaration, for the same reasons: see inMemory.spec.ts.
   capabilities: [
     Capability.Events,
     Capability.ConfigurationChange,
@@ -123,7 +104,6 @@ runProviderTck({
   ],
 
   // Absolute, because paths resolve against the runner's working directory rather than this file's.
-  // A directory named for what it holds, and nothing like the canonical `gherkin`/`features`.
   extensionFeatures: join(__dirname, '..', '..', 'fixtures', 'extension-features'),
   extensionSteps: vendorSteps,
 });

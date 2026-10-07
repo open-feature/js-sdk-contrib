@@ -14,9 +14,8 @@ describe('InProcessControl', () => {
   }) => (await provider.resolveStringEvaluation(CHANGING_FLAG_KEY, 'unset')).value;
 
   it('actually changes the resolved value, not just the event', async () => {
-    // The assumption every configuration-change scenario rests on. If changeFlag emitted an event
-    // without altering what the provider resolves, the scenario would still pass its event
-    // assertion and the suite would be certifying a signal with nothing behind it.
+    // If changeFlag emitted an event without altering what the provider resolves, the scenario
+    // would still pass its event assertion and certify a signal with nothing behind it.
     const control = new InProcessControl();
     const provider = control.newProvider();
 
@@ -27,15 +26,12 @@ describe('InProcessControl', () => {
     expect(after).not.toEqual(before);
   });
 
-  // The event itself, and that it names the changed flag, is asserted end-to-end by the
-  // @configuration-change scenario, which runs in this package's in-memory suite. Duplicating it
-  // here would mean reaching into the SDK's event emitter directly, which is both a weaker
-  // assertion and a coupling to an internal API.
+  // The event itself is asserted end to end by the @configuration-change scenario in the in-memory
+  // suite; duplicating it here would mean coupling to the SDK's event emitter.
 
   it('does not leak a change into the next scenario', async () => {
-    // A leak here would make the suite order-dependent: a scenario running after the
-    // configuration-change one would start with changing-flag already flipped, and the failure would
-    // look like a provider defect.
+    // A leak would make the suite order-dependent, and the failure would look like a provider
+    // defect.
     const control = new InProcessControl();
 
     const first = control.newProvider();
@@ -58,15 +54,13 @@ describe('InProcessControl', () => {
   });
 
   it('does not pretend to have a connection', () => {
-    // The load-bearing one. A no-op disconnect would report the @stale scenarios as passed against a
-    // provider that cannot go stale — precisely the silent-green failure a conformance suite must
-    // never have.
+    // The load-bearing one: a no-op disconnect would report the @stale scenarios as passed against
+    // a provider that cannot go stale.
     expect(asConnectionControl(new InProcessControl())).toBeUndefined();
   });
 
   it('omits missing-flag from the canonical flag set', () => {
-    // The property the FLAG_NOT_FOUND scenario depends on. Seeding it would turn that scenario green
-    // for the wrong reason, and nothing else in the suite would notice.
+    // Seeding it would turn the FLAG_NOT_FOUND scenario green for the wrong reason.
     expect(Object.keys(canonicalFlagSet())).not.toContain('missing-flag');
   });
 
@@ -80,18 +74,16 @@ describe('InProcessControl', () => {
   };
 
   it('keeps the falsy values of the canonical flag set as values', () => {
-    // false, 0 and "" are what the falsy-value scenarios resolve to, and each scenario's default is
-    // something else. A `||` default anywhere between this set and the provider would hand back the
-    // default instead, and the failure would look like a provider defect rather than a seeding one.
+    // Each falsy-value scenario's caller default is something else, so a `||` default between this
+    // set and the provider would hand back the default and look like a provider defect.
     expect(resolvedValue('boolean-zero-flag')).toBe(false);
     expect(resolvedValue('integer-zero-flag')).toBe(0);
     expect(resolvedValue('string-zero-flag')).toBe('');
   });
 
   it('holds 2^53 - 1 exactly', () => {
-    // The @large-integers scenario asks for the largest integer a JavaScript number represents
-    // without rounding. Anything that had gone through a narrower type on the way here would be
-    // off by one or more, and the scenario would blame the provider.
+    // Anything that had gone through a narrower type on the way here would be off by one or more,
+    // and the @large-integers scenario would blame the provider.
     const value = resolvedValue('huge-integer-flag');
 
     expect(value).toBe(Number.MAX_SAFE_INTEGER);

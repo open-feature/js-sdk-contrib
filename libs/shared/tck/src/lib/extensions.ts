@@ -12,22 +12,16 @@ export interface ExtensionFeatureFile {
 /**
  * Every `.feature` file in a directory *tree*, as a path under `dir`, in a stable order.
  *
- * Recursive, and that is the whole point of it being a function rather than a `readdirSync` filter.
- * A scan of direct children only under-collects silently: an adopter who groups their features into
- * subdirectories — the obvious thing to do once there are more than a handful — gets a run that is
- * missing scenarios and says nothing about it. Silent under-collection is the same failure the
- * shadowing refusals below exist to prevent, arrived at from the other direction: there, a scenario
- * ran and was attributed to the wrong feature; here, it never ran and nothing was attributed at all.
- * Both leave a green run that did not ask the questions it claims to have asked.
+ * Recursive, because a scan of direct children under-collects silently: an adopter who groups
+ * features into subdirectories gets a run missing scenarios and no word about it.
  *
- * Ordering is by entry name at each level, depth first, so it does not depend on the order the
- * filesystem happens to return entries in *or* on the platform's path separator. Sorting whole paths
- * would do the latter: `dir/x.feature` sorts before `dir.feature` under `/` and after it under `\`,
- * which would make Jest's test order differ between a contributor's machine and CI.
+ * Ordered by entry name at each level, depth first, rather than by whole path, so the order does not
+ * depend on the platform's separator: `dir/x.feature` sorts before `dir.feature` under `/` and after
+ * it under `\`, which would make Jest's test order differ between a machine and CI.
  *
- * Symlinks are followed, because a symlinked feature directory that was silently skipped is the very
- * thing this function is being recursive about. `visited` holds the real path of every directory
- * already walked, which is what stops a link pointing at an ancestor from recursing forever.
+ * Symlinks are followed, a silently skipped symlinked directory being the thing this recursion
+ * exists to stop. `visited` holds the real path of every directory already walked, which stops a
+ * link pointing at an ancestor from recursing forever.
  */
 export function featureFiles(dir: string): string[] {
   const found: string[] = [];
@@ -67,25 +61,17 @@ function isInside(parent: string, child: string): boolean {
  * Each path is either a directory -- every `.feature` file anywhere under it, in the stable order
  * {@link featureFiles} defines -- or a single `.feature` file.
  *
- * The refusals are the point of this function, and they exist because the Java TCK shipped without
- * them: a same-named feature file in a second location *replaced* the canonical one there, and the
- * suite went green having run the adopter's version of a canonical scenario instead of the canonical
- * one. Nothing about that is visible in a passing run, which is the worst way for a conformance suite
- * to be wrong. Three rules make it unrepresentable here:
+ * The refusals are the point of this function: an extension that displaces a canonical feature leaves
+ * a green run that did not ask the questions it claims to have asked. Three rules make that
+ * unrepresentable:
  *
  *   - an extension file may not live inside the canonical asset directory, which would run a
  *     canonical feature a second time and record two outcomes for one scenario;
- *   - an extension file may not be named after a canonical one. This name is what identifies the
- *     feature a scenario belongs to, so two features called `errors` would attribute an adopter's
- *     scenario to the canonical suite;
- *   - two extension files may not share a name either, for the same reason. The name is the bare
- *     file name, so this holds across subdirectories: `targeting/fractional.feature` and
- *     `caching/fractional.feature` are both `fractional` and are refused, which is why the recursion
- *     does not reintroduce the shadowing it makes newly reachable.
- *
- * The canonical features are loaded unconditionally and separately, so an extension cannot prevent
- * one from loading; these rules close the remaining gap, which is an extension being mistaken for
- * one.
+ *   - an extension file may not be named after a canonical one, that name being what identifies the
+ *     feature a scenario belongs to;
+ *   - two extension files may not share a name either. The name is the bare file name, so this holds
+ *     across subdirectories and the recursion above does not reintroduce the shadowing it makes
+ *     newly reachable.
  */
 export function resolveExtensionFeatures(
   paths: readonly string[],

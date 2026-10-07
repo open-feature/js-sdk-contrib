@@ -5,16 +5,11 @@ import { CHANGING_BASELINE, CHANGING_CHANGED, CHANGING_FLAG_KEY, canonicalFlagSe
 /**
  * The packaged canonical flag file, read here independently of the loader under test.
  *
- * The point of this file is that `canonicalFlagSet` is a *parse* of the specification's
- * `canonical-flags.json` rather than a transcription of it, so these tests read the same file and
- * check that what came back is what it says. A loader that dropped a flag, mixed up a default
- * variant, treated a `$comment` as a flag or mangled a value fails here.
+ * `canonicalFlagSet` is a *parse* of the specification's `canonical-flags.json` rather than a
+ * transcription, so these tests read the same file and check that what came back is what it says.
  *
- * What that on its own cannot catch is the file itself changing, since both sides would move
- * together — so the second half of this file pins the handful of properties the file's own
- * `$comment` calls load-bearing. Those are not a second copy of the flag set; they are the
- * invariants the scenarios depend on, and the canonical Gherkin corpus asserts the same values
- * independently, which is what makes a drifted file fail the suite rather than pass it quietly.
+ * What that cannot catch is the file itself changing, both sides moving together — so the second half
+ * of this file pins the properties the file's own `$comment` calls load-bearing.
  */
 const packaged = JSON.parse(readFileSync(CANONICAL_FLAGS_PATH, 'utf8')) as {
   flags: Record<string, { state: string; defaultVariant: string; variants: Record<string, unknown> }>;
@@ -30,8 +25,8 @@ function resolved(flag: { defaultVariant: string; variants: Record<string, unkno
 
 describe('canonicalFlagSet is the packaged canonical-flags.json', () => {
   it('is not reading an empty or truncated file', () => {
-    // Guards the rest of this file: every assertion below is driven by `packagedFlags`, so an empty
-    // parse would make all of them pass while examining nothing.
+    // Guards the rest: every assertion below is driven by `packagedFlags`, so an empty parse would
+    // make them all pass while examining nothing.
     expect(packagedFlags.length).toBeGreaterThanOrEqual(18);
   });
 
@@ -40,14 +35,10 @@ describe('canonicalFlagSet is the packaged canonical-flags.json', () => {
   });
 
   it('carries the value its packaged defaultVariant names for every flag, disabled ones included', () => {
-    // "Carries", not "resolves", and the distinction is the `disabled-*` flags. Their configured
-    // value is the one value a conformant provider must never serve -- the caller's default stands
-    // in instead -- so a reader could reasonably expect them to be exempt here. They are not, and
-    // must not be: what suppresses the value is the flag's *state*, asserted separately below, and
-    // the decoder has to carry the value through faithfully for the suppression to be observable at
-    // all. A decoder that dropped their variants would make the scenarios pass for the wrong reason,
-    // since a flag resolving to nothing and a flag with nothing to resolve look identical from the
-    // caller's side.
+    // "Carries", not "resolves": the `disabled-*` flags are included deliberately. What suppresses
+    // their value is the flag's state, asserted separately below, and a decoder that dropped their
+    // variants would make those scenarios pass for the wrong reason -- a flag resolving to nothing
+    // and a flag with nothing to resolve look identical from the caller's side.
     const configuration = canonicalFlagSet();
 
     for (const [key, flag] of packagedFlags) {
@@ -78,8 +69,7 @@ describe('canonicalFlagSet is the packaged canonical-flags.json', () => {
   });
 
   it('treats a $comment as an annotation rather than as a flag or a variant', () => {
-    // The file carries one at the document level and several inside flags, so this is not a
-    // hypothetical shape.
+    // The file carries one at the document level and several inside flags.
     expect(Object.keys(canonicalFlagSet())).not.toContain('$comment');
 
     for (const flag of Object.values(canonicalFlagSet())) {
@@ -101,11 +91,8 @@ describe('canonicalFlagSet is the packaged canonical-flags.json', () => {
 
 describe('the properties the canonical file calls load-bearing', () => {
   /*
-   * These are the assertions that would fail if the packaged file changed underneath the suite,
-   * which the equivalence tests above cannot see: they compare the loader against the file, so the
-   * two move together. Each one is a property the file's own comment names, and each is also
-   * asserted by a canonical scenario -- so a value that drifts here breaks the conformance run too,
-   * rather than only this file.
+   * The assertions that would fail if the packaged file changed underneath the suite, which the
+   * equivalence tests above cannot see. Each is a property the file's own comment names.
    */
 
   it('omits missing-flag, which the FLAG_NOT_FOUND scenario depends on being absent', () => {
@@ -135,8 +122,8 @@ describe('the properties the canonical file calls load-bearing', () => {
     expect(resolved(configuration['string-flag'])).toBe('hi');
     expect(resolved(configuration['integer-flag'])).toBe(10);
     expect(resolved(configuration['float-flag'])).toBe(0.5);
-    // 10.0 in the file. JavaScript has no integer type, so this is the same value as 10 -- which is
-    // the language fact that makes @numeric-coercion unaskable here, not a loss in the parse.
+    // 10.0 in the file, and the same value as 10 in JavaScript -- the language fact behind
+    // @numeric-coercion being unaskable here, not a loss in the parse.
     expect(resolved(configuration['integral-float-flag'])).toBe(10);
     // A string flag, asked for as a boolean by the TYPE_MISMATCH scenario.
     expect(resolved(configuration['wrong-flag'])).toBe('uno');
@@ -151,13 +138,9 @@ describe('the properties the canonical file calls load-bearing', () => {
   });
 
   it('disables exactly the four disabled-* flags and nothing else', () => {
-    // The newest of the file's load-bearing properties, and the one with the widest blast radius:
-    // every other scenario in the canonical corpus assumes the flag it names serves its own value.
-    // Disabling anything else turns those scenarios into failures that read as provider defects,
-    // and enabling one of these four makes the @disabled-flags rows pass while examining nothing --
-    // the flag would serve its configured value and the assertion is on the value.
-    //
-    // Asserted over the whole set rather than over the four names, so a fifth disabled flag arriving
+    // Widest blast radius of the file's properties: every other canonical scenario assumes the flag
+    // it names serves its own value, and enabling one of these four makes the @disabled-flags rows
+    // pass while examining nothing. Asserted over the whole set, so a fifth disabled flag arriving
     // upstream shows up here rather than in whichever scenario it silently broke.
     const configuration = canonicalFlagSet();
     const disabled = Object.keys(configuration).filter((key) => configuration[key].disabled);
@@ -171,11 +154,9 @@ describe('the properties the canonical file calls load-bearing', () => {
   });
 
   it('mirrors each disabled flag on its enabled twin, so the caller default differs from the value', () => {
-    // What makes the @disabled-flags rows catch a provider that ignores the state: each row's
-    // caller default is the flag's *other* variant, so a provider serving the configured value is
-    // caught on the value alone, with no reason assertion needed. That only works while the twins
-    // agree -- a disabled flag whose default variant drifted to match the scenario's caller default
-    // would pass whether the state was honoured or not.
+    // What makes the @disabled-flags rows catch a provider that ignores the state: each row's caller
+    // default is the flag's *other* variant. A disabled flag whose default variant drifted to match
+    // the scenario's caller default would pass whether the state was honoured or not.
     const configuration = canonicalFlagSet();
     const mirrors: [string, string][] = [
       ['disabled-boolean-flag', 'boolean-flag'],
@@ -198,28 +179,19 @@ describe('the properties the canonical file calls load-bearing', () => {
   });
 
   it('gives no flag a contextEvaluator, so every enabled flag reports STATIC', () => {
-    // Still true of every flag, targeting-key-flag included, and it is not an oversight there. The
-    // flag-definition format expresses a rule as data; InMemoryProvider expresses one as a
-    // `contextEvaluator` function, and the format has no way to carry a function. So the flag's
-    // `targeting` member is inert for this decoder, and the in-memory suites leave @targeting
-    // undeclared rather than synthesise an evaluator to satisfy the scenarios -- which would test a
-    // fixture written for the occasion instead of a provider.
-    //
-    // "Enabled", because the four disabled-* flags resolve no variant at all and so report whatever
-    // their provider reports for a flag it declined to evaluate. The only scenarios that pin STATIC
-    // are reason.feature's four outline rows, behind @standard-reasons, and they name enabled flags
-    // only; the disabled flag has its own row there, pinning DISABLED.
+    // True of targeting-key-flag too, and not an oversight: the format expresses a rule as data and
+    // InMemoryProvider as a `contextEvaluator` function, so the member is inert for this decoder and
+    // the in-memory suites leave @targeting undeclared. "Enabled", because the disabled-* flags
+    // resolve no variant and report whatever their provider reports for one it declined.
     for (const flag of Object.values(canonicalFlagSet())) {
       expect(flag.contextEvaluator).toBeUndefined();
     }
   });
 
   it('carries targeting-key-flag with its two variants, defaulting to the miss', () => {
-    // The one flag in the set with a targeting rule, and what makes context passthrough observable
-    // for a backend that has targeting: a matching key resolves a different value, so a provider
-    // that drops the context is caught by the resolved value rather than needing an echo endpoint.
-    // The decoder reads state, variants and defaultVariant, so what survives here is the flag's
-    // shape -- which is what the `@targeting` scenarios' default-variant halves assert.
+    // The one flag with a targeting rule, and what makes context passthrough observable for a
+    // backend that has targeting. The decoder reads state, variants and defaultVariant, so what
+    // survives here is the shape the @targeting scenarios' default-variant halves assert.
     const flag = canonicalFlagSet()['targeting-key-flag'];
 
     expect(flag).toBeDefined();
@@ -230,9 +202,8 @@ describe('the properties the canonical file calls load-bearing', () => {
   });
 
   it('drops the targeting member rather than passing it to the SDK as a flag field', () => {
-    // The decoder is a translation of three fields, not a pass-through of the document. A member it
-    // does not understand must not ride along into the SDK's configuration, where it would either be
-    // ignored silently or -- worse -- collide with a field the SDK adds later.
+    // The decoder translates three fields rather than passing the document through: a member it does
+    // not understand must not ride along, where it could collide with a field the SDK adds later.
     const flag = canonicalFlagSet()['targeting-key-flag'] as Record<string, unknown>;
 
     expect(Object.keys(flag).sort()).toEqual(['defaultVariant', 'disabled', 'variants']);

@@ -2,9 +2,7 @@
  * The five flag types the Evaluation API exposes, as the feature files name them.
  *
  * `Integer` and `Float` are distinct in the Gherkin but both resolve through `getNumberDetails`
- * here, because JavaScript has a single `number` type. That is the one place where the shared
- * scenarios cannot mean quite the same thing in this language — see
- * {@link Capability.NumericCoercion}.
+ * here, JavaScript having a single `number` type — see {@link Capability.NumericCoercion}.
  */
 export type FlagType = 'Boolean' | 'String' | 'Integer' | 'Float' | 'Object';
 
@@ -23,8 +21,7 @@ export function parseFlagType(raw: string): FlagType {
  * Converts a value written in a scenario into the type the Evaluation API uses.
  *
  * Everything in Gherkin is a string, so this is where `"0.5"` becomes a number and `"{}"` becomes an
- * empty object. An empty cell is a value too: `""` is what the empty-string scenario resolves to,
- * and it has to survive as exactly that.
+ * empty object. An empty cell is a value too: `""` is what the empty-string scenario resolves to.
  */
 export function parseValue(type: FlagType, raw: string): unknown {
   switch (type) {
@@ -39,8 +36,7 @@ export function parseValue(type: FlagType, raw: string): unknown {
     case 'Integer':
     case 'Float': {
       // `Number('')` is 0, not NaN, so a blank cell has to be refused explicitly or a scenario
-      // asking for nothing would silently ask for zero. Integers up to 2^53 - 1 parse exactly,
-      // which is as far as any scenario goes.
+      // asking for nothing would silently ask for zero.
       const value = raw.trim() === '' ? Number.NaN : Number(raw);
       if (Number.isNaN(value)) {
         throw new Error(`'${raw}' is not a number`);
@@ -64,8 +60,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * Compares an expected value from a scenario with what a provider actually resolved.
  *
  * Structural for objects and arrays, strict for everything else. A boolean only ever equals a
- * boolean, so the scenarios that ask for a boolean flag as some other type cannot be satisfied by a
- * coincidental truthy match.
+ * boolean, so a type-mismatch scenario cannot be satisfied by a coincidental truthy match.
  */
 export function valuesEqual(expected: unknown, actual: unknown): boolean {
   if (typeof expected === 'boolean' || typeof actual === 'boolean') {

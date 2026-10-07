@@ -5,13 +5,9 @@ import { CANONICAL_FLAGS_PATH } from './assets';
 /**
  * The in-memory provider's flag configuration.
  *
- * Derived from the constructor rather than imported: `@openfeature/server-sdk` declares
- * `FlagConfiguration` in its type definitions but does not re-export it from the package entry
- * point, so importing it directly is a TS2459. Deriving it keeps this in lockstep with whatever the
- * SDK actually accepts.
- *
- * `NonNullable` is load-bearing: the constructor parameter is optional, so the bare
- * `ConstructorParameters<...>[0]` includes `undefined` and every use of the type inherits it.
+ * Derived from the constructor because the SDK declares `FlagConfiguration` but does not re-export
+ * it, so importing it directly is a TS2459. `NonNullable` is load-bearing: the constructor parameter
+ * is optional, so the bare `ConstructorParameters<...>[0]` includes `undefined`.
  */
 export type FlagConfiguration = NonNullable<ConstructorParameters<typeof InMemoryProvider>[0]>;
 
@@ -27,9 +23,8 @@ export const CHANGING_CHANGED = 'bar';
 /**
  * The annotation key the flag-definition format uses for prose.
  *
- * It is a member of the document and of a flag rather than a flag or a variant, so it is dropped
- * wherever the format lets it appear. It is *not* stripped from inside a variant's value: a value
- * is opaque application data, and an object flag whose payload happened to have a `$comment` member
+ * Dropped wherever the format lets it appear, but *not* from inside a variant's value: a value is
+ * opaque application data, and an object flag whose payload happened to carry a `$comment` member
  * would be silently corrupted by a loader that reached into it.
  */
 const COMMENT_KEY = '$comment';
@@ -55,10 +50,9 @@ function withoutComments(entries: Record<string, unknown>): Record<string, unkno
 /**
  * Turns one entry of the canonical file into one entry of an in-memory flag configuration.
  *
- * Every failure here throws with the key in the message. The file is pinned by the spec submodule,
- * so a failure means the pinned assets and this loader disagree about the file's shape — which is
- * something moving the pin should surface loudly rather than something a run should limp past with
- * a partial flag set.
+ * Every failure throws with the key in the message. A failure means the pinned assets and this
+ * loader disagree about the file's shape, which moving the pin should surface loudly rather than
+ * leave a run limping on with a partial flag set.
  */
 function flagDefinition(key: string, raw: unknown): FlagDefinition {
   if (!isRecord(raw)) {
@@ -91,8 +85,7 @@ function flagDefinition(key: string, raw: unknown): FlagDefinition {
   return {
     variants: named,
     defaultVariant,
-    // The format states what a flag *is*; the SDK's configuration states what it is not. The
-    // canonical set enables everything, so this is a translation rather than a decision.
+    // The format states what a flag is; the SDK's configuration states what it is not.
     disabled: state === DISABLED,
   } as FlagDefinition;
 }
@@ -100,37 +93,29 @@ function flagDefinition(key: string, raw: unknown): FlagDefinition {
 /**
  * The canonical flag file's text, read once.
  *
- * Held as text rather than as a parsed object so that every call to {@link canonicalFlagSet} can
- * `JSON.parse` it afresh. The in-memory provider is handed the configuration directly and the
- * in-process control rebuilds it per scenario, so two callers sharing one object graph would let a
- * mutation in one scenario outlive it — the reference-sharing bug the Go implementation had to fix
- * in its in-memory provider.
+ * Held as text rather than parsed so every call to {@link canonicalFlagSet} can `JSON.parse` it
+ * afresh. The provider is handed the configuration directly, so two callers sharing one object graph
+ * would let a mutation in one scenario outlive it.
  */
 const canonicalFlagsText = readFileSync(CANONICAL_FLAGS_PATH, 'utf8');
 
 /**
  * The canonical flag set, as an in-memory provider configuration.
  *
- * **Parsed out of `flags/canonical-flags.json`, not transcribed from it.** A TypeScript literal here
- * would be a transcription of the language-agnostic definition, and the drift it invites is silent
- * in the worst way: the in-memory self-test would go green against a flag set that is no longer the
- * canonical one, verifying itself against the wrong baseline while reporting success.
+ * **Parsed out of `flags/canonical-flags.json`, not transcribed from it.** A TypeScript literal
+ * would drift silently: the in-memory self-test would go green against a flag set that is no longer
+ * the canonical one.
  *
  * The file's own load-bearing properties are documented beside it, in
  * [`specification/assets/provider-tck/README.md`](https://github.com/open-feature/spec/blob/main/specification/assets/provider-tck/README.md).
- * Three of them meet JavaScript here, and survive the parse:
+ * Three of them meet JavaScript here:
  *
  * - `targeting-key-flag`'s rule is *data* in the file while an `InMemoryProvider` rule is a
- *   *function*, so its `targeting` member is inert for this decoder — the flag resolves its `miss`
- *   default whatever the context — and the in-memory suites leave `@targeting` undeclared so its
- *   scenarios skip with that reason. Synthesising an evaluator to make them pass would test a
- *   fixture written for the occasion rather than a provider. Nothing here can introduce one anyway:
- *   the format has no way to express it.
- * - the falsy `*-zero-flag` values survive `JSON.parse`, and nothing downstream of it tests a
- *   variant value for truthiness — a `value || default` anywhere on the way would turn those
- *   scenarios into failures that look like provider defects.
- * - `huge-integer-flag` is 2^53 − 1, which a JavaScript number holds exactly and `JSON.parse`
- *   therefore reads without rounding.
+ *   *function*, so its `targeting` member is inert for this decoder and the in-memory suites leave
+ *   `@targeting` undeclared rather than synthesise an evaluator;
+ * - the falsy `*-zero-flag` values survive `JSON.parse`, and nothing downstream tests a variant value
+ *   for truthiness — a `value || default` on the way would read as a provider defect;
+ * - `huge-integer-flag` is 2^53 − 1, which a JavaScript number holds exactly.
  *
  * @param changingVariant which variant `changing-flag` resolves to. The in-process control flips it
  *   to produce a real configuration change; every other flag comes from the file untouched.
@@ -152,12 +137,10 @@ export function canonicalFlagSet(changingVariant: string = CHANGING_BASELINE): F
     configuration[key] = flagDefinition(key, raw);
   }
 
-  // `changing-flag` is the one flag whose default variant the suite chooses rather than reads, so
-  // it is the one flag whose variant *names* this module has to agree with the file about. Checked
-  // rather than assumed: CHANGING_BASELINE and CHANGING_CHANGED are exported, the in-process
-  // control switches between them, and a rename upstream would otherwise leave the control setting
-  // a default variant the flag does not have — which the in-memory provider reports as a resolution
-  // failure somewhere far away from the cause.
+  // `changing-flag` is the one flag whose default variant the suite chooses rather than reads, so it
+  // is the one whose variant *names* this module has to agree with the file about. A rename upstream
+  // would otherwise leave the control setting a default variant the flag does not have, which
+  // surfaces as a resolution failure far from the cause.
   const changing = configuration[CHANGING_FLAG_KEY];
   if (!changing) {
     throw new Error(

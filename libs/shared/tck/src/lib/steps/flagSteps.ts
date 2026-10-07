@@ -13,28 +13,24 @@ export const flagSteps =
     given(
       /^an? ([A-Za-z]+)-flag with key "([^"]*)" and a default value "([^"]*)"$/,
       (rawType: string, key: string, rawDefault: string) => {
-        // The declared type and the flag are independent on purpose: most of errors.feature asks
-        // for a flag as a type it is not.
+        // The declared type and the flag are independent on purpose: errors.feature asks for flags
+        // as types they are not.
         const type = parseFlagType(rawType);
         state.flag = { key, type, defaultValue: parseValue(type, rawDefault) };
       },
     );
 
     given(/^a context containing a targeting key with value "([^"]*)"$/, (targetingKey: string) => {
-      // The wording is Appendix B's, and the Java TCK already carries a step definition for it.
-      // Inventing a second way to say "a context containing a targeting key" is the kind of
-      // divergence the appendix exists to prevent, so the phrasing is copied rather than improved.
+      // The wording is Appendix B's, copied rather than improved: a second way to say the same
+      // thing is the divergence the appendix exists to prevent.
       state.context = { targetingKey };
     });
 
     when('the flag was evaluated with details', async () => {
       const client = state.requireClient();
       const flag = state.requireFlag();
-      // Passed through on every resolve, and `undefined` where the scenario supplied none.
-      // Requirement 2.2.1 makes the evaluation context a parameter of every resolve method, and
-      // until the untargeted-context scenario arrived no canonical scenario supplied one at all --
-      // so a provider that threw on any context, or serialised it into a malformed request, passed
-      // the whole suite. The `undefined` case is equally deliberate: see TckState.context.
+      // Passed through on every resolve, and `undefined` where the scenario supplied none -- which
+      // is deliberate; see TckState.context.
       const context = state.context;
 
       state.details = undefined;
@@ -48,8 +44,7 @@ export const flagSteps =
           case 'String':
             state.details = await client.getStringDetails(flag.key, flag.defaultValue as string, context);
             break;
-          // JavaScript has a single number type, so both map to the same call. See
-          // Capability.NumericCoercion for what that costs.
+          // One number type, so both map to the same call. See Capability.NumericCoercion.
           case 'Integer':
           case 'Float':
             state.details = await client.getNumberDetails(flag.key, flag.defaultValue as number, context);
@@ -98,9 +93,8 @@ export const flagSteps =
     });
 
     then(/^the error-code should be "([^"]*)"$/, (expected: string) => {
-      // The empty case matters as much as the populated ones. A provider that reports a plausible
-      // value with no error code is the failure mode the suite is most concerned with, because the
-      // application has no way to notice.
+      // The empty case matters as much as the populated ones: a provider reporting a plausible value
+      // with no error code gives the application no way to notice.
       const details = state.requireDetails();
       const actual = details.errorCode ?? '';
 
@@ -120,12 +114,11 @@ export const flagSteps =
     });
 
     then(/^the error message should be empty$/, () => {
-      // Every success path asserts this (requirement 2.3.2). A provider that reports a value AND an
-      // error message is sending two contradictory signals, and an application reading the message
-      // will believe the wrong one.
+      // A provider that reports a value AND an error message sends two contradictory signals, and an
+      // application reading the message believes the wrong one.
       const details = state.requireDetails();
-      // Typed as `string | undefined`, but a provider written in JavaScript can hand back `null`,
-      // and a null message is as empty as a missing one.
+      // Typed `string | undefined`, but a JavaScript provider can hand back `null`, which is as
+      // empty as a missing one.
       const message: unknown = details.errorMessage;
       if (message !== undefined && message !== null && message !== '') {
         throw new Error(`an error message was reported alongside the value, expected none: '${String(message)}'`);
@@ -133,14 +126,9 @@ export const flagSteps =
     });
 
     then('no exception should have been thrown', () => {
-      // Nothing the scenario asked of the provider may have thrown: the evaluation, if there was
-      // one, and every direct lifecycle call. Each records what it threw rather than propagating
-      // it, and this is the one step that reads those records back.
-      //
-      // The Evaluation API is specified never to throw: an errored evaluation returns the code
-      // default with an error code. A provider that rejects instead takes the caller down with it
-      // -- and one that rejects from shutdown does so from the application's own shutdown, where an
-      // exception is least welcome.
+      // Nothing the scenario asked of the provider may have thrown -- the evaluation and every
+      // direct lifecycle call. Each records what it threw rather than propagating, and this is the
+      // one step that reads those records back.
       if (!state.hasCalledProvider()) {
         throw new Error(
           'nothing has been asked of the provider in this scenario: a "When the flag was evaluated ' +
@@ -187,9 +175,8 @@ export const flagSteps =
     });
 
     then('the resolved details value should have changed', () => {
-      // This is the half of the configuration-change contract providers actually get wrong. Emitting
-      // PROVIDER_CONFIGURATION_CHANGED and then continuing to resolve the old value is worse than
-      // emitting nothing, because the application acted on a signal that was not true.
+      // The half of the configuration-change contract providers get wrong: emitting the event and
+      // then continuing to resolve the old value is worse than emitting nothing.
       const details = state.requireDetails();
       if (!state.hasMemory) {
         throw new Error(

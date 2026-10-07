@@ -11,8 +11,7 @@ const plansWithout = (...declared: Capability[]) =>
 
 describe('the capability gate', () => {
   it('names every skipped scenario with the reason it was skipped', () => {
-    // Appendix F requires a skipped scenario to be reported *with the reason*. Jest has nowhere to
-    // put it but the name, so every gated scenario has to carry it there.
+    // Jest has nowhere to put the reason but the name, so every gated scenario carries it there.
     const gated = plansWithout(Capability.Events, Capability.ConfigurationChange).filter(
       (scenario) => scenario.missing.length,
     );
@@ -27,23 +26,17 @@ describe('the capability gate', () => {
   });
 
   it('reaches the example rows of a Scenario Outline, which scenarioNameTemplate does not', () => {
-    // The regression this guards. jest-cucumber applies `scenarioNameTemplate` to an outline's own
-    // title and then defines each example row under its *expanded* title instead, so the three
-    // @object rows in errors.feature's scalar-mismatch outline were being skipped with no reason
-    // shown at all.
-    //
-    // @string-typing and @fully-typed-values are declared so that @object is the only capability
-    // missing from any of these: errors.feature's structured-as-JSON-text scenario carries all
-    // three, and this test is about the reason reaching an example row rather than about how
-    // several reasons compose — which 'names every capability a scenario is missing' covers instead.
+    // The regression this guards: jest-cucumber applies `scenarioNameTemplate` to an outline's own
+    // title and defines each example row under its *expanded* title, so a skipped row showed no
+    // reason at all. @string-typing and @fully-typed-values are declared so @object is the only
+    // capability missing here; composition is covered by 'names every capability a scenario is
+    // missing'.
     const objectScenarios = plansWithout(
       Capability.Events,
       Capability.StringTyping,
       Capability.FullyTypedValues,
     ).filter((scenario) => scenario.tags.includes(Capability.Object));
 
-    // @object is carried by errors.feature's three scalar-mismatch rows and its structured-as-JSON
-    // scenario, and by one scenario in evaluation.feature.
     expect(objectScenarios.length).toBeGreaterThan(1);
     for (const scenario of objectScenarios) {
       expect(scenario.missing).toContain(Capability.Object);
@@ -54,12 +47,7 @@ describe('the capability gate', () => {
   });
 
   it('plans one entry per example row, not one per outline', () => {
-    // errors.feature's mandatory type-mismatch matrix is 8 example rows under one Scenario Outline.
-    // A plan that collapsed them would skip or run seven scenarios without saying so.
-    //
-    // It was 11 until Appendix F moved the three "requested as String" rows behind
-    // @string-typing: an untyped backend satisfies the string accessor for every flag, so those
-    // rows are a capability question rather than a mismatch no backend can satisfy.
+    // A plan that collapsed an outline's example rows would skip or run the rest without saying so.
     const all = plansWithout(...Object.values(Capability));
     const matrix = all.filter((scenario) => scenario.title === 'Requesting the wrong type returns the code default');
 
@@ -67,10 +55,9 @@ describe('the capability gate', () => {
   });
 
   it('gates one Examples block of an outline without gating the others', () => {
-    // Gherkin permits tags on an individual Examples block, so two rows of the same outline can
-    // differ in whether the gate stops them. No canonical feature does this today, which is exactly
-    // why it is worth pinning: a plan keyed on the scenario name would gate all four rows together,
-    // and the rows that should have run would disappear. The plan is positional instead.
+    // Gherkin permits tags on an individual Examples block, and no canonical feature does it today,
+    // which is why it is worth pinning: a plan keyed on the scenario name would gate every row of
+    // the outline together. The plan is positional instead.
     const parsed = parseFeature(
       [
         'Feature: mixed examples',
@@ -100,9 +87,8 @@ describe('the capability gate', () => {
   });
 
   it('loads every canonical feature, the metadata one included', () => {
-    // Feature files are discovered from the asset directory rather than enumerated, so a file
-    // arriving upstream is picked up without a wiring change here. This pins that it was: a
-    // feature the harness quietly failed to load would be the one kind of gap nothing else reports.
+    // Features are discovered rather than enumerated, so a file arriving upstream needs no wiring
+    // change -- and one the harness quietly failed to load is a gap nothing else reports.
     expect(features.map((parsed) => parsed.title).sort()).toEqual([
       'Provider error handling',
       'Provider events',
@@ -114,32 +100,25 @@ describe('the capability gate', () => {
   });
 
   it('has a canonical scenario for every declarable capability, so none of them gates nothing', () => {
-    // The mirror of the reserved-expiry check the harness makes at run time. That one catches a tag
-    // this library still calls reserved after a scenario for it arrived upstream; this one catches
-    // the opposite -- a capability an adopter may declare that no canonical scenario carries, which
-    // gates nothing and puts an unexamined claim in a report. Reserved capabilities are excluded
-    // because carrying no scenario is what reserved *means*.
-    //
-    // It is also the only guard that catches a stale copy of the assets, which is the one failure a
-    // count cannot see: an out-of-date asset set is internally consistent with itself, so the suite
-    // still collects, still plans and still passes -- with the new capability gating nothing at all.
-    // Worth pinning because the assets and this file move on separate mechanisms: a submodule
-    // gitlink and a rollup asset glob, either of which can be updated without the other.
+    // The mirror of the harness's reserved-expiry check: a capability an adopter may declare that no
+    // canonical scenario carries gates nothing and puts an unexamined claim in a report. It is also
+    // the only guard that catches a stale copy of the assets, which is internally consistent with
+    // itself and so collects, plans and passes with the new capability gating nothing. Worth pinning
+    // because the assets and this file move on separate mechanisms -- a submodule gitlink and a
+    // rollup asset glob, either updatable without the other.
     const carried = new Set(plansWithout().flatMap((scenario) => scenario.tags));
 
     expect(DECLARABLE_CAPABILITIES.filter((capability) => !carried.has(capability))).toEqual([]);
 
-    // The inexpressible ones are held to the same requirement, and it is the requirement that tells
-    // them apart from a reservation: their scenarios *exist*, and pass in other languages. One that
-    // stopped being carried would make the refusal in options.ts a refusal of nothing -- a
-    // reservation in all but name, and one this library would be wrong to keep refusing.
+    // The inexpressible ones are held to the same requirement, which is what tells them apart from
+    // a reservation: their scenarios exist. One that stopped being carried would make the refusal in
+    // options.ts a refusal of nothing.
     expect(Object.keys(INEXPRESSIBLE_CAPABILITIES).filter((capability) => !carried.has(capability))).toEqual([]);
   });
 
   it('gates both halves of @numeric-coercion on the tag, not only the lossy one', () => {
-    // The lossless scenarios arrived with the integral float in the canonical flag set. They carry
-    // the same tag, so a JavaScript suite -- which cannot declare it, the language having one
-    // numeric type -- must see all three skipped and none of them fail.
+    // All three carry the same tag, so a JavaScript suite -- which cannot declare it -- must see
+    // all three skipped and none of them fail.
     const gated = plansWithout(Capability.Events).filter((scenario) =>
       scenario.missing.includes(Capability.NumericCoercion),
     );
@@ -156,8 +135,8 @@ describe('the capability gate', () => {
   });
 
   it('gates the 2^53 - 1 scenario on @large-integers and leaves the 2^31 - 1 one mandatory', () => {
-    // Accessor width is a property of the SDK rather than of the provider, so only the value a
-    // 32-bit accessor cannot ask for is tagged. The other precision scenario runs for everyone.
+    // Accessor width is a property of the SDK, so only the value a 32-bit accessor cannot ask for is
+    // tagged; the other precision scenario runs for everyone.
     const all = plansWithout(Capability.Events);
     const titled = (title: string) => all.find((scenario) => scenario.title === title);
 
@@ -168,14 +147,10 @@ describe('the capability gate', () => {
   });
 
   it('gates the four string-accessor scenarios and leaves the rest of the matrix mandatory', () => {
-    // The tag arrived by *narrowing* the mandatory matrix rather than by adding coverage, which is
-    // the shape worth pinning: three rows and one @object scenario moved out of "Requesting the
-    // wrong type returns the code default", and the eight rows left behind must still be mandatory.
-    // A registration that gated the wrong rows would quietly excuse a real mismatch.
-    //
-    // All four still carry @string-typing after the split — @fully-typed-values narrows two of them
-    // further rather than taking them away, so a provider withholding both sees all four skipped
-    // exactly as it did before.
+    // The tag narrows the mandatory matrix rather than adding coverage, and the rows left behind
+    // must still be mandatory: a registration that gated the wrong ones would quietly excuse a real
+    // mismatch. @fully-typed-values narrows two of these further rather than taking them away, so a
+    // provider withholding both still sees all four skipped.
     const gated = plansWithout(Capability.Events).filter((scenario) =>
       scenario.missing.includes(Capability.StringTyping),
     );
@@ -187,13 +162,12 @@ describe('the capability gate', () => {
       'A structured flag is not returned as its JSON text',
     ]);
 
-    // The outline rows are gated on this tag alone; only the structured one composes with @object,
-    // a provider with no structured values having no way to be asked the question at all.
+    // Only the structured one composes with @object, a provider with no structured values having no
+    // way to be asked at all.
     const composed = gated.filter((scenario) => scenario.missing.includes(Capability.Object));
     expect(composed.map((scenario) => scenario.title)).toEqual(['A structured flag is not returned as its JSON text']);
 
-    // And withdrawing it withdraws only the string-accessor claim: every remaining row of the
-    // mismatch matrix is untagged and still runs.
+    // Withdrawing it withdraws only the string-accessor claim.
     const mandatory = plansWithout()
       .filter((scenario) => !scenario.missing.length)
       .map((scenario) => scenario.title);
@@ -201,12 +175,10 @@ describe('the capability gate', () => {
   });
 
   it('splits the float and structured cases onto @fully-typed-values, and the two outline rows not', () => {
-    // The split this suite exists to make measurable, and the asymmetry is the whole point: a
-    // partially typed backend declares @string-typing and withholds @fully-typed-values, so the
-    // boolean and integer rows must *run* for it while the float and structured ones skip. A
-    // registration that put the outline behind both tags would restore the coarse gate the split
-    // removed, and a provider's own stringification defect would go back to reading as a permitted
-    // backend absence.
+    // The asymmetry is the point: a partially typed backend declares @string-typing and withholds
+    // @fully-typed-values, so the boolean and integer rows must *run* for it while the float and
+    // structured ones skip. Putting the outline behind both tags would restore the coarse gate, and
+    // a provider's own stringification defect would read as a permitted backend absence again.
     const declaredStringTypingOnly = plansWithout(Capability.Events, Capability.Object, Capability.StringTyping);
 
     const gated = declaredStringTypingOnly.filter((scenario) => scenario.missing.includes(Capability.FullyTypedValues));
@@ -215,9 +187,8 @@ describe('the capability gate', () => {
       'A structured flag is not returned as its JSON text',
     ]);
 
-    // The two rows a partially typed store can still answer, which must be left running. These are
-    // the rows the JavaScript Flagsmith provider fails on its own code rather than on its backend,
-    // and keeping them ungated here is what keeps that failure in the results.
+    // The two rows a partially typed store can still answer, which must be left running: a provider
+    // failing them is failing on its own code.
     const running = declaredStringTypingOnly
       .filter((scenario) => !scenario.missing.length)
       .map((scenario) => scenario.title);
@@ -227,11 +198,8 @@ describe('the capability gate', () => {
   });
 
   it('gates every variant assertion on @variants, and gates nothing else on it', () => {
-    // The consolidation this tag exists for. The variant assertions used to be spread across the
-    // untagged evaluation scenarios, which failed a backend with no variant concept ten times over
-    // for something requirement 2.2.4 only SHOULDs. They are now one outline of eight rows, so a
-    // provider leaving the tag undeclared sees eight skips and no failures -- and, just as
-    // important, the value scenarios it shares flags with still run.
+    // The variant assertions are one outline, so a provider leaving the tag undeclared sees skips
+    // and no failures -- and the value scenarios it shares flags with still run.
     const gated = plansWithout(Capability.Events).filter((scenario) => scenario.missing.includes(Capability.Variants));
 
     expect(gated).toHaveLength(8);
@@ -240,19 +208,15 @@ describe('the capability gate', () => {
       expect(scenario.missing).toEqual([Capability.Variants]);
     }
 
-    // The flags the outline covers are still asserted for value by scenarios that are untagged, so
-    // withdrawing @variants withdraws the variant claim and nothing else.
+    // Withdrawing @variants withdraws the variant claim and nothing else.
     const mandatory = plansWithout(Capability.Events).filter((scenario) => !scenario.missing.length);
     expect(mandatory.map((scenario) => scenario.title)).toContain('Resolve values');
     expect(mandatory.map((scenario) => scenario.title)).toContain('A falsy value is a value, not an absence');
   });
 
   it('gates the three @targeting scenarios, which are no longer a reservation', () => {
-    // @targeting was a reserved name until Appendix F carried scenarios for it. All three are
-    // needed: a matching context, a non-matching one -- without which a provider that always
-    // returned the targeted value would pass -- and no context at all.
     // Filtered on @targeting being the *only* thing missing, because reason.feature composes it
-    // with @standard-reasons — see the composition test below.
+    // with @standard-reasons -- see the composition test below.
     const gated = plansWithout(Capability.Events).filter(
       (scenario) => scenario.missing.length === 1 && scenario.missing[0] === Capability.Targeting,
     );
@@ -265,10 +229,9 @@ describe('the capability gate', () => {
   });
 
   it('gates the whole of reason.feature on @standard-reasons, and nothing else on it', () => {
-    // The tag is on the Feature rather than on any scenario, which is the one shape a plan keyed on
-    // scenario tags alone would miss: `planScenarios` unions the feature's tags into every
-    // scenario's, and this is the only canonical file that relies on it. Nine entries -- the
-    // four-row STATIC outline plus five plain scenarios.
+    // The tag is on the Feature rather than on any scenario, which a plan keyed on scenario tags
+    // alone would miss: `planScenarios` unions the feature's tags into every scenario's, and this is
+    // the only canonical file relying on it.
     const gated = plansWithout(Capability.Events).filter((scenario) =>
       scenario.missing.includes(Capability.StandardReasons),
     );
@@ -278,8 +241,7 @@ describe('the capability gate', () => {
       gated.filter((scenario) => scenario.title === 'A flag with no targeting rules resolves statically'),
     ).toHaveLength(4);
 
-    // And withdrawing it withdraws only the reason claim: every scenario that asserted a reason
-    // before the suite consolidated them is untagged and still mandatory.
+    // Withdrawing it withdraws only the reason claim.
     const mandatory = plansWithout()
       .filter((scenario) => !scenario.missing.length)
       .map((scenario) => scenario.title);
@@ -288,10 +250,9 @@ describe('the capability gate', () => {
   });
 
   it('composes @standard-reasons with the capability each reason needs to be observable', () => {
-    // TARGETING_MATCH cannot be observed without targeting and DISABLED cannot be observed unless
-    // the backend distinguishes a disabled flag, so three of the nine carry a second tag. A
-    // provider declaring @standard-reasons alone runs the other six and skips these with their
-    // reason -- which is the whole point of naming every missing capability rather than the first.
+    // TARGETING_MATCH cannot be observed without targeting, and DISABLED unless the backend
+    // distinguishes a disabled flag, so some scenarios carry a second tag -- which is why the skip
+    // names every missing capability rather than the first.
     const composed = plansWithout(Capability.Events, Capability.StandardReasons).filter(
       (scenario) => scenario.missing.length,
     );
@@ -307,7 +268,7 @@ describe('the capability gate', () => {
       expect(skipDisplayName(scenario)).toContain(scenario.missing[0]);
     }
 
-    // The remaining six run on the declaration alone.
+    // The rest run on the declaration alone.
     const running = plansWithout(Capability.Events, Capability.StandardReasons).filter(
       (scenario) => scenario.tags.includes(Capability.StandardReasons) && !scenario.missing.length,
     );
@@ -315,8 +276,7 @@ describe('the capability gate', () => {
   });
 
   it('leaves the untargeted-context scenario mandatory, no capability gating it', () => {
-    // Requirement 2.2.1 makes the evaluation context a parameter of every resolve method, and this
-    // is the only scenario that supplies one with no targeting involved. It must not be gated: a
+    // The only scenario that supplies a context with no targeting involved. It must not be gated: a
     // provider that threw on any context would otherwise be skipped rather than failed.
     const all = plansWithout();
     const untargeted = all.find(
@@ -328,11 +288,8 @@ describe('the capability gate', () => {
   });
 
   it('words the skip so a reader can tell a declined capability from an unaskable one', () => {
-    // One skip *status* is the whole mechanism -- Appendix F is explicit that a second status would
-    // tell a reader nothing the reason does not. The reason has to carry the distinction instead,
-    // because only one of the two says anything about the provider: "the provider declined" is a
-    // fact about this adoption, and "no provider in this language can be asked" is a fact about the
-    // SDK that is true of every adoption and will not change until the Evaluation API does.
+    // One skip status, so the reason carries the distinction: "the provider declined" is a fact
+    // about this adoption, and "no provider in this language can be asked" is a fact about the SDK.
     const declined = plansWithout(Capability.Events).filter((scenario) => scenario.missing.includes(Capability.Object));
     const unaskable = plansWithout(Capability.Events).filter((scenario) =>
       scenario.missing.includes(Capability.NumericCoercion),
@@ -349,17 +306,16 @@ describe('the capability gate', () => {
         `${scenario.title} — SKIPPED: this SDK cannot ask ${Capability.NumericCoercion} of any ` +
           `provider: ${inexpressibleReason(Capability.NumericCoercion)}`,
       );
-      // The language property travels with the skip rather than sitting one lookup away in the
-      // capability's documentation, which is what three per-suite comments used to be for.
+      // The language property travels with the skip rather than sitting a lookup away in the
+      // capability's documentation.
       expect(skipDisplayName(scenario)).toContain('single numeric type');
       expect(skipDisplayName(scenario)).not.toContain('does not declare');
     }
   });
 
   it('emits both clauses for a scenario gated by one of each, naming its own capabilities to each', () => {
-    // No canonical scenario is in this position today, which is exactly why it is worth pinning: a
-    // scenario is gated by *every* capability tag that applies to it, so an upstream file that
-    // composed @numeric-coercion with an ordinary tag must not lose either half of the reason.
+    // No canonical scenario is in this position today, which is why it is worth pinning: an upstream
+    // file composing @numeric-coercion with an ordinary tag must not lose either half of the reason.
     const parsed = parseFeature(
       [
         'Feature: composed gates',
@@ -381,8 +337,8 @@ describe('the capability gate', () => {
   });
 
   it('names every capability a scenario is missing, not only the first', () => {
-    // A scenario gated by two capabilities is skipped for both, and a reader has to be able to see
-    // which: withdrawing either one is enough to keep it from running.
+    // Withdrawing either capability is enough to keep the scenario from running, so the reader has
+    // to be able to see both.
     const [planned] = plansWithout().filter((scenario) => scenario.missing.length > 1);
 
     expect(planned.missing.length).toBeGreaterThan(1);
