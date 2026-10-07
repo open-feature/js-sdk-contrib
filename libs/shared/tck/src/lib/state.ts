@@ -13,9 +13,8 @@ import type { FlagType } from './values';
 /**
  * The payload the server SDK hands an event handler.
  *
- * `EventDetails` defaults to *both* the server and the web event unions, which is wider than
- * anything this suite can ever see: it runs on the server SDK, so pinning the parameter keeps the
- * recorder's type honest about what it holds.
+ * `EventDetails` defaults to both the server and the web event unions; this suite runs on the server
+ * SDK, so pinning the parameter keeps the recorder's type honest about what it holds.
  */
 export type ServerEventDetails = EventDetails<ServerProviderEvents>;
 
@@ -28,10 +27,9 @@ export type ServerEventDetails = EventDetails<ServerProviderEvents>;
  * assertion as satisfied by the first event.
  */
 export class EventRecorder {
-  // The SDK types the payload as optional, so an entry may be `undefined`. It is still queued
-  // rather than dropped: an event that arrives without details has still arrived, and every
-  // "should have been executed" assertion is about arrival. Dropping it would turn a delivered
-  // event into a timeout, which is the most misleading failure this class could produce.
+  // The payload is optional, so an entry may be `undefined`. Queued rather than dropped: every
+  // "should have been executed" assertion is about arrival, and dropping it would turn a delivered
+  // event into a timeout.
   private readonly queue: (ServerEventDetails | undefined)[] = [];
 
   /** The most recently consumed event, which the payload assertions inspect. */
@@ -77,11 +75,9 @@ export type LifecycleOperation = 'shutdown' | 'initialize';
 /**
  * The outcome of one direct call into the provider's lifecycle.
  *
- * The shutdown scenarios call the provider's own `onClose` and `initialize` rather than going
- * through the SDK, because the SDK's bookkeeping around them is Appendix B's business rather than
- * this suite's. Each call is recorded the way an evaluation is — what it threw, if anything — so
- * that "no exception should have been thrown" reads one kind of record for both, plus how long it
- * took, which is what the prompt-shutdown scenario bounds.
+ * Recorded the way an evaluation is — what it threw, if anything — so that "no exception should have
+ * been thrown" reads one kind of record for both, plus how long it took, which the prompt-shutdown
+ * scenario bounds.
  */
 export interface LifecycleRecord {
   operation: LifecycleOperation;
@@ -109,21 +105,19 @@ export class TckState {
   /**
    * The provider instance under test, as the factory produced it.
    *
-   * Everything else reaches the provider through {@link client}, which is how an application would.
-   * The lifecycle and metadata steps are the exception: they ask the provider itself, because what
-   * they verify is the provider's own `onClose`, `initialize` and `metadata` rather than the SDK's
-   * handling of them.
+   * Everything else reaches the provider through {@link client}, as an application would. The
+   * lifecycle and metadata steps are the exception, verifying the provider's own `onClose`,
+   * `initialize` and `metadata` rather than the SDK's handling of them.
    */
   provider: Provider | undefined;
   flag: FlagUnderTest | undefined;
   /**
    * The evaluation context a scenario supplied, or `undefined` if it supplied none.
    *
-   * The distinction is load-bearing rather than cosmetic, which is why this is not defaulted to an
-   * empty object. One `@targeting` scenario asserts that a targeting rule which cannot match does
-   * not error *when no context is passed at all*, and it catches a provider that requires a
-   * targeting key. Passing `{}` where the scenario said nothing would put that provider on a
-   * different code path and the scenario would stop asking its question.
+   * Not defaulted to `{}`: one `@targeting` scenario asserts that a rule which cannot match does not
+   * error *when no context is passed at all*, which catches a provider that requires a targeting
+   * key. Passing `{}` where the scenario said nothing would put it on a different code path and the
+   * scenario would stop asking its question.
    */
   context: EvaluationContext | undefined;
   details: EvaluationDetails<FlagValue> | undefined;
@@ -187,9 +181,8 @@ export class TckState {
   /**
    * Everything the scenario asked of the provider that threw, in the order it was asked.
    *
-   * The evaluation and the lifecycle calls are recorded separately, since they carry different
-   * things, but "did anything the scenario asked of the provider throw" is one question and this is
-   * where it is answered. The "no exception" step is the only reader.
+   * The evaluation and the lifecycle calls are recorded separately, but "did anything throw" is one
+   * question. The "no exception" step is the only reader.
    */
   exceptions(): ThrownBy[] {
     const thrown: ThrownBy[] = this.lifecycle

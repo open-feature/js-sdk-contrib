@@ -22,10 +22,9 @@ export interface TckFeature {
   feature: string;
   parsed: ReturnType<typeof loadFeature>;
   /**
-   * Whether this file is part of the canonical conformance set.
-   *
-   * False for a feature an adopter supplied through {@link TckOptions.extensionFeatures}. The
-   * distinction is what keeps an extension out of anything that reads as a conformance claim.
+   * Whether this file is part of the canonical conformance set; false for one an adopter supplied
+   * through {@link TckOptions.extensionFeatures}. The distinction keeps an extension out of anything
+   * that reads as a conformance claim.
    */
   canonical: boolean;
 }
@@ -50,9 +49,7 @@ export function loadTckFeatures(tagFilter: string | undefined): TckFeature[] {
  * The feature files an adopter contributed, loaded the same way the canonical ones are.
  *
  * The same loader and the same tag filter, so an extension scenario is gated by the capability
- * declaration exactly as a canonical one is. What differs is the `canonical` flag, which is how
- * anything downstream tells an adopter's scenario from one the shared suite owns.
- *
+ * declaration exactly as a canonical one is; only the `canonical` flag differs.
  * `resolveExtensionFeatures` refuses anything that could be mistaken for a canonical feature before
  * a line of it is parsed.
  */
@@ -83,10 +80,8 @@ function asList<T>(value: T | readonly T[] | undefined): readonly T[] {
  * The canonical flag set as raw JSON, and the control-API document a containerised backend must
  * implement, re-exported from where they are resolved.
  *
- * Both are part of this module's published surface and both are now defined in `assets`, which is
- * also where {@link canonicalFlagSet} reads the flag file from. One definition of each path is the
- * point: the file an adopter seeds a backend from is provably the same file this library builds
- * its own in-memory flag configuration out of.
+ * One definition of each path is the point: the file an adopter seeds a backend from is provably the
+ * same file {@link canonicalFlagSet} builds this library's in-memory configuration out of.
  */
 export { CANONICAL_FLAGS_PATH, CONTROL_API_PATH } from './assets';
 
@@ -114,64 +109,48 @@ export function runProviderTck(options: TckOptions): void {
   const { declared, undeclared, knownDeviations } = resolveCapabilities(options);
   const state = new TckState(options);
 
-  // Jest's own per-test timeout is 5s by default, and every bound this suite works to is longer than
-  // that: `eventTimeoutMs` defaults to 12s, `readyTimeoutMs` to 30s, and `lifecycle.feature` bounds
-  // an error event at 10s. Whichever cap fires first wins, so until this line the harness's own
-  // timeouts -- which exist to fail with a message naming the thing that did not happen -- were
-  // unreachable, and a provider slower than five seconds was reported as "Exceeded timeout of
-  // 5000 ms for a test". Measured rather than reasoned about: a deliberately broken `@unavailable`
-  // scenario, whose step bounds the error event at 10000ms, failed at 5001ms.
-  //
-  // Derived from the suite's own bounds rather than picked: a scenario may wait three times over --
-  // the stale one awaits ready, stale and ready again -- and may make two direct lifecycle calls on
-  // top of registration, each bounded by `readyTimeoutMs`. This is a backstop above all of that,
-  // never the thing that should fire.
+  // Jest's 5s default is shorter than every bound this suite works to, and whichever cap fires first
+  // wins: without this line the harness's own timeouts -- which name the thing that did not happen --
+  // are unreachable. Measured: a deliberately broken `@unavailable` scenario bounding its error event
+  // at 10000ms failed at 5001ms instead. Derived from the suite's own bounds because a scenario may
+  // wait three times over and make two direct lifecycle calls on top of registration; it is a
+  // backstop, never the thing that should fire.
   jest.setTimeout(3 * (eventTimeout(options) + readyTimeout(options)));
 
-  // Before anything else observable happens, so an extension step bound below has a suite to read
-  // and a second call in the same file is refused with a message rather than by jest-cucumber
-  // reporting every step as ambiguous.
+  // Before anything else observable happens, so a second call in the same file is refused with a
+  // message rather than by jest-cucumber reporting every step as ambiguous.
   registerSuiteUnderTest(state);
 
-  // Undeclared capabilities are excluded here, which marks their scenarios `skippedViaTagFilter`.
-  // jest-cucumber turns that into `test.skip`, so they are reported as SKIPPED rather than quietly
-  // omitted -- which is the whole point. The reason travels in the scenario name, because Jest has
-  // nowhere else to put it.
+  // Excluding an undeclared capability marks its scenarios `skippedViaTagFilter`, which
+  // jest-cucumber turns into `test.skip`: reported as SKIPPED rather than quietly omitted, with the
+  // reason in the scenario name because Jest has nowhere else to put it.
   const tagFilter = undeclared.length ? undeclared.map((capability) => `not ${capability}`).join(' and ') : undefined;
 
-  // The canonical set first and always, then whatever the adopter added. Extensions extend the run;
-  // they never take part in producing it, so no wiring mistake can leave a canonical feature out.
+  // The canonical set first and always, then whatever the adopter added, so no wiring mistake can
+  // leave a canonical feature out.
   const features = [
     ...loadTckFeatures(tagFilter),
     ...loadExtensionFeatures(asList(options.extensionFeatures), tagFilter),
   ];
 
-  // jest-cucumber owns the test and test.skip calls and accepts a runner to make them through, so
-  // the harness supplies one per feature. That is the only seam that reaches a Scenario Outline's
-  // example rows: `scenarioNameTemplate` never does.
+  // jest-cucumber accepts a runner to make its test/test.skip calls through, and that is the only
+  // seam reaching a Scenario Outline's example rows -- `scenarioNameTemplate` does not.
   const plans = features.map(({ parsed }) => planScenarios(parsed, declared));
 
-  // Which capabilities are reserved is recorded here but decided upstream, so it is checked against
-  // the features that actually ran rather than trusted. A reservation whose scenario has since been
-  // written would otherwise go on making a testable capability undeclarable -- the opposite mistake,
-  // and just as quiet. Only the canonical set can expire a reservation: an adopter's own feature
-  // reaching for a reserved tag is a mistake in that file, not news about the specification.
+  // Checked against the features that actually ran, because which capabilities are reserved is
+  // recorded here but decided upstream. Canonical only: an adopter's own feature reaching for a
+  // reserved tag is a mistake in that file, not news about the specification.
   const canonicalTags = plans.flatMap((plan, position) =>
     features[position].canonical ? plan.flatMap((scenario) => scenario.tags) : [],
   );
 
-  // The same fact as the reservation check below, from the other end, and the one Appendix F says is
-  // easy to leave out: a canonical tag this library's vocabulary does not know. It gates nothing, so
-  // its scenarios stay mandatory for every adopter -- a suite that has not learned a new capability
-  // does not report a new capability, it silently goes on demanding the old behaviour. Measured
-  // before it was written: at the revision that split @string-typing, with the enum untouched, the
-  // new @fully-typed-values float scenario ran for every suite in this repository and passed, those
-  // backends being fully typed. Nothing failed here at all -- the hole only bites the adoption that
-  // legitimately withholds the tag, which sees unexplained failures while everyone else stays green.
+  // The reservation check below from the other end: a canonical tag this vocabulary does not know
+  // gates nothing, so its scenarios stay mandatory for every adopter -- see `unknownCapabilityTags`
+  // for the measurement behind it.
   //
-  // Checked here rather than only in this library's own tests, because Appendix F requires the
-  // integrity checks to be in force *where the scenarios execute*: an adopter runs the canonical set
-  // from its own build, and a guarantee that holds only in `nx test tck` does not cover that run.
+  // Raised here rather than only in this library's own tests, because the integrity checks have to be
+  // in force *where the scenarios execute*: an adopter runs the canonical set from its own build, and
+  // a guarantee that holds only in `nx test tck` does not cover that run.
   const unknown = unknownCapabilityTags(canonicalTags);
   if (unknown.length) {
     throw new Error(
@@ -205,11 +184,11 @@ export function runProviderTck(options: TckOptions): void {
       console.log(
         `tck [${options.name}]: backend under test is ${options.control.description}; ` +
           `declared capabilities ${[...declared].sort().join(' ') || '(none)'}` +
-          // Named rather than counted: a reader of the output has to be able to see that a scenario
-          // they do not recognise came from the adopter and not from the shared suite.
+          // Named rather than counted, so a scenario a reader does not recognise can be traced to
+          // the adopter rather than to the shared suite.
           (extensions.length ? `; extension features ${extensions.sort().join(' ')}` : '') +
-          // Printed in full, next to the declaration it qualifies. A deviation exists to be read
-          // alongside a failure, and a run's output is where someone reads that failure first.
+          // Printed in full, next to the declaration it qualifies: a deviation exists to be read
+          // alongside the failure, and the run's output is where that is read first.
           knownDeviations
             .map(
               (deviation) =>
@@ -232,15 +211,13 @@ export function runProviderTck(options: TckOptions): void {
     });
 
     afterAll(async () => {
-      // Registering a provider in a domain closes the one it replaces, so every scenario but the
-      // last cleans up after itself. Clearing the domain closes that gap, which matters for a
-      // provider holding a network connection.
+      // Registering a provider closes the one it replaces, so only the last scenario's is left
+      // open; clearing the domain matters for a provider holding a network connection.
       await OpenFeature.clearProviders();
     });
 
-    // One call, so an extension scenario draws on the canonical vocabulary and an extension step is
-    // usable from a canonical one. jest-cucumber rejects a step text that two definitions match, so
-    // an extension step cannot quietly redefine a canonical one.
+    // One call, so canonical and extension steps are interchangeable. jest-cucumber rejects a step
+    // text two definitions match, so an extension cannot quietly redefine a canonical step.
     autoBindSteps(
       features.map(({ parsed }) => parsed),
       [providerSteps(state), flagSteps(state), eventSteps(state), ...asList<StepDefinitions>(options.extensionSteps)],

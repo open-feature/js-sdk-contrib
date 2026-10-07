@@ -32,9 +32,8 @@ export const eventSteps =
   (state: TckState): StepDefinitions =>
   ({ given, when, then }) => {
     given(/^an? (ready|stale|error|change) event handler$/, (name: string) => {
-      // Handlers are attached after the provider is registered. The SDK runs a handler immediately
-      // when the provider is already in the matching state, so "Given a stable provider" followed by
-      // "And a ready event handler" is not a race.
+      // Attached after the provider is registered, which is not a race: the SDK runs a handler
+      // immediately when the provider is already in the matching state.
       const event = eventFor(name);
       if (state.recorders.has(event)) {
         return;
@@ -58,17 +57,15 @@ export const eventSteps =
     then(
       /^the (ready|stale|error|change) event handler should have been executed within (\d+)ms$/,
       async (name: string, millis: string) => {
-        // These scenarios assert promptness, not merely eventual arrival: a provider that cannot
-        // reach its backend has to say so quickly, because an application blocked on provider
-        // registration is down. The explicit bound therefore overrides eventTimeoutMs.
+        // Promptness rather than eventual arrival: an application blocked on provider registration
+        // is down. The explicit bound therefore overrides eventTimeoutMs.
         await state.requireRecorder(eventFor(name), name).next(Number(millis));
       },
     );
 
     then('the flag should be part of the event payload', () => {
-      // Naming the changed flags is what makes the event actionable: a consumer caching evaluations
-      // needs to know what to invalidate, and an event carrying no keys forces it to invalidate
-      // everything.
+      // Naming the changed flags is what makes the event actionable: an event carrying no keys
+      // forces a caching consumer to invalidate everything.
       const flag = state.requireFlag();
       const recorder = state.requireRecorder(ServerProviderEvents.ConfigurationChanged, 'change');
 
@@ -80,10 +77,9 @@ export const eventSteps =
         );
       }
 
-      // `flagsChanged` is declared only on the configuration-change payload, so on the union of all
-      // event payloads it resolves through their `Record<string, unknown>` index signature and
-      // widens to `unknown`. Narrowing to the change payload restores `string[] | undefined`, and it
-      // is sound because this recorder is by construction the change recorder.
+      // `flagsChanged` widens to `unknown` on the union of all event payloads, through their index
+      // signature. Narrowing restores `string[] | undefined`, and is sound because this recorder is
+      // by construction the change recorder.
       const changeDetails = recorder.last as EventDetails<ServerProviderEvents.ConfigurationChanged>;
       const changed = changeDetails.flagsChanged ?? [];
       if (changed.includes(flag.key)) {

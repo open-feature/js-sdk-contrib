@@ -12,12 +12,7 @@ export interface PlannedScenario {
   title: string;
   /** Scenario tags and feature tags together, which is what gates the scenario. */
   tags: string[];
-  /**
-   * The capabilities gating this scenario that the provider does not have.
-   *
-   * Empty means the scenario runs. Non-empty means the capability gate skips it, and the reason has
-   * to be visible when it does.
-   */
+  /** The capabilities gating this scenario that the provider does not have; empty means it runs. */
   missing: Capability[];
 }
 
@@ -25,10 +20,10 @@ export interface PlannedScenario {
  * Works out, ahead of the run, exactly which scenarios jest-cucumber will define from a feature and
  * which of them the capability gate will skip.
  *
- * The order matters and is not incidental: `autoBindSteps` defines every plain scenario in file
- * order and then every example of every outline, and the runner below relies on that to know which
- * scenario it is being handed. It asserts the title it receives against the plan at each step, so a
- * change in jest-cucumber's behaviour surfaces as a loud failure rather than a wrong skip reason.
+ * The order is load-bearing: `autoBindSteps` defines every plain scenario in file order and then
+ * every example of every outline, and the runner below relies on that to know which scenario it is
+ * being handed. It asserts each title against the plan, so a change in jest-cucumber's behaviour
+ * surfaces as a loud failure rather than a wrong skip reason.
  */
 export function planScenarios(parsed: ParsedFeature, declared: ReadonlySet<Capability>): PlannedScenario[] {
   const scenarios: PlannedScenario[] = [];
@@ -39,10 +34,9 @@ export function planScenarios(parsed: ParsedFeature, declared: ReadonlySet<Capab
 
     for (const tag of tags) {
       const capability = capabilityForTag(tag);
-      // A tag this vocabulary does not know gates nothing, so it cannot make a scenario skip. For a
-      // canonical scenario that is a run-integrity failure rather than something to ignore, and the
-      // harness raises it from the planned tags -- see `unknownCapabilityTags`. Planning stays
-      // total either way, so the failure names every offending tag at once instead of the first.
+      // An unknown tag gates nothing, so it cannot make a scenario skip; the harness raises it from
+      // the planned tags instead -- see `unknownCapabilityTags`. Planning stays total either way, so
+      // the failure names every offending tag at once.
       if (capability && !declared.has(capability)) {
         missing.push(capability);
       }
@@ -69,12 +63,10 @@ type ScenarioAction = (...args: unknown[]) => void | Promise<void> | undefined;
  * Builds the `describe`/`test` pair jest-cucumber calls for one feature, wrapped so that a scenario
  * the capability gate skips is named with the reason it was skipped.
  *
- * jest-cucumber offers `scenarioNameTemplate` for exactly this, and it does not reach far enough:
- * the template is applied to a Scenario Outline's own title, but each example row is defined under
- * its *expanded* title instead, so every skipped example row was reported with no reason shown at
- * all. Four rows of `errors.feature` are in that position whenever `@object` is undeclared. Appendix
- * F requires a skipped scenario to be reported with its reason, so the harness composes the name
- * itself, at the point jest-cucumber makes the `test.skip` call.
+ * Not `scenarioNameTemplate`, which does not reach far enough: it is applied to a Scenario Outline's
+ * own title while each example row is defined under its *expanded* title, so a skipped example row
+ * shows no reason at all. The harness composes the name itself, at the point jest-cucumber makes the
+ * `test.skip` call.
  */
 export function scenarioRunner(featureTitle: string, planned: readonly PlannedScenario[]): IJestLike {
   let index = 0;
@@ -85,8 +77,8 @@ export function scenarioRunner(featureTitle: string, planned: readonly PlannedSc
     }
 
     index = 0;
-    // Jest evaluates a describe body synchronously while collecting, so every scenario of this
-    // feature is defined before this call returns.
+    // Jest evaluates a describe body synchronously, so every scenario of this feature is defined
+    // before this call returns.
     describe(title, body);
   };
 
@@ -118,8 +110,7 @@ export function scenarioRunner(featureTitle: string, planned: readonly PlannedSc
   const skipScenario = (title: string, action: ScenarioAction, timeout?: number): void => {
     const scenario = next(title);
 
-    // The body is never invoked; it is passed on so Jest reports the scenario as skipped rather
-    // than as an empty test.
+    // Never invoked; passed on so Jest reports a skipped scenario rather than an empty test.
     test.skip(skipDisplayName(scenario), async () => action(), timeout);
   };
 
@@ -136,24 +127,17 @@ export function scenarioRunner(featureTitle: string, planned: readonly PlannedSc
 /**
  * The name a skipped scenario is reported under.
  *
- * The reason travels in the name because Jest has nowhere else to put it, and a suite that quietly
- * goes green on scenarios it did not run is worse than no suite at all.
+ * The reason travels in the name because Jest has nowhere else to put it. **The wordings for the two
+ * cases differ deliberately**: a capability the provider declined to declare says something about the
+ * provider, and one this SDK cannot express says nothing about it at all, so the second carries the
+ * language property with it rather than leaving it a lookup away in `Capability`.
  *
- * One skip *status* is the whole mechanism — Appendix F is explicit that a second status, or a
- * parallel declaration field, would tell a reader nothing the reason does not. **The reason itself
- * must distinguish the two cases**, and that is the other half of the same rule: a capability the
- * provider declined to declare says something about the provider, and one this SDK cannot express
- * says nothing about it at all. A reader seeing a capability absent from a report has to be able to
- * tell those apart, so the wordings differ and the second carries the language property with it —
- * which is why it is one lookup shorter than it used to be, rather than one lookup away in
- * `Capability`'s documentation.
- *
- * A scenario can be in both positions at once — it is gated by *every* capability tag that applies
- * to it — so both clauses are emitted when both apply, each naming its own capabilities.
+ * A scenario is gated by *every* capability tag that applies to it, so both clauses are emitted when
+ * both apply, each naming its own capabilities.
  */
 export function skipDisplayName(scenario: PlannedScenario): string {
   if (!scenario.missing.length) {
-    // jest-cucumber also skips a scenario whose steps are pending. This suite has none, so reaching
+    // jest-cucumber also skips a scenario whose steps are pending; this suite has none, so reaching
     // here means something skipped a scenario the TCK expected to run.
     return `${scenario.title} — SKIPPED: for a reason the TCK did not ask for`;
   }

@@ -2,25 +2,20 @@ import type { Client, Provider } from '@openfeature/server-sdk';
 import type { TckState } from './state';
 
 /**
- * The suite running in this module registry, or `undefined` before `runProviderTck` has been
- * called.
+ * The suite running in this module registry, or `undefined` before `runProviderTck` has been called.
  *
- * Module scope is the right scope, not a compromise. jest-cucumber binds step definitions as
- * module-level closures — that is what `StepDefinitions` *is*, a function handed `given`/`when`/
- * `then` at bind time — so an extension step has module scope and nothing else to close over. Jest
- * gives every test file its own module registry, and the suite already documents one
- * `runProviderTck` call per file because jest-cucumber accumulates its vocabulary in module state.
- * So "the suite in this module" and "the suite in this file" are the same thing, and a second suite
- * in the same file is refused below rather than allowed to overwrite the first.
+ * Module scope is the right scope: jest-cucumber binds step definitions as module-level closures,
+ * so an extension step has module scope and nothing else to close over, and Jest gives every test
+ * file its own module registry. "The suite in this module" is therefore "the suite in this file", and
+ * a second suite in the same file is refused below rather than allowed to overwrite the first.
  */
 let current: TckState | undefined;
 
 /**
  * Records the suite an extension step will reach, called by `runProviderTck`.
  *
- * Internal: not exported from the package. An adopter never names the state object, which is why
- * {@link clientUnderTest} and {@link providerUnderTest} exist instead of an exported accessor for
- * it — see their documentation.
+ * Internal: not exported from the package. An adopter reaches the suite through
+ * {@link clientUnderTest} and {@link providerUnderTest} instead.
  */
 export function registerSuiteUnderTest(state: TckState): void {
   if (current && current !== state) {
@@ -53,13 +48,9 @@ function requireSuite(accessor: string): TckState {
 /**
  * The OpenFeature client for the provider under test, for use from an extension step definition.
  *
- * This is the seam that makes an extension step worth running inside the suite rather than beside
- * it. The provider is registered under a suite-scoped domain the adopter never sees, so without
- * this an extension step could observe the lifecycle the suite set up but not use it, and the only
- * way to evaluate a flag would be to build a second client — which resolves against a *different*
- * provider than the one the suite is testing, and so answers a different question than the scenario
- * asked. Every other language's suite has the same route: Go's `tck.ClientFromContext`, Java's
- * injected `TckState`, Python's `tck_state` fixture.
+ * The provider is registered under a suite-scoped domain the adopter never sees, so this is the only
+ * route to it: a client of the adopter's own resolves against a *different* provider than the one the
+ * suite is testing, and so answers a different question than the scenario asked.
  *
  * ```ts
  * const fractionalSteps: StepDefinitions = ({ then }) => {
@@ -69,9 +60,8 @@ function requireSuite(accessor: string): TckState {
  * };
  * ```
  *
- * It throws before the scenario has registered a provider, which in the canonical vocabulary means
- * before a `Given a stable provider` step. Put one in a `Background`, as the canonical features and
- * the extension fixture both do.
+ * It throws before the scenario has registered a provider — before a `Given a stable provider` step
+ * — so put one in a `Background`, as the canonical features and the extension fixture both do.
  *
  * @throws if called outside a suite, or before the scenario registered a provider.
  */
@@ -82,11 +72,9 @@ export function clientUnderTest(): Client {
 /**
  * The provider instance under test, as this scenario's factory produced it.
  *
- * {@link clientUnderTest} is the one to reach for: it is how an application would use the provider,
- * so a step that goes through it asserts something an application could observe. This is for the
- * cases the canonical lifecycle and metadata steps also handle this way — a step whose subject is
- * the provider's own surface rather than the SDK's handling of it, such as a vendor-specific
- * configuration call the SDK has no word for.
+ * {@link clientUnderTest} is the one to reach for, because it is how an application would use the
+ * provider. This is for a step whose subject is the provider's own surface rather than the SDK's
+ * handling of it — a vendor-specific configuration call the SDK has no word for, say.
  *
  * A fresh instance per scenario, so hold it no longer than the step that asked for it.
  *

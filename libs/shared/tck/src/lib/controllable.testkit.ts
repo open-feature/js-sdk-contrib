@@ -5,11 +5,8 @@ import type { FlagConfiguration } from './flags';
 import { CHANGING_BASELINE, CHANGING_CHANGED, CHANGING_FLAG_KEY, canonicalFlagSet } from './flags';
 
 /**
- * A flag store an initialisation reaches, which may refuse to answer.
- *
- * Refusing is what a closed socket does, and it is all the `@unavailable` scenarios need: a provider
- * whose initialisation fails observably and promptly, with no port to close and no container to
- * stop.
+ * A flag store an initialisation reaches, which may refuse to answer — which is all the
+ * `@unavailable` scenarios need, with no port to close and no container to stop.
  */
 export type ControllableBackend = () => FlagConfiguration;
 
@@ -19,40 +16,28 @@ const PROVIDER_NAME = 'tck-controllable-provider';
 /**
  * An in-process provider with a **real initialisation**, for the TCK's own Docker-free self-test.
  *
- * It exists because the SDK's `InMemoryProvider` cannot cover `lifecycle.feature` and never will: it
- * is handed its whole flag set by its constructor and **implements neither `initialize` nor
- * `onClose`**. The SDK's registry treats a provider with no `initialize` as ready the moment it is
- * registered — `if (typeof provider.initialize === 'function')`, and otherwise straight to `READY`
- * and `PROVIDER_READY` — so the readiness scenario would pass against it without anything having
- * been demonstrated, exactly as a `NoopFeatureProvider` passes it. That is why `inMemory.spec.ts`
- * leaves {@link Capability.Lifecycle} undeclared, and it is the right call there.
+ * The SDK's `InMemoryProvider` cannot cover `lifecycle.feature`: it implements neither `initialize`
+ * nor `onClose`, and the SDK's registry treats a provider with no `initialize` as `READY` the moment
+ * it is registered, so the readiness scenario would pass having demonstrated nothing. That is why
+ * `inMemory.spec.ts` leaves {@link Capability.Lifecycle} undeclared — and why, without this
+ * provider, the shutdown and re-initialisation steps would execute only through the Docker-gated
+ * flagd adoption, where a broken TCK step looks like a provider defect.
  *
- * The consequence was that **the shutdown and re-initialisation steps only ever executed through the
- * flagd adoption** — which is Docker-gated and excluded from CI, so in a normal run nothing
- * exercised them at all. When they did break, it surfaced inside a containerised provider suite,
- * where a broken TCK step looks like a provider defect.
- *
- * So this provider acquires something. It starts owning nothing, {@link initialize} reaches a
+ * So this provider acquires something: it starts owning nothing, {@link initialize} reaches a
  * {@link ControllableBackend} that may refuse it, and {@link onClose} drops what was acquired. The
- * store is an object in this process rather than something across a socket, but the *shape* is the
- * one the lifecycle scenarios assert: initialisation can fail, its outcome is observable, shutdown
- * releases and can be repeated, and initialising again brings the provider back.
+ * store is an object in this process, but the *shape* is the one the lifecycle scenarios assert.
  *
  * ## Composition rather than `extends InMemoryProvider`
  *
- * Deliberate, and for a reason that was read out of the SDK's build rather than assumed. Seeding a
- * subclass's flags at `initialize()` time means calling `putConfiguration`, and
- * `putConfiguration` ends with an unconditional
- * `this.events.emit(ServerProviderEvents.ConfigurationChanged, { flagsChanged })` — there is no
- * quiet path through it. A subclass's emitter is the one the SDK is subscribed to, so every
- * initialisation would announce a configuration change naming every flag in the set. A test double
- * that emits events the thing it stands in for does not emit is worse than no double, because the
- * suite would then be asserting against behaviour the double invented. Holding the delegate in a
- * field keeps every emission this class makes deliberate.
+ * Seeding a subclass's flags at `initialize()` time means calling `putConfiguration`, which ends
+ * with an unconditional `events.emit(ConfigurationChanged, { flagsChanged })` — there is no quiet
+ * path through it. A subclass's emitter is the one the SDK is subscribed to, so every initialisation
+ * would announce a configuration change naming every flag in the set, and the suite would be
+ * asserting against behaviour the double invented. Holding the delegate in a field keeps every
+ * emission deliberate.
  *
- * **Not part of the published API.** This file is excluded from `tsconfig.lib.json`, so it is not in
- * the package and has no declaration in `dist`. An adopter with no backend uses
- * {@link InProcessControl} and the SDK's own provider; this is the TCK testing itself.
+ * **Not part of the published API**: excluded from `tsconfig.lib.json`, so it is not in the package.
+ * An adopter with no backend uses {@link InProcessControl} and the SDK's own provider.
  */
 export class ControllableProvider implements Provider {
   readonly runsOn = 'server' as const;
@@ -60,10 +45,8 @@ export class ControllableProvider implements Provider {
   readonly metadata = { name: PROVIDER_NAME } as const;
 
   /**
-   * This provider's own emitter, and the only one the SDK ever sees.
-   *
-   * The delegate has an emitter too, and nothing is subscribed to it: the delegate is never
-   * registered with the OpenFeature API, so an event it emits reaches nobody. That is why
+   * This provider's own emitter, and the only one the SDK ever sees. The delegate is never
+   * registered with the OpenFeature API, so an event it emitted would reach nobody — which is why
    * {@link changeFlags} emits from here.
    */
   readonly events = new OpenFeatureEventEmitter();
@@ -76,13 +59,13 @@ export class ControllableProvider implements Provider {
   /**
    * Acquires the flag set from the backend, and fails if the backend will not give it up.
    *
-   * Called by the SDK on registration, and directly by the `the provider is initialized again` step.
-   * Both paths run the same code, which is the point of the reinitialisation scenario: a provider
-   * that returned early because an `initialized` latch was never cleared would pass the first and
-   * fail the second.
+   * Called by the SDK on registration and directly by the `the provider is initialized again` step.
+   * Both run the same code, which is the point of the reinitialisation scenario: a provider that
+   * returned early because an `initialized` latch was never cleared would pass the first and fail the
+   * second.
    *
-   * Declared with no parameters, which still satisfies `initialize?(context?, domain?)`: this
-   * provider's store is not context-dependent, and naming arguments it ignores would say it was.
+   * Declared with no parameters, which still satisfies `initialize?(context?, domain?)`: this store
+   * is not context-dependent, and naming arguments it ignores would say it was.
    */
   async initialize(): Promise<void> {
     this.delegate = new InMemoryProvider(this.backend());
@@ -91,10 +74,9 @@ export class ControllableProvider implements Provider {
   /**
    * Releases the flag set.
    *
-   * Idempotent, which is what "shutting down a provider twice has no further effect" asks for: the
-   * second call finds `undefined` and returns. Nothing else is torn down — the emitter outlives a
-   * shutdown, because requirement 2.5.2 permits a provider to be initialised again and one that had
-   * destroyed its emitter could not emit `PROVIDER_READY` when it was.
+   * Idempotent, which is what "shutting down a provider twice has no further effect" asks for. The
+   * emitter deliberately outlives a shutdown: a provider that destroyed it could not emit
+   * `PROVIDER_READY` on being initialised again.
    */
   async onClose(): Promise<void> {
     this.delegate = undefined;
@@ -151,9 +133,8 @@ export class ControllableProvider implements Provider {
    * The store, or a failure that names the cause.
    *
    * An evaluation reaching a shut-down provider is a real error rather than a reason to serve stale
-   * values: the whole claim of the shutdown scenarios is that shutdown released something. The SDK
-   * turns a throw from a resolver into the caller's default with reason `ERROR`, which is what the
-   * `@unavailable` code-default scenario asserts.
+   * values; the claim of the shutdown scenarios is that shutdown released something. The SDK turns a
+   * throw from a resolver into the caller's default with reason `ERROR`.
    */
   private requireDelegate(): InMemoryProvider {
     if (!this.delegate) {
@@ -167,12 +148,11 @@ export class ControllableProvider implements Provider {
  * In-process control for {@link ControllableProvider}, with a backend that can refuse to answer.
  *
  * Everything {@link InProcessControl} does, plus the one thing it cannot: hand out a provider whose
- * initialisation *fails*. That is what unlocks `@lifecycle`, `@reinitialization` and `@unavailable`
- * with no Docker — an unreachable in-process store, rather than a closed socket, is enough for a
- * provider to settle into `ERROR` observably and for a shutdown against a dead backend to be timed.
+ * initialisation *fails*, which is what unlocks `@lifecycle`, `@reinitialization` and `@unavailable`
+ * with no Docker.
  *
  * Used only by `controllable.spec.ts`. {@link InProcessControl} remains the one an adopter with no
- * backend writes against, and this does not widen it.
+ * backend writes against.
  */
 export class ControllableBackendControl implements BackendControl {
   /** The provider serving the current scenario, or `undefined` between scenarios. */
@@ -183,20 +163,15 @@ export class ControllableBackendControl implements BackendControl {
 
   readonly description = `in-process control of ${PROVIDER_NAME}`;
 
-  /**
-   * There is no backend beyond an object in this process, which is the whole point of this double.
-   *
-   * Stated rather than defaulted, like every other control: the same scenarios passing over the
-   * control API and passing through in-process manipulation are not the same claim.
-   */
+  /** Stated rather than defaulted, like every other control: the same scenarios passing over the
+   * control API and through in-process manipulation are not the same claim. */
   readonly controlApi = 'in-process' as const;
 
   /**
    * Creates the provider for the scenario about to run, over a reachable store.
    *
-   * The store is read at `initialize()` time rather than now — the factory hands over a closure, not
-   * a flag set — and that is the whole reason this provider can cover the lifecycle feature: the
-   * flag set is something initialisation acquires.
+   * The factory hands over a closure rather than a flag set, so the store is read at `initialize()`
+   * time — which is what lets this provider cover the lifecycle feature at all.
    */
   newProvider(): ControllableProvider {
     this.changingVariant = CHANGING_BASELINE;
@@ -207,9 +182,8 @@ export class ControllableBackendControl implements BackendControl {
   /**
    * Creates a provider whose backend will not answer, so `initialize()` rejects.
    *
-   * Not recorded as {@link current}: the `@unavailable` scenarios never change a flag, and leaving
-   * the field alone means a later {@link changeFlag} fails loudly rather than mutating a provider
-   * that never initialised.
+   * Not recorded as {@link current}, so a later {@link changeFlag} fails loudly rather than mutating
+   * a provider that never initialised.
    */
   newUnavailableProvider(): ControllableProvider {
     return new ControllableProvider(() => {

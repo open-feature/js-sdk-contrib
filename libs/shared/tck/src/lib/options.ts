@@ -41,9 +41,8 @@ export interface TckOptions {
    * Creates the provider under test, configured against a backend that is already running and
    * seeded with the canonical flag set. Called once per scenario.
    *
-   * A factory rather than a single instance because each scenario gets its own provider, and
-   * because a provider often cannot be configured before the suite starts — a container stack's host
-   * ports do not exist until it is up.
+   * A factory rather than an instance because a provider often cannot be configured before the
+   * suite starts — a container stack's host ports do not exist until it is up.
    */
   newProvider: ProviderFactory;
 
@@ -62,8 +61,8 @@ export interface TckOptions {
    *
    * Point it at a closed port on localhost. Do not point it at the backend under test — that must
    * stay up, and simulated outages belong to {@link control}. Configure a short connection deadline:
-   * the scenario allows a bounded time for the error event, and a provider with a 30-second connect
-   * timeout will not make it.
+   * the scenario allows a bounded time for the error event, so a 30-second connect timeout will not
+   * make it.
    *
    * Required only if {@link capabilities} includes {@link Capability.UnavailableInit}.
    */
@@ -76,20 +75,17 @@ export interface TckOptions {
    * test name — never as passed. Defaults to every *declarable* capability; narrow it rather than
    * widening it.
    *
-   * Two kinds of capability cannot be declared, and naming either here is rejected rather than
-   * passed through: a **reserved** one ({@link RESERVED_CAPABILITIES}) and an **inexpressible** one
-   * ({@link INEXPRESSIBLE_CAPABILITIES}). The refusals say which, because only the first is
-   * temporary and neither says anything about your provider.
+   * Naming a **reserved** ({@link RESERVED_CAPABILITIES}) or an **inexpressible**
+   * ({@link INEXPRESSIBLE_CAPABILITIES}) capability here is rejected rather than passed through.
    */
   capabilities?: readonly Capability[];
 
   /**
    * Gaps this provider is known to have, each named rather than merely absent.
    *
-   * **An entry says: this provider fails to do something it is required to do**, in one of the two
-   * shapes Appendix F's "Rules for declaring" sets out. {@link capabilities} cannot express that on
-   * its own: a capability left out reads as a decision, and a defect and a decision produce the same
-   * skip.
+   * **An entry says: this provider fails to do something it is required to do.**
+   * {@link capabilities} cannot express that on its own, because a capability left out reads as a
+   * decision and a defect and a decision produce the same skip.
    *
    * ```ts
    * capabilities: [Capability.Lifecycle, Capability.Reinitialization],
@@ -102,12 +98,10 @@ export interface TckOptions {
    * ]
    * ```
    *
-   * {@link KnownDeviation.summary} is required and the issue is not —
-   * {@link KnownDeviation.tracked} and {@link KnownDeviation.untracked} are the two forms. Pass
-   * `undefined` as the capability when the gap is against a mandatory, ungated scenario. It may name
-   * neither of the two kinds {@link capabilities} refuses, for the two reasons those are refused: a
-   * reserved capability has no scenario to deviate *from*, and an inexpressible one has scenarios
-   * that were never put to this provider.
+   * {@link KnownDeviation.tracked} and {@link KnownDeviation.untracked} are the two forms; the
+   * summary is required and the issue is not. Pass `undefined` as the capability when the gap is
+   * against a mandatory, ungated scenario. Reserved and inexpressible capabilities are refused here
+   * as they are in {@link capabilities}.
    *
    * Declaring one changes nothing about what runs. It is a statement about the provider, carried
    * through to whatever reads the declaration.
@@ -117,11 +111,9 @@ export interface TckOptions {
   /**
    * Feature files of your own, run in the same suite as the canonical ones.
    *
-   * A vendor with provider-specific behaviour — flagd's `fractional` targeting, say — has scenarios
-   * the shared suite cannot carry, because they are not part of the contract every provider
-   * implements. Naming them here runs them inside the TCK's own `describe`: the same backend
-   * lifecycle, the same per-scenario reset, the same capability gate. The alternative is a second
-   * harness that has to reimplement all of that and will drift from it.
+   * Provider-specific behaviour the shared suite cannot carry still wants the TCK's backend
+   * lifecycle, per-scenario reset and capability gate; naming the files here runs them inside the
+   * TCK's own `describe` rather than in a second harness that would drift from it.
    *
    * Each entry is either a directory — every `.feature` file **anywhere under it**, subdirectories
    * included, in a stable order — or a single `.feature` file. Paths resolve against the working
@@ -129,9 +121,8 @@ export interface TckOptions {
    * `join(__dirname, 'features')`.
    *
    * **Extension features must be named differently from the canonical ones, and live in a directory
-   * of their own.** Both are enforced rather than documented: a feature named after a canonical one
-   * is refused. An extension can therefore never shadow, replace or re-run a canonical scenario, and
-   * nothing downstream can mistake one for the other.
+   * of their own.** Both are enforced, so an extension can never shadow, replace or re-run a
+   * canonical scenario.
    *
    * The vocabulary is shared: an extension scenario can use every canonical step, and needs
    * {@link extensionSteps} only for the steps the canonical vocabulary has no word for.
@@ -141,8 +132,8 @@ export interface TckOptions {
   /**
    * Step definitions for the vocabulary {@link extensionFeatures} adds.
    *
-   * jest-cucumber's own shape, and bound in the same `autoBindSteps` call as the canonical steps, so
-   * an extension step and a canonical step are interchangeable within one scenario:
+   * jest-cucumber's own shape, bound in the same `autoBindSteps` call as the canonical steps, so an
+   * extension step and a canonical step are interchangeable within one scenario:
    *
    * ```ts
    * const fractionalSteps: StepDefinitions = ({ given, then }) => {
@@ -156,23 +147,19 @@ export interface TckOptions {
    * A step matcher that also matches a canonical step is rejected by jest-cucumber as ambiguous, so
    * an extension cannot quietly redefine what a canonical step means.
    *
-   * **Reach the provider under test with {@link clientUnderTest}**, not with a client of your own.
-   * `StepDefinitions` is handed nothing but jest-cucumber's own `given`/`when`/`then`, so that
-   * accessor is the route to the client the suite registered — and registering a second provider
-   * would put the step's question to something other than the provider the rest of the scenario is
-   * about. {@link providerUnderTest} is there for a step whose subject is the provider's own surface
-   * rather than the SDK's handling of it.
+   * **Reach the provider under test with {@link clientUnderTest}**, not with a client of your own:
+   * registering a second provider would put the step's question to something other than the provider
+   * the rest of the scenario is about. {@link providerUnderTest} is there for a step whose subject is
+   * the provider's own surface rather than the SDK's handling of it.
    */
   extensionSteps?: StepDefinitions | readonly StepDefinitions[];
 
   /**
    * How long to wait for a provider event, in milliseconds.
    *
-   * The single most important knob for a provider author, because providers observe backend changes
-   * on wildly different timescales. A streaming provider sees a configuration change in
-   * milliseconds; one polling every 30 seconds may need most of a poll interval. Set it to
-   * comfortably exceed your worst-case detection latency, or the suite reports timeouts that are
-   * really just impatience.
+   * Providers observe backend changes on wildly different timescales, so set this to comfortably
+   * exceed your worst-case detection latency — a provider polling every 30 seconds may need most of
+   * a poll interval — or the suite reports timeouts that are really just impatience.
    *
    * Scenarios can tighten this with the explicit `within {int}ms` step, which always wins.
    *
@@ -196,12 +183,8 @@ export interface ResolvedCapabilities {
    * Every capability a scenario can be gated by that this suite does not declare, which is what the
    * tag filter gates on.
    *
-   * Reserved capabilities are absent, and their absence changes nothing: no scenario carries one, so
-   * excluding it from the filter excludes it from nothing.
-   *
-   * Inexpressible ones are always present, which is the mechanism the central refusal rests on. No
-   * suite can declare one, so its scenarios are gated in every run — and because that happens here
-   * rather than in each suite's options, no suite has to remember to leave it out.
+   * Inexpressible capabilities are always present, which is how one list here replaces an omission
+   * in every suite. Reserved ones are absent, and no scenario carries one.
    */
   undeclared: Capability[];
   /** The gaps the suite named, checked and in declaration order. */
@@ -209,12 +192,8 @@ export interface ResolvedCapabilities {
 }
 
 /**
- * The reserved names, worded so the refusal reads as English however many there are.
- *
- * There was one reservation for every message when `@targeting` and `@caching` were both reserved.
- * `@targeting` became declarable the moment Appendix F gained scenarios for it, leaving a single
- * name and a sentence that read "@caching are reserved names" — a reservation expiring is the
- * expected course of events, so the message has to survive it.
+ * The reserved names, worded so the refusal reads as English however many there are — a reservation
+ * expiring is the expected course of events, so the message has to survive the list shrinking.
  */
 function listReserved(): string {
   const names = RESERVED_CAPABILITIES.join(' and ');
@@ -225,16 +204,13 @@ function listReserved(): string {
  * Works out which capabilities a suite declares, and rejects every option that would make the
  * conformance report claim something the run did not establish.
  *
- * Separated from {@link runProviderTck} so it can be exercised without Jest, because nearly every
- * rule here exists to stop a wrong report rather than a failing test, and a rule with no test is a
- * rule that regresses quietly.
+ * Separated from {@link runProviderTck} so it can be exercised without Jest: nearly every rule here
+ * exists to stop a wrong report rather than a failing test, and a rule with no test of its own
+ * regresses quietly.
  */
 export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
-  // Refused rather than dropped, and refused before anything else is checked. Silently filtering a
-  // reserved capability here would leave the adopter believing the claim was made. A warning would
-  // be nearer the letter of the schema, but a console line in a Jest run competes with the runner's
-  // own output and is invisible in the log of a green build. The fix is a one-line edit, so failing
-  // costs the adopter nothing and guarantees they see it.
+  // Refused rather than filtered or warned about: a console line in a Jest run is invisible in the
+  // log of a green build, so the adopter would go on believing the claim was made.
   const reserved = [...new Set(options.capabilities ?? [])].filter(isReserved);
   if (reserved.length) {
     throw new Error(
@@ -246,11 +222,9 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
     );
   }
 
-  // The second refusal, and deliberately not folded into the first: a reservation is global and
-  // expires, while this is one language's and permanent, and the scenarios it gates exist and pass
-  // elsewhere. Telling an adopter "no scenario carries this" would send them looking for a gap
-  // upstream that is not there. Appendix F requires the distinction to survive into the skip reasons
-  // too -- see `skipDisplayName`.
+  // Deliberately not folded into the refusal above: telling an adopter "no scenario carries this"
+  // would send them looking for a gap upstream that is not there. The distinction survives into the
+  // skip reasons too -- see `skipDisplayName`.
   const inexpressible = [...new Set(options.capabilities ?? [])].filter(isInexpressible);
   if (inexpressible.length) {
     throw new Error(
@@ -266,13 +240,8 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
 
   const knownDeviations = options.knownDeviations ?? [];
 
-  // Checked here, with the rest of the declaration's shape, rather than further down with the rules
-  // about what the provider supports. Both say nothing about capabilities: they say the statement
-  // itself is malformed, and a malformed statement should be refused before anything is derived
-  // from the declaration it sits in.
-
-  // The same rule as for `capabilities`, for the same reason: a reserved capability has no
-  // scenario, so there is nothing to deviate from and the claim is about nothing.
+  // Checked with the rest of the declaration's shape, before anything is derived from it: a
+  // reserved capability has no scenario, so there is nothing to deviate from.
   const reservedDeviations = knownDeviations.flatMap((deviation) =>
     deviation.capability && isReserved(deviation.capability) ? [deviation.capability] : [],
   );
@@ -284,9 +253,8 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
     );
   }
 
-  // And the same rule for an inexpressible one, for a different reason. Here there *are* scenarios,
-  // so the gap would be against something -- but no provider in this language was ever asked, so a
-  // deviation would assert a defect that cannot exist and put it in a report as this provider's.
+  // And for an inexpressible one, for a different reason: the scenarios exist, but no provider in
+  // this language was ever asked, so the deviation would report a defect that cannot exist.
   const inexpressibleDeviations = knownDeviations.flatMap((deviation) =>
     deviation.capability && isInexpressible(deviation.capability) ? [deviation.capability] : [],
   );
@@ -322,11 +290,9 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
 
   return {
     declared,
-    // Everything a scenario can be gated by, less what this suite declared -- which is wider than
-    // the declarable set by exactly the inexpressible capabilities. They can never be in `declared`,
-    // so they are always gated, which is how one list here replaces an omission in every suite.
-    // Reserved ones are excluded because no scenario carries them: `not @caching` would exclude
-    // nothing and only make the filter longer.
+    // Wider than the declarable set by exactly the inexpressible capabilities: they can never be in
+    // `declared`, so they are always gated, which is how one list here replaces an omission in every
+    // suite. Reserved ones are excluded because no scenario carries them.
     undeclared: ALL_CAPABILITIES.filter((capability) => !isReserved(capability) && !declared.has(capability)),
     knownDeviations,
   };
@@ -335,25 +301,16 @@ export function resolveCapabilities(options: TckOptions): ResolvedCapabilities {
 /**
  * The OpenFeature domain a suite registers its providers under.
  *
- * Suite-scoped rather than scenario-scoped on purpose. Registering a new provider in the same domain
- * replaces the previous one; a fresh domain per scenario would leave every provider of the suite
- * registered, which for a provider holding a network connection means leaking one connection per
- * scenario.
- *
- * The prefix follows the package name, deliberately. It is observable — a domain appears in SDK
- * messages and in anything that lists registered providers — and a reader who sees it has to be
- * able to find the thing that produced it; `provider-tck/in-memory` would send them looking for a
- * package that no longer exists. Nothing consumes the string, so nothing outside this suite can be
- * broken by following the rename, and the only two properties that matter — that it is stable for
- * the life of a suite and unique per suite name — are unaffected.
+ * Suite-scoped rather than scenario-scoped on purpose: registering a new provider in the same domain
+ * replaces the previous one, where a fresh domain per scenario would leave every provider of the
+ * suite registered and leak a connection per scenario.
  */
 export function domainFor(options: TckOptions): string {
   return `tck/${options.name}`;
 }
 
-// Narrowed to the field each one reads, rather than taking the whole options object, so that the
-// containerised entry point can default a timeout from its own options before it has assembled a
-// TckOptions to pass on.
+// Narrowed to the field each one reads so the containerised entry point can default a timeout from
+// its own options before it has assembled a TckOptions to pass on.
 export function eventTimeout(options: Pick<TckOptions, 'eventTimeoutMs'>): number {
   return options.eventTimeoutMs ?? DEFAULT_EVENT_TIMEOUT_MS;
 }

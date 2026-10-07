@@ -5,11 +5,9 @@ import { TckState } from './state';
 import { clientUnderTest, providerUnderTest, registerSuiteUnderTest, resetSuiteUnderTest } from './underTest';
 
 /**
- * The unit half of the accessor's coverage. The behaviour that matters — that an extension step
- * reaches the client of the provider the suite registered, and that instance and no other — is
- * asserted end to end by `extensionSuite.spec.ts`, because only a real run has a real provider in
- * it. What is left for here is the failure modes, which a real run cannot reach without being
- * broken: no suite, and two suites.
+ * The unit half of the accessor's coverage. That an extension step reaches the client of the
+ * provider the suite registered is asserted end to end by `extensionSuite.spec.ts`; what is left for
+ * here is the failure modes a real run cannot reach — no suite, and two suites.
  */
 
 const control: BackendControl = {
@@ -47,8 +45,7 @@ describe('the accessors, once a suite has registered', () => {
   it('report the canonical "put a Given first" message before the scenario has a provider', () => {
     registerSuiteUnderTest(new TckState(optionsFor('unit')));
 
-    // Deliberately the same message the canonical steps produce, because it is the same mistake:
-    // the accessor adds no diagnosis of its own for a scenario that simply has not got there yet.
+    // Deliberately the same message the canonical steps produce, it being the same mistake.
     expect(() => clientUnderTest()).toThrow(/no provider has been registered in this scenario/);
     expect(() => providerUnderTest()).toThrow(/no provider has been created in this scenario/);
   });
@@ -87,8 +84,8 @@ describe('a second suite in one file', () => {
   });
 
   it('is not what registering the same suite twice is, so that stays allowed', () => {
-    // Registration is idempotent for one state object. Nothing calls it twice today, but a refusal
-    // that fired on a re-entrant call would turn a harmless one into a failed suite.
+    // Idempotent for one state object: a refusal firing on a re-entrant call would turn a harmless
+    // one into a failed suite.
     const state = new TckState(optionsFor('same'));
     registerSuiteUnderTest(state);
 
