@@ -1,7 +1,7 @@
 import type { Logger } from '@openfeature/core';
 import { AbstractFlagChangeStrategy } from '../flag-change-strategy';
 import type { FlagChangeEvent, ServerSentEventFlagChangeStrategyOptions } from '../model';
-import type { GOFeatureFlagServerSentEventResponse } from '../../model';
+import type { GOFeatureFlagServerSentEventResponse, OpenFeatureServerSentEventResponse } from '../../model';
 
 /**
  * (internal) used by {@link ServerSentEventFlagChangeStrategy} to track internal context.
@@ -19,6 +19,7 @@ type SseContext = {
 export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrategy<ServerSentEventFlagChangeStrategyOptions> {
   // the SSE path on the relay-proxy
   private static readonly _GOFF_SSE_PATH = 'stream/v1/sse/flag/change';
+  private static readonly _OFREP_SSE_EventType_RefetchEvaluation = 'refetchEvaluation';
   // the internal context
   private _ctx?: SseContext;
 
@@ -160,11 +161,19 @@ export class ServerSentEventFlagChangeStrategy extends AbstractFlagChangeStrateg
   /**
    * extract flag names from the SSE EventSource messages
    */
-  private buildFlagChangeEvent(res: GOFeatureFlagServerSentEventResponse): FlagChangeEvent {
-    return {
-      added: res.added ? Object.keys(res.added) : [],
-      updated: res.updated ? Object.keys(res.updated) : [],
-      deleted: res.deleted ? Object.keys(res.deleted) : [],
-    } as FlagChangeEvent;
+  private buildFlagChangeEvent(res: GOFeatureFlagServerSentEventResponse): FlagChangeEvent | undefined {
+    return this.isOpenFeatureSseEvent(res)
+      ? // when OFREP SSE event (relay-proxy >= 1.56.0), we need to refetch all from scratch. Let's return undefined
+        undefined
+      : // when GO Feature Flag SSE event (relay-proxy <= 1.55.3), we can refetch only the changed flags.
+        ({
+          added: res.added ? Object.keys(res.added) : [],
+          updated: res.updated ? Object.keys(res.updated) : [],
+          deleted: res.deleted ? Object.keys(res.deleted) : [],
+        } as FlagChangeEvent);
+  }
+
+  private isOpenFeatureSseEvent(data: any): data is OpenFeatureServerSentEventResponse {
+    return data?.type === ServerSentEventFlagChangeStrategy._OFREP_SSE_EventType_RefetchEvaluation;
   }
 }

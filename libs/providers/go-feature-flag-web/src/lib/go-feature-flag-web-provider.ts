@@ -36,7 +36,8 @@ import {
   WebSocketFlagChangeStrategy,
 } from './change-strategy';
 import { buildOptionsFromProviderOptions } from './change-strategy/utils';
-import { awaitableTimeout, compositeAbortController, whenAnySettle } from './utils';
+import { awaitableTimeout, compositeAbortController, deepEqual, whenAnySettle } from './utils';
+import { getRetryAfterMs, shouldRetry } from './http-utils';
 
 /**
  * (internal) used to shape the internal cache of flags after retrieval with {@link GoFeatureFlagWebProvider.fetchAll}
@@ -71,6 +72,11 @@ interface FetchErrorHandlerResponse {
    * This will be used mainly by {@link GoFeatureFlagWebProvider.fetchAllWithRetries} to understand when reconnecting.
    */
   retriable?: boolean;
+  /**
+   * Indicates the number of milliseconds to wait before retrying the operation.
+   * This will be used mainly by {@link GoFeatureFlagWebProvider.fetchAllWithRetries} to understand when reconnecting.
+   */
+  retryAfterMs?: number;
 }
 
 export class GoFeatureFlagWebProvider implements Provider {
@@ -385,8 +391,10 @@ export class GoFeatureFlagWebProvider implements Provider {
    * @param context
    */
   private emitProviderEvent(event: ProviderEmittableEvents, context?: EventContext) {
-    this.events.emit(event, context);
-    this._lastEmittedProviderEvent = event;
+    if (event !== this._lastEmittedProviderEvent) {
+      this.events.emit(event, context);
+      this._lastEmittedProviderEvent = event;
+    }
   }
 
   /**
@@ -399,22 +407,23 @@ export class GoFeatureFlagWebProvider implements Provider {
    * @param newValue
    * @returns
    */
-  private isConfigurationChange(oldValue: GoFeatureFlagResolvedFlags, newValue: GoFeatureFlagResolvedFlags) {
+  private getChangedFlags(oldValue: GoFeatureFlagResolvedFlags, newValue: GoFeatureFlagResolvedFlags) {
     const oldKeys = new Set(Object.keys(oldValue.flags));
     const newKeys = new Set(Object.keys(newValue.flags));
-    // compare the count of flag keys (flags added or removed)
-    if (oldKeys.size !== newKeys.size) return true;
+    const changedKeys: string[] = [];
     // check any diff in keys
-    for (const key of oldKeys) {
+    for (const key of newKeys) {
       // check if some keys where added/removed
-      if (!newKeys.has(key)) return true;
-      const oldFlag = oldValue.flags[key];
-      const newFlag = newValue.flags[key];
-      // check if the evaluated variant or value is changed
-      if (oldFlag.variant !== newFlag.variant || oldFlag.value !== newFlag.value) return true;
+      if (oldKeys.has(key)) {
+        const oldFlag = oldValue.flags[key];
+        const newFlag = newValue.flags[key];
+        // check if the evaluated variant or value is changed
+        if (oldFlag.variant === newFlag.variant && deepEqual(oldFlag.value, newFlag.value)) oldKeys.delete(key);
+      } else changedKeys.push(key);
     }
-    // no valuable changes between the compared flagsets
-    return false;
+    // add the remaining old keys (it means they have been deleted)
+    changedKeys.push(...oldKeys);
+    return changedKeys;
   }
 
   private handleFetchAllResult(
@@ -423,17 +432,17 @@ export class GoFeatureFlagWebProvider implements Provider {
   ): data is GoFeatureFlagResolvedFlags {
     if (this.isFlagResult(data)) {
       // Check if the configuration changed
-      const isConfigurationChange = !!changeEvent || this.isConfigurationChange(this._flags, data);
+      const flagsChanged = changeEvent
+        ? [...changeEvent.deleted, ...changeEvent.updated, ...changeEvent.added]
+        : this.getChangedFlags(this._flags, data);
       // New flags has been loaded, update state
       this._flags.flags = data.flags;
       this._lastFlagChangeEvent = undefined;
       // send a `ConfigurationChanged` when the flags evaluation changed
-      if (this._lastEmittedProviderEvent && isConfigurationChange) {
+      if (this._lastEmittedProviderEvent && flagsChanged.length > 0) {
         this.events.emit(ProviderEvents.ConfigurationChanged, {
           message: 'flag configuration have changed',
-          flagsChanged: changeEvent
-            ? [...changeEvent.deleted, ...changeEvent.updated, ...changeEvent.added]
-            : undefined,
+          flagsChanged,
         });
       }
       // Always send a `Ready` event when successful
@@ -480,9 +489,9 @@ export class GoFeatureFlagWebProvider implements Provider {
         // let's retry after waiting some delay
         attempts++;
         this._logger?.warn(
-          `${GoFeatureFlagWebProvider.name}: Waiting ${delay} ms before trying to evaluate the flags (${attempts}/${this._maxRetries}).`,
+          `${GoFeatureFlagWebProvider.name}: Waiting ${result.retryAfterMs ?? delay} ms before trying to evaluate the flags (${attempts}/${this._maxRetries}).`,
         );
-        await awaitableTimeout(delay, { signal: sessionAbort.signal }).catch((err) => undefined);
+        await awaitableTimeout(result.retryAfterMs ?? delay, { signal: sessionAbort.signal }).catch(() => undefined);
         delay *= this._retryDelayMultiplier;
       } while (!sessionAbort.signal.aborted);
       // NOTE: if we are here the session has been cancelled, we return false for now
@@ -556,16 +565,14 @@ export class GoFeatureFlagWebProvider implements Provider {
         throw new FetchTimeoutError(this._apiTimeout);
       }
       // An error occurred during the request, rethrow as-is
-      else if (result.error) {
-        throw result.error;
-      }
+      else if (result.error) return Promise.reject(result.error);
 
       // If we are here, the request received a response
       const response = result.data as Response;
 
       if (!response.ok) {
         // throw a FetchError
-        throw new FetchError(response.status);
+        throw new FetchError(response.status, shouldRetry(response), getRetryAfterMs(response));
       }
 
       const data = (await (response as Response).json()) as GOFeatureFlagAllFlagsResponse;
@@ -626,19 +633,22 @@ export class GoFeatureFlagWebProvider implements Provider {
     } else if (error instanceof FetchError) {
       if (error.status == 401) {
         this._logger?.error(
-          `${GoFeatureFlagWebProvider.name}: invalid token used to contact GO Feature Flag instance: ${error}`,
+          `${GoFeatureFlagWebProvider.name}: Invalid token used to contact GO Feature Flag instance: ${error}`,
         );
         return { reason: 'unauthorized', error };
       } else if (error.status === 404) {
-        this._logger?.error(
-          `${GoFeatureFlagWebProvider.name}: impossible to call go-feature-flag relay proxy ${error}`,
-        );
+        this._logger?.error(`${GoFeatureFlagWebProvider.name}: GO Feature Flag instance endpoint not found: ${error}`);
         return { reason: 'notFound', error };
+      } else {
+        this._logger?.error(
+          `${GoFeatureFlagWebProvider.name}: An error occurred while calling GO Feature Flag instance: ${error}`,
+        );
+        return { reason: `HTTP ${error.status}`, error, retriable: error.retriable, retryAfterMs: error.retryAfterMs };
       }
+    } else {
+      this._logger?.error(`${GoFeatureFlagWebProvider.name}: Unknown error while retrieving flags: ${error}`);
+      return { reason: 'unknown', error };
     }
-
-    this._logger?.error(`${GoFeatureFlagWebProvider.name}: unknown error while retrieving flags: ${error}`);
-    return { reason: 'unknown', error, retriable: true };
   }
 
   /**
@@ -698,8 +708,6 @@ export class GoFeatureFlagWebProvider implements Provider {
         await this.fetchAll(this._lastEvaluationContext!).catch((err) =>
           this._logger?.error(`${this.metadata.name}: An error occured when polling new flag values`, err),
         );
-        // we also try ro connect again the change strategy
-        this.changeStrategy.connect();
       } while (!this._disposing && !pollingAbort.signal.aborted);
     } finally {
       this._logger?.debug(`${this.metadata.name}: stop polling cycle.`);

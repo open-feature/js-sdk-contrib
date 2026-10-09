@@ -74,12 +74,12 @@ client.addHandler(ProviderEvents.ConfigurationChanged, () => { //... });
 
 ### Reconnection
 
-If the connection to the GO Feature Flag instance fails, the provider will attempt to reconnect with an exponential back-off.  
+If the WebSocket or SSE connection to the GO Feature Flag instance fails, the provider will attempt to reconnect with an exponential back-off.  
 The `maxRetries` can be specified to customize reconnect behavior.
 
 #### Polling as a fallback
 
-If the connection is not restored after `maxRetries` and `pollingIntervalMs` is a positive number, the provider will fallback to polling against GO Feature Flag instance. Polling will continue until the connection to WebSocket or SSE endpoints of GO Feature Flag instance is estabilished.
+If the WebSocket or SSE connection is not restored after `maxRetries` and `pollingIntervalMs` is a positive number, the provider will fallback to polling against GO Feature Flag instance. Polling will continue until the end of the session.
 
 ### Event streaming
 

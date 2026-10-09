@@ -134,7 +134,7 @@ export abstract class AbstractFlagChangeStrategy<
    * Used to notify flag changes to the listeners registered through {@link FlagChangeStrategy.onFlagChange()}
    * @param event
    */
-  protected notifyFlagChange(event: FlagChangeEvent) {
+  protected notifyFlagChange(event?: FlagChangeEvent | undefined) {
     if (!this.disposing && this._onFlagChangeHandlers.size > 0) {
       this._onFlagChangeHandlers.forEach((handler) => {
         try {

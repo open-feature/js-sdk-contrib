@@ -5,9 +5,13 @@
  */
 export class FetchError extends Error {
   status: number;
-  constructor(status: number) {
+  retriable: boolean;
+  retryAfterMs?: number;
+  constructor(status: number, retriable = false, retryAfterMs?: number) {
     super(`Request failed with status code ${status}`);
     this.status = status;
+    this.retriable = retriable;
+    this.retryAfterMs = retryAfterMs;
   }
 }
 

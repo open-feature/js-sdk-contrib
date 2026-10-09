@@ -21,7 +21,7 @@ export interface FlagChangeEvent {
 /**
  * The type used to register handlers through {@link FlagChangeStrategy.onFlagChange}
  */
-export type FlagChangeStrategyOnFlagChangeHandler = (changes: FlagChangeEvent) => void;
+export type FlagChangeStrategyOnFlagChangeHandler = (changes?: FlagChangeEvent | undefined) => void;
 /**
  * The type used to register handlers through {@link FlagChangeStrategy.onStatusChange}
  */

@@ -183,3 +183,38 @@ export function compositeAbortController(signals: AbortSignal[]): AbortControlle
 
   return composite;
 }
+
+/**
+ * Compare two objects and check if they can be considered deeply equal
+ * @param source
+ * @param target
+ */
+export function deepEqual(source: any, target: any) {
+  // Same reference or same primitive value.
+  if (Object.is(source, target)) return true;
+  // Different primitives, null, or an object versus a primitive.
+  if (source === null || target === null || typeof source !== 'object' || typeof target !== 'object') return false;
+  // Array check
+  const sourceIsArray = Array.isArray(source);
+  const targetIsArray = Array.isArray(target);
+  if (sourceIsArray !== targetIsArray) return false;
+  if (sourceIsArray && targetIsArray) {
+    if (source.length !== target.length) return false;
+  } else {
+    // Object check
+    const sourceProto = Object.getPrototypeOf(source);
+    const targetProto = Object.getPrototypeOf(target);
+    const sourceIsPlain = sourceProto === Object.prototype || sourceProto === null;
+    const targetIsPlain = targetProto === Object.prototype || targetProto === null;
+    if (!sourceIsPlain || !targetIsPlain || sourceProto !== targetProto) return false;
+  }
+  // check nested properties
+  const sourceKeys = Object.keys(source);
+  const targetKeys = Object.keys(target);
+  if (sourceKeys.length !== targetKeys.length) return false;
+  for (const key of sourceKeys) {
+    if (!Object.prototype.hasOwnProperty.call(target, key) || !deepEqual(source[key], target[key])) return false;
+  }
+
+  return true;
+}

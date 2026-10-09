@@ -2,7 +2,6 @@ import type { EvaluationDetails, FlagValue, Hook, HookContext } from '@openfeatu
 import type { CollectorManager } from './collector-manager';
 
 const defaultTargetingKey = 'undefined-targetingKey';
-type Timer = ReturnType<typeof setInterval>;
 
 export class GoFeatureFlagDataCollectorHook implements Hook {
   private collectorManagger?: CollectorManager;

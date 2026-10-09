@@ -137,12 +137,22 @@ export interface GOFeatureFlagWebsocketResponse {
 }
 
 /**
- * Format of the Server-Sent Event event we can receive.
+ * Format of the Server-Sent Event event we can receive (relay-proxy <= 1.55.3).
  */
 export interface GOFeatureFlagServerSentEventResponse {
   deleted?: { [key: string]: any };
   added?: { [key: string]: any };
   updated?: { [key: string]: any };
+}
+
+/**
+ * Format of the OpenFeature Server-Sent Event event we can receive (relay-proxy >= 1.56.0).
+ * OpenFeature OFREP spec ADR-08: https://github.com/open-feature/protocol/blob/main/service/adrs/0008-sse-for-bulk-evaluation-changes.md#sse-event-format
+ */
+export interface OpenFeatureServerSentEventResponse {
+  etag?: string;
+  lastModified?: number;
+  type: 'refetchEvaluation';
 }
 
 export interface DataCollectorRequest<T> {
