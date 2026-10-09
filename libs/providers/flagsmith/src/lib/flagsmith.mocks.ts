@@ -1,4 +1,4 @@
-import type { BaseFlag } from 'flagsmith-nodejs';
+import type { BaseFlag } from '@flagsmith/nodejs';
 
 export const mockFlagData = {
   booleanAsStringEnabled: {
