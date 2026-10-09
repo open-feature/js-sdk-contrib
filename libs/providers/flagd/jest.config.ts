@@ -11,7 +11,8 @@ module.exports = {
     ],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
-  // ignore e2e path
-  testPathIgnorePatterns: ['/e2e/'],
+  // both are Docker-gated, with targets of their own. `/src/tck/` is anchored so it cannot match a
+  // `tck` directory under `lib/`.
+  testPathIgnorePatterns: ['/e2e/', '/src/tck/'],
   coverageDirectory: '../../../coverage/libs/providers/flagd',
 };
