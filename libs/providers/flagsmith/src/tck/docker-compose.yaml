@@ -1,0 +1,14 @@
+# The Flagsmith provider-TCK backend: the Flagsmith Edge Proxy with a launchpad implementing the
+# control API as its upstream. https://github.com/aepfli/flagsmith-tck-testbed
+#
+# The image is PINNED, not :latest. Four language adoptions pull it, and a mutable tag lets a push
+# to the testbed change four pull requests' results with no diff anywhere to explain it.
+#
+# Ports are deliberately not pinned: the TCK resolves the dynamically mapped host ports once the
+# stack is up, and the mappings have to survive the outage scenarios.
+services:
+  backend:
+    image: ${FLAGSMITH_TESTBED_IMAGE:-ghcr.io/aepfli/flagsmith-tck-testbed:0.1.0}
+    ports:
+      - 8000 # Edge Proxy -- what the provider under test talks to
+      - 8080 # launchpad -- control API, exposed by the TCK automatically
