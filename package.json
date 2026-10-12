@@ -39,7 +39,7 @@
     "@protobuf-ts/runtime-rpc": "^2.9.0",
     "@swc/helpers": "0.5.21",
     "ajv": "^8.18.0",
-    "axios": "1.18.0",
+    "axios": "1.20.0",
     "copy-anything": "^3.0.5",
     "flagsmith-nodejs": "^6.1.0",
     "imurmurhash": "^0.1.4",
