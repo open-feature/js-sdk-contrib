@@ -1,13 +1,29 @@
-import { loadFeatures, parseFeature } from 'jest-cucumber';
+import { IdGenerator } from '@cucumber/messages';
+import { parseFeature } from 'jest-cucumber';
 import { Capability, DECLARABLE_CAPABILITIES, INEXPRESSIBLE_CAPABILITIES, inexpressibleReason } from './capability';
-import { planScenarios, skipDisplayName } from './scenarioRunner';
-import { FEATURES_GLOB } from './runProviderTck';
+import { readFeatureMessages } from './messages';
+import { planFeature, skipDisplayName } from './scenarioRunner';
+import { loadTckFeatures } from './runProviderTck';
 
-/** The canonical features, with `@object` deliberately undeclared so its scenarios are gated. */
-const features = loadFeatures(FEATURES_GLOB);
+/** The canonical features, unfiltered, with their compiled scenarios. */
+const features = loadTckFeatures(undefined);
 
 const plansWithout = (...declared: Capability[]) =>
-  features.flatMap((parsed) => planScenarios(parsed, new Set(declared)));
+  features.flatMap(
+    ({ feature, parsed, messages }) => planFeature(feature, parsed, messages.planned, new Set(declared)).scenarios,
+  );
+
+/** Plans a feature written inline, so a shape the canonical files do not have can still be pinned. */
+const synthetic = (lines: string[], declared: Capability[] = []) => {
+  const source = lines.join('\n');
+
+  return planFeature(
+    'synthetic',
+    parseFeature(source),
+    readFeatureMessages('synthetic.feature', source, IdGenerator.incrementing()).planned,
+    new Set(declared),
+  ).scenarios;
+};
 
 describe('the capability gate', () => {
   it('names every skipped scenario with the reason it was skipped', () => {
@@ -48,8 +64,9 @@ describe('the capability gate', () => {
 
   it('plans one entry per example row, not one per outline', () => {
     // A plan that collapsed an outline's example rows would skip or run the rest without saying so.
-    const all = plansWithout(...Object.values(Capability));
-    const matrix = all.filter((scenario) => scenario.title === 'Requesting the wrong type returns the code default');
+    const matrix = plansWithout(...Object.values(Capability)).filter(
+      (scenario) => scenario.name === 'Requesting the wrong type returns the code default',
+    );
 
     expect(matrix).toHaveLength(8);
   });
@@ -58,7 +75,7 @@ describe('the capability gate', () => {
     // Gherkin permits tags on an individual Examples block, and no canonical feature does it today,
     // which is why it is worth pinning: a plan keyed on the scenario name would gate every row of
     // the outline together. The plan is positional instead.
-    const parsed = parseFeature(
+    const planned = synthetic(
       [
         'Feature: mixed examples',
         '',
@@ -71,17 +88,16 @@ describe('the capability gate', () => {
         '',
         '    @object',
         '    Examples: structured',
-        '      | what         |',
-        '      | structured   |',
+        '      | what       |',
+        '      | structured |',
         '',
-      ].join('\n'),
+      ],
+      [Capability.Events],
     );
 
-    const planned = planScenarios(parsed, new Set([Capability.Events]));
-
-    expect(planned.map((scenario) => [scenario.title, scenario.missing])).toEqual([
-      ['a plain flag', []],
-      ['a structured flag', [Capability.Object]],
+    expect(planned.map((scenario) => [scenario.title, scenario.example, scenario.missing])).toEqual([
+      ['a plain flag', { what: 'plain' }, []],
+      ['a structured flag', { what: 'structured' }, [Capability.Object]],
     ]);
     expect(skipDisplayName(planned[1])).toContain('@object');
   });
@@ -89,7 +105,7 @@ describe('the capability gate', () => {
   it('loads every canonical feature, the metadata one included', () => {
     // Features are discovered rather than enumerated, so a file arriving upstream needs no wiring
     // change -- and one the harness quietly failed to load is a gap nothing else reports.
-    expect(features.map((parsed) => parsed.title).sort()).toEqual([
+    expect(features.map(({ parsed }) => parsed.title).sort()).toEqual([
       'Provider error handling',
       'Provider events',
       'Provider flag evaluation',
@@ -316,7 +332,7 @@ describe('the capability gate', () => {
   it('emits both clauses for a scenario gated by one of each, naming its own capabilities to each', () => {
     // No canonical scenario is in this position today, which is why it is worth pinning: an upstream
     // file composing @numeric-coercion with an ordinary tag must not lose either half of the reason.
-    const parsed = parseFeature(
+    const [planned] = synthetic(
       [
         'Feature: composed gates',
         '',
@@ -324,10 +340,9 @@ describe('the capability gate', () => {
         '  Scenario: a structured flag asked for as an integer',
         '    Given a String-flag with key "string-flag" and a default value "x"',
         '',
-      ].join('\n'),
+      ],
+      [Capability.Events],
     );
-
-    const [planned] = planScenarios(parsed, new Set([Capability.Events]));
     const name = skipDisplayName(planned);
 
     expect(planned.missing).toEqual([Capability.Object, Capability.NumericCoercion]);
@@ -354,5 +369,113 @@ describe('the capability gate', () => {
     for (const scenario of mandatory) {
       expect(scenario.tags.filter((tag) => Object.values(Capability).includes(tag as Capability))).toEqual([]);
     }
+  });
+});
+
+describe('binding a planned scenario to its pickle', () => {
+  const planned = plansWithout(...Object.values(Capability));
+
+  it('gives every planned scenario a distinct pickle', () => {
+    // The pickle is what carries the outcome in the results stream, so two scenarios sharing one
+    // would report the same result twice and lose the other.
+    const ids = planned.map((scenario) => scenario.pickleId);
+
+    expect(ids).not.toContain('');
+    expect(new Set(ids).size).toBe(planned.length);
+  });
+
+  it('binds each scenario to the pickle of the same scenario', () => {
+    // jest-cucumber substitutes an outline row into the scenario title and so does the pickle
+    // compiler, so the two strings agree -- which is what makes the positional pairing checkable.
+    for (const { feature, parsed, messages } of features) {
+      const plan = planFeature(feature, parsed, messages.planned, new Set()).scenarios;
+      const byId = new Map(messages.planned.map(({ pickle }) => [pickle.id, pickle]));
+
+      for (const scenario of plan) {
+        expect(byId.get(scenario.pickleId)?.name).toBe(scenario.title);
+      }
+    }
+  });
+
+  it('refuses to plan when jest-cucumber and the compiler disagree on how many scenarios there are', () => {
+    // A wrong pairing is worse than none: it reports an outcome against a scenario that did not run.
+    const source = ['Feature: drifted', '', '  Scenario: alpha', '    Given a stable provider', ''].join('\n');
+
+    expect(() => planFeature('drifted', parseFeature(source), [], new Set())).toThrow(
+      /defines 1 scenarios but the Gherkin compiler produced 0/,
+    );
+  });
+
+  it('refuses to plan when the scenario at a position is not the pickle at that position', () => {
+    const mine = ['Feature: mine', '', '  Scenario: alpha', '    Given a stable provider', ''].join('\n');
+    const theirs = ['Feature: theirs', '', '  Scenario: beta', '    Given a stable provider', ''].join('\n');
+    const compiled = readFeatureMessages('theirs.feature', theirs, IdGenerator.incrementing());
+
+    expect(() => planFeature('mine', parseFeature(mine), compiled.planned, new Set())).toThrow(
+      /is "alpha" but the pickle at that position is "beta"/,
+    );
+  });
+});
+
+describe('the example a scenario came from', () => {
+  const planned = plansWithout(...Object.values(Capability));
+
+  it('names an outline scenario as the feature file writes it, placeholders and all', () => {
+    // Not jest-cucumber's expanded title. That string is the runner's, and Go's and Python's runners
+    // produce different ones for the same row, which defeats the comparison the report exists for.
+    const outlineTitles = features.flatMap(({ parsed }) => parsed.scenarioOutlines.map((outline) => outline.title));
+
+    for (const scenario of planned.filter((entry) => entry.example)) {
+      expect(outlineTitles).toContain(scenario.name);
+    }
+  });
+
+  it('gives every row of the type-mismatch matrix a distinct example', () => {
+    const matrix = planned.filter((scenario) => scenario.name === 'Requesting the wrong type returns the code default');
+
+    expect(matrix.map((scenario) => scenario.example)).toEqual([
+      { key: 'string-flag', requested: 'Boolean', default: 'false' },
+      { key: 'string-flag', requested: 'Integer', default: '1' },
+      { key: 'string-flag', requested: 'Float', default: '0.1' },
+      { key: 'wrong-flag', requested: 'Boolean', default: 'false' },
+      { key: 'boolean-flag', requested: 'Integer', default: '1' },
+      { key: 'boolean-flag', requested: 'Float', default: '0.1' },
+      { key: 'integer-flag', requested: 'Boolean', default: 'false' },
+      { key: 'float-flag', requested: 'Boolean', default: 'false' },
+    ]);
+  });
+
+  it('keeps cell contents as strings, because Gherkin has no types', () => {
+    for (const scenario of planned) {
+      for (const value of Object.values(scenario.example ?? {})) {
+        expect(typeof value).toBe('string');
+      }
+    }
+  });
+
+  it('omits the example for a scenario that is not an outline row', () => {
+    const plain = planned.filter((scenario) => !scenario.example);
+
+    expect(plain.length).toBeGreaterThan(0);
+    for (const scenario of plain) {
+      expect(scenario).not.toHaveProperty('example');
+    }
+  });
+
+  it('carries the example on a capability-skipped row too', () => {
+    // A skipped row is still a row, and the harness has to be able to name it in a diagnostic.
+    //
+    // Only the outline's three rows appear: errors.feature's structured-as-JSON-text scenario also
+    // carries @object, and it is a plain Scenario rather than an outline row, so it has no example
+    // to carry and the filter leaves it out.
+    const skipped = plansWithout(Capability.Events).filter(
+      (scenario) => scenario.missing.includes(Capability.Object) && scenario.example,
+    );
+
+    expect(skipped.map((scenario) => scenario.example)).toEqual([
+      { requested: 'Boolean', default: 'false' },
+      { requested: 'Integer', default: '1' },
+      { requested: 'Float', default: '0.1' },
+    ]);
   });
 });
