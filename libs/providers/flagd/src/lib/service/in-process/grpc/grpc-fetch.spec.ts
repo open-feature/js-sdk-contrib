@@ -47,6 +47,7 @@ const serviceMock: FlagSyncServiceClient = {
       destroy,
     };
   }),
+  close: jest.fn(),
 } as unknown as FlagSyncServiceClient;
 
 describe('grpc fetch', () => {
@@ -119,6 +120,35 @@ describe('grpc fetch', () => {
     onDataCallback({ flagConfiguration: initFlagConfig, syncContext: syncContext });
   });
 
+  it('should wait for a valid initial payload', async () => {
+    const invalidSyncContext = { generation: 'invalid' };
+    const validSyncContext = { generation: 'valid' };
+    const callback = jest
+      .fn<string[], [string]>()
+      .mockImplementationOnce(() => {
+        throw new Error('invalid flag configuration');
+      })
+      .mockReturnValue([]);
+    const fetch = new GrpcFetch(cfg, setSyncContext, serviceMock);
+    let connected = false;
+    const connection = fetch.connect(callback, reconnectCallback, changedCallback, disconnectCallback).then(() => {
+      connected = true;
+    });
+
+    onDataCallback({ flagConfiguration: 'invalid', syncContext: invalidSyncContext });
+    await Promise.resolve();
+
+    expect(connected).toBe(false);
+    expect(setSyncContext).not.toHaveBeenCalled();
+
+    onDataCallback({ flagConfiguration: '{"flags":{}}', syncContext: validSyncContext });
+    await connection;
+
+    expect(callback).toHaveBeenCalledTimes(2);
+    expect(setSyncContext).toHaveBeenCalledTimes(1);
+    expect(setSyncContext).toHaveBeenCalledWith(validSyncContext);
+  });
+
   it('should handle data sync reconnection', (done) => {
     const initFlagConfig = '{"flags":{}}';
     const updatedFlagConfig =
@@ -179,6 +209,45 @@ describe('grpc fetch', () => {
     });
 
     onErrorCallback(new Error('Some connection error'));
+  });
+
+  it('should cancel a pending reconnect when disconnected', async () => {
+    const fetch = new GrpcFetch(cfg, jest.fn(), serviceMock);
+    const connectPromise = fetch.connect(jest.fn(), jest.fn(), jest.fn(), disconnectCallback).catch(() => undefined);
+
+    onErrorCallback(new Error('Some connection error'));
+    await connectPromise;
+    await fetch.disconnect();
+    jest.runAllTimers();
+
+    expect(serviceMock.waitForReady).toHaveBeenCalledTimes(1);
+    expect(serviceMock.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not create a stream when readiness completes after disconnect', async () => {
+    let readyCallback: ((err?: Error) => void) | undefined;
+    (serviceMock.waitForReady as jest.Mock).mockImplementationOnce(
+      (_deadline: number, callback: (err?: Error) => void) => {
+        readyCallback = callback;
+      },
+    );
+    const fetch = new GrpcFetch(cfg, jest.fn(), serviceMock);
+
+    void fetch.connect(jest.fn(), jest.fn(), jest.fn(), disconnectCallback);
+    await fetch.disconnect();
+    readyCallback?.();
+
+    expect(serviceMock.syncFlags).not.toHaveBeenCalled();
+    expect(serviceMock.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('should disconnect only once', async () => {
+    const fetch = new GrpcFetch(cfg, jest.fn(), serviceMock);
+
+    await fetch.disconnect();
+    await fetch.disconnect();
+
+    expect(serviceMock.close).toHaveBeenCalledTimes(1);
   });
 
   it('should send selector via flagd-selector metadata header', async () => {
