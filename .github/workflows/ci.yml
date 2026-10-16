@@ -3,7 +3,11 @@ on:
   push:
     branches: ['main']
   pull_request:
-    branches: ['main']
+    # feat/provider-tck* is temporary, for the duration of the conformance suite review.
+    # This filter matches the base branch of a pull request, so without those bases the
+    # suite PRs stacked on feat/provider-tck never run CI at all. Tracked by
+    # open-feature/spec#417; drop them once the stack has landed.
+    branches: ['main', 'feat/provider-tck*']
 
 jobs:
   test-build:
