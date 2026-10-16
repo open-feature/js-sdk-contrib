@@ -125,3 +125,41 @@ Run `nx package providers-ofrep` to build the library.
 ## Running unit tests
 
 Run `nx test providers-ofrep` to execute the unit tests via [Jest](https://jestjs.io).
+
+## Running the conformance suite
+
+This provider adopts the [OpenFeature Provider TCK](../../shared/tck/README.md):
+
+```sh
+npx nx tck providers-ofrep
+```
+
+It needs a **Docker daemon**. The suite brings up
+[`libs/shared/tck-backend/docker-compose.yaml`](../../shared/tck-backend/docker-compose.yaml) itself
+— a pinned flagd-testbed image, used because flagd serves OFREP and its launchpad is the reference
+implementation of the suite's control API, and shared with the flagd adoption so the two cannot
+drift onto different backends — discovers the mapped ports, and drives the backend over that API.
+OFREP is a protocol rather than a product, so any conformant server would do; a conformance result
+is a claim about that exact image tag.
+
+**Scope: this package only.** [`libs/providers/ofrep-web`](../ofrep-web/README.md) is deliberately
+not adopted. It is the only OFREP provider in this repository with events, a STALE state and a
+failable initialisation — the parts of the contract the suite is most useful for — but none of them
+can be exercised against flagd: flagd's OFREP handler never writes an `ETag` and never reads
+`If-None-Match`, so the `304` path the web provider's polling depends on is unreachable, and its
+bulk response carries no `eventStreams` field, so the SSE path is unreachable too. Adopting it
+against this backend would declare capabilities that the backend, not the provider, makes
+untestable. It waits for a neutral OFREP testbed.
+
+**The suite lives in `src/tck/`, behind a `tck` target**, which is what keeps it out of the default
+build and out of CI: it sits in a Jest project of its own
+([`src/tck/jest.config.ts`](./src/tck/jest.config.ts)) and the provider's unit config ignores
+`/src/tck/`. The target's name matters — `npm run e2e` is `nx run-many --all --target=e2e` and CI
+has a job for it, so an `e2e` target here would pull a backend image on every push. Run
+`npx nx tck providers-ofrep` by hand before merging a change to this provider or to the TCK.
+
+The `tck` target's wiring — `passWithNoTests: false`, and a `tck:pullSpec` dependency so the suite
+cannot run against the previous pin's feature files — is described in the
+[TCK's own README](../../shared/tck/README.md). Why an adoption suite is excluded rather than made a
+required gate is
+[Appendix F](https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md).
