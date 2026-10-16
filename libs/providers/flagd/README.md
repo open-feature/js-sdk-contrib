@@ -236,3 +236,30 @@ Run `nx package providers-flagd` to build the library.
 ## Running Unit Tests
 
 Run `nx test providers-flagd` to execute the unit tests via [Jest](https://jestjs.io).
+
+## Running the conformance suite
+
+This provider adopts the [OpenFeature Provider TCK](../../shared/tck/README.md), once per resolver:
+
+```sh
+npx nx tck providers-flagd
+```
+
+It needs a **Docker daemon**. The suite brings up
+[`libs/shared/tck-backend/docker-compose.yaml`](../../shared/tck-backend/docker-compose.yaml) itself
+— a pinned flagd-testbed image, shared with the OFREP adoption so the two cannot drift onto
+different backends — discovers the mapped ports, and drives the backend over the testbed's control
+API. A conformance result is a claim about that exact image tag.
+
+**The suites live in `src/tck/`, a sibling of `src/e2e/` rather than a child of it**, and the
+directory is what keeps them out of the default build and out of CI. They sit behind a Jest project
+of their own ([`src/tck/jest.config.ts`](./src/tck/jest.config.ts)) reached only by the `tck` target;
+the unit config ignores `/src/tck/` and `src/e2e/jest.config.ts` never sees it. Nesting them under
+`src/e2e/` would put them in reach of the `e2e` target's default `testMatch`, and that target _is_ a
+CI job here. Run the suite by hand before merging a change to this provider or to the TCK.
+
+The `tck` target's wiring — `passWithNoTests: false`, and a `tck:pullSpec` dependency so the suite
+cannot run against the previous pin's feature files — is described in the
+[TCK's own README](../../shared/tck/README.md). Why an adoption suite is excluded rather than made a
+required gate is
+[Appendix F](https://github.com/open-feature/spec/blob/main/specification/appendix-f-provider-conformance.md).
