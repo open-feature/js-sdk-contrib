@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v4.0.1...flagd-core-v5.0.0) (2026-10-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* bucket on any context type; (fractional re-assignment) ([#1636](https://github.com/open-feature/js-sdk-contrib/issues/1636))
+
+### ✨ New Features
+
+* bucket on any context type; (fractional re-assignment) ([#1636](https://github.com/open-feature/js-sdk-contrib/issues/1636)) ([e8fa0aa](https://github.com/open-feature/js-sdk-contrib/commit/e8fa0aa7f0bd3fe364db3bec9e3c6454d317b308))
+
 ## [4.0.1](https://github.com/open-feature/js-sdk-contrib/compare/flagd-core-v4.0.0...flagd-core-v4.0.1) (2026-08-20)
 
 

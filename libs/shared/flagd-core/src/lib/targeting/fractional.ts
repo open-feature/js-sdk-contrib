@@ -1,7 +1,7 @@
-import MurmurHash3 from 'imurmurhash';
 import type { EvaluationContextValue } from '@openfeature/core';
 import { flagKeyPropertyKey, flagdPropertyKey, targetingPropertyKey, getLoggerFromContext } from './common';
 import type { EvaluationContextWithLogger } from './common';
+import { hashBucketingValue } from './cbor';
 
 export const fractionalRule = 'fractional';
 
@@ -25,19 +25,25 @@ export function fractional(data: unknown, context: EvaluationContextWithLogger):
     return null;
   }
 
-  let bucketBy: string | undefined;
+  // resolve the bucketing input per the ADR: a non-array first element is the explicit input (string/number/bool/object; null/undefined rejected), otherwise shorthand -> CBOR-encode [flagKey, targetingKey] (targetingKey must be a non-empty string).
+  let bucketInput: unknown;
   let buckets: unknown[];
 
-  if (typeof args[0] == 'string') {
-    bucketBy = args[0];
+  const first = args[0];
+  if (!Array.isArray(first)) {
+    if (first === null || first === undefined) {
+      logger.debug(`Invalid ${fractionalRule} configuration: bucketing value resolved to null`);
+      return null;
+    }
+    bucketInput = first;
     buckets = args.slice(1, args.length);
   } else {
     const targetingKey = context[targetingPropertyKey];
-    if (!targetingKey) {
-      logger.debug('Missing targetingKey property, cannot perform fractional targeting');
+    if (typeof targetingKey !== 'string' || targetingKey.length === 0) {
+      logger.debug('Missing or non-string targetingKey property, cannot perform fractional targeting');
       return null;
     }
-    bucketBy = `${flagdProperties[flagKeyPropertyKey]}${targetingKey}`;
+    bucketInput = [flagdProperties[flagKeyPropertyKey], targetingKey];
     buckets = args;
   }
 
@@ -58,7 +64,7 @@ export function fractional(data: unknown, context: EvaluationContextWithLogger):
     return null;
   }
 
-  const hashUint32 = BigInt(new MurmurHash3(bucketBy).result() >>> 0);
+  const hashUint32 = BigInt(hashBucketingValue(bucketInput));
   const bucket = (hashUint32 * BigInt(bucketingList.totalWeight)) >> BigInt(32);
 
   let sum = BigInt(0);

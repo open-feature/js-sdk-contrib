@@ -15,6 +15,10 @@ jobs:
     strategy:
       matrix:
         node-version: [20.x, 22.x, 24.x]
+    # Jest ESM mode (used by the flagd family to load the ESM-only cborg dep).
+    # Harmless for other projects: it is a no-op for tests that do not use ESM.
+    env:
+      NODE_OPTIONS: --experimental-vm-modules
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
@@ -59,6 +63,9 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    # Jest ESM mode (flagd e2e loads the ESM-only cborg dep via flagd-core in-process).
+    env:
+      NODE_OPTIONS: --experimental-vm-modules
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
