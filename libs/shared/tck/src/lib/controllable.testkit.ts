@@ -165,7 +165,7 @@ export class ControllableBackendControl implements BackendControl {
 
   /** Stated rather than defaulted, like every other control: the same scenarios passing over the
    * control API and through in-process manipulation are not the same claim. */
-  readonly controlApi = 'in-process' as const;
+  readonly backendType = 'in-process' as const;
 
   /**
    * Creates the provider for the scenario about to run, over a reachable store.

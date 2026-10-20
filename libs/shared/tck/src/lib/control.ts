@@ -1,4 +1,14 @@
 /**
+ * How the backend under test was driven, for the conformance report's `backend.controlApi`.
+ *
+ * `'http'` is the normative control API, `'in-process'` the narrow allowance for providers with no
+ * backend, and `'custom'` a control this suite does not ship. `'custom'` is the honest answer in
+ * that last case: a report saying the suite cannot vouch for how the backend was driven beats one
+ * claiming the normative path it did not take.
+ */
+export type BackendType = 'http' | 'in-process' | 'custom';
+
+/**
  * The single seam between the TCK's scenarios and whatever manipulates the backend under test.
  *
  * Step definitions never talk to a backend directly, which is why the same Gherkin runs unchanged
@@ -31,14 +41,27 @@ export interface BackendControl {
   readonly description: string;
 
   /**
-   * How the backend was driven, for the conformance report's `backend.controlApi`: `'http'` is the
-   * normative control API, `'in-process'` the narrow allowance for providers with no backend.
+   * How the backend was driven, for the conformance report's `backend.controlApi` — whose JSON key
+   * is unchanged; only the TypeScript name moved.
    *
-   * Required, with **no inference from the control's concrete type**: inferring it is right about the
-   * two built-in controls and silently wrong about an adopter's custom one, which is the case where
-   * the answer matters.
+   * Optional, and with **no inference from the control's concrete type**: inferring it is right
+   * about the two controls this library ships and silently wrong about an adopter's own, which is
+   * the case where the answer matters. Saying nothing therefore resolves to `'custom'` — see
+   * {@link resolveBackendType} — the weakest honest claim, matching the Java binding's `default`
+   * method returning `CUSTOM`. Both controls shipped here state theirs, so only an adopter writing
+   * their own control gets the default.
    */
-  readonly controlApi: 'http' | 'in-process';
+  readonly backendType?: BackendType;
+}
+
+/**
+ * How a control drove the backend, for the report, with silence resolving to `'custom'`.
+ *
+ * The single place the default lives, so a control that states nothing is reported as the weakest
+ * honest claim rather than as the normative path it never took.
+ */
+export function resolveBackendType(control: BackendControl): BackendType {
+  return control.backendType ?? 'custom';
 }
 
 /**

@@ -73,7 +73,7 @@ export interface HttpControlOptions {
 export class HttpControl implements BackendControl, ConnectionControl {
   /** Stated rather than inferred: a claim of `http` is worth something only from the control that
    * actually spoke HTTP. */
-  readonly controlApi = 'http' as const;
+  readonly backendType = 'http' as const;
 
   private readonly resolveBaseUrl: () => string;
   private readonly backendConfiguration: string;

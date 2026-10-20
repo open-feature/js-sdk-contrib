@@ -118,7 +118,10 @@ includes the image pull.
 `fetch`, preferring `POST /reset` and falling back to `POST /start?config=default` on a `404` or
 `501`. Its base URL is a **thunk** (`{ baseUrl: () => url }`), since a control port is usually mapped
 dynamically and does not exist until the stack is up, whereas `runProviderTck` runs at module load.
-Any control must state **`controlApi`** — `'http'` or `'in-process'` — which is not inferred.
+A control may state **`backendType`** — `'http'`, `'in-process'` or `'custom'` — which is never
+inferred from its concrete type. Saying nothing resolves to `'custom'`, so a control this suite does
+not ship is reported as one the suite cannot vouch for rather than as the normative path it never
+took. The report's JSON key stays `backend.controlApi`.
 
 ## Declaring capabilities
 
