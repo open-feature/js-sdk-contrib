@@ -12,7 +12,7 @@ import { clientUnderTest, providerUnderTest, registerSuiteUnderTest, resetSuiteU
 
 const control: BackendControl = {
   description: 'a control that exists only to satisfy the options type',
-  controlApi: 'in-process',
+  backendType: 'in-process',
   prepareScenario: async () => undefined,
   changeFlag: async () => undefined,
 };

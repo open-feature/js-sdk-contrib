@@ -35,7 +35,7 @@ export class InProcessControl implements BackendControl {
   readonly description = 'in-process control of the SDK in-memory provider';
 
   /** There is no backend, which is the whole reason this class exists. */
-  readonly controlApi = 'in-process' as const;
+  readonly backendType = 'in-process' as const;
 
   /**
    * Creates the provider for the scenario about to run, seeded with the canonical flag set. Each
