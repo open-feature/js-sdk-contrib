@@ -2,11 +2,15 @@ import { basename, join } from 'node:path';
 import type { StepDefinitions } from 'jest-cucumber';
 import { autoBindSteps, loadFeature } from 'jest-cucumber';
 import { OpenFeature } from '@openfeature/server-sdk';
+import type { AdopterTagSelection } from './adopterTags';
+import { adopterTagFilter, resolveAdopterTags } from './adopterTags';
 import { resolveAssetDir } from './assets';
+import type { Capability } from './capability';
 import { expiredReservations, unknownCapabilityTags } from './capability';
 import { featureFiles, resolveExtensionFeatures } from './extensions';
 import type { TckOptions } from './options';
 import { eventTimeout, readyTimeout, resolveCapabilities } from './options';
+import type { PlannedScenario } from './scenarioRunner';
 import { planScenarios, scenarioRunner } from './scenarioRunner';
 import { TckState } from './state';
 import { eventSteps } from './steps/eventSteps';
@@ -68,6 +72,27 @@ export function loadExtensionFeatures(paths: readonly string[], tagFilter: strin
   }));
 }
 
+/**
+ * Plans every feature, applying the adopter's own tag selection to the extension ones alone.
+ *
+ * **This is the canonical exemption**, and it is one decision rather than a test repeated per
+ * scenario: a conformance scenario is not an adoption's to deselect, so the selection does not reach
+ * its plan at all. Separated from {@link runProviderTck} so that exemption can be asserted — the
+ * harness itself only runs under Jest, where a skipped scenario is green and says nothing.
+ *
+ * The same split is made when the files are loaded, the selection's tag filter going to the
+ * extension features only. Both halves are needed: the filter is what skips the scenario and the
+ * plan is what names the reason, and a scenario skipped with no planned reason is reported as
+ * skipped "for a reason the TCK did not ask for" rather than silently.
+ */
+export function planFeatures(
+  features: readonly TckFeature[],
+  declared: ReadonlySet<Capability>,
+  selection: AdopterTagSelection,
+): PlannedScenario[][] {
+  return features.map(({ parsed, canonical }) => planScenarios(parsed, declared, canonical ? undefined : selection));
+}
+
 /** Accepts an option that may be given once or several times, and always yields a list. */
 function asList<T>(value: T | readonly T[] | undefined): readonly T[] {
   if (value === undefined) {
@@ -107,6 +132,11 @@ export { CANONICAL_FLAGS_PATH, CONTROL_API_PATH } from './assets';
  */
 export function runProviderTck(options: TckOptions): void {
   const { declared, undeclared, knownDeviations } = resolveCapabilities(options);
+
+  // Checked here, with the capability declaration and before any feature is loaded, so a malformed
+  // or contradictory selection fails once and cleanly rather than per scenario it would have touched.
+  const adopterTags = resolveAdopterTags(options);
+
   const state = new TckState(options);
 
   // Jest's 5s default is shorter than every bound this suite works to, and whichever cap fires first
@@ -126,16 +156,23 @@ export function runProviderTck(options: TckOptions): void {
   // reason in the scenario name because Jest has nowhere else to put it.
   const tagFilter = undeclared.length ? undeclared.map((capability) => `not ${capability}`).join(' and ') : undefined;
 
+  // The adopter's own selection rides on the same mechanism, and on the extension features alone: a
+  // canonical scenario is the conformance claim and is not an adoption's to deselect. The exemption
+  // is this line and the one that plans the two sets differently -- there is no per-scenario test
+  // for canonical-ness that a future caller could forget.
+  const adopterFilter = adopterTagFilter(adopterTags);
+  const extensionTagFilter = [tagFilter, adopterFilter].filter(Boolean).join(' and ') || undefined;
+
   // The canonical set first and always, then whatever the adopter added, so no wiring mistake can
   // leave a canonical feature out.
   const features = [
     ...loadTckFeatures(tagFilter),
-    ...loadExtensionFeatures(asList(options.extensionFeatures), tagFilter),
+    ...loadExtensionFeatures(asList(options.extensionFeatures), extensionTagFilter),
   ];
 
   // jest-cucumber accepts a runner to make its test/test.skip calls through, and that is the only
   // seam reaching a Scenario Outline's example rows -- `scenarioNameTemplate` does not.
-  const plans = features.map(({ parsed }) => planScenarios(parsed, declared));
+  const plans = planFeatures(features, declared, adopterTags);
 
   // Checked against the features that actually ran, because which capabilities are reserved is
   // recorded here but decided upstream. Canonical only: an adopter's own feature reaching for a
@@ -187,6 +224,9 @@ export function runProviderTck(options: TckOptions): void {
           // Named rather than counted, so a scenario a reader does not recognise can be traced to
           // the adopter rather than to the shared suite.
           (extensions.length ? `; extension features ${extensions.sort().join(' ')}` : '') +
+          // Beside the features it selects over, because a reader counting extension scenarios that
+          // did not run needs to see that this suite asked for a subset of them.
+          (adopterFilter ? `; extension scenarios selected by ${adopterFilter}` : '') +
           // Printed in full, next to the declaration it qualifies: a deviation exists to be read
           // alongside the failure, and the run's output is where that is read first.
           knownDeviations
