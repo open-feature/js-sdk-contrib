@@ -155,6 +155,44 @@ export interface TckOptions {
   extensionSteps?: StepDefinitions | readonly StepDefinitions[];
 
   /**
+   * Which of your own {@link extensionFeatures} scenarios this suite runs: only those carrying one
+   * of these tags.
+   *
+   * Left out, every extension scenario runs. Given, it is a **filter and not a hint**: an extension
+   * scenario carrying none of these tags is skipped, an untagged one included. That is the point —
+   * one set of extension features run by two harnesses, say an RPC mode and an in-process mode,
+   * wants a scenario to belong to one of them, and an untagged scenario belongs to neither until
+   * somebody says so.
+   *
+   * ```ts
+   * extensionFeatures: join(__dirname, 'features'),
+   * includeTags: ['@rpc'],
+   * excludeTags: ['@fractional-v1'],
+   * ```
+   *
+   * Each tag carries its leading `@` and no surrounding whitespace, and naming a {@link Capability}
+   * tag is refused: what the provider supports is {@link capabilities}' decision, and a second gate
+   * able to skip a declared capability's scenarios could contradict it. **Canonical scenarios are
+   * exempt** — they are the conformance claim, and are not an adoption's to deselect.
+   *
+   * A deselected scenario is reported as skipped with the tag that deselected it, the way an
+   * undeclared capability's is; it is never quietly dropped. Its steps still need definitions —
+   * jest-cucumber binds the vocabulary of every scenario in the file, skipped or not — so each
+   * harness passes {@link extensionSteps} for the whole set rather than for its own share of it.
+   */
+  includeTags?: readonly string[];
+
+  /**
+   * Scenarios of your own that this suite does not run: any extension scenario carrying one of these
+   * tags.
+   *
+   * The counterpart to {@link includeTags}, under the same rules, and it **wins where they
+   * overlap**: a scenario carrying an excluded tag is skipped however it is included. Naming one tag
+   * in both options is refused rather than resolved that way, a tag being one or the other.
+   */
+  excludeTags?: readonly string[];
+
+  /**
    * How long to wait for a provider event, in milliseconds.
    *
    * Providers observe backend changes on wildly different timescales, so set this to comfortably

@@ -79,6 +79,8 @@ control-API document are **packaged with the library**: adoption needs no submod
 | `knownDeviations`        | none           | requirements this provider is known to fail              |
 | `extensionFeatures`      | —              | vendor features: a directory, a file, or a list          |
 | `extensionSteps`         | —              | steps for words the canonical vocabulary lacks           |
+| `includeTags`            | —              | run only extension scenarios carrying one of these tags  |
+| `excludeTags`            | —              | skip extension scenarios carrying one of these tags      |
 | `eventTimeoutMs`         | `12000`        | time to observe a backend change                         |
 | `readyTimeoutMs`         | `30000`        | time to reach `READY`                                    |
 
@@ -263,6 +265,31 @@ const vendorSteps: StepDefinitions = ({ then }) => {
 `providerUnderTest()` returns the provider itself, for a step whose subject is the provider's own
 surface. Both throw before the scenario has registered one, which means before a
 `Given a stable provider` step: put one in a `Background`.
+
+### Selecting among your own scenarios
+
+One set of extension features is often run by more than one harness — an RPC mode and an in-process
+mode of the same provider — where a scenario belongs to one of them. Tag them and name the tags:
+
+```ts
+extensionFeatures: join(__dirname, 'features'),
+includeTags: ['@rpc'],
+excludeTags: ['@fractional-v1'],
+```
+
+`includeTags` is a **filter, not a hint**: an extension scenario carrying none of its tags is
+skipped, an untagged one included. `excludeTags` wins where the two overlap, and naming one tag in
+both is refused. Each tag needs its leading `@`, and a capability tag is refused — what the provider
+supports is `capabilities`' decision, and a second gate able to skip a declared capability's
+scenarios could contradict it. **Canonical scenarios are exempt**: they are the conformance claim,
+not an adoption's to deselect.
+
+A deselected scenario is reported as skipped, naming the tag that deselected it, exactly as an
+undeclared capability's is — and **ahead of** the capability declaration where both would apply, a
+scenario the adoption deselected being one the suite never put to the provider rather than a
+capability the provider withheld. Its steps still need definitions — jest-cucumber binds the vocabulary of
+every scenario in the file, skipped or not — so each harness passes `extensionSteps` for the whole
+set rather than for its own share of it.
 
 ## JavaScript notes
 

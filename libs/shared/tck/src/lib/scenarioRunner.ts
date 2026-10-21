@@ -1,4 +1,6 @@
 import type { IJestLike, loadFeature } from 'jest-cucumber';
+import type { AdopterTagSelection } from './adopterTags';
+import { adopterSkipReason } from './adopterTags';
 import type { Capability } from './capability';
 import { capabilityForTag, inexpressibleReason, isInexpressible } from './capability';
 
@@ -14,6 +16,14 @@ export interface PlannedScenario {
   tags: string[];
   /** The capabilities gating this scenario that the provider does not have; empty means it runs. */
   missing: Capability[];
+  /**
+   * Why the adopter's own tag selection deselects this scenario, or `undefined` where it does not.
+   *
+   * Always `undefined` for a canonical scenario: the exemption is applied by withholding the
+   * selection from the plan rather than tested for here, so no path through this module can skip a
+   * conformance scenario on an adopter's tag.
+   */
+  deselectedBecause?: string;
 }
 
 /**
@@ -24,8 +34,16 @@ export interface PlannedScenario {
  * every example of every outline, and the runner below relies on that to know which scenario it is
  * being handed. It asserts each title against the plan, so a change in jest-cucumber's behaviour
  * surfaces as a loud failure rather than a wrong skip reason.
+ *
+ * `selection` is the adopter's own tag selection, and is passed **only for an extension feature**.
+ * Withholding it for the canonical set is what exempts a conformance scenario from being deselected,
+ * and is the same decision that withholds the selection's tag filter when the file is loaded.
  */
-export function planScenarios(parsed: ParsedFeature, declared: ReadonlySet<Capability>): PlannedScenario[] {
+export function planScenarios(
+  parsed: ParsedFeature,
+  declared: ReadonlySet<Capability>,
+  selection?: AdopterTagSelection,
+): PlannedScenario[] {
   const scenarios: PlannedScenario[] = [];
 
   const plan = (scenario: ParsedScenario): void => {
@@ -42,7 +60,14 @@ export function planScenarios(parsed: ParsedFeature, declared: ReadonlySet<Capab
       }
     }
 
-    scenarios.push({ title: scenario.title, tags, missing });
+    scenarios.push({
+      title: scenario.title,
+      tags,
+      missing,
+      // Planned alongside the capability gate because a scenario can be skipped by each for its own
+      // reason, and the name it is reported under has to carry both.
+      deselectedBecause: selection ? adopterSkipReason(tags, selection) : undefined,
+    });
   };
 
   parsed.scenarios.forEach(plan);
@@ -134,23 +159,47 @@ export function scenarioRunner(featureTitle: string, planned: readonly PlannedSc
  *
  * A scenario is gated by *every* capability tag that applies to it, so both clauses are emitted when
  * both apply, each naming its own capabilities.
+ *
+ * **The reasons are tiered, narrowest applicability last**, and the applicable tier reports alone:
+ *
+ *  1. Hard vocabulary checks — a reserved tag, or a canonical tag this library does not know — fail
+ *     the whole run, and so precede everything here. They live in `runProviderTck`, over the whole
+ *     plan rather than over what ran, which is why no skip below can mask one.
+ *  2. A capability this SDK cannot express. Permanent, language-wide, and nothing to do with this
+ *     adoption, so it never loses to anything an adoption configured.
+ *  3. The adopter's own tag selection.
+ *  4. The capability declaration.
+ *
+ * Three above four is the ordering that matters: a scenario the adoption *deselected* is not a
+ * capability the provider *withheld*. Reporting the declaration first would make a conformance
+ * report say the provider declined something this suite never put to it.
  */
 export function skipDisplayName(scenario: PlannedScenario): string {
-  if (!scenario.missing.length) {
-    // jest-cucumber also skips a scenario whose steps are pending; this suite has none, so reaching
-    // here means something skipped a scenario the TCK expected to run.
-    return `${scenario.title} — SKIPPED: for a reason the TCK did not ask for`;
-  }
-
   const undeclared = scenario.missing.filter((capability) => !isInexpressible(capability));
   const inexpressible = scenario.missing.filter(isInexpressible);
 
   const reasons: string[] = [];
-  if (undeclared.length) {
+  if (inexpressible.length) {
+    // Tier 2, and with it the whole capability picture: the undeclared clause stays alongside, each
+    // naming its own capabilities, because the two say different things about the same scenario.
+    if (undeclared.length) {
+      reasons.push(`provider does not declare ${undeclared.join(' ')}`);
+    }
+    for (const capability of inexpressible) {
+      reasons.push(`this SDK cannot ask ${capability} of any provider: ${inexpressibleReason(capability)}`);
+    }
+  } else if (scenario.deselectedBecause) {
+    // Tier 3, reporting alone: the suite never asked this scenario, so there is no capability the
+    // provider can be said to have withheld.
+    reasons.push(scenario.deselectedBecause);
+  } else if (undeclared.length) {
     reasons.push(`provider does not declare ${undeclared.join(' ')}`);
   }
-  for (const capability of inexpressible) {
-    reasons.push(`this SDK cannot ask ${capability} of any provider: ${inexpressibleReason(capability)}`);
+
+  if (!reasons.length) {
+    // jest-cucumber also skips a scenario whose steps are pending; this suite has none, so reaching
+    // here means something skipped a scenario the TCK expected to run.
+    return `${scenario.title} — SKIPPED: for a reason the TCK did not ask for`;
   }
 
   return `${scenario.title} — SKIPPED: ${reasons.join('; ')}`;
