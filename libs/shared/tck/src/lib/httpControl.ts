@@ -1,4 +1,4 @@
-import type { BackendControl, ConnectionControl } from './control';
+import type { BackendControl, ConfigurationControl, ConnectionControl } from './control';
 
 /**
  * The backend configuration name every backend under test must support, and the one that serves the
@@ -68,9 +68,11 @@ export interface HttpControlOptions {
  * state at the cost of a process restart. The fallback is probed once and remembered for the suite.
  *
  * `/reset` is specified to reset flag state rather than to start a stopped backend, so the scenario
- * following any disconnect uses `/start`.
+ * following any disconnect uses `/start`. For the same reason the scenario following a
+ * {@link serveConfiguration} uses it too: `/reset` restores flag state, not which configuration is
+ * being served.
  */
-export class HttpControl implements BackendControl, ConnectionControl {
+export class HttpControl implements BackendControl, ConnectionControl, ConfigurationControl {
   /** Stated rather than inferred: a claim of `http` is worth something only from the control that
    * actually spoke HTTP. */
   readonly backendType = 'http' as const;
@@ -90,6 +92,14 @@ export class HttpControl implements BackendControl, ConnectionControl {
    * rather than merely resetting flag state.
    */
   private backendMaybeDown = false;
+
+  /**
+   * A configuration one scenario asked for, which the next scenario has to be taken off again.
+   *
+   * `undefined` means the suite's own configuration is serving, which is where every scenario
+   * starts.
+   */
+  private scenarioConfiguration: string | undefined;
 
   constructor(options: HttpControlOptions) {
     const { baseUrl, backendConfiguration, requestTimeoutMs } = options;
@@ -122,13 +132,17 @@ export class HttpControl implements BackendControl, ConnectionControl {
    * Brings the backend back to the baseline, preferring `/reset` and falling back to `/start`.
    *
    * See the class documentation for why the choice is made this way, and why a scenario following a
-   * disconnect always uses `/start`.
+   * disconnect or a served configuration always uses `/start`.
    */
   async prepareScenario(): Promise<void> {
-    // /reset restores flag state; it is not specified to bring a stopped backend back up.
-    if (this.backendMaybeDown || this.resetSupported === false) {
-      await this.start();
-      this.backendMaybeDown = false;
+    // /reset restores flag state; it neither brings a stopped backend back up nor changes which
+    // configuration is being served, so either of those has to be undone with /start.
+    if (this.backendMaybeDown || this.scenarioConfiguration !== undefined || this.resetSupported === false) {
+      // This suite's configuration, not the last scenario's: that is what preparing means.
+      await this.start(this.backendConfiguration);
+      // Cleared only once the start has succeeded, so a failed restoration is retried by the next
+      // scenario rather than downgraded to /reset, which would leave the old configuration serving.
+      this.scenarioConfiguration = undefined;
       return;
     }
 
@@ -137,7 +151,7 @@ export class HttpControl implements BackendControl, ConnectionControl {
     if (status === 404 || status === 501) {
       // The documented fallback. Remembered so the probe happens once per suite.
       this.resetSupported = false;
-      await this.start();
+      await this.start(this.backendConfiguration);
       return;
     }
 
@@ -222,18 +236,39 @@ export class HttpControl implements BackendControl, ConnectionControl {
   }
 
   /**
-   * Starts the backend again with the configuration already in effect.
+   * Starts the backend again with the configuration already in effect — the one a scenario served,
+   * if it served one, and this suite's otherwise.
    *
    * That restores the same baseline flag state, so the provider observes a change in availability
-   * and never a change in flag values.
+   * and never a change in flag values. Serving the suite's configuration here instead would turn an
+   * outage into a change of flag values as well, which is the one thing an outage must not be.
    */
   async reconnect(): Promise<void> {
-    await this.start();
-    this.backendMaybeDown = false;
+    await this.start(this.configurationInEffect);
   }
 
-  private async start(): Promise<void> {
-    await this.require('/start', { config: this.backendConfiguration });
+  /**
+   * Restarts the backend on one of its own named configurations; see {@link ConfigurationControl}.
+   *
+   * Recorded, because `/reset` cannot undo it: the scenario after this one is taken back to the
+   * suite's configuration by {@link prepareScenario}.
+   */
+  async serveConfiguration(configuration: string): Promise<void> {
+    await this.start(configuration);
+    this.scenarioConfiguration = configuration;
+  }
+
+  /** What the backend should be serving: the scenario's configuration if it served one, else the
+   * suite's. */
+  private get configurationInEffect(): string {
+    return this.scenarioConfiguration ?? this.backendConfiguration;
+  }
+
+  private async start(configuration: string): Promise<void> {
+    await this.require('/start', { config: configuration });
+    // The backend is up again whichever configuration it came up on, so the next scenario may
+    // reset rather than start.
+    this.backendMaybeDown = false;
   }
 
   /** Performs a control call and fails on any non-2xx response. */

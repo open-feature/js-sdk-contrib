@@ -1,5 +1,5 @@
 import type { BackendControl, BackendType } from './control';
-import { resolveBackendType } from './control';
+import { asConfigurationControl, resolveBackendType, unsupportedConfiguration } from './control';
 import { HttpControl } from './httpControl';
 import { InProcessControl } from './inProcessControl';
 
@@ -41,5 +41,39 @@ describe('the backend type a control reports', () => {
 
     expect(resolveBackendType(new HttpControl({ baseUrl: 'http://localhost:8080' }))).toBe('http');
     expect(resolveBackendType(new InProcessControl())).toBe('in-process');
+  });
+});
+
+/**
+ * Which controls can serve a named configuration, which is not something a scenario can ask.
+ *
+ * A control that cannot has to say so by not implementing it: a no-op would leave the canonical
+ * baseline serving and let an extension scenario written against another configuration's flags fail
+ * on every assertion, reported as a provider defect.
+ */
+describe('serving a named backend configuration', () => {
+  it('is offered by the control API, whose /start takes a config', () => {
+    expect(asConfigurationControl(new HttpControl({ baseUrl: 'http://localhost:8080' }))).toBeDefined();
+  });
+
+  it('is not offered by in-process control, which has one flag set', () => {
+    // The honest answer rather than a gap: there is no second configuration to switch to.
+    expect(asConfigurationControl(new InProcessControl())).toBeUndefined();
+  });
+
+  it('refuses a control that cannot, naming the configuration and the fix', () => {
+    // The advice has to differ from the connection-control one: no capability gates this, so
+    // "remove a capability" would send an adopter to the wrong knob.
+    const control: BackendControl = {
+      description: 'a control with one flag set',
+      prepareScenario: async () => undefined,
+      changeFlag: async () => undefined,
+    };
+
+    const error = unsupportedConfiguration(control, 'metadata');
+
+    expect(error.message).toContain("cannot serve the 'metadata' configuration");
+    expect(error.message).toContain('ConfigurationControl');
+    expect(error.message).not.toContain('Capability');
   });
 });

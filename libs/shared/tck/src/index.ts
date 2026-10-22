@@ -32,8 +32,14 @@ export {
   runContainerizedProviderTck,
 } from './lib/compose';
 export type { BackendEndpoint, ContainerizedProviderFactory, ContainerizedTckOptions } from './lib/compose';
-export { asConnectionControl, resolveBackendType, unsupportedControl } from './lib/control';
-export type { BackendControl, BackendType, ConnectionControl } from './lib/control';
+export {
+  asConfigurationControl,
+  asConnectionControl,
+  resolveBackendType,
+  unsupportedConfiguration,
+  unsupportedControl,
+} from './lib/control';
+export type { BackendControl, BackendType, ConfigurationControl, ConnectionControl } from './lib/control';
 export { KnownDeviation } from './lib/deviation';
 export { CHANGING_BASELINE, CHANGING_CHANGED, CHANGING_FLAG_KEY, canonicalFlagSet } from './lib/flags';
 export type { FlagConfiguration } from './lib/flags';

@@ -90,6 +90,58 @@ export function asConnectionControl(control: BackendControl): ConnectionControl 
     : undefined;
 }
 
+/**
+ * Implemented by a backend that can serve more than one of its own named flag configurations.
+ *
+ * Separate from {@link BackendControl} for the reason {@link ConnectionControl} is: a control over a
+ * single in-process flag set has no second configuration to offer, and not implementing this is the
+ * honest answer rather than a no-op that would leave the canonical baseline serving and report the
+ * scenario as passed.
+ */
+export interface ConfigurationControl {
+  /**
+   * Restarts the backend on one of its own named flag configurations, seeding that configuration's
+   * flag state.
+   *
+   * The names belong to the **backend**, not to the TCK: the control API takes `config` as a free
+   * string defaulting to `default`, so a feature file naming one is naming something only that
+   * backend's control defines. That makes this an extension-scenario operation — the canonical
+   * scenarios never ask, the baseline every control already serves being the configuration they are
+   * written against.
+   *
+   * It has to take effect *before* the provider connects, which is why the step asking for it is the
+   * same step that creates the provider rather than one a scenario could put after it.
+   * {@link ConnectionControl.reconnect} brings this configuration back rather than the suite's —
+   * losing the connection is not how a scenario changes what is served — and the scenario after this
+   * one starts from the suite's own configuration again.
+   */
+  serveConfiguration(configuration: string): Promise<void>;
+}
+
+/** Narrows a control to one that can serve a named configuration, or `undefined` if it cannot. */
+export function asConfigurationControl(control: BackendControl): ConfigurationControl | undefined {
+  const candidate = control as Partial<ConfigurationControl>;
+  return typeof candidate.serveConfiguration === 'function' ? (candidate as ConfigurationControl) : undefined;
+}
+
+/**
+ * Builds the error thrown when a scenario names a configuration the control cannot serve.
+ *
+ * Separate from {@link unsupportedControl}, whose advice — drop a capability — is the wrong fix here:
+ * no capability gates this, because which configurations a backend has is its own business rather
+ * than part of the contract. Only an extension scenario names one, so the mistake is in that feature
+ * file or in the harness it was handed to.
+ */
+export function unsupportedConfiguration(control: BackendControl, configuration: string): Error {
+  return new Error(
+    `${control.description} cannot serve the '${configuration}' configuration: it implements no ` +
+      `serveConfiguration. The name is the backend's own, and only an extension scenario names ` +
+      `one, so either that scenario belongs to a harness whose control can switch configurations, ` +
+      `or this control needs to implement ConfigurationControl. A control over a single ` +
+      `in-process flag set has no second configuration to offer.`,
+  );
+}
+
 /** Builds the error thrown when a backend has no connection to control. Thrown rather than skipped:
  * a silent no-op would report the scenario as passed. */
 export function unsupportedControl(control: BackendControl, operation: string): Error {

@@ -1,10 +1,23 @@
 import type { StepDefinitions } from 'jest-cucumber';
-import type { JsonValue } from '@openfeature/server-sdk';
+import type { EvaluationContext, EvaluationContextValue, FlagMetadata, JsonValue } from '@openfeature/server-sdk';
 import { Capability } from '../capability';
 import type { TckState } from '../state';
-import { describe as describeValue, parseFlagType, parseValue, valuesEqual } from '../values';
+import {
+  describe as describeValue,
+  parseContextType,
+  parseContextValue,
+  parseFlagType,
+  parseMetadataType,
+  parseValue,
+  valuesEqual,
+} from '../values';
 
 type ObjectRow = { key: string; type: string; value: string };
+
+type ContextRow = { key: string; type: string; value: string };
+
+/** A row of the specification's own flag-metadata table, whose middle column it calls `metadata_type`. */
+type MetadataRow = { key: string; metadata_type: string; value: string };
 
 /** Steps that declare, evaluate and assert flags. */
 export const flagSteps =
@@ -24,6 +37,26 @@ export const flagSteps =
       // The wording is Appendix B's, copied rather than improved: a second way to say the same
       // thing is the divergence the appendix exists to prevent.
       state.context = { targetingKey };
+    });
+
+    given('a context with the following keys:', (rows: ContextRow[]) => {
+      // The table form of the step above, for a scenario whose targeting depends on more than one
+      // key. Its vocabulary is the wider one -- Long and StringList included -- because a table is
+      // where a scenario reaches for the types a targeting operator takes; see ContextType.
+      //
+      // Merged rather than assigned, so a targeting key stated earlier survives a table that says
+      // nothing about it, while a row naming `targetingKey` is the later statement and wins. The
+      // context stays undefined until something states one; see TckState.context for why that
+      // matters.
+      const context: EvaluationContext = { ...state.context };
+
+      for (const row of rows) {
+        // The conversion answers `unknown`, every type in the vocabulary being a context value
+        // except in the eyes of the compiler.
+        context[row.key] = parseContextValue(parseContextType(row.type), row.value) as EvaluationContextValue;
+      }
+
+      state.context = context;
     });
 
     when('the flag was evaluated with details', async () => {
@@ -169,6 +202,51 @@ export const flagSteps =
       }
     });
 
+    then('the resolved metadata should contain', (rows: MetadataRow[]) => {
+      // The wording and the columns are the specification's own, from
+      // `assets/gherkin/metadata.feature`: flag metadata is spec behaviour rather than a vendor's,
+      // so the question belongs in the shared vocabulary and not in each adoption's own glue.
+      //
+      // An entry the table does not list is not checked. A provider is free to attach its own, and
+      // a scenario that had to enumerate them all would fail on every addition.
+      const metadata = requireMetadata(state);
+
+      for (const row of rows) {
+        const type = parseMetadataType(row.metadata_type);
+        const expected = parseValue(type, row.value);
+
+        if (!(row.key in metadata)) {
+          const present = Object.keys(metadata);
+          throw new Error(
+            `the resolved metadata has no '${row.key}' entry, expected ${describeValue(expected)}. ` +
+              `It carries ${present.length ? present.join(' ') : 'nothing at all'}`,
+          );
+        }
+
+        // Compared strictly, so a number sent as a string fails here rather than passing as a
+        // coincidental match -- metadata crosses the wire as JSON and that is exactly how a
+        // provider loses a type.
+        if (!valuesEqual(expected, metadata[row.key])) {
+          throw new Error(
+            `metadata '${row.key}' (${type}) was ${describeValue(metadata[row.key])}, ` +
+              `expected ${describeValue(expected)}`,
+          );
+        }
+      }
+    });
+
+    then('the resolved metadata is empty', () => {
+      // Worth asking: a provider that invents metadata nobody asked for makes every consumer's
+      // cache key wider than it needs to be, and the absence is as much part of the contract as a
+      // value is.
+      const metadata = requireMetadata(state);
+      const keys = Object.keys(metadata);
+
+      if (keys.length) {
+        throw new Error(`the resolved metadata carries ${keys.join(' ')}, expected none`);
+      }
+    });
+
     when('the resolved value is remembered', () => {
       state.remembered = state.requireDetails().value;
       state.hasMemory = true;
@@ -203,3 +281,23 @@ export const flagSteps =
       }
     });
   };
+
+/**
+ * The flag metadata of the last evaluation, or a failure naming the step that is missing.
+ *
+ * Typed as always present, but a provider is JavaScript and can hand back anything, so a missing map
+ * is reported as the provider's omission rather than read as an empty one — "the resolved metadata is
+ * empty" would otherwise pass for a provider that attaches no metadata object at all.
+ */
+function requireMetadata(state: TckState): FlagMetadata {
+  const metadata: unknown = state.requireDetails().flagMetadata;
+
+  if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata)) {
+    throw new Error(
+      `the evaluation reported ${describeValue(metadata)} as its flag metadata, expected a map. ` +
+        `Every evaluation carries one, empty where the provider has nothing to add`,
+    );
+  }
+
+  return metadata as FlagMetadata;
+}

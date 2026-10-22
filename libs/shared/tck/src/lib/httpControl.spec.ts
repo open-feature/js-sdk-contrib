@@ -84,6 +84,74 @@ describe('HttpControl', () => {
     expect(calls).toEqual([`POST ${BASE}/start?config=ssl`]);
   });
 
+  it('serves a named configuration by starting the backend on it', async () => {
+    // The step that asks for one creates the provider immediately afterwards, so this call is what
+    // decides which flags the provider connects to.
+    const subject = control();
+
+    await subject.serveConfiguration('metadata');
+
+    expect(calls).toEqual([`POST ${BASE}/start?config=metadata`]);
+  });
+
+  it('takes the next scenario back to the suite configuration rather than resetting', async () => {
+    // The load-bearing one: /reset restores flag state, not which configuration is served, so a
+    // reset here would leave the previous scenario's configuration serving every scenario after it.
+    const subject = control();
+
+    await subject.prepareScenario();
+    await subject.serveConfiguration('metadata');
+    calls.length = 0;
+
+    await subject.prepareScenario();
+
+    expect(calls).toEqual([`POST ${BASE}/start?config=default`]);
+  });
+
+  it('resets again once the suite configuration is back', async () => {
+    // The restoration is one scenario's job, not a mode the control stays in.
+    const subject = control();
+
+    await subject.serveConfiguration('metadata');
+    await subject.prepareScenario();
+    calls.length = 0;
+
+    await subject.prepareScenario();
+
+    expect(calls).toEqual([`POST ${BASE}/reset`]);
+  });
+
+  it('retries a failed restoration rather than downgrading it to a reset', async () => {
+    // A restoration that failed leaves the wrong configuration serving, and /reset cannot put that
+    // right -- so the next scenario has to try the start again.
+    const subject = control();
+
+    await subject.prepareScenario();
+    await subject.serveConfiguration('metadata');
+    statuses.set('/start', 500);
+    await expect(subject.prepareScenario()).rejects.toThrow(/returned 500/);
+    statuses.delete('/start');
+    calls.length = 0;
+
+    await subject.prepareScenario();
+
+    expect(calls).toEqual([`POST ${BASE}/start?config=default`]);
+  });
+
+  it('reconnects onto the configuration a scenario served, not the suite one', async () => {
+    // Losing the connection is not how a scenario changes what the backend serves: a reconnect that
+    // reverted to the suite's configuration would turn an outage into a change of flag values.
+    const subject = control();
+
+    await subject.serveConfiguration('metadata');
+    await subject.disconnect();
+    calls.length = 0;
+
+    await subject.reconnect();
+
+    expect(calls).toEqual([`POST ${BASE}/start?config=metadata`]);
+  });
+
   it('fails loudly on an unexpected status', async () => {
     // Silence would leave the scenario running against a backend in an unknown state and reporting
     // whatever it found as a conformance result.
