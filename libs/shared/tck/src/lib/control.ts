@@ -1,0 +1,155 @@
+/**
+ * How the backend under test was driven, for the conformance report's `backend.controlApi`.
+ *
+ * `'http'` is the normative control API, `'in-process'` the narrow allowance for providers with no
+ * backend, and `'custom'` a control this suite does not ship. `'custom'` is the honest answer in
+ * that last case: a report saying the suite cannot vouch for how the backend was driven beats one
+ * claiming the normative path it did not take.
+ */
+export type BackendType = 'http' | 'in-process' | 'custom';
+
+/**
+ * The single seam between the TCK's scenarios and whatever manipulates the backend under test.
+ *
+ * Step definitions never talk to a backend directly, which is why the same Gherkin runs unchanged
+ * against a containerised backend driven over HTTP and against a provider manipulated in-process.
+ *
+ * ## Which implementation is right for your provider
+ *
+ * A provider that talks to a backend drives it over the HTTP control API — `openapi/control-api.yaml`
+ * — and gets one from {@link runContainerizedProviderTck} without writing a control at all. A
+ * provider with *no* backend to contract with (in-memory, environment-variable, file-based) uses
+ * {@link InProcessControl}. Appendix F's "Providers with no backend" says why that second path is a
+ * narrow allowance and not a shortcut for the first.
+ */
+export interface BackendControl {
+  /**
+   * Brings the backend to the state every scenario starts from: reachable, with flag state at the
+   * canonical baseline. Called once before each scenario, and the TCK's only isolation mechanism —
+   * scenarios share one backend for the whole suite and containers are never restarted.
+   */
+  prepareScenario(): Promise<void>;
+
+  /**
+   * Mutates flag configuration so a conforming provider observes a change and afterwards resolves a
+   * different value for `changing-flag`. Which value is deliberately unspecified: the suite asserts
+   * only that the resolved value differs from what it was.
+   */
+  changeFlag(): Promise<void>;
+
+  /** A short description of what is being controlled, for messages a human reads. */
+  readonly description: string;
+
+  /**
+   * How the backend was driven, for the conformance report's `backend.controlApi` — whose JSON key
+   * is unchanged; only the TypeScript name moved.
+   *
+   * Optional, and with **no inference from the control's concrete type**: inferring it is right
+   * about the two controls this library ships and silently wrong about an adopter's own, which is
+   * the case where the answer matters. Saying nothing therefore resolves to `'custom'` — see
+   * {@link resolveBackendType} — the weakest honest claim, matching the Java binding's `default`
+   * method returning `CUSTOM`. Both controls shipped here state theirs, so only an adopter writing
+   * their own control gets the default.
+   */
+  readonly backendType?: BackendType;
+}
+
+/**
+ * How a control drove the backend, for the report, with silence resolving to `'custom'`.
+ *
+ * The single place the default lives, so a control that states nothing is reported as the weakest
+ * honest claim rather than as the normative path it never took.
+ */
+export function resolveBackendType(control: BackendControl): BackendType {
+  return control.backendType ?? 'custom';
+}
+
+/**
+ * Implemented by a backend that can be cut off from the provider and restored.
+ *
+ * Separate from {@link BackendControl} so a backend-less provider cannot supply a no-op by accident:
+ * not implementing it is the honest answer, and the TCK turns the gap into a reported skip.
+ */
+export interface ConnectionControl {
+  /** Makes the backend unreachable for the rest of the scenario, without stopping any container. */
+  disconnect(): Promise<void>;
+
+  /**
+   * Makes the backend reachable again, preserving flag state. That is a requirement rather than an
+   * implementation detail: an outage must be observable as a change in availability and never as a
+   * change in flag values, or the stale scenario cannot distinguish the two.
+   */
+  reconnect(): Promise<void>;
+}
+
+/** Narrows a control to one that can simulate an outage, or `undefined` if it cannot. */
+export function asConnectionControl(control: BackendControl): ConnectionControl | undefined {
+  const candidate = control as Partial<ConnectionControl>;
+  return typeof candidate.disconnect === 'function' && typeof candidate.reconnect === 'function'
+    ? (candidate as ConnectionControl)
+    : undefined;
+}
+
+/**
+ * Implemented by a backend that can serve more than one of its own named flag configurations.
+ *
+ * Separate from {@link BackendControl} for the reason {@link ConnectionControl} is: a control over a
+ * single in-process flag set has no second configuration to offer, and not implementing this is the
+ * honest answer rather than a no-op that would leave the canonical baseline serving and report the
+ * scenario as passed.
+ */
+export interface ConfigurationControl {
+  /**
+   * Restarts the backend on one of its own named flag configurations, seeding that configuration's
+   * flag state.
+   *
+   * The names belong to the **backend**, not to the TCK: the control API takes `config` as a free
+   * string defaulting to `default`, so a feature file naming one is naming something only that
+   * backend's control defines. That makes this an extension-scenario operation — the canonical
+   * scenarios never ask, the baseline every control already serves being the configuration they are
+   * written against.
+   *
+   * It has to take effect *before* the provider connects, which is why the step asking for it is the
+   * same step that creates the provider rather than one a scenario could put after it.
+   * {@link ConnectionControl.reconnect} brings this configuration back rather than the suite's —
+   * losing the connection is not how a scenario changes what is served — and the scenario after this
+   * one starts from the suite's own configuration again.
+   */
+  serveConfiguration(configuration: string): Promise<void>;
+}
+
+/** Narrows a control to one that can serve a named configuration, or `undefined` if it cannot. */
+export function asConfigurationControl(control: BackendControl): ConfigurationControl | undefined {
+  const candidate = control as Partial<ConfigurationControl>;
+  return typeof candidate.serveConfiguration === 'function' ? (candidate as ConfigurationControl) : undefined;
+}
+
+/**
+ * Builds the error thrown when a scenario names a configuration the control cannot serve.
+ *
+ * Separate from {@link unsupportedControl}, whose advice — drop a capability — is the wrong fix here:
+ * no capability gates this, because which configurations a backend has is its own business rather
+ * than part of the contract. Only an extension scenario names one, so the mistake is in that feature
+ * file or in the harness it was handed to.
+ */
+export function unsupportedConfiguration(control: BackendControl, configuration: string): Error {
+  return new Error(
+    `${control.description} cannot serve the '${configuration}' configuration: it implements no ` +
+      `serveConfiguration. The name is the backend's own, and only an extension scenario names ` +
+      `one, so either that scenario belongs to a harness whose control can switch configurations, ` +
+      `or this control needs to implement ConfigurationControl. A control over a single ` +
+      `in-process flag set has no second configuration to offer.`,
+  );
+}
+
+/** Builds the error thrown when a backend has no connection to control. Thrown rather than skipped:
+ * a silent no-op would report the scenario as passed. */
+export function unsupportedControl(control: BackendControl, operation: string): Error {
+  return new Error(
+    `${control.description} does not support '${operation}'. This is a test-configuration bug ` +
+      `rather than a provider defect: a scenario needing connection control ran, so the suite ` +
+      `declared Capability.Stale or Capability.UnavailableInit for a backend that cannot simulate ` +
+      `an outage. Remove those capabilities, or supply a BackendControl that also implements ` +
+      `ConnectionControl.`,
+  );
+}
