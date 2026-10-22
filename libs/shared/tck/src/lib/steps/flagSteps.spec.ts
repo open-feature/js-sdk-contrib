@@ -119,8 +119,49 @@ describe('the flag metadata assertions', () => {
     evaluated({ version: '2' });
 
     await expect(run('the resolved metadata should contain', [metadataRow('version', 'Integer', '2')])).rejects.toThrow(
-      /was 2 \(string\), expected 2 \(number\)/,
+      /metadata 'version' \(Integer\) was 2 \(string\), which this row declares numeric/,
     );
+  });
+
+  it('fails a String row answered with a number, which is the same loss the other way', async () => {
+    evaluated({ scope: 2 });
+
+    await expect(run('the resolved metadata should contain', [metadataRow('scope', 'String', '2')])).rejects.toThrow(
+      /was 2 \(number\), expected 2 \(string\)/,
+    );
+  });
+
+  it('accepts a Float that a 32-bit transport widened', async () => {
+    // What the table means by 0.1 is the number, not the double its decimal parses to: a provider
+    // whose wire format carries a float hands back 0.10000000149011612 and is not wrong.
+    evaluated({ ratio: 0.10000000149011612 });
+
+    await expect(
+      run('the resolved metadata should contain', [metadataRow('ratio', 'Float', '0.1')]),
+    ).resolves.toBeUndefined();
+  });
+
+  it('still fails a Float that is a different number', async () => {
+    // The tolerance covers one transport's precision and nothing else -- a provider resolving the
+    // wrong value must not pass through it.
+    evaluated({ ratio: 0.2 });
+
+    await expect(run('the resolved metadata should contain', [metadataRow('ratio', 'Float', '0.1')])).rejects.toThrow(
+      /metadata 'ratio' \(Float\) was 0.2 \(number\), expected 0.1 \(number\)/,
+    );
+  });
+
+  it('compares an Integer wider than 32 bits exactly, rather than refusing it', async () => {
+    // Nothing reads metadata back through getIntegerDetails, so a provider carrying a wide number
+    // is not making a mistake -- and an Integer row gets no tolerance either way.
+    evaluated({ hash: 4294967296 });
+
+    await expect(
+      run('the resolved metadata should contain', [metadataRow('hash', 'Integer', '4294967296')]),
+    ).resolves.toBeUndefined();
+    await expect(
+      run('the resolved metadata should contain', [metadataRow('hash', 'Integer', '4294967297')]),
+    ).rejects.toThrow(/expected 4294967297/);
   });
 
   it('does not check an entry the table leaves out', async () => {
