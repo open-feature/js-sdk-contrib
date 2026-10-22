@@ -48,7 +48,13 @@ export interface Config {
    */
   certPath?: string;
 
-  // Supplied gRPC credentials take precedence over tls and certPath.
+  /**
+   * Custom gRPC channel credentials, such as mutual TLS (mTLS) credentials, used by the rpc and in-process resolvers.
+   *
+   * Mutually exclusive with `tls` and `certPath`, and takes precedence over the `FLAGD_TLS` and
+   * `FLAGD_SERVER_CERT_PATH` environment variables. The credentials are owned by the caller; to replace them,
+   * create a new provider.
+   */
   channelCredentials?: ChannelCredentials;
 
   /**
@@ -150,7 +156,15 @@ export interface FlagdGrpcConfig extends Config {
   streamDeadlineMs: number;
 }
 
-export type FlagdProviderOptions = Partial<FlagdConfig & FlagdGrpcConfig>;
+/**
+ * Either the provider builds the gRPC credentials from `tls` and `certPath`, or the caller supplies `channelCredentials`.
+ */
+type TransportSecurityOptions =
+  | { tls?: boolean; certPath?: string; channelCredentials?: never }
+  | { channelCredentials: ChannelCredentials; tls?: never; certPath?: never };
+
+export type FlagdProviderOptions = Partial<Omit<FlagdConfig & FlagdGrpcConfig, keyof TransportSecurityOptions>> &
+  TransportSecurityOptions;
 
 const DEFAULT_CONFIG: Omit<FlagdConfig & FlagdGrpcConfig, 'port' | 'resolverType'> = {
   deadlineMs: 500,
@@ -276,6 +290,10 @@ function getEnvVarConfig(): Partial<Config & FlagdGrpcConfig> {
 }
 
 export function getConfig(options: FlagdProviderOptions = {}): FlagdConfig & FlagdGrpcConfig {
+  // typings prevent this, but check for plain JS
+  if (options.channelCredentials && (options.tls !== undefined || options.certPath !== undefined)) {
+    throw new Error('channelCredentials cannot be combined with the tls or certPath options');
+  }
   const envVarConfig = getEnvVarConfig();
   const defaultConfig =
     options.resolverType == 'in-process' || envVarConfig.resolverType == 'in-process'
