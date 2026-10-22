@@ -19,30 +19,67 @@ import type { FlagType } from './values';
 export type ServerEventDetails = EventDetails<ServerProviderEvents>;
 
 /**
+ * One recorded event: its payload, and where it sits among every event of the scenario.
+ *
+ * The ordinal is what makes a question about order *across kinds* answerable at all. Each kind has
+ * its own recorder and its own queue — see {@link EventRecorder} — which is why awaiting one kind
+ * cannot discard another kind's record, and equally why neither queue alone says which of the two
+ * arrived first.
+ */
+export interface RecordedEvent {
+  /** Arrival number within the scenario, counted across every kind, starting at 1. */
+  ordinal: number;
+  /** The payload the SDK delivered, which may be absent. */
+  details: ServerEventDetails | undefined;
+}
+
+/**
  * Captures the events of one type, in order, so a scenario can consume them one at a time.
  *
  * Consuming rather than merely observing is what makes the stale scenario work: it awaits a
  * `PROVIDER_READY` at the start and a second, different `PROVIDER_READY` once the backend is back,
  * and a recorder that only remembered "ready has fired at some point" would report the second
  * assertion as satisfied by the first event.
+ *
+ * Consuming claims **only this kind's** record: an error recorded before an awaited ready event is
+ * still there afterwards, for the step that asks about the order of the two. A single queue drained
+ * through the match would have thrown that record away and left the ordering question nothing to
+ * object to.
  */
 export class EventRecorder {
-  // The payload is optional, so an entry may be `undefined`. Queued rather than dropped: every
-  // "should have been executed" assertion is about arrival, and dropping it would turn a delivered
-  // event into a timeout.
-  private readonly queue: (ServerEventDetails | undefined)[] = [];
+  // The payload is optional, so an entry's `details` may be `undefined`. Queued rather than dropped:
+  // every "should have been executed" assertion is about arrival, and dropping it would turn a
+  // delivered event into a timeout.
+  private readonly queue: RecordedEvent[] = [];
 
   /** The most recently consumed event, which the payload assertions inspect. */
   last: ServerEventDetails | undefined;
 
-  constructor(readonly eventName: string) {}
+  /**
+   * @param eventName the kind this recorder captures, for failure messages
+   * @param nextOrdinal hands out arrival numbers shared with every other recorder of the scenario
+   */
+  constructor(
+    readonly eventName: string,
+    private readonly nextOrdinal: () => number,
+  ) {}
 
   record(details: ServerEventDetails | undefined): void {
-    this.queue.push(details);
+    this.queue.push({ ordinal: this.nextOrdinal(), details });
+  }
+
+  /**
+   * The earliest event of this kind no step has consumed yet, or `undefined` if there is none.
+   *
+   * Read by the ordering assertion, which asks about what is *still* recorded: an event an earlier
+   * step claimed was already accounted for by that step.
+   */
+  get unclaimed(): RecordedEvent | undefined {
+    return this.queue[0];
   }
 
   /** Consumes the next event of this recorder's type, waiting up to `timeoutMs`. */
-  async next(timeoutMs: number): Promise<ServerEventDetails | undefined> {
+  async next(timeoutMs: number): Promise<RecordedEvent> {
     const deadline = Date.now() + timeoutMs;
 
     while (this.queue.length === 0) {
@@ -56,9 +93,14 @@ export class EventRecorder {
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
 
-    const details = this.queue.shift();
-    this.last = details;
-    return details;
+    const event = this.queue.shift();
+    if (!event) {
+      // Unreachable: the loop above exits only with something queued, and no other code consumes.
+      throw new Error(`the ${this.eventName} queue emptied between the wait and the read`);
+    }
+
+    this.last = event.details;
+    return event;
   }
 }
 
@@ -129,6 +171,14 @@ export class TckState {
   hasMemory = false;
   readonly recorders = new Map<ServerProviderEvents, EventRecorder>();
 
+  /**
+   * How many events the scenario has recorded, across every kind.
+   *
+   * Owned here rather than by a recorder because it has to be shared: one counter is what puts
+   * records of different kinds in a single order.
+   */
+  private eventCount = 0;
+
   constructor(readonly options: TckOptions) {}
 
   reset(): void {
@@ -142,6 +192,13 @@ export class TckState {
     this.remembered = undefined;
     this.hasMemory = false;
     this.recorders.clear();
+    this.eventCount = 0;
+  }
+
+  /** The arrival number of the next event, whichever kind records it. */
+  nextEventOrdinal(): number {
+    this.eventCount += 1;
+    return this.eventCount;
   }
 
   requireClient(): Client {

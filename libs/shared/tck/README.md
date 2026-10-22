@@ -125,6 +125,12 @@ inferred from its concrete type. Saying nothing resolves to `'custom'`, so a con
 not ship is reported as one the suite cannot vouch for rather than as the normative path it never
 took. The report's JSON key stays `backend.controlApi`.
 
+Two further operations are **separate interfaces** a control implements or does not, rather than
+methods it might no-op: `ConnectionControl` (`disconnect`/`reconnect`), and `ConfigurationControl`
+(`serveConfiguration`), which `HttpControl` implements and `InProcessControl` cannot — a single
+in-process flag set has no second configuration to offer. Not implementing one is the honest answer,
+and the TCK turns the gap into a reported skip or a failure that names the fix.
+
 ## Declaring capabilities
 
 Each scenario exercising an optional part of the contract carries a Gherkin tag, and a provider
@@ -266,6 +272,19 @@ const vendorSteps: StepDefinitions = ({ then }) => {
 surface. Both throw before the scenario has registered one, which means before a
 `Given a stable provider` step: put one in a `Background`.
 
+### Vocabulary the canonical scenarios do not use
+
+Four steps exist for extension feature files, which is why no canonical scenario contains them — and
+they are shared rather than left to each adopter's glue so that the same feature file runs against
+another language's binding, where the wording is the same:
+
+| Step                                                                                     | What it asks                                                                                                                                                             |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Given a stable provider with "<name>" configuration`                                    | the backend serves one of its **own** named flag configurations, and the provider connects to it afterwards — one step, because the order is the whole point             |
+| `Given a context with the following keys:`                                               | `key`, `type`, `value` rows; the type vocabulary adds `Long` and `StringList` to the flag types, for a targeting operator that reads a 64-bit number or a list           |
+| `Then the <kind> event handler should have been executed with no <kind> event before it` | an event of one kind arrived, with no event of the other kind recorded before it — both kinds need a handler, since an absence nobody listened for is not an observation |
+| `Then the resolved metadata should contain` / `Then the resolved metadata is empty`      | flag metadata of the last evaluation; `key`, `metadata_type`, `value` rows, which is the specification's own wording and columns                                         |
+
 ### Selecting among your own scenarios
 
 One set of extension features is often run by more than one harness — an RPC mode and an in-process
@@ -328,9 +347,15 @@ per-flag control operations, caching, hooks, flag metadata, `@stale`'s lack of D
 in any language, and the requirements not yet covered. Two are worth naming here because the
 appendix does not:
 
-- **`POST /restart` is unused**, so `ConnectionControl` has no `disconnectFor`: no current scenario
-  needs a bounded outage. What would bring it back is a `@caching` scenario asserting what a stale
-  provider serves _during_ an outage, which needs `/restart`'s preservation of flag state.
+- **`POST /restart` is unused**, so `ConnectionControl` has no `disconnectFor` and there is no step
+  for a bounded outage: no current scenario needs one. A scenario cares that the provider went
+  stale, then errored, then came back ready, and awaiting those three events _is_ the wait — a
+  seconds argument would add a second, unrelated clock to it. For the same reason there is no step
+  asserting that an event did **not** fire: an absence holds only over a stretch of time, so such a
+  step either slows every run down or passes because nothing has arrived yet. The ordering step
+  above asks the same question as a fact about what was recorded. What would bring `/restart` back
+  is a `@caching` scenario asserting what a stale provider serves _during_ an outage, which needs
+  its preservation of flag state.
 - **Neither adoption suite compiles in the default build**, which Appendix F asks for — two of two,
   by one mechanism each. `nx package` typechecks against the provider's `tsconfig.lib.json`; OFREP's
   adoption is a single `*.spec.ts` and falls out under `src/**/*.spec.ts`, while flagd's is named by

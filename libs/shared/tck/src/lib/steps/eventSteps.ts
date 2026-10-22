@@ -39,7 +39,9 @@ export const eventSteps =
         return;
       }
 
-      const recorder = new EventRecorder(name);
+      // The ordinal source is the scenario's, not the recorder's: it is what lets a later step ask
+      // whether an event of another kind arrived before this one.
+      const recorder = new EventRecorder(name, () => state.nextEventOrdinal());
       state.recorders.set(event, recorder);
       state.requireClient().addHandler(event, (details) => recorder.record(details));
     });
@@ -60,6 +62,36 @@ export const eventSteps =
         // Promptness rather than eventual arrival: an application blocked on provider registration
         // is down. The explicit bound therefore overrides eventTimeoutMs.
         await state.requireRecorder(eventFor(name), name).next(Number(millis));
+      },
+    );
+
+    then(
+      /^the (ready|stale|error|change) event handler should have been executed with no (ready|stale|error|change) event before it$/,
+      async (name: string, forbidden: string) => {
+        // This is how a scenario says "and no error": as an *order*, not as a window. "No error
+        // event fired" can only be answered over some stretch of time, and at any instant an event
+        // that never fires and one that fires a moment later are the same observation -- so a step
+        // asking it that way either slows every run down or passes because nothing has arrived yet.
+        // "No error before the provider came back ready" is a question about what was recorded, and
+        // the recording answers it with no clock involved.
+        const recorder = state.requireRecorder(eventFor(name), name);
+
+        // Demanded before the wait, and deliberately: an absence nobody listened for is not an
+        // observation, and a scenario that forgot the handler would otherwise pass this step
+        // vacuously -- the one failure mode a negative assertion cannot afford.
+        const forbiddenRecorder = state.requireRecorder(eventFor(forbidden), forbidden);
+
+        const awaited = await recorder.next(eventTimeout(state.options));
+        const earlier = forbiddenRecorder.unclaimed;
+
+        if (earlier && earlier.ordinal < awaited.ordinal) {
+          throw new Error(
+            `a ${forbidden} event was recorded before the ${name} event this step awaited ` +
+              `(arrival ${earlier.ordinal} against ${awaited.ordinal}). The scenario is about the ` +
+              `route the provider took and not only where it ended up: an application handling ` +
+              `${forbidden} events has already acted on that one by the time ${name} arrives`,
+          );
+        }
       },
     );
 
