@@ -1,6 +1,7 @@
-import type { Config, FlagdProviderOptions } from './configuration';
+import type { FlagdProviderOptions } from './configuration';
 import { getConfig } from './configuration';
 import { DEFAULT_MAX_BACKOFF_MS, DEFAULT_MAX_CACHE_SIZE, DEFAULT_RETRY_GRACE_PERIOD } from './constants';
+import type { ChannelCredentials } from '@grpc/grpc-js';
 import type { EvaluationContext } from '@openfeature/server-sdk';
 import { configSteps } from '../e2e/step-definitions/configSteps';
 import type { State } from '../e2e/step-definitions/state';
@@ -147,6 +148,17 @@ describe('Configuration', () => {
     expect(getConfig(options)).toStrictEqual(options);
   });
 
+  it('should reject channelCredentials combined with tls or certPath', () => {
+    const channelCredentials = {} as ChannelCredentials;
+
+    // @ts-expect-error the types forbid the combination, the runtime check covers plain JavaScript callers
+    expect(() => getConfig({ channelCredentials, tls: true })).toThrow('channelCredentials cannot be combined');
+    // @ts-expect-error see above
+    expect(() => getConfig({ channelCredentials, certPath: '/etc/cert/ca.crt' })).toThrow(
+      'channelCredentials cannot be combined',
+    );
+  });
+
   it('should ignore an valid port set as an environment variable', () => {
     process.env['FLAGD_PORT'] = 'invalid number';
     expect(getConfig()).toStrictEqual(expect.objectContaining({ port: 8013 }));
@@ -166,12 +178,12 @@ describe('Configuration', () => {
         expect(getConfig()).toStrictEqual(expect.objectContaining({ port, resolverType }));
       });
       it('should use default in-process port if resolver type is set per options and no port is provided', () => {
-        const options: Partial<Config> = { resolverType };
+        const options: FlagdProviderOptions = { resolverType };
         expect(getConfig(options)).toStrictEqual(expect.objectContaining({ port, resolverType }));
       });
       it('should use provided port if resolver type is set per options and port', () => {
         const port = 1111;
-        const options: Partial<Config> = { resolverType, port };
+        const options: FlagdProviderOptions = { resolverType, port };
         expect(getConfig(options)).toStrictEqual(expect.objectContaining({ port, resolverType }));
       });
     });
@@ -183,12 +195,12 @@ describe('Configuration', () => {
         expect(getConfig()).toStrictEqual(expect.objectContaining({ port, resolverType }));
       });
       it('should use default in-process port if resolver type is set per options and no port is provided', () => {
-        const options: Partial<Config> = { resolverType };
+        const options: FlagdProviderOptions = { resolverType };
         expect(getConfig(options)).toStrictEqual(expect.objectContaining({ port, resolverType }));
       });
       it('should use provided port if resolver type is set per options and port', () => {
         const port = 1111;
-        const options: Partial<Config> = { resolverType, port };
+        const options: FlagdProviderOptions = { resolverType, port };
         expect(getConfig(options)).toStrictEqual(expect.objectContaining({ port, resolverType }));
       });
     });

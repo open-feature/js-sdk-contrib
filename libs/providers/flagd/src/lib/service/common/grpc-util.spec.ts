@@ -2,11 +2,12 @@ import {
   buildClientOptions,
   buildRetryPolicy,
   createFatalStatusCodesSet,
+  getChannelCredentials,
   handleFatalStatusCodeError,
   isFatalStatusCodeError,
 } from './grpc-util';
-import type { ServiceError } from '@grpc/grpc-js';
-import { status } from '@grpc/grpc-js';
+import type { ChannelCredentials, ServiceError } from '@grpc/grpc-js';
+import { credentials, status } from '@grpc/grpc-js';
 
 import type { Config } from '../../configuration';
 import type { Logger } from '@openfeature/server-sdk';
@@ -16,6 +17,34 @@ const createMockLogger = (): Logger => ({
   warn: jest.fn(),
   info: jest.fn(),
   debug: jest.fn(),
+});
+
+describe('getChannelCredentials', () => {
+  const config: Config = {
+    host: 'localhost',
+    port: 8013,
+    tls: false,
+    deadlineMs: 500,
+  };
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('uses supplied credentials before TLS options', () => {
+    const channelCredentials = {} as ChannelCredentials;
+    const createInsecureSpy = jest.spyOn(credentials, 'createInsecure');
+
+    expect(getChannelCredentials({ ...config, channelCredentials })).toBe(channelCredentials);
+    expect(createInsecureSpy).not.toHaveBeenCalled();
+  });
+
+  it('uses the existing credential construction when credentials are absent', () => {
+    const channelCredentials = {} as ChannelCredentials;
+    jest.spyOn(credentials, 'createInsecure').mockReturnValue(channelCredentials);
+
+    expect(getChannelCredentials(config)).toBe(channelCredentials);
+  });
 });
 
 describe('buildClientOptions', () => {
