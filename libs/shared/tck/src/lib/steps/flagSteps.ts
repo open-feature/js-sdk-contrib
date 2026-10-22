@@ -2,6 +2,7 @@ import type { StepDefinitions } from 'jest-cucumber';
 import type { EvaluationContext, EvaluationContextValue, FlagMetadata, JsonValue } from '@openfeature/server-sdk';
 import { Capability } from '../capability';
 import type { TckState } from '../state';
+import type { MetadataType } from '../values';
 import {
   describe as describeValue,
   parseContextType,
@@ -223,15 +224,7 @@ export const flagSteps =
           );
         }
 
-        // Compared strictly, so a number sent as a string fails here rather than passing as a
-        // coincidental match -- metadata crosses the wire as JSON and that is exactly how a
-        // provider loses a type.
-        if (!valuesEqual(expected, metadata[row.key])) {
-          throw new Error(
-            `metadata '${row.key}' (${type}) was ${describeValue(metadata[row.key])}, ` +
-              `expected ${describeValue(expected)}`,
-          );
-        }
+        assertMetadataValue(row.key, type, expected, metadata);
       }
     });
 
@@ -281,6 +274,53 @@ export const flagSteps =
       }
     });
   };
+
+/**
+ * How far a `Float` metadata value may sit from the decimal the table writes, as a fraction of it.
+ *
+ * A 32-bit float carries about seven significant digits, so this covers the widening of one and
+ * nothing else: 0.1 over a wire format with a `float` field arrives as 0.10000000149011612, which is
+ * the value the table means and not the double the table parses to.
+ */
+const FLOAT_TOLERANCE = 1e-5;
+
+/**
+ * Compares one metadata entry by the type its row declares rather than by strict equality alone.
+ *
+ * `String` and `Boolean` are exact, and strictly so: metadata crosses the wire as JSON, and a number
+ * sent as a string has to fail here rather than pass as a coincidental match. The numeric types are
+ * the ones that need care, in the opposite direction — the scenario asks about the *value*, so a row
+ * is answered by the number the provider carries and not by how wide its transport made it. Hence a
+ * tolerance for `Float` (see {@link FLOAT_TOLERANCE}) and an exact compare for `Integer`, which in
+ * this language is the same `number` and so is never narrowed to 32 bits on the way in.
+ *
+ * @param key the metadata key the row names
+ * @param type the metadata type the row declares
+ * @param expected the row's value, already converted
+ * @param metadata every entry the provider sent, for the failure message
+ */
+function assertMetadataValue(key: string, type: MetadataType, expected: unknown, metadata: FlagMetadata): void {
+  const actual: unknown = metadata[key];
+  const where = `metadata '${key}' (${type})`;
+
+  if (type === 'String' || type === 'Boolean') {
+    if (!valuesEqual(expected, actual)) {
+      throw new Error(`${where} was ${describeValue(actual)}, expected ${describeValue(expected)}`);
+    }
+    return;
+  }
+
+  if (typeof actual !== 'number' || Number.isNaN(actual)) {
+    throw new Error(`${where} was ${describeValue(actual)}, which this row declares numeric`);
+  }
+
+  const target = expected as number;
+  const tolerance = type === 'Float' ? Math.abs(target) * FLOAT_TOLERANCE : 0;
+
+  if (Math.abs(actual - target) > tolerance) {
+    throw new Error(`${where} was ${describeValue(actual)}, expected ${describeValue(expected)}`);
+  }
+}
 
 /**
  * The flag metadata of the last evaluation, or a failure naming the step that is missing.
