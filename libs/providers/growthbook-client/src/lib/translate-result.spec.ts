@@ -1,4 +1,5 @@
 import { TypeMismatchError } from '@openfeature/server-sdk';
+import type { FeatureResultSource } from '@growthbook/growthbook';
 import translateResult from './translate-result';
 
 describe('translateResult', () => {
@@ -70,5 +71,33 @@ describe('translateResult', () => {
         false,
       ),
     ).toThrow(TypeMismatchError);
+  });
+  it.each<[FeatureResultSource, string]>([
+    ['experiment', 'SPLIT'],
+    ['force', 'TARGETING_MATCH'],
+    ['override', 'STATIC'],
+    ['prerequisite', 'DEFAULT'],
+    ['defaultValue', 'DEFAULT'],
+    ['unknownFeature', 'ERROR'],
+    ['cyclicPrerequisite', 'ERROR'],
+  ])('maps the GrowthBook source %s to the standard reason %s', (source, expected) => {
+    const translated = translateResult<boolean>({ value: true, source, on: true, off: false, ruleId: 'test' }, false);
+    expect(translated.reason).toEqual(expected);
+  });
+
+  it('falls back to UNKNOWN for a source it does not recognise', () => {
+    const translated = translateResult<boolean>(
+      { value: true, source: 'somethingNew' as FeatureResultSource, on: true, off: false, ruleId: 'test' },
+      false,
+    );
+    expect(translated.reason).toEqual('UNKNOWN');
+  });
+
+  it('preserves the raw GrowthBook source in flag metadata', () => {
+    const translated = translateResult<boolean>(
+      { value: true, source: 'experiment', on: true, off: false, ruleId: 'test' },
+      false,
+    );
+    expect(translated.flagMetadata).toEqual({ source: 'experiment' });
   });
 });
