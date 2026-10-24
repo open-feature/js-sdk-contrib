@@ -24,7 +24,7 @@ describe('rpc', () => {
   autoBindSteps(
     loadFeatures(GHERKIN_FLAGD, {
       tagFilter:
-        '@rpc and not @targetURI and not @caching and not @unixsocket and not @deprecated and not @fractional-v1 and not @fractional-v3',
+        '@rpc and not @targetURI and not @caching and not @unixsocket and not @deprecated and not @fractional-v1 and not @fractional-v2',
       scenarioNameTemplate: (vars) => {
         return `${vars.scenarioTitle} (${vars.scenarioTags.join(',')} ${vars.featureTags.join(',')})`;
       },
