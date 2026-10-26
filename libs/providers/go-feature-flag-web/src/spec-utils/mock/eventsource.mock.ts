@@ -74,7 +74,10 @@ export class EventSourceMock implements EventSource {
 
     this.eventListenersMap = new Map();
     EventSourceMock.addInstance(this);
-    EventSourceMock.resolveInstanceState(this).catch(() => this.close());
+    EventSourceMock.resolveInstanceState(this).catch((err) => {
+      EventSourceMock._logger?.error('EventSourceMock:', err);
+      this.close();
+    });
   }
 
   private static async resolveInstanceState(e: EventSourceMock): Promise<void> {
@@ -190,17 +193,19 @@ export class EventSourceMock implements EventSource {
   }
 
   private static validateQueryParams(e: EventSourceMock) {
-    return this._requiredQueryParams.keys().every((p) => {
-      if (e._url.searchParams.has(p)) {
+    for (const requiredQueryParam of this._requiredQueryParams) {
+      if (e._url.searchParams.has(requiredQueryParam)) {
         this._logger?.debug(
-          `${EventSourceMock.name}: found required query param '${p}' with value '${e._url.searchParams.get(p)}'.`,
+          `${EventSourceMock.name}: found required query param '${requiredQueryParam}' with value '${e._url.searchParams.get(requiredQueryParam)}'.`,
         );
-        return true;
+      } else {
+        // required query param is missing
+        this._logger?.error(`${EventSourceMock.name}: missing required query param '${requiredQueryParam}'.`);
+        return false;
       }
-      // required query param is missing
-      this._logger?.error(`${EventSourceMock.name}: missing required query param '${p}'.`);
-      return false;
-    });
+    }
+    // If we are here, everything is fine
+    return true;
   }
 
   /**
