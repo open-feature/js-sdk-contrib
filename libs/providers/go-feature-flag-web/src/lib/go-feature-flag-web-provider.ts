@@ -372,7 +372,8 @@ export class GoFeatureFlagWebProvider implements Provider {
       flagMetadata: resolved.flagMetadata,
       errorCode: resolved.errorCode,
       errorMessage: resolved.errorMessage,
-      reason: this._changeStrategy.status !== 'connected' ? StandardResolutionReasons.CACHED : resolved.reason,
+      reason:
+        this._lastEmittedProviderEvent === ProviderEvents.Ready ? resolved.reason : StandardResolutionReasons.CACHED,
     };
   }
 
