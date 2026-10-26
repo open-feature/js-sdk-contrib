@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.18.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.17.0...flagd-provider-v0.18.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **flagd:** accept custom channel credentials (options type change) ([#1630](https://github.com/open-feature/js-sdk-contrib/issues/1630))
+
+### ✨ New Features
+
+* **flagd:** accept custom channel credentials (options type change) ([#1630](https://github.com/open-feature/js-sdk-contrib/issues/1630)) ([ecdb11f](https://github.com/open-feature/js-sdk-contrib/commit/ecdb11f2907c2fc8c86eef27b9faa45d3c81175c))
+
 ## [0.17.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-provider-v0.16.1...flagd-provider-v0.17.0) (2026-10-15)
 
 
