@@ -173,13 +173,13 @@ describe('targeting', () => {
       expect(targeting.evaluate('flagA', { key: 'bucketKeyA' })).toBe('red');
     });
 
-    it('should evaluate to blue with key "bucketKey4"', () => {
+    it('should evaluate to blue with key "bucketKeyB"', () => {
       const logic = {
         fractional: [{ cat: [{ var: '$flagd.flagKey' }, { var: 'key' }] }, ['red', 50], ['blue', 50]],
       };
       const targeting = new Targeting(logic, logger);
 
-      expect(targeting.evaluate('flagA', { key: 'bucketKey4' })).toBe('blue');
+      expect(targeting.evaluate('flagA', { key: 'bucketKeyB' })).toBe('blue');
     });
 
     it('should evaluate valid rule with targeting key', () => {
@@ -191,7 +191,7 @@ describe('targeting', () => {
       };
       const targeting = new Targeting(logic, logger);
 
-      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB' })).toBe('red');
+      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB' })).toBe('blue');
     });
 
     it('should evaluate valid rule with targeting key although one does not have a fraction', () => {
@@ -200,7 +200,7 @@ describe('targeting', () => {
       };
       const targeting = new Targeting(logic, logger);
 
-      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB' })).toBe('red');
+      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB' })).toBe('blue');
     });
 
     it('should return null if targeting key is missing', () => {
@@ -246,7 +246,7 @@ describe('targeting', () => {
       const targeting = new Targeting(logic, logger);
 
       expect(targeting.evaluate('flagA', { key: 'bucketKeyA' })).toBe('red');
-      expect(targeting.evaluate('flagA', { key: 'bucketKey4' })).toBe(100);
+      expect(targeting.evaluate('flagA', { key: 'bucketKeyB' })).toBe(100);
     });
 
     it('should support boolean variant names', () => {
@@ -256,7 +256,7 @@ describe('targeting', () => {
       const targeting = new Targeting(logic, logger);
 
       expect(targeting.evaluate('flagA', { key: 'bucketKeyA' })).toBe(true);
-      expect(targeting.evaluate('flagA', { key: 'bucketKey4' })).toBe(false);
+      expect(targeting.evaluate('flagA', { key: 'bucketKeyB' })).toBe(false);
     });
 
     it('should return null when variant expression evaluates to a non-scalar (object/array)', () => {
@@ -322,7 +322,7 @@ describe('targeting', () => {
 
     it('should support sub-percent granularity with large integer weights (0.1% red)', () => {
       const logic = {
-        fractional: ['user2077', ['red', 10], ['blue', 9990]],
+        fractional: ['user1004', ['red', 10], ['blue', 9990]],
       };
       const targeting = new Targeting(logic, logger);
       expect(targeting.evaluate('flagA', {})).toBe('red');
@@ -346,7 +346,7 @@ describe('targeting', () => {
 
       expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com', tier: 'premium' })).toBe('premium');
       expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com', tier: 'basic' })).toBe('standard');
-      // user1 → bv(100)=76 → bucket1 → always "standard"
+      // user1 buckets to the plain 'standard' slot regardless of tier
       expect(targeting.evaluate('flag', { targetingKey: 'user1', tier: 'premium' })).toBe('standard');
     });
 
@@ -358,7 +358,7 @@ describe('targeting', () => {
 
       expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com', color: 'red' })).toBe('red');
       expect(targeting.evaluate('flag', { targetingKey: 'jon@company.com', color: 'green' })).toBe('green');
-      // user1 → bv(100)=76 → bucket1 → always "blue"
+      // user1 buckets to the plain 'blue' slot regardless of color
       expect(targeting.evaluate('flag', { targetingKey: 'user1', color: 'red' })).toBe('blue');
     });
 
@@ -380,9 +380,9 @@ describe('targeting', () => {
       };
       const targeting = new Targeting(logic, logger);
 
-      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyA', rolloutPercent: 10 })).toBe('new-feature');
-      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB', rolloutPercent: 10 })).toBe('control');
-      expect(targeting.evaluate('flagA', { targetingKey: 'bucketKeyB', rolloutPercent: 90 })).toBe('new-feature');
+      expect(targeting.evaluate('flagA', { targetingKey: 'key2', rolloutPercent: 10 })).toBe('new-feature');
+      expect(targeting.evaluate('flagA', { targetingKey: 'mid0', rolloutPercent: 10 })).toBe('control');
+      expect(targeting.evaluate('flagA', { targetingKey: 'mid0', rolloutPercent: 90 })).toBe('new-feature');
     });
 
     it('should support weight=0 (variant effectively excluded from traffic)', () => {
@@ -449,8 +449,8 @@ describe('targeting', () => {
         targetingKey: 'user1',
         targetingKey2: 'user2',
       });
-      // user1 → outer bucket 3 (the nested fractional slot) → nested bucketBy='flagAuser1' → 'diamonds'
-      expect(result).toBe('diamonds');
+      // user1 lands in the nested fractional slot; nested bucketing (CBOR v3) -> 'hearts'
+      expect(result).toBe('hearts');
     });
 
     it('should support a timestamp-based weight with an explicit bucket key', () => {
@@ -466,18 +466,15 @@ describe('targeting', () => {
       const targeting = new Targeting(logic, logger);
       const result = targeting.evaluate('flag', { email: 'user@example.com' });
 
-      // 'on' has overwhelmingly more weight than 'off' — nearly all users get 'on'
-      // We just assert a valid variant is returned; the exact result depends on the hash.
+      // 'on' heavily outweighs 'off', so nearly all users get 'on'; just assert a valid variant (exact result depends on the hash)
       expect(['on', 'off']).toContain(result);
-      // Sanity-check that the computed weight is positive and within bounds
+      // sanity-check that the computed weight is positive and within bounds
       expect(w1).toBeGreaterThan(0);
       expect(w1 + 100).toBeLessThan(2147483647);
     });
 
     it('should support two timestamp-derived weights summing to a fixed total', () => {
-      // w1 = ts - 1740000000 (ramp up),  w2 = 1800000000 - ts (ramp down)
-      // Their sum is always 60000000 regardless of current time.
-      // When ts > 1800000000 w2 goes negative and is clamped to 0 → 'off' gets no traffic.
+      // w1 = ts-1740000000 (ramp up), w2 = 1800000000-ts (ramp down); sum is always 60000000, and when ts > 1800000000 w2 clamps to 0 so 'off' gets no traffic
       const logic = {
         fractional: [
           ['on', { '-': [{ var: '$flagd.timestamp' }, 1740000000] }],

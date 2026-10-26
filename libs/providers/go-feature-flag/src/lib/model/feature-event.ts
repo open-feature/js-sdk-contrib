@@ -49,4 +49,12 @@ export interface FeatureEvent {
    * If the feature flag is not versioned, this will be null or empty.
    */
   version?: string;
+
+  /**
+   * Where the value came from, so the collector can tell locally evaluated traffic from the rest.
+   *
+   * `SERVER` is deliberately absent from this union: the specification reserves it for the relay
+   * proxy's own records, so a provider must never emit it.
+   */
+  source: 'INPROCESS' | 'PROVIDER_CACHE';
 }

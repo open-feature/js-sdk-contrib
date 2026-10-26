@@ -19,7 +19,27 @@ Previously, the WASM filename was hardcoded with a specific version (e.g., `gofe
 
 The script has one configuration constant at the top:
 
-- `TARGET_WASM_VERSION`: The explicit version to use (e.g., `'v1.45.6'`)
+- `TARGET_WASM_VERSION`: The explicit WASM module version to use (e.g., `'0.2.4'`)
+
+This is the WASM module version, which is versioned independently of the relay proxy — it
+selects `wasm-releases/evaluation/gofeatureflag-evaluation_<version>.wasm`.
+
+### Upgrading the WASM module
+
+Changing `TARGET_WASM_VERSION` is only half of an upgrade. The script runs
+`git submodule update --init wasm-releases` **without** `--remote`, so the submodule is reset
+to the commit recorded in the superproject — a newer version will not be found there, and the
+script exits `1`. Both steps are required:
+
+```bash
+# 1. advance the submodule to a commit that publishes the target version
+git -C wasm-releases fetch origin
+git -C wasm-releases checkout <commit>
+git add wasm-releases
+
+# 2. set TARGET_WASM_VERSION in copy-latest-wasm.js, then verify
+npx nx copy-wasm providers-go-feature-flag
+```
 
 ### Usage
 

@@ -12,18 +12,21 @@
  * instrumentation injects new Function() calls, which the edge runtime
  * environment blocks.
  */
-export default {
+module.exports = {
   displayName: 'flagd-core (disableDynamicCodeGeneration)',
   preset: '../../../jest.preset.js',
   coverageProvider: 'v8',
-  testEnvironment: '<rootDir>/test/jest-environment-web-worker.js',
+  testEnvironment: 'node',
   testMatch: ['<rootDir>/src/lib/flagd-core.spec.ts', '<rootDir>/src/lib/targeting/targeting.spec.ts'],
+  // ESM mode for cborg (NODE_OPTIONS=--experimental-vm-modules on the project.json target); uses the built-in `node` env (custom envs break Jest ESM) with the edge no-code-gen restriction enforced via a setup file.
+  extensionsToTreatAsEsm: ['.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.esm-setup.ts', '<rootDir>/test/block-dynamic-codegen.ts'],
   moduleNameMapper: {
     '^\\./flagd-core$': '<rootDir>/test/mocks/flagd-core-web-worker.ts',
     '^\\./targeting$': '<rootDir>/test/mocks/targeting-web-worker.ts',
   },
   transform: {
-    '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
+    '^.+\\.ts$': ['ts-jest', { useESM: true, tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
 };
