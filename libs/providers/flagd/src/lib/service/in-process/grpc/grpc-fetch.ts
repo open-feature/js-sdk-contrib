@@ -31,6 +31,8 @@ export class GrpcFetch implements DataFetch {
   private _logger: Logger | undefined;
   private readonly _fatalStatusCodes: Set<number>;
   private _errorThrottled = false;
+  private _disconnected = false;
+  private _reconnectTimer: ReturnType<typeof setTimeout> | undefined;
   /**
    * Initialized will be set to true once the initial connection is successful
    * and the first payload has been received. Subsequent reconnects will not
@@ -93,7 +95,15 @@ export class GrpcFetch implements DataFetch {
   }
 
   async disconnect() {
+    if (this._disconnected) {
+      return;
+    }
+    this._disconnected = true;
     this._logger?.debug('Disconnecting gRPC sync connection');
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = undefined;
+    }
     closeStreamIfDefined(this._syncStream);
     this._syncClient.close();
   }
@@ -106,11 +116,17 @@ export class GrpcFetch implements DataFetch {
     resolveConnect?: () => void,
     rejectConnect?: (reason: Error) => void,
   ) {
+    if (this._disconnected) {
+      return;
+    }
     this._logger?.debug('Starting gRPC sync connection');
     closeStreamIfDefined(this._syncStream);
     try {
       // wait for connection to be stable
       this._syncClient.waitForReady(Date.now() + this._deadlineMs, (err) => {
+        if (this._disconnected) {
+          return;
+        }
         if (err) {
           this.handleError(
             err as Error,
@@ -124,28 +140,31 @@ export class GrpcFetch implements DataFetch {
           const streamDeadline = this._streamDeadlineMs != 0 ? Date.now() + this._streamDeadlineMs : undefined;
           const stream = this._syncClient.syncFlags(this._request, this._metadata, { deadline: streamDeadline });
           stream.on('data', (data: SyncFlagsResponse) => {
+            if (this._disconnected) {
+              return;
+            }
             this._logger?.debug(`Received sync payload`);
 
             try {
+              const changes = dataCallback(data.flagConfiguration);
               if (data.syncContext) {
                 this._setSyncContext(data.syncContext);
               }
-              const changes = dataCallback(data.flagConfiguration);
               if (this._initialized && changes.length > 0) {
                 changedCallback(changes);
               }
+
+              if (resolveConnect) {
+                resolveConnect();
+              } else if (!this._isConnected) {
+                // Not the first connection and there's no active connection.
+                this._logger?.debug('Reconnected to gRPC sync');
+                reconnectCallback();
+              }
+              this._isConnected = true;
             } catch (err) {
               this._logger?.debug('Error processing sync payload: ', (err as Error)?.message ?? 'unknown error');
             }
-
-            if (resolveConnect) {
-              resolveConnect();
-            } else if (!this._isConnected) {
-              // Not the first connection and there's no active connection.
-              this._logger?.debug('Reconnected to gRPC sync');
-              reconnectCallback();
-            }
-            this._isConnected = true;
           });
           stream.on('error', (err: ServiceError | undefined) => {
             // In cases where we get an explicit error status, we add a delay.
@@ -183,6 +202,9 @@ export class GrpcFetch implements DataFetch {
     disconnectCallback: (message: string) => void,
     rejectConnect?: (reason: Error) => void,
   ) {
+    if (this._disconnected) {
+      return;
+    }
     // Check if error is a fatal status code on first connection only
     if (isFatalStatusCodeError(err, this._initialized, this._fatalStatusCodes)) {
       this._isConnected = false;
@@ -205,8 +227,14 @@ export class GrpcFetch implements DataFetch {
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: (message: string) => void,
   ) {
-    setTimeout(
-      () => this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback),
+    if (this._disconnected) {
+      return;
+    }
+    this._reconnectTimer = setTimeout(
+      () => {
+        this._reconnectTimer = undefined;
+        this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
+      },
       this._errorThrottled ? this._maxBackoffMs : 0,
     );
     this._errorThrottled = false;
