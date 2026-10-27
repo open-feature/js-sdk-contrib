@@ -1,9 +1,9 @@
 import { FlagsmithOpenFeatureProvider } from './flagsmith-provider';
 import { type Logger, StandardResolutionReasons, ErrorCode, GeneralError } from '@openfeature/server-sdk';
-import { type Flagsmith, type Flags, type BaseFlag } from 'flagsmith-nodejs';
+import { type Flagsmith, type Flags, type BaseFlag } from '@flagsmith/nodejs';
 import { mockFlagData } from './flagsmith.mocks';
 
-jest.mock('flagsmith-nodejs');
+jest.mock('@flagsmith/nodejs');
 
 const loggerMock: Logger = {
   debug: jest.fn(),
