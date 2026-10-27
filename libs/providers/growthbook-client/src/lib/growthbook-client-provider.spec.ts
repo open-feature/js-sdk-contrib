@@ -177,4 +177,16 @@ describe('GrowthbookClientProvider', () => {
       });
     });
   });
+  describe('track', () => {
+    it('forwards the event to GrowthBook', () => {
+      const logEvent = jest.spyOn(GrowthBook.prototype, 'logEvent').mockResolvedValue(undefined);
+
+      // The web client's track takes (name, details): the context comes from
+      // OpenFeature.setContext, which the provider mirrors onto the GrowthBook
+      // client via onContextChange.
+      ofClient.track('purchase', { value: 42 });
+
+      expect(logEvent).toHaveBeenCalledWith('purchase', { value: 42 });
+    });
+  });
 });
