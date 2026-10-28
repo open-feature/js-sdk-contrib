@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.3...ofrep-web-provider-v0.4.4) (2026-10-28)
+
+
+### ✨ New Features
+
+* **go-feature-flag-web:** allow SSE connection ([#1590](https://github.com/open-feature/js-sdk-contrib/issues/1590)) ([533486f](https://github.com/open-feature/js-sdk-contrib/commit/533486f5049fed85b877c6669a791ff6ad39097f))
+
 ## [0.4.3](https://github.com/open-feature/js-sdk-contrib/compare/ofrep-web-provider-v0.4.2...ofrep-web-provider-v0.4.3) (2026-08-10)
 
 
