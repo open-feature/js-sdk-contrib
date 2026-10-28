@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.8.0...flagd-web-provider-v0.9.0) (2026-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* bucket on any context type; (fractional re-assignment) ([#1636](https://github.com/open-feature/js-sdk-contrib/issues/1636))
+
+### ✨ New Features
+
+* bucket on any context type; (fractional re-assignment) ([#1636](https://github.com/open-feature/js-sdk-contrib/issues/1636)) ([e8fa0aa](https://github.com/open-feature/js-sdk-contrib/commit/e8fa0aa7f0bd3fe364db3bec9e3c6454d317b308))
+
 ## [0.8.0](https://github.com/open-feature/js-sdk-contrib/compare/flagd-web-provider-v0.7.4...flagd-web-provider-v0.8.0) (2026-09-23)
 
 
