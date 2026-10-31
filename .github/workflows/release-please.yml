@@ -21,6 +21,46 @@ jobs:
           token: ${{secrets.RELEASE_PLEASE_ACTION_TOKEN}}
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
+      paths_released: ${{ steps.release.outputs.paths_released }}
+      # Per-path keys such as "libs/hooks/debounce--tag_name".
+      all: ${{ toJSON(steps.release.outputs) }}
+
+  # One CycloneDX SBOM per released module, attached to that module's GitHub release.
+  # `npm sbom` at the repo root would list every module. Each package is resolved
+  # from its own runtime dependencies instead. See tools/sbom/README.md.
+  sbom:
+    needs: [release-please, publish]
+    if: ${{ fromJSON(needs.release-please.outputs.releases_created || false) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ${{ fromJSON(needs.release-please.outputs.paths_released) }}
+    env:
+      TAG: ${{ fromJSON(needs.release-please.outputs.all)[format('{0}--tag_name', matrix.release)] }}
+      MODULE_DIR: ${{ matrix.release }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Check release tag
+        run: test -n "$TAG"
+
+      - name: Generate module SBOM
+        run: node tools/sbom/generate-module-sbom.js "$MODULE_DIR" bom.json
+
+      - name: Attach SBOM to GitHub release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        with:
+          tag_name: ${{ env.TAG }}
+          files: bom.json
 
   publish:
     needs: release-please
