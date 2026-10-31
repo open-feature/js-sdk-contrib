@@ -30,7 +30,12 @@ jobs:
   # from its own runtime dependencies instead. See tools/sbom/README.md.
   sbom:
     needs: [release-please, publish]
-    if: ${{ fromJSON(needs.release-please.outputs.releases_created || false) }}
+    # `publish` is one `nx run-many` job, so one package can fail after others
+    # are already on npm. Release Please has already created the GitHub releases,
+    # so still attach each SBOM. `!cancelled()` overrides the implicit success()
+    # check that would skip this job; `release-please` must still have succeeded.
+    # Matrix entries keep fail-fast: false so one module's SBOM failure stays visible.
+    if: ${{ !cancelled() && needs.release-please.result == 'success' && fromJSON(needs.release-please.outputs.releases_created || false) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
