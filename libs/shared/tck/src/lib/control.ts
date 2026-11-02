@@ -1,5 +1,5 @@
 /**
- * How the backend under test was driven, for the conformance report's `backend.controlApi`.
+ * How the backend under test was driven, for the conformance report's `backend.backendType`.
  *
  * `'http'` is the normative control API, `'in-process'` the narrow allowance for providers with no
  * backend, and `'custom'` a control this suite does not ship. `'custom'` is the honest answer in
@@ -41,8 +41,7 @@ export interface BackendControl {
   readonly description: string;
 
   /**
-   * How the backend was driven, for the conformance report's `backend.controlApi` — whose JSON key
-   * is unchanged; only the TypeScript name moved.
+   * How the backend was driven, for the conformance report's `backend.backendType`.
    *
    * Optional, and with **no inference from the control's concrete type**: inferring it is right
    * about the two controls this library ships and silently wrong about an adopter's own, which is
