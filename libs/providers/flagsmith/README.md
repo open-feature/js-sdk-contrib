@@ -109,7 +109,7 @@ const value = await client.getBooleanValue('premium-feature', false, evaluationC
 The provider supports all OpenFeature flag value types:
 
 - **Boolean**: Returns `flag.enabled` by default, or `flag.value` if `useBooleanConfigValue` is true
-- **String**: Returns the flag value as-is if it's a string
+- **String**: Returns `String(value)` — for a value of **any** type, not only for a string
 - **Number**: Attempts to parse the flag value as a number
 - **Object**: Attempts to parse the flag value as JSON
 
@@ -118,7 +118,8 @@ The provider supports all OpenFeature flag value types:
 The provider handles various error scenarios:
 
 - **Flag Not Found**: Returns default value with `FLAG_NOT_FOUND` error code
-- **Type Mismatch**: Returns default value with `TYPE_MISMATCH` error code if flag value cannot be converted to requested type
+- **Type Mismatch**: Returns default value with `TYPE_MISMATCH` error code if the flag value cannot be converted to the requested type — for the Number, Boolean and Object accessors.
+  **The String accessor is the exception and never reports it**: it returns `String(value)` unconditionally, so a boolean flag requested as a String resolves to `"true"` and an integer flag to `"10"` with no error code, whatever type the backend recorded. See [`src/lib/type-factory.ts`](./src/lib/type-factory.ts).
 - **Disabled Flags**:  
   – For boolean flags with `useBooleanConfigValue=false`: returns `false` with reason `DISABLED`  
   – For other flags: throws `GeneralError` unless `returnValueForDisabledFlags` is `true`
