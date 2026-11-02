@@ -1,10 +1,13 @@
+import { IdGenerator } from '@cucumber/messages';
 import type { IJestLike } from 'jest-cucumber';
-import { autoBindSteps, loadFeatures, parseFeature } from 'jest-cucumber';
+import { autoBindSteps, parseFeature } from 'jest-cucumber';
 import { adopterSkipReason, adopterTagFilter, resolveAdopterTags } from './adopterTags';
+import type { AdopterTagSelection } from './adopterTags';
 import { Capability, DECLARABLE_CAPABILITIES } from './capability';
+import { readFeatureMessages } from './messages';
 import type { TckFeature } from './runProviderTck';
-import { FEATURES_GLOB, planFeatures } from './runProviderTck';
-import { planScenarios, skipDisplayName } from './scenarioRunner';
+import { loadTckFeatures, planFeatures } from './runProviderTck';
+import { planFeature, skipDisplayName } from './scenarioRunner';
 
 /**
  * An adopter's own feature, standing in for the motivating case: one set of extension features run
@@ -40,6 +43,17 @@ const extensionText = [
 ].join('\n');
 
 const extension = parseFeature(extensionText);
+
+/** The extension feature's Cucumber Messages, which a plan pairs each scenario with. */
+const extensionMessages = () =>
+  readFeatureMessages('extensions/vendor.feature', extensionText, IdGenerator.incrementing());
+
+/** Plans the extension feature as the harness would, under `selection`. */
+const planScenarios = (
+  parsed: ReturnType<typeof parseFeature>,
+  capabilities: ReadonlySet<Capability>,
+  selection: AdopterTagSelection,
+) => planFeature('vendor', parsed, extensionMessages().planned, capabilities, selection).scenarios;
 
 /** Everything declarable but `@stale`, so one fixture scenario is gated by a capability as well. */
 const declared = new Set(DECLARABLE_CAPABILITIES.filter((capability) => capability !== Capability.Stale));
@@ -116,17 +130,17 @@ describe("an adopter's tag selection", () => {
     // The exemption, asserted through the function the harness plans with. The selection names a tag
     // nothing carries, so under it every scenario it reaches is deselected -- which is how the
     // extension half below shows the call was not a no-op.
-    const canonical = loadFeatures(FEATURES_GLOB);
+    const canonical = loadTckFeatures(undefined);
     expect(canonical.length).toBeGreaterThan(0);
 
     const features: TckFeature[] = [
-      ...canonical.map((parsed) => ({ feature: parsed.title, parsed, canonical: true })),
-      { feature: 'vendor', parsed: extension, canonical: false },
+      ...canonical,
+      { feature: 'vendor', parsed: extension, messages: extensionMessages(), canonical: false },
     ];
 
     const plans = planFeatures(features, declared, resolveAdopterTags({ includeTags: ['@nothing-carries-this'] }));
-    const conformance = plans.slice(0, canonical.length).flat();
-    const adopters = plans[canonical.length];
+    const conformance = plans.slice(0, canonical.length).flatMap((plan) => plan.scenarios);
+    const adopters = plans[canonical.length].scenarios;
 
     expect(conformance.length).toBeGreaterThan(0);
     expect(conformance.filter((scenario) => scenario.deselectedBecause)).toEqual([]);
