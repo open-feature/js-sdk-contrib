@@ -1,6 +1,6 @@
 {
   "name": "@openfeature/go-feature-flag-web-provider",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-feature/js-sdk-contrib.git",
@@ -12,7 +12,8 @@
     "current-version": "echo $npm_package_version"
   },
   "peerDependencies": {
-    "@openfeature/web-sdk": "^1.0.0"
+    "@openfeature/core": "^1.12.0",
+    "@openfeature/web-sdk": "^1.10.0"
   },
   "dependencies": {
     "copy-anything": "^3.0.5"

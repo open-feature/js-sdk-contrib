@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.11](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.10...go-feature-flag-web-provider-v0.2.11) (2026-10-28)
+
+
+### ✨ New Features
+
+* **go-feature-flag-web:** allow SSE connection ([#1590](https://github.com/open-feature/js-sdk-contrib/issues/1590)) ([533486f](https://github.com/open-feature/js-sdk-contrib/commit/533486f5049fed85b877c6669a791ff6ad39097f))
+
 ## [0.2.10](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-web-provider-v0.2.9...go-feature-flag-web-provider-v0.2.10) (2026-10-15)
 
 

@@ -7,6 +7,17 @@ import type {
   TrackingEventDetails,
 } from '@openfeature/web-sdk';
 
+export const GoFeatureFlagWebProviderConnectionModeEnum = {
+  WebSocket: 'ws',
+  ServerSentEvent: 'sse',
+} as const;
+
+export const GoFeatureFlagEvaluationContextKey = 'gofeatureflag';
+export const GoFeatureFlagEvaluationContextFlagListKey = 'flagList';
+
+export type GoFeatureFlagWebProviderConnectionMode =
+  (typeof GoFeatureFlagWebProviderConnectionModeEnum)[keyof typeof GoFeatureFlagWebProviderConnectionModeEnum];
+
 /**
  * GoFeatureFlagEvaluationContext is the representation of a user for GO Feature Flag
  * the key is used to do the repartition in GO Feature Flag this is the only
@@ -32,6 +43,10 @@ export interface GoFeatureFlagAllFlagRequest {
  * when initializing the open-feature provider.
  */
 export interface GoFeatureFlagWebProviderOptions {
+  // the connection mode to be used. Possible values are: 'ws', 'sse'.
+  // Default to 'ws' if omitted
+  mode?: GoFeatureFlagWebProviderConnectionMode;
+
   // endpoint is the URL where your GO Feature Flag server is located.
   endpoint: string;
 
@@ -76,6 +91,13 @@ export interface GoFeatureFlagWebProviderOptions {
   // ‼️Important: If you are using a GO Feature Flag relay proxy before version v1.41.0, the information
   // of this field will not be added to your feature events.
   exporterMetadata?: Record<string, ExporterMetadataValue>;
+
+  /**
+   * pollingIntervalMs (optional) interval of time (in milliseconds) between polling attempts against the GO Feature Flag evaluation endpoint,
+   * used as fallback when the provider is not able to connect through WebSocket or SSE for flag changes.
+   * default: 0 (no polling enabled)
+   */
+  pollingIntervalMs?: number;
 }
 
 // ExporterMetadataValue is the type of the value that can be used in the exporterMetadata
@@ -112,6 +134,25 @@ export interface GOFeatureFlagWebsocketResponse {
   deleted?: { [key: string]: any };
   added?: { [key: string]: any };
   updated?: { [key: string]: any };
+}
+
+/**
+ * Format of the Server-Sent Event event we can receive (relay-proxy <= 1.55.3).
+ */
+export interface GOFeatureFlagServerSentEventResponse {
+  deleted?: { [key: string]: any };
+  added?: { [key: string]: any };
+  updated?: { [key: string]: any };
+}
+
+/**
+ * Format of the OpenFeature Server-Sent Event event we can receive (relay-proxy >= 1.56.0).
+ * OpenFeature OFREP spec ADR-08: https://github.com/open-feature/protocol/blob/main/service/adrs/0008-sse-for-bulk-evaluation-changes.md#sse-event-format
+ */
+export interface OpenFeatureServerSentEventResponse {
+  etag?: string;
+  lastModified?: number;
+  type: 'refetchEvaluation';
 }
 
 export interface DataCollectorRequest<T> {
