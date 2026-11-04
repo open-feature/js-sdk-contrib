@@ -278,7 +278,7 @@ function getEnvVarConfig(): Partial<Config & FlagdGrpcConfig> {
       defaultAuthority: process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY],
     }),
     ...(process.env[ENV_VAR.FLAGD_ENABLE_HTTP_PROXY] && {
-      enableHttpProxy: process.env[ENV_VAR.FLAGD_ENABLE_HTTP_PROXY]?.toLowerCase() === 'true',
+      enableHttpProxy: process.env[ENV_VAR.FLAGD_ENABLE_HTTP_PROXY]?.trim().toLowerCase() === 'true',
     }),
     ...(Number(process.env[ENV_VAR.FLAGD_RETRY_BACKOFF_MS]) && {
       retryBackoffMs: Number(process.env[ENV_VAR.FLAGD_RETRY_BACKOFF_MS]),
