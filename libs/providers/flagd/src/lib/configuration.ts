@@ -101,6 +101,14 @@ export interface Config {
   defaultAuthority?: string;
 
   /**
+   * Controls whether gRPC routes connections through an HTTP proxy.
+   * By default (unset), gRPC honors the `grpc_proxy`, `https_proxy` and `http_proxy` environment variables
+   * (subject to `no_proxy`). Set to `false` to connect directly to the flagd target regardless of those variables.
+   * Only applies to RPC and in-process resolvers.
+   */
+  enableHttpProxy?: boolean;
+
+  /**
    * Initial retry backoff in milliseconds.
    */
   retryBackoffMs?: number;
@@ -200,6 +208,7 @@ enum ENV_VAR {
   FLAGD_RESOLVER = 'FLAGD_RESOLVER',
   FLAGD_OFFLINE_FLAG_SOURCE_PATH = 'FLAGD_OFFLINE_FLAG_SOURCE_PATH',
   FLAGD_DEFAULT_AUTHORITY = 'FLAGD_DEFAULT_AUTHORITY',
+  FLAGD_ENABLE_HTTP_PROXY = 'FLAGD_ENABLE_HTTP_PROXY',
   FLAGD_RETRY_BACKOFF_MS = 'FLAGD_RETRY_BACKOFF_MS',
   FLAGD_RETRY_BACKOFF_MAX_MS = 'FLAGD_RETRY_BACKOFF_MAX_MS',
   FLAGD_KEEP_ALIVE_TIME_MS = 'FLAGD_KEEP_ALIVE_TIME_MS',
@@ -267,6 +276,9 @@ function getEnvVarConfig(): Partial<Config & FlagdGrpcConfig> {
     }),
     ...(process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY] && {
       defaultAuthority: process.env[ENV_VAR.FLAGD_DEFAULT_AUTHORITY],
+    }),
+    ...(process.env[ENV_VAR.FLAGD_ENABLE_HTTP_PROXY] && {
+      enableHttpProxy: process.env[ENV_VAR.FLAGD_ENABLE_HTTP_PROXY]?.toLowerCase() === 'true',
     }),
     ...(Number(process.env[ENV_VAR.FLAGD_RETRY_BACKOFF_MS]) && {
       retryBackoffMs: Number(process.env[ENV_VAR.FLAGD_RETRY_BACKOFF_MS]),

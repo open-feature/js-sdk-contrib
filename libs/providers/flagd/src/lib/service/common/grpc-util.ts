@@ -75,6 +75,11 @@ export function buildClientOptions(config: Config): ClientOptions {
     }
   }
 
+  if (config.enableHttpProxy !== undefined) {
+    // grpc-js honors grpc_proxy/https_proxy/http_proxy env vars unless this is explicitly turned off
+    options['grpc.enable_http_proxy'] = config.enableHttpProxy ? 1 : 0;
+  }
+
   return options;
 }
 

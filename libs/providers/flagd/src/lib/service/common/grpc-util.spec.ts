@@ -84,6 +84,19 @@ describe('buildClientOptions', () => {
     expect(Object.keys(buildClientOptions(config))).not.toContain('grpc.keepalive_time_ms');
   });
 
+  it.each([
+    { value: false, expected: 0 },
+    { value: true, expected: 1 },
+  ])('should set grpc.enable_http_proxy to $expected when enableHttpProxy is $value', ({ value, expected }) => {
+    expect(buildClientOptions({ ...baseConfig, enableHttpProxy: value })).toMatchObject({
+      'grpc.enable_http_proxy': expected,
+    });
+  });
+
+  it('should not set grpc.enable_http_proxy when enableHttpProxy is unset', () => {
+    expect(Object.keys(buildClientOptions(baseConfig))).not.toContain('grpc.enable_http_proxy');
+  });
+
   it('should combine multiple options', () => {
     const config: Config = { ...baseConfig, defaultAuthority: 'my-authority', keepAliveTime: 5000 };
     expect(buildClientOptions(config)).toEqual({
