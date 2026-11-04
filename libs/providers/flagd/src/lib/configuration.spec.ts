@@ -63,6 +63,7 @@ describe('Configuration', () => {
     process.env['FLAGD_OFFLINE_FLAG_SOURCE_PATH'] = offlineFlagSourcePath;
     process.env['FLAGD_DEFAULT_AUTHORITY'] = defaultAuthority;
     process.env['FLAGD_KEEP_ALIVE_TIME_MS'] = `${keepAliveTime}`;
+    process.env['FLAGD_ENABLE_HTTP_PROXY'] = 'false';
     process.env['FLAGD_RETRY_GRACE_PERIOD'] = `${retryGracePeriod}`;
     process.env['FLAGD_STREAM_DEADLINE_MS'] = `${streamDeadlineMs}`;
 
@@ -79,12 +80,19 @@ describe('Configuration', () => {
         selector,
         offlineFlagSourcePath,
         defaultAuthority,
+        enableHttpProxy: false,
         deadlineMs: 500,
         streamDeadlineMs,
         keepAliveTime,
         retryGracePeriod,
       }),
     );
+  });
+
+  it.each(['true', ' TRUE '])('should enable the HTTP proxy when FLAGD_ENABLE_HTTP_PROXY is "%s"', (value) => {
+    process.env['FLAGD_ENABLE_HTTP_PROXY'] = value;
+
+    expect(getConfig()).toEqual(expect.objectContaining({ enableHttpProxy: true }));
   });
 
   it('should override context enricher', () => {
