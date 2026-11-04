@@ -89,6 +89,12 @@ describe('Configuration', () => {
     );
   });
 
+  it.each(['true', ' TRUE '])('should enable the HTTP proxy when FLAGD_ENABLE_HTTP_PROXY is "%s"', (value) => {
+    process.env['FLAGD_ENABLE_HTTP_PROXY'] = value;
+
+    expect(getConfig()).toEqual(expect.objectContaining({ enableHttpProxy: true }));
+  });
+
   it('should override context enricher', () => {
     const contextEnricher = (syncContext: EvaluationContext | null): EvaluationContext => {
       return { ...syncContext, extraKey: 'extraValue' };

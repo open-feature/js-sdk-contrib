@@ -97,6 +97,15 @@ describe('buildClientOptions', () => {
     expect(Object.keys(buildClientOptions(baseConfig))).not.toContain('grpc.enable_http_proxy');
   });
 
+  it('should emit both default authority and enable_http_proxy when set together', () => {
+    const options = buildClientOptions({ ...baseConfig, defaultAuthority: 'my-authority', enableHttpProxy: false });
+
+    expect(options).toMatchObject({
+      'grpc.default_authority': 'my-authority',
+      'grpc.enable_http_proxy': 0,
+    });
+  });
+
   it('should combine multiple options', () => {
     const config: Config = { ...baseConfig, defaultAuthority: 'my-authority', keepAliveTime: 5000 };
     expect(buildClientOptions(config)).toEqual({
