@@ -96,3 +96,24 @@ describe('Flagd flag structure', () => {
     expect(ff.variants.get('pi5')).toStrictEqual({ value: 3.14159, accuracy: 5 });
   });
 });
+
+describe('Flagd flag hash', () => {
+  const flag = (defaultVariant: string): Flag => ({
+    state: 'ENABLED',
+    defaultVariant,
+    variants: { on: true, off: false },
+  });
+
+  it('should be equal for equal flags', () => {
+    expect(new FeatureFlag('a', flag('on'), logger).hash).toBe(new FeatureFlag('a', flag('on'), logger).hash);
+  });
+
+  it('should differ for different flags', () => {
+    expect(new FeatureFlag('a', flag('on'), logger).hash).not.toBe(new FeatureFlag('a', flag('off'), logger).hash);
+  });
+
+  it('should be the same on every read', () => {
+    const ff = new FeatureFlag('a', flag('on'), logger);
+    expect(ff.hash).toBe(ff.hash);
+  });
+});
