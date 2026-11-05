@@ -31,6 +31,9 @@ export class GrpcFetch implements DataFetch {
   private _logger: Logger | undefined;
   private readonly _fatalStatusCodes: Set<number>;
   private _errorThrottled = false;
+  private _disconnected = false;
+  private _reconnectTimer?: ReturnType<typeof setTimeout>;
+  private _rejectConnect?: (reason: Error) => void;
   /**
    * Initialized will be set to true once the initial connection is successful
    * and the first payload has been received. Subsequent reconnects will not
@@ -86,14 +89,35 @@ export class GrpcFetch implements DataFetch {
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: (message: string) => void,
   ): Promise<void> {
-    await new Promise<void>((resolve, reject) =>
-      this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback, resolve, reject),
-    );
+    await new Promise<void>((resolve, reject) => {
+      this._rejectConnect = reject;
+      this.listen(
+        dataCallback,
+        reconnectCallback,
+        changedCallback,
+        disconnectCallback,
+        () => {
+          this._rejectConnect = undefined;
+          resolve();
+        },
+        (reason) => {
+          this._rejectConnect = undefined;
+          reject(reason);
+        },
+      );
+    });
     this._initialized = true;
   }
 
   async disconnect() {
     this._logger?.debug('Disconnecting gRPC sync connection');
+    this._disconnected = true;
+    this._rejectConnect?.(new Error('gRPC client disconnected before connecting'));
+    this._rejectConnect = undefined;
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = undefined;
+    }
     closeStreamIfDefined(this._syncStream);
     this._syncClient.close();
   }
@@ -111,6 +135,10 @@ export class GrpcFetch implements DataFetch {
     try {
       // wait for connection to be stable
       this._syncClient.waitForReady(Date.now() + this._deadlineMs, (err) => {
+        if (this._disconnected) {
+          rejectConnect?.(err ?? new Error('gRPC client disconnected before connecting'));
+          return;
+        }
         if (err) {
           this.handleError(
             err as Error,
@@ -205,8 +233,16 @@ export class GrpcFetch implements DataFetch {
     changedCallback: (flagsChanged: string[]) => void,
     disconnectCallback: (message: string) => void,
   ) {
-    setTimeout(
-      () => this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback),
+    if (this._disconnected) {
+      return;
+    }
+    this._reconnectTimer = setTimeout(
+      () => {
+        this._reconnectTimer = undefined;
+        if (!this._disconnected) {
+          this.listen(dataCallback, reconnectCallback, changedCallback, disconnectCallback);
+        }
+      },
       this._errorThrottled ? this._maxBackoffMs : 0,
     );
     this._errorThrottled = false;
