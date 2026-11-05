@@ -203,7 +203,11 @@ export class GRPCService implements Service {
       } else {
         const streamDeadline = this._streamDeadline != 0 ? Date.now() + this._streamDeadline : undefined;
         const stream = this._client.eventStream({}, { deadline: streamDeadline });
+        // Guard prevents double-reconnect when grpc-js emits 'end' then 'error' on a non-OK close.
+        let streamTerminated = false;
         stream.on('error', (err: Error) => {
+          if (streamTerminated) return;
+          streamTerminated = true;
           // In cases where we get an explicit error status, we add a delay.
           // This prevents tight loops when errors are returned immediately, typically by intervening proxies like Envoy.
           this._errorThrottled = true;
@@ -213,6 +217,12 @@ export class GRPCService implements Service {
             return;
           }
           rejectConnect?.(err);
+          this.handleError(reconnectCallback, changedCallback, disconnectCallback);
+        });
+        stream.on('end', () => {
+          if (streamTerminated) return;
+          streamTerminated = true;
+          rejectConnect?.(new Error('streaming connection closed by server before ready'));
           this.handleError(reconnectCallback, changedCallback, disconnectCallback);
         });
         stream.on('data', (message) => {
