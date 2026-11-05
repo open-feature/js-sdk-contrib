@@ -34,6 +34,8 @@ components:
     - markphelps
   libs/providers/flipt-web:
     - markphelps
+  libs/providers/optimizely-web:
+    - dflynn15
   libs/providers/unleash-web:
     - jarebudev
 
