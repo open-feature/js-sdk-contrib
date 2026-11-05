@@ -125,6 +125,16 @@ Only omit `input.auth` when authentication cannot affect flag results for the sa
 
 The localStorage key is `ofrep-web-provider:v2:{hash}` where `{hash}` is the first 16 hex characters of SHA-256 (or an FNV-1a fallback in non-secure contexts where `crypto.subtle` is unavailable).
 
+#### Contexts with no targeting key
+
+Evaluations for a context with no `targetingKey` (or an empty one) are **not persisted**. Such a context carries no identity, so its cache key would reduce to `baseUrl`, the auth credential, and `domain`, and the same entry would be shared by every context against that OFREP resource. Nothing would then invalidate it when the subject changes, so an application that signs a user out and continues anonymously would be served the previous evaluation. Flags still evaluate normally over the network; `local-cache-first` simply behaves like `disabled` for those contexts.
+
+To persist anonymous evaluations, configure a `cacheKeyGenerator`. Doing so asserts that the key material it returns identifies the subject, for example a stable device or anonymous ID:
+
+```ts
+cacheKeyGenerator: (input) => JSON.stringify([input.url, input.auth, input.domain, input.targetingKey ?? deviceId]),
+```
+
 #### Domain scoping
 
 The provider declares itself `domain-scoped`, so each instance is bound to at most one OpenFeature domain via `OpenFeature.setProvider('domain', provider)`. The SDK forwards that domain to `initialize(context, domain?)`; persistence is not initialized until then, so nothing is read from or written to `localStorage` before initialization.

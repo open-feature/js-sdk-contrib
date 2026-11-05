@@ -210,4 +210,54 @@ describe('Storage (persistent flag cache)', () => {
       expect(result!.etag).toBe('"etag"');
     });
   });
+
+  describe('contexts with no targeting key (ADR-0009)', () => {
+    it('does not persist an evaluation when the context has no targeting key', async () => {
+      const storage = createStorage();
+      await storage.store({}, boolFlagCache, '"etag"');
+      expect(await storage.retrieve({}, DEFAULT_CACHE_TTL_SECONDS)).toBeUndefined();
+      expect(localStorage.length).toBe(0);
+    });
+
+    it('does not load a persisted entry when the context has no targeting key', async () => {
+      const withGenerator = createStorage('local-cache-first', { cacheKeyGenerator: () => 'anon' });
+      await withGenerator.store({}, boolFlagCache, '"etag"');
+      expect(localStorage.length).toBe(1);
+
+      const withoutGenerator = createStorage('local-cache-first', {
+        cacheKeyGenerator: undefined,
+      });
+      expect(await withoutGenerator.retrieve({}, DEFAULT_CACHE_TTL_SECONDS)).toBeUndefined();
+    });
+
+    it('treats an empty-string targeting key as having no identity', async () => {
+      const storage = createStorage();
+      await storage.store(ctx(''), boolFlagCache, '"etag"');
+      expect(localStorage.length).toBe(0);
+      expect(await storage.retrieve(ctx(''), DEFAULT_CACHE_TTL_SECONDS)).toBeUndefined();
+    });
+
+    it('persists without a targeting key when a cache-key generator is configured', async () => {
+      const storage = createStorage('local-cache-first', {
+        cacheKeyGenerator: ({ url }) => `${url}:device-42`,
+      });
+      await storage.store({ country: 'CA' }, boolFlagCache, '"etag"');
+      const result = await storage.retrieve({ country: 'CA' }, DEFAULT_CACHE_TTL_SECONDS);
+      expect(result).not.toBeUndefined();
+      expect(result!.flags).toEqual(boolFlagCache);
+    });
+
+    it('reports persistability per context', async () => {
+      const storage = createStorage();
+      expect(storage.persistable(ctx('user-1'))).toBe(true);
+      expect(storage.persistable({})).toBe(false);
+      expect(storage.persistable(ctx(''))).toBe(false);
+    });
+
+    it('is never persistable when the cache is disabled', async () => {
+      const storage = createStorage('disabled', { cacheKeyGenerator: () => 'anon' });
+      expect(storage.persistable(ctx('user-1'))).toBe(false);
+      expect(storage.persistable({})).toBe(false);
+    });
+  });
 });

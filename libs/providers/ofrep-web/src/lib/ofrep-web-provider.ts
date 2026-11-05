@@ -42,7 +42,7 @@ import { BulkEvaluationStatus } from './model/evaluate-flags-response';
 import type { FlagCache, MetadataCache } from './model/in-memory-cache';
 import type { CacheMode, OFREPWebProviderOptions } from './model/ofrep-web-provider-options';
 import { DEFAULT_CACHE_TTL_SECONDS } from './model/ofrep-web-provider-options';
-import { defaultCacheKeyGenerator, deriveAuthCredential } from './store/cache-key';
+import { deriveAuthCredential } from './store/cache-key';
 import { Storage } from './store/storage';
 import { SseManager } from './sse-manager';
 
@@ -109,7 +109,7 @@ export class OFREPWebProvider implements Provider {
         this._options.baseUrl,
         () => deriveAuthCredential(this._options),
         domain ?? '',
-        this._options.cacheKeyGenerator ?? defaultCacheKeyGenerator,
+        this._options.cacheKeyGenerator,
         this._logger,
       );
       this._context = context;
@@ -186,9 +186,12 @@ export class OFREPWebProvider implements Provider {
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     this._contextRevision++;
     try {
-      if (oldContext?.targetingKey !== newContext?.targetingKey) {
+      // ADR-0009: clearing is governed by the derived cache key, not the `targetingKey` alone.
+      // A cache-key generator that incorporates other context properties can change the key
+      // while the `targetingKey` is unchanged, which would otherwise leave a stale entry behind.
+      if (await this._cacheKeyChanged(oldContext, newContext)) {
         this._etag = null;
-        void this._storage?.clear(oldContext);
+        await this._storage?.clear(oldContext);
       }
       this._context = newContext;
 
@@ -623,6 +626,21 @@ export class OFREPWebProvider implements Provider {
 
       this.events?.emit(ClientProviderEvents.Stale, { message: `Error while polling: ${error}` });
     }
+  }
+
+  /**
+   * Whether the derived cache key differs between two contexts. Falls back to comparing
+   * `targetingKey` values when no storage is configured yet.
+   */
+  private async _cacheKeyChanged(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<boolean> {
+    if (!this._storage) {
+      return oldContext?.targetingKey !== newContext?.targetingKey;
+    }
+    const [oldKey, newKey] = await Promise.all([
+      this._storage.cacheKeyMaterial(oldContext ?? {}),
+      this._storage.cacheKeyMaterial(newContext ?? {}),
+    ]);
+    return oldKey !== newKey;
   }
 
   private async _tryLoadFlagsFromCache(context?: EvaluationContext | undefined): Promise<boolean> {
