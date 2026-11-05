@@ -1,0 +1,20 @@
+{
+  "extends": ["../../.eslintrc.json"],
+  "ignorePatterns": ["!**/*", "fixtures/**"],
+  "env": {
+    "node": true
+  },
+  "overrides": [
+    {
+      "files": ["*.js"],
+      "rules": {}
+    },
+    {
+      "files": ["*.spec.js"],
+      "env": {
+        "jest": true,
+        "node": true
+      }
+    }
+  ]
+}
