@@ -60,6 +60,36 @@ describe('FliptProvider', () => {
 
       await noHeaderProvider.initialize();
     });
+
+    it('should forward the timeout in seconds to FliptClient', async () => {
+      const timeoutSpy = jest.spyOn(AbortSignal, 'timeout');
+      const timeoutProvider = new FliptProvider('default', {
+        url: 'http://localhost:8080',
+        timeout: 2,
+      });
+
+      await timeoutProvider.initialize();
+      fetchMock.post(
+        booleanEndpoint,
+        {
+          enabled: true,
+          reason: 'MATCH_EVALUATION_REASON',
+          requestId: 'test-id',
+          requestDurationMillis: 0.5,
+          timestamp: '2024-01-15T19:06:33.721025Z',
+          flagKey: 'test_flag',
+        },
+        { overwriteRoutes: true },
+      );
+
+      try {
+        await timeoutProvider.resolveBooleanEvaluation('test_flag', false, { targetingKey: 'user123' });
+
+        expect(timeoutSpy).toHaveBeenCalledWith(2000);
+      } finally {
+        timeoutSpy.mockRestore();
+      }
+    });
   });
 
   describe('method resolveStringEvaluation', () => {
