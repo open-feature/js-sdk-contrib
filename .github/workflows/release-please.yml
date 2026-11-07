@@ -55,6 +55,11 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      # `npm sbom` requires npm >= 10.2.0. Node 24 already bundles a new enough
+      # npm; pin the same npm as the publish job so this does not depend on it.
+      - name: Ensure npm supports sbom
+        run: npm install -g npm@^11.5.1
+
       - name: Check release tag
         run: test -n "$TAG"
 

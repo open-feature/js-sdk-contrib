@@ -16,6 +16,49 @@ const path = require('path');
 
 const DEPENDENCY_FIELDS = ['dependencies', 'optionalDependencies'];
 
+// `npm sbom` shipped in npm 10.2.0. Older npm exits with "unknown command".
+const MINIMUM_NPM_VERSION = '10.2.0';
+
+function parseNpmVersion(version) {
+  const match = /^v?(\d+)\.(\d+)\.(\d+)/.exec(String(version).trim());
+  if (!match) {
+    return null;
+  }
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+function npmVersionSupportsSbom(version) {
+  const parsed = parseNpmVersion(version);
+  const minimum = parseNpmVersion(MINIMUM_NPM_VERSION);
+  if (!parsed || !minimum) {
+    return false;
+  }
+
+  const length = Math.max(parsed.length, minimum.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference = (parsed[index] || 0) - (minimum[index] || 0);
+    if (difference !== 0) {
+      return difference > 0;
+    }
+  }
+  return true;
+}
+
+function assertNpmSupportsSbom(version) {
+  const reported = String(version == null ? '' : version).trim();
+  if (npmVersionSupportsSbom(reported)) {
+    return;
+  }
+
+  throw new Error(
+    `npm sbom requires npm >= ${MINIMUM_NPM_VERSION} (found ${reported || 'unknown'}). Install npm ${MINIMUM_NPM_VERSION} or newer before generating an SBOM.`,
+  );
+}
+
+function currentNpmVersion() {
+  return runNpm(['--version'], process.cwd()).trim();
+}
+
 function isolatedManifest(pkg) {
   if (!pkg || typeof pkg.name !== 'string' || pkg.name.length === 0) {
     throw new Error('package.json must include a name');
@@ -110,7 +153,9 @@ function normalizeRootComponent(sbom, pkg) {
   return sbom;
 }
 
-function generateModuleSbom(moduleDir, outputFile) {
+function generateModuleSbom(moduleDir, outputFile, npmVersion = currentNpmVersion()) {
+  assertNpmSupportsSbom(npmVersion);
+
   const resolvedModuleDir = path.resolve(moduleDir);
   const packageJsonPath = path.join(resolvedModuleDir, 'package.json');
   if (!fs.existsSync(packageJsonPath)) {
@@ -185,6 +230,8 @@ if (require.main === module) {
 
 module.exports = {
   absolutizeDependencySpecifiers,
+  assertNpmSupportsSbom,
+  currentNpmVersion,
   generateModuleSbom,
   isolatedManifest,
   normalizeRootComponent,

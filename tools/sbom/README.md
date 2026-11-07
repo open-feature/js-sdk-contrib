@@ -6,7 +6,7 @@ The repository is not an npm workspace. Its root lockfile contains every module,
 
 ## Generate an SBOM
 
-From the repository root, with Node.js and npm available:
+From the repository root, with npm 10.2.0 or newer (`npm sbom`):
 
 ```sh
 node tools/sbom/generate-module-sbom.js libs/hooks/debounce bom.json

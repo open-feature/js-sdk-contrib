@@ -3,6 +3,8 @@ const os = require('os');
 const path = require('path');
 const {
   absolutizeDependencySpecifiers,
+  assertNpmSupportsSbom,
+  currentNpmVersion,
   generateModuleSbom,
   isolatedManifest,
   normalizeRootComponent,
@@ -108,6 +110,36 @@ describe('normalizeRootComponent', () => {
   });
 });
 
+describe('assertNpmSupportsSbom', () => {
+  const requirement = /npm sbom requires npm >= 10\.2\.0/;
+
+  it('accepts npm 10.2.0 and newer, including versions whose minor is greater than 2', () => {
+    for (const version of ['10.2.0', '10.2.1', '10.10.0', '11.5.1', '11.19.1', 'v10.2.0', '10.2.0\n']) {
+      expect(() => assertNpmSupportsSbom(version)).not.toThrow();
+    }
+  });
+
+  it('rejects npm older than 10.2.0 with the version that was found', () => {
+    for (const version of ['8.19.4', '9.9.2', '10.0.0', '10.1.9']) {
+      expect(() => assertNpmSupportsSbom(version)).toThrow(
+        `npm sbom requires npm >= 10.2.0 (found ${version}). Install npm 10.2.0 or newer before generating an SBOM.`,
+      );
+    }
+  });
+
+  it('rejects a version string that is not major.minor.patch', () => {
+    expect(() => assertNpmSupportsSbom('not-a-version')).toThrow(requirement);
+    expect(() => assertNpmSupportsSbom('not-a-version')).toThrow(/found not-a-version/);
+    expect(() => assertNpmSupportsSbom('')).toThrow(/found unknown/);
+  });
+
+  it('reads npm --version from the environment', () => {
+    const version = currentNpmVersion();
+    expect(version).toMatch(/^\d+\.\d+\.\d+/);
+    expect(() => assertNpmSupportsSbom(version)).not.toThrow();
+  });
+});
+
 describe('generateModuleSbom', () => {
   jest.setTimeout(120000);
 
@@ -161,6 +193,13 @@ describe('generateModuleSbom', () => {
     expect(serialized).not.toContain('jest');
     expect(serialized).not.toContain('@grpc/grpc-js');
     expect(serialized).not.toContain('@openfeature/server-sdk');
+  });
+
+  it('fails before reading the module when npm is older than 10.2.0', () => {
+    const missing = path.join(os.tmpdir(), 'does-not-exist-sbom-module');
+    expect(() => generateModuleSbom(missing, path.join(missing, 'bom.json'), '8.19.4')).toThrow(
+      /npm sbom requires npm >= 10\.2\.0 \(found 8\.19\.4\)/,
+    );
   });
 
   it('rejects a directory without package.json', () => {
