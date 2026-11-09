@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v2.1.0...go-feature-flag-provider-v2.2.0) (2026-11-03)
+
+
+### ✨ New Features
+
+* **go-feature-flag:** bump WASM to 0.3.0 ([#1653](https://github.com/open-feature/js-sdk-contrib/issues/1653)) ([cf057ad](https://github.com/open-feature/js-sdk-contrib/commit/cf057ad7dfce4e10180a59abe6183adae5c7cf74))
+
 ## [2.1.0](https://github.com/open-feature/js-sdk-contrib/compare/go-feature-flag-provider-v2.0.0...go-feature-flag-provider-v2.1.0) (2026-10-27)
 
 
