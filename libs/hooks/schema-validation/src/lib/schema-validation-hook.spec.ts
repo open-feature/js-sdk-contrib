@@ -116,6 +116,38 @@ describe('SchemaValidationHook', () => {
       expect(() => run(hook, 'flag', 'hello', logger)).not.toThrow();
       expect(logger.warn).toHaveBeenCalledTimes(1);
     });
+
+    it('should treat a thenable that is not a native promise as asynchronous', () => {
+      const thenableSchema: StandardSchemaV1 = {
+        '~standard': {
+          version: 1,
+          vendor: 'test',
+          validate: (value) => {
+            const thenable = { then: (resolve: (result: { value: unknown }) => void) => resolve({ value }) };
+            return thenable as unknown as Promise<{ value: unknown }>;
+          },
+        },
+      };
+      const hook = new SchemaValidationHook(thenableSchema);
+
+      expect(() => run(hook, 'flag', 'hello')).toThrow('validates asynchronously, which is not supported');
+    });
+
+    it('should accept a synchronous result that also has a then function', () => {
+      const schemaWithThen: StandardSchemaV1 = {
+        '~standard': {
+          version: 1,
+          vendor: 'test',
+          validate: (value) => {
+            const result = { value, then: () => undefined };
+            return result;
+          },
+        },
+      };
+      const hook = new SchemaValidationHook(schemaWithThen);
+
+      expect(() => run(hook, 'flag', 'hello')).not.toThrow();
+    });
   });
 
   describe('SDK compatibility', () => {

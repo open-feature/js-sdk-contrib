@@ -1,6 +1,6 @@
 import type { BaseHook, EvaluationDetails, FlagValue, HookContext, Logger } from '@openfeature/core';
 import { GeneralError } from '@openfeature/core';
-import type { StandardSchemaV1, StandardSchemaV1Issue } from './standard-schema';
+import type { StandardSchemaV1, StandardSchemaV1Issue, StandardSchemaV1Result } from './standard-schema';
 
 /**
  * A map of flag keys to the schema their values must match.
@@ -43,6 +43,12 @@ export class SchemaValidationHook implements BaseHook {
     this.onInvalid = options.onInvalid ?? 'throw';
   }
 
+  /**
+   * Validates the evaluated value against the schema of the flag, if there is one.
+   * @param hookContext the context of the evaluation
+   * @param evaluationDetails the details of the evaluation, including the evaluated value
+   * @throws {GeneralError} if the value is invalid and `onInvalid` is `'throw'`
+   */
   after(hookContext: HookContext, evaluationDetails: EvaluationDetails<FlagValue>): void {
     const schema = this.getSchema(hookContext.flagKey);
     if (!schema) {
@@ -51,9 +57,9 @@ export class SchemaValidationHook implements BaseHook {
 
     const result = schema['~standard'].validate(evaluationDetails.value);
 
-    if (isPromise(result)) {
+    if (isAsyncResult(result)) {
       // the web SDK cannot wait for a promise in a hook, so async validation is not supported
-      result.catch(() => undefined);
+      Promise.resolve(result).catch(() => undefined);
       this.handleInvalid(
         hookContext,
         `Schema for flag "${hookContext.flagKey}" validates asynchronously, which is not supported`,
@@ -69,6 +75,11 @@ export class SchemaValidationHook implements BaseHook {
     }
   }
 
+  /**
+   * Returns the schema for a flag: the single schema if one was given, otherwise the entry in the schema map.
+   * @param flagKey the key of the evaluated flag
+   * @returns the schema, or `undefined` if the flag has no schema
+   */
   private getSchema(flagKey: string): StandardSchemaV1 | undefined {
     if (isStandardSchema(this.schemas)) {
       return this.schemas;
@@ -76,6 +87,12 @@ export class SchemaValidationHook implements BaseHook {
     return Object.prototype.hasOwnProperty.call(this.schemas, flagKey) ? this.schemas[flagKey] : undefined;
   }
 
+  /**
+   * Logs a warning or throws, depending on the `onInvalid` option.
+   * @param hookContext the context of the evaluation, used for its logger
+   * @param message the message describing why the value is invalid
+   * @throws {GeneralError} if `onInvalid` is `'throw'`
+   */
   private handleInvalid(hookContext: HookContext, message: string): void {
     if (this.onInvalid === 'log') {
       (this.options.logger ?? hookContext.logger).warn(message);
@@ -85,15 +102,36 @@ export class SchemaValidationHook implements BaseHook {
   }
 }
 
+/**
+ * Checks whether the hook was given a single schema rather than a schema map.
+ * @param value the schema or schema map passed to the hook
+ * @returns `true` if the value is a Standard Schema
+ */
 function isStandardSchema(value: StandardSchemaV1 | SchemaMap): value is StandardSchemaV1 {
   const standard = (value as Partial<StandardSchemaV1>)['~standard'];
   return typeof standard === 'object' && standard !== null && typeof standard.validate === 'function';
 }
 
-function isPromise<T>(value: T | Promise<T>): value is Promise<T> {
-  return typeof (value as Promise<T> | undefined)?.then === 'function';
+/**
+ * Checks whether a validation result is asynchronous. A synchronous result always has a `value` or `issues`
+ * key, so a result with one of those keys is treated as synchronous even if it also has a `then` function.
+ * @param result the value returned by the schema's `validate` function
+ * @returns `true` if the result is a promise or another thenable
+ */
+function isAsyncResult(
+  result: StandardSchemaV1Result<unknown> | PromiseLike<StandardSchemaV1Result<unknown>>,
+): result is PromiseLike<StandardSchemaV1Result<unknown>> {
+  if (result instanceof Promise) {
+    return true;
+  }
+  return typeof (result as { then?: unknown }).then === 'function' && !('value' in result) && !('issues' in result);
 }
 
+/**
+ * Formats validation issues into a single line, prefixing each issue with its path when there is one.
+ * @param issues the issues returned by the schema
+ * @returns the formatted issues, separated by `; `
+ */
 function formatIssues(issues: ReadonlyArray<StandardSchemaV1Issue>): string {
   return issues
     .map((issue) => {
