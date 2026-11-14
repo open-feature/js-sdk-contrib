@@ -47,6 +47,17 @@ type RequiredResolutionDetails<T> = Omit<ResolutionDetails<T>, 'value'> & {
   );
 
 /**
+ * A JSON.stringify replacer that sorts object keys, so a flag hashes the same whatever its key order.
+ */
+function sortKeys(_key: string, value: unknown): unknown {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return value;
+  }
+  // Keys of one object are unique, so the comparator never sees two equal keys.
+  return Object.fromEntries(Object.entries(value).sort(([a], [b]) => (a < b ? -1 : 1)));
+}
+
+/**
  * Flagd flag configuration structure for internal reference.
  */
 export class FeatureFlag {
@@ -54,8 +65,7 @@ export class FeatureFlag {
   private readonly _state: 'ENABLED' | 'DISABLED';
   private readonly _defaultVariant: string | undefined;
   private readonly _variants: Map<string, FlagValue>;
-  private _hash?: string;
-  private _flag?: Flag;
+  private readonly _hash: string;
   private readonly _metadata: FlagMetadata;
   private readonly _targeting?: Targeting;
   private readonly _targetingParseErrorMessage?: string;
@@ -81,9 +91,8 @@ export class FeatureFlag {
         this._targetingParseErrorMessage = message;
       }
     }
-    // The hash is computed on first read. Only MemoryStorage.setConfigurations reads it, to compare a flag
-    // with the one it replaces, and object-hash is a large part of the cost of parsing a configuration.
-    this._flag = flag;
+    // Hashing the JSON text is many times faster than letting object-hash walk the object.
+    this._hash = sha1(JSON.stringify(flag, sortKeys));
 
     this.validateStructure();
   }
@@ -92,15 +101,7 @@ export class FeatureFlag {
     return this._key;
   }
 
-  /**
-   * The SHA-1 of the flag configuration, computed on first read.
-   * @throws {RangeError} If the flag is nested too deeply for object-hash to walk.
-   */
   get hash(): string {
-    if (this._hash === undefined) {
-      this._hash = sha1(this._flag as Flag);
-      this._flag = undefined;
-    }
     return this._hash;
   }
 

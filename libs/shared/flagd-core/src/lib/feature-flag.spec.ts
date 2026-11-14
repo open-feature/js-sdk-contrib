@@ -1,5 +1,4 @@
-import type { JsonValue, Logger } from '@openfeature/core';
-import { sha1 } from 'object-hash';
+import type { Logger } from '@openfeature/core';
 import type { Flag } from './feature-flag';
 import { FeatureFlag } from './feature-flag';
 
@@ -98,41 +97,37 @@ describe('Flagd flag structure', () => {
   });
 
   describe('hash', () => {
-    it('should be the SHA-1 of the flag configuration', () => {
-      const input: Flag = {
-        state: 'ENABLED',
-        defaultVariant: 'off',
-        variants: {
-          on: true,
-          off: false,
-        },
+    const input: Flag = {
+      state: 'ENABLED',
+      defaultVariant: 'pi2',
+      variants: {
+        pi2: { value: 3.14, accuracy: 2 },
+        pi5: { value: 3.14159, accuracy: 5 },
+      },
+      targeting: '',
+    };
+
+    it('should not depend on key order', () => {
+      const reordered: Flag = {
         targeting: '',
+        variants: {
+          pi5: { accuracy: 5, value: 3.14159 },
+          pi2: { accuracy: 2, value: 3.14 },
+        },
+        defaultVariant: 'pi2',
+        state: 'ENABLED',
       };
 
-      const ff = new FeatureFlag('test', input, logger);
-
-      expect(ff.hash).toBe(sha1(input));
-      expect(ff.hash).toBe(sha1(input));
+      expect(new FeatureFlag('test', reordered, logger).hash).toBe(new FeatureFlag('test', input, logger).hash);
     });
 
-    it('should not be computed when the flag is constructed', () => {
-      // object-hash recurses, so a value this deep makes it throw.
-      let deep: JsonValue = true;
-      for (let i = 0; i < 10000; i++) {
-        deep = { nested: deep };
-      }
-      const input: Flag = {
-        state: 'ENABLED',
-        defaultVariant: 'deep',
-        variants: {
-          deep,
-        },
+    it('should change when a nested value changes', () => {
+      const changed: Flag = {
+        ...input,
+        variants: { ...input.variants, pi5: { value: 3.14159, accuracy: 4 } },
       };
 
-      const ff = new FeatureFlag('test', input, logger);
-
-      expect(ff.variants.get('deep')).toBe(deep);
-      expect(() => ff.hash).toThrow(RangeError);
+      expect(new FeatureFlag('test', changed, logger).hash).not.toBe(new FeatureFlag('test', input, logger).hash);
     });
   });
 });

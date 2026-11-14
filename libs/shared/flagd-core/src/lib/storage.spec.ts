@@ -53,16 +53,6 @@ describe('MemoryStorage', () => {
     expect(storage.setConfigurations(flags4)).toEqual(['flag1']);
   });
 
-  it('should hash a flag only when a later configuration replaces it', () => {
-    // object-hash recurses, so a value this deep makes it throw.
-    const depth = 10000;
-    const deep = '{"nested":'.repeat(depth) + 'true' + '}'.repeat(depth);
-    const cfg = `{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"deep","variants":{"deep":${deep}}}}}`;
-
-    expect(storage.setConfigurations(cfg)).toEqual(['flag1']);
-    expect(() => storage.setConfigurations(cfg)).toThrow(RangeError);
-  });
-
   it('should get flag correctly', () => {
     const cfg =
       '{"flags":{"flag1":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}},"flag2":{"state":"ENABLED","defaultVariant":"variant1","variants":{"variant1":true,"variant2":false}}}}';
