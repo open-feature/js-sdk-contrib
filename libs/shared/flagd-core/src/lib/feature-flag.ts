@@ -54,7 +54,8 @@ export class FeatureFlag {
   private readonly _state: 'ENABLED' | 'DISABLED';
   private readonly _defaultVariant: string | undefined;
   private readonly _variants: Map<string, FlagValue>;
-  private readonly _hash: string;
+  private _hash?: string;
+  private _flag?: Flag;
   private readonly _metadata: FlagMetadata;
   private readonly _targeting?: Targeting;
   private readonly _targetingParseErrorMessage?: string;
@@ -80,7 +81,9 @@ export class FeatureFlag {
         this._targetingParseErrorMessage = message;
       }
     }
-    this._hash = sha1(flag);
+    // The hash is computed on first read. Only MemoryStorage.setConfigurations reads it, to compare a flag
+    // with the one it replaces, and object-hash is a large part of the cost of parsing a configuration.
+    this._flag = flag;
 
     this.validateStructure();
   }
@@ -89,7 +92,15 @@ export class FeatureFlag {
     return this._key;
   }
 
+  /**
+   * The SHA-1 of the flag configuration, computed on first read.
+   * @throws {RangeError} If the flag is nested too deeply for object-hash to walk.
+   */
   get hash(): string {
+    if (this._hash === undefined) {
+      this._hash = sha1(this._flag as Flag);
+      this._flag = undefined;
+    }
     return this._hash;
   }
 

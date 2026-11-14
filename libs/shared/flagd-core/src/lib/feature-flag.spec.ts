@@ -1,4 +1,5 @@
-import type { Logger } from '@openfeature/core';
+import type { JsonValue, Logger } from '@openfeature/core';
+import { sha1 } from 'object-hash';
 import type { Flag } from './feature-flag';
 import { FeatureFlag } from './feature-flag';
 
@@ -94,5 +95,44 @@ describe('Flagd flag structure', () => {
     expect(ff.defaultVariant).toBe('pi2');
     expect(ff.variants.get('pi2')).toStrictEqual({ value: 3.14, accuracy: 2 });
     expect(ff.variants.get('pi5')).toStrictEqual({ value: 3.14159, accuracy: 5 });
+  });
+
+  describe('hash', () => {
+    it('should be the SHA-1 of the flag configuration', () => {
+      const input: Flag = {
+        state: 'ENABLED',
+        defaultVariant: 'off',
+        variants: {
+          on: true,
+          off: false,
+        },
+        targeting: '',
+      };
+
+      const ff = new FeatureFlag('test', input, logger);
+
+      expect(ff.hash).toBe(sha1(input));
+      expect(ff.hash).toBe(sha1(input));
+    });
+
+    it('should not be computed when the flag is constructed', () => {
+      // object-hash recurses, so a value this deep makes it throw.
+      let deep: JsonValue = true;
+      for (let i = 0; i < 10000; i++) {
+        deep = { nested: deep };
+      }
+      const input: Flag = {
+        state: 'ENABLED',
+        defaultVariant: 'deep',
+        variants: {
+          deep,
+        },
+      };
+
+      const ff = new FeatureFlag('test', input, logger);
+
+      expect(ff.variants.get('deep')).toBe(deep);
+      expect(() => ff.hash).toThrow(RangeError);
+    });
   });
 });
