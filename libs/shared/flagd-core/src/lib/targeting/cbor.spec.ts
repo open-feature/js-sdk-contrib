@@ -1,3 +1,4 @@
+import MurmurHash3 from 'imurmurhash';
 import { encodeDeterministicCbor, normalizeForCbor, hashBucketingValue } from './cbor';
 
 function hex(bytes: Uint8Array): string {
@@ -72,5 +73,86 @@ describe('hashBucketingValue', () => {
     expect(Number.isInteger(h)).toBe(true);
     expect(h).toBeGreaterThanOrEqual(0);
     expect(h).toBeLessThanOrEqual(0xffffffff);
+  });
+});
+
+describe('hashBucketingValue against cborg bytes hashed as a latin1 string by imurmurhash', () => {
+  // the same hash computed from cborg's bytes with an independent murmur3 implementation; a mismatch would move users between buckets.
+  function reference(value: unknown): number {
+    let latin1 = '';
+    for (const byte of encodeDeterministicCbor(value)) {
+      latin1 += String.fromCharCode(byte);
+    }
+    return new MurmurHash3(latin1).result() >>> 0;
+  }
+
+  const utf8Length = (value: string) => new TextEncoder().encode(value).length;
+
+  // mulberry32, so a failure reproduces.
+  function random(seed: number): () => number {
+    return () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  it.each([0, 1, 23, 24, 255, 256, 65535, 65536])('matches for strings of %i UTF-8 bytes', (length) => {
+    for (const unit of ['a', 'é', '€', '😀']) {
+      const unitLength = utf8Length(unit);
+      const value = unit.repeat(Math.floor(length / unitLength)) + 'a'.repeat(length % unitLength);
+      expect(utf8Length(value)).toBe(length);
+      expect(hashBucketingValue(value)).toBe(reference(value));
+    }
+  });
+
+  // 1024 UTF-16 code units is the most hashText encodes into its reused buffer.
+  it.each([1023, 1024, 1025])('matches for strings of %i code units', (length) => {
+    for (const unit of ['a', 'é', '€', '\ud800']) {
+      const value = unit.repeat(length);
+      expect(hashBucketingValue(value)).toBe(reference(value));
+    }
+    const pairAtEnd = 'a'.repeat(length - 2) + '😀';
+    expect(hashBucketingValue(pairAtEnd)).toBe(reference(pairAtEnd));
+  });
+
+  it('matches for lone surrogates', () => {
+    for (const value of ['\ud800', '\udc00', 'a\ud800', '\udbffa', '\udc00\ud800', '😀\ud83d', '\ude00😀']) {
+      expect(hashBucketingValue(value)).toBe(reference(value));
+    }
+  });
+
+  it('is not affected by an earlier, longer string', () => {
+    expect(hashBucketingValue('z'.repeat(1000))).toBe(reference('z'.repeat(1000)));
+    expect(hashBucketingValue('short')).toBe(reference('short'));
+  });
+
+  it('matches for non-string inputs of every byte length mod 4', () => {
+    const values = [true, 24, 256, 65536, -1000, 1.5, 3.14, { a: 1 }, ['my-flag', 'user-123'], { user: { id: 7 } }];
+    expect(new Set(values.map((value) => encodeDeterministicCbor(value).length % 4)).size).toBe(4);
+    for (const value of values) {
+      expect(hashBucketingValue(value)).toBe(reference(value));
+    }
+  });
+
+  it('matches for generated strings with multibyte UTF-8 and lone surrogates', () => {
+    const next = random(0x5eed);
+    const pick = (max: number) => Math.floor(next() * max);
+    const units = [
+      () => String.fromCharCode(pick(0x80)),
+      () => String.fromCharCode(0x80 + pick(0x780)),
+      () => String.fromCharCode(0xe000 + pick(0x2000)),
+      () => String.fromCodePoint(0x10000 + pick(0x100000)),
+      () => String.fromCharCode(0xd800 + pick(0x800)),
+    ];
+    for (let run = 0; run < 2000; run++) {
+      const length = pick(run % 10 === 0 ? 1200 : 40);
+      let value = '';
+      while (value.length < length) {
+        value += units[pick(units.length)]();
+      }
+      expect(hashBucketingValue(value)).toBe(reference(value));
+    }
   });
 });
