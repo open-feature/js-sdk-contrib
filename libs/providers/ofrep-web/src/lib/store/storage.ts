@@ -34,6 +34,7 @@ export class Storage {
   private readonly _getAuthCredential: () => Promise<string>;
   private readonly _domain: string;
   private readonly _cacheKeyGenerator: CacheKeyGenerator;
+  private readonly _hasCustomCacheKeyGenerator: boolean;
   private readonly _logger?: Logger;
 
   constructor(
@@ -41,19 +42,43 @@ export class Storage {
     baseUrl: string,
     getAuthCredential: () => Promise<string>,
     domain: string,
-    cacheKeyGenerator: CacheKeyGenerator = defaultCacheKeyGenerator,
+    cacheKeyGenerator?: CacheKeyGenerator,
     logger?: Logger,
   ) {
     this._disabled = cacheMode === 'disabled';
     this._baseUrl = baseUrl;
     this._getAuthCredential = getAuthCredential;
     this._domain = domain;
-    this._cacheKeyGenerator = cacheKeyGenerator;
+    this._cacheKeyGenerator = cacheKeyGenerator ?? defaultCacheKeyGenerator;
+    this._hasCustomCacheKeyGenerator = cacheKeyGenerator !== undefined;
     this._logger = logger;
   }
 
   get disabled(): boolean {
     return this._disabled;
+  }
+
+  /**
+   * Whether an evaluation for this context may be persisted (ADR-0009).
+   *
+   * A context with no `targetingKey` carries no identity, so its cache key reduces to the OFREP
+   * resource inputs and is shared by every context against that resource. Persisting it risks
+   * serving one subject's evaluation to another, for example after a sign-out that continues
+   * anonymously, so such contexts are not persisted and `local-cache-first` behaves like
+   * `disabled` for them.
+   *
+   * A configured cache-key generator is the opt-in: the application asserts that the key material
+   * it returns identifies the subject, so persistence is allowed.
+   */
+  persistable(context: EvaluationContext): boolean {
+    if (this._disabled) return false;
+    if (this._hasCustomCacheKeyGenerator) return true;
+    return typeof context.targetingKey === 'string' && context.targetingKey !== '';
+  }
+
+  /** Key material for a context, used to detect cache-key changes across a context change. */
+  async cacheKeyMaterial(context: EvaluationContext): Promise<string> {
+    return this._cacheKeyMaterial(context);
   }
 
   private async _cacheKeyMaterial(context: EvaluationContext): Promise<string> {
@@ -118,7 +143,8 @@ export class Storage {
 
   /**
    * Persists the flag cache alongside its ETag and a write timestamp.
-   * No-op when cacheMode is 'disabled'. Storage write failures are logged and swallowed
+   * No-op when cacheMode is 'disabled' or the context is not persistable.
+   * Storage write failures are logged and swallowed
    * so the provider continues operating with the fresh in-memory values.
    */
   async store(
@@ -128,7 +154,7 @@ export class Storage {
     metadata?: Record<string, unknown>,
     eventStreams?: EventStream[],
   ): Promise<void> {
-    if (this._disabled) return;
+    if (!this.persistable(context)) return;
     try {
       const cacheKeyHash = await this._hashInput(context);
       const key = this._formatStorageKey(cacheKeyHash);
@@ -151,6 +177,7 @@ export class Storage {
    * Loads a previously persisted entry.
    * Returns `undefined` when:
    *  - cacheMode is 'disabled'
+   *  - the context is not persistable (see `persistable`)
    *  - no entry exists for this context
    *  - the schema version does not match
    *  - the entry is older than `ttlSeconds` (expired entries are removed from storage)
@@ -162,7 +189,7 @@ export class Storage {
     | { flags: FlagCache; etag: string | null; metadata?: Record<string, unknown>; eventStreams?: EventStream[] }
     | undefined
   > {
-    if (this._disabled) return undefined;
+    if (!this.persistable(context)) return undefined;
     try {
       const raw = localStorage.getItem(await this.getStorageKey(context));
       if (!raw) return undefined;
