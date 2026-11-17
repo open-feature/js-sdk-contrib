@@ -1,0 +1,17 @@
+{
+  "name": "@openfeature/example-provider",
+  "version": "0.4.2",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@fixture/runtime": "file:../runtime"
+  },
+  "optionalDependencies": {
+    "@fixture/optional-runtime": "file:../optional"
+  },
+  "devDependencies": {
+    "@fixture/dev-only": "file:../dev-only"
+  },
+  "peerDependencies": {
+    "@fixture/peer-only": "file:../peer-only"
+  }
+}
