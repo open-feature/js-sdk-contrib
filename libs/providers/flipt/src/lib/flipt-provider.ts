@@ -174,7 +174,22 @@ export class FliptProvider implements Provider {
         };
       }
 
-      if (!variantEvaluation.match && variantEvaluation.reason != 'DEFAULT_EVALUATION_REASON') {
+      // Flipt serves a flag's configured default variant with match=false and
+      // DEFAULT_EVALUATION_REASON; honor the served variant instead of
+      // falling back to the application-provided default value.
+      if (variantEvaluation.reason === 'DEFAULT_EVALUATION_REASON' && variantEvaluation.variantKey) {
+        const flagValue: PrimitiveType | U = validateFlagType(
+          flagType,
+          flagType === 'json' ? variantEvaluation.variantAttachment : variantEvaluation.variantKey,
+        );
+
+        return {
+          value: flagValue,
+          reason: StandardResolutionReasons.DEFAULT,
+        };
+      }
+
+      if (!variantEvaluation.match) {
         return {
           value: defaultValue,
           reason: StandardResolutionReasons.DEFAULT,
