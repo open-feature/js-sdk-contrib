@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "object-hash": "^3.0.0",
-    "imurmurhash": "^0.1.4",
     "semver": "^7.6.3",
     "json-logic-engine": "5.0.7"
   },
