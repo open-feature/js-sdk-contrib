@@ -11,7 +11,7 @@ import {
   GeneralError,
   StandardResolutionReasons,
 } from '@openfeature/server-sdk';
-import { type Flags, type Flagsmith, type BaseFlag, type TraitConfig, type FlagsmithValue } from 'flagsmith-nodejs';
+import { type Flags, type Flagsmith, type BaseFlag, type TraitConfig, type FlagsmithValue } from '@flagsmith/nodejs';
 import { typeFactory } from './type-factory';
 
 type FlagsmithTrait = Record<string, FlagsmithValue | TraitConfig>;

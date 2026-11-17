@@ -20,7 +20,7 @@
         "@nx/dependency-checks": [
           "error",
           {
-            "ignoredDependencies": ["flagsmith-nodejs"]
+            "ignoredDependencies": ["@flagsmith/nodejs"]
           }
         ]
       }

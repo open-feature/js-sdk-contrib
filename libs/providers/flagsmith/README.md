@@ -5,7 +5,7 @@ This is an OpenFeature provider implementation for using [Flagsmith](https://fla
 ## Installation
 
 ```bash
-npm install @openfeature/flagsmith-provider @openfeature/server-sdk@^1.19 flagsmith-nodejs@^6.1
+npm install @openfeature/flagsmith-provider @openfeature/server-sdk@^1.19 @flagsmith/nodejs@^9.1
 ```
 
 ## Usage
@@ -19,7 +19,7 @@ It can be created by passing a configured Flagsmith client instance to the `Flag
 ```javascript
 import { OpenFeature } from '@openfeature/server-sdk';
 import { FlagsmithOpenFeatureProvider } from '@openfeature/flagsmith-provider';
-import { Flagsmith } from 'flagsmith-nodejs';
+import { Flagsmith } from '@flagsmith/nodejs';
 
 // Create the Flagsmith client
 const flagsmith = new Flagsmith({
@@ -45,7 +45,7 @@ await OpenFeature.clearProviders();
 ```javascript
 import { OpenFeature } from '@openfeature/server-sdk';
 import FlagsmithOpenFeatureProvider from '@openfeature/flagsmith-provider';
-import Flagsmith from 'flagsmith-nodejs';
+import Flagsmith from '@flagsmith/nodejs';
 
 // Create the Flagsmith client with custom options
 const flagsmith = new Flagsmith({
