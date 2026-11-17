@@ -95,8 +95,8 @@ export const buildRetryPolicy = (
 
   const retryPolicy = {
     maxAttempts: 4,
-    initialBackoff: `${Math.round(initialBackoff / 1000).toFixed(2)}s`,
-    maxBackoff: `${Math.round(maxBackoff / 1000).toFixed(2)}s`,
+    initialBackoff: `${(initialBackoff / 1000).toFixed(2)}s`,
+    maxBackoff: `${(maxBackoff / 1000).toFixed(2)}s`,
     backoffMultiplier: 2,
     retryableStatusCodes: [statusName(status.UNAVAILABLE), statusName(status.UNKNOWN)],
   };

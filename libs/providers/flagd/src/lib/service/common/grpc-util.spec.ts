@@ -114,6 +114,13 @@ describe('buildRetryPolicy', () => {
       },
     });
   });
+
+  it('should preserve sub-second precision in backoff durations', () => {
+    const result = JSON.parse(buildRetryPolicy(['service.A'], 400, 1500));
+
+    expect(result.methodConfig[0].retryPolicy.initialBackoff).toBe('0.40s');
+    expect(result.methodConfig[0].retryPolicy.maxBackoff).toBe('1.50s');
+  });
 });
 
 describe('createFatalStatusCodesSet', () => {
