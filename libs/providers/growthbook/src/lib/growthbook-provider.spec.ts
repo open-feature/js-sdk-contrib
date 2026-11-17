@@ -181,4 +181,50 @@ describe('GrowthbookProvider', () => {
       });
     });
   });
+  describe('evaluation context mapping', () => {
+    it('passes targetingKey to GrowthBook as the id attribute', async () => {
+      const evalFeature = jest.spyOn(GrowthBookClient.prototype, 'evalFeature').mockImplementation(() => ({
+        value: true,
+        source: 'defaultValue',
+        on: true,
+        off: false,
+        ruleId: '',
+      }));
+
+      await ofClient.getBooleanDetails(testFlagKey, false, { targetingKey: 'user-123', country: 'US' });
+
+      expect(evalFeature).toHaveBeenCalledWith(testFlagKey, {
+        attributes: { id: 'user-123', targetingKey: 'user-123', country: 'US' },
+      });
+    });
+
+    it('prefers an explicit id attribute over targetingKey', async () => {
+      const evalFeature = jest.spyOn(GrowthBookClient.prototype, 'evalFeature').mockImplementation(() => ({
+        value: true,
+        source: 'defaultValue',
+        on: true,
+        off: false,
+        ruleId: '',
+      }));
+
+      await ofClient.getBooleanDetails(testFlagKey, false, { targetingKey: 'ignored', id: 'explicit' });
+
+      expect(evalFeature).toHaveBeenCalledWith(testFlagKey, {
+        attributes: { id: 'explicit', targetingKey: 'ignored' },
+      });
+    });
+  });
+  describe('track', () => {
+    it('forwards the event to GrowthBook with the mapped user context', async () => {
+      const logEvent = jest.spyOn(GrowthBookClient.prototype, 'logEvent').mockImplementation(() => undefined);
+
+      ofClient.track('purchase', { targetingKey: 'user-123', country: 'US' }, { value: 42 });
+
+      expect(logEvent).toHaveBeenCalledWith(
+        'purchase',
+        { value: 42 },
+        { attributes: { id: 'user-123', targetingKey: 'user-123', country: 'US' } },
+      );
+    });
+  });
 });
