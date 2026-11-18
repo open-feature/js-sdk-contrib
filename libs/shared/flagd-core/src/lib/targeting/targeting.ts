@@ -2,6 +2,7 @@ import { LogicEngine } from 'json-logic-engine';
 import { endsWith, startsWith, endsWithRule, startsWithRule } from './string-comp';
 import { semVer, semVerRule } from './sem-ver';
 import { fractional, fractionalRule } from './fractional';
+import { resolve, resolveRule } from './resolve';
 import { flagdPropertyKey, flagKeyPropertyKey, loggerSymbol, timestampPropertyKey } from './common';
 import type { EvaluationContextWithLogger } from './common';
 import type { EvaluationContext, Logger, JsonValue } from '@openfeature/core';
@@ -29,6 +30,7 @@ export class Targeting {
     engine.addMethod(endsWithRule, endsWith);
     engine.addMethod(semVerRule, semVer);
     engine.addMethod(fractionalRule, fractional);
+    engine.addMethod(resolveRule, resolve);
 
     if (this._useInterpreter) {
       // Interpreter mode: store engine and logic for .run() calls.
