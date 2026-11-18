@@ -20,6 +20,8 @@ export interface FliptClientParameters {
   url: string;
   authenticationStrategy?: AuthenticationStrategy;
   headers?: Record<string, string>;
+  /** Timeout in seconds, as expected by the Flipt SDK. */
+  timeout?: number;
 }
 
 export class FliptProvider implements Provider {
@@ -78,6 +80,7 @@ export class FliptProvider implements Provider {
       url: this.clientParameters.url,
       authenticationStrategy: this.clientParameters.authenticationStrategy,
       headers: this.clientParameters.headers,
+      timeout: this.clientParameters.timeout,
     });
     this.status = ProviderStatus.READY;
   }

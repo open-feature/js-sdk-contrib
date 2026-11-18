@@ -25,7 +25,11 @@ To initialize the OpenFeature client with Flipt, you can use the following code 
 ```ts
 import { FliptProvider } from '@openfeature/flipt';
 
-const provider = new FliptProvider('namespace-of-choice', { url: 'http://your.upstream.flipt.host' });
+const provider = new FliptProvider('namespace-of-choice', {
+  url: 'http://your.upstream.flipt.host',
+  // The timeout is in seconds, as expected by the Flipt SDK.
+  timeout: 5,
+});
 OpenFeature.setProvider(provider);
 ```
 
