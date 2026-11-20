@@ -259,7 +259,43 @@ describe('targeting', () => {
       expect(targeting.evaluate('flagA', { key: 'bucketKeyB' })).toBe(false);
     });
 
-    it('should return null when variant expression evaluates to a non-scalar (object/array)', () => {
+    it('should evaluate a computed variant expression and return its result for the selected bucket', () => {
+      const logic = {
+        fractional: [
+          { var: 'targetingKey' },
+          [{ cat: ['r', 'ed'] }, 1],
+          [{ cat: ['bl', 'ue'] }, 0],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flagA', { targetingKey: 'user1' })).toBe('red');
+    });
+
+    it('should select the computed variant of the bucket that has the weight', () => {
+      const logic = {
+        fractional: [
+          { var: 'targetingKey' },
+          [{ cat: ['r', 'ed'] }, 0],
+          [{ cat: ['bl', 'ue'] }, 1],
+        ],
+      };
+      const targeting = new Targeting(logic, logger);
+
+      expect(targeting.evaluate('flagA', { targetingKey: 'user1' })).toBe('blue');
+    });
+
+    it('should pass a non-scalar variant result through unchanged', () => {
+      const logic = {
+        fractional: [{ var: 'targetingKey' }, [{ var: 'resolved' }, 1]],
+      };
+      const targeting = new Targeting(logic, logger);
+      const resolved = { variant: 'red', reason: 'SPLIT' };
+
+      expect(targeting.evaluate('flagA', { targetingKey: 'user1', resolved })).toEqual(resolved);
+    });
+
+    it('should return null when variant expression evaluates to nothing', () => {
       const logic = {
         fractional: [{ var: 'targetingKey' }, [{ var: 'missingKey' }, 50], ['blue', 50]],
       };

@@ -5,7 +5,8 @@ import { hashBucketingValue } from './cbor';
 
 export const fractionalRule = 'fractional';
 
-type VariantValue = string | number | boolean | null;
+// a bucket variant is whatever its expression evaluated to; the resolver decides what to do with it
+type VariantValue = unknown;
 
 export function fractional(data: unknown, context: EvaluationContextWithLogger): VariantValue {
   const logger = getLoggerFromContext(context);
@@ -98,16 +99,9 @@ function toBucketingList(from: unknown[]): {
       throw new Error('Invalid bucketing entry. Requires at least a variant');
     }
 
-    let variant: VariantValue;
-    if (typeof entry[0] === 'string' || typeof entry[0] === 'number' || typeof entry[0] === 'boolean') {
-      variant = entry[0];
-    } else if (entry[0] === null || entry[0] === undefined) {
-      variant = null;
-    } else {
-      throw new Error(
-        'Bucketing requires variant to be a string, number, or boolean (or a JSONLogic expression that evaluates to one)',
-      );
-    }
+    // JSONLogic pre-evaluates the variant, so this is a literal or the result of an expression (e.g. resolve)
+    // anything is passed through as is, only a missing result is normalised to null
+    const variant: VariantValue = entry[0] === undefined ? null : entry[0];
 
     let weight = 1;
     if (entry.length >= 2) {
