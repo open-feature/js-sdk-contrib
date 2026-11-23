@@ -153,6 +153,10 @@ export class FeatureFlag {
         // Obtain resolution in string. This is useful for short-circuiting json logic
         variant = targetingResolution.toString();
         reason = StandardResolutionReasons.TARGETING_MATCH;
+        // a stringified object usually means a resolve was nested where its result is consumed (e.g. cat or ==)
+        if (variant.includes('[object Object]')) {
+          logger.warn(`Targeting for flag '${this._key}' evaluated to an object; check for a misplaced resolve`);
+        }
       }
     }
 

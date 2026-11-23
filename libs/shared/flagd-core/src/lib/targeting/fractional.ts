@@ -111,7 +111,7 @@ function toBucketingList(from: unknown[]): {
       variant = null;
     } else {
       throw new Error(
-        'Bucketing requires variant to be a string, number, or boolean (or a JSONLogic expression that evaluates to one)',
+        'Bucketing requires variant to be a string, number, boolean, or resolve (or a JSONLogic expression that evaluates to one)',
       );
     }
 

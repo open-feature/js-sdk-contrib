@@ -27,7 +27,7 @@ function core(targeting: unknown, disableDynamicCodeGeneration: boolean, flagMet
 }
 
 describe('resolve schema validation', () => {
-  // placement is enforced by the schema, not by a load-time walker; misplaced resolve is otherwise undefined behavior
+  // placement is only checked by the schema; with non-strict validation a misplaced resolve is still evaluated (and logged)
   const load = (targeting: unknown) =>
     new MemoryStorage(logger).setConfigurations(
       JSON.stringify({ flags: { f: { state: 'ENABLED', defaultVariant: 'off', variants, targeting } } }),
@@ -38,6 +38,19 @@ describe('resolve schema validation', () => {
     ['root', { resolve: ['on', 'R', [['details', 'x']]] }],
     ['if result', { if: [true, { resolve: ['on'] }, { resolve: ['off'] }] }],
     ['fractional bucket', { fractional: [[{ resolve: ['on'] }, 1]] }],
+    [
+      'if mixed with plain nested if',
+      { if: [{ var: 'a' }, { if: [{ var: 'b' }, 'on', 'off'] }, { resolve: ['off'] }] },
+    ],
+    [
+      'fractional mixed with plain variant',
+      {
+        fractional: [
+          [{ resolve: ['on'] }, 1],
+          ['off', 1],
+        ],
+      },
+    ],
   ])('accepts resolve as %s', (_, targeting) => {
     expect(() => load(targeting)).not.toThrow();
   });
@@ -102,6 +115,43 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     expect(evaluate(rule, {})).toMatchObject({ variant: 'off', reason: 'FALLTHROUGH' });
   });
 
+  it('mixes with a plain nested if', () => {
+    const rule = { if: [{ var: 'a' }, { if: [{ var: 'b' }, 'on', 'off'] }, { resolve: ['off', 'NOT_A'] }] };
+    expect(evaluate(rule, { a: true, b: true })).toMatchObject({
+      variant: 'on',
+      reason: StandardResolutionReasons.TARGETING_MATCH,
+    });
+    expect(evaluate(rule, { a: true })).toMatchObject({
+      variant: 'off',
+      reason: StandardResolutionReasons.TARGETING_MATCH,
+    });
+    expect(evaluate(rule, {})).toMatchObject({ variant: 'off', reason: 'NOT_A' });
+  });
+
+  it('mixes with plain fractional bucket variants', () => {
+    const rule = (resolveWeight: number, plainWeight: number) => ({
+      fractional: [{ var: 'id' }, [{ resolve: ['on', 'SPLIT'] }, resolveWeight], ['off', plainWeight]],
+    });
+    expect(evaluate(rule(1, 0), { id: 'u1' })).toMatchObject({ variant: 'on', reason: 'SPLIT' });
+    expect(evaluate(rule(0, 1), { id: 'u1' })).toMatchObject({
+      variant: 'off',
+      reason: StandardResolutionReasons.TARGETING_MATCH,
+    });
+  });
+
+  it.each(['ERROR', 'DEFAULT', 'DISABLED', ''])('replaces reserved reason %j with TARGETING_MATCH', (reason) => {
+    expect(evaluate({ resolve: ['on', reason] })).toMatchObject({
+      variant: 'on',
+      reason: StandardResolutionReasons.TARGETING_MATCH,
+    });
+  });
+
+  it('warns when a misplaced resolve is stringified', () => {
+    jest.mocked(logger.warn).mockClear();
+    evaluate({ cat: [{ resolve: ['on'] }] });
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('misplaced resolve'));
+  });
+
   it('accepts resolve as a fractional bucket variant', () => {
     const rule = { fractional: [{ var: 'id' }, [{ resolve: ['on', 'SPLIT', [['details', 'treatment']]] }, 1]] };
     expect(evaluate(rule, { id: 'u1' })).toMatchObject({
@@ -163,6 +213,7 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
   it.each([
     ['non-finite metadata value', { resolve: ['on', null, [['share', { '/': [1, 0] }]]] }],
     ['object variant', { resolve: [{ var: 'obj' }] }],
+    ['number variant', { resolve: [1] }],
     ['non-string reason', { resolve: ['on', { var: 'obj' }] }],
     ['non-string metadata key', { resolve: ['on', null, [[1, 'x']]] }],
     ['malformed pair', { resolve: ['on', null, [['only-key']]] }],

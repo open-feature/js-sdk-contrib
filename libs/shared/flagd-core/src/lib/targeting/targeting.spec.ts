@@ -445,7 +445,7 @@ describe('targeting', () => {
         ],
       };
       const targeting = new Targeting(logic, logger);
-      const result = targeting.evaluate<string | number | boolean>('flagA', {
+      const result = targeting.evaluate('flagA', {
         targetingKey: 'user1',
         targetingKey2: 'user2',
       });
