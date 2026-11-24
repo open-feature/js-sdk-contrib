@@ -60,6 +60,8 @@ describe('resolve schema validation', () => {
     ['if consumed by ==', { '==': [{ if: [true, { resolve: ['on'] }, 'off'] }, 'on'] }],
     ['fractional consumed by ==', { '==': [{ fractional: [[{ resolve: ['on'] }, 1]] }, 'on'] }],
     ['reserved metadata key', { resolve: ['on', null, [['flagSetId', 'x']]] }],
+    ['reserved reason', { resolve: ['on', 'STALE'] }],
+    ['as first if condition', { if: [{ resolve: ['on'] }, 'on', 'off'] }],
   ])('rejects resolve %s', (_, targeting) => {
     expect(() => load(targeting)).toThrow();
   });
@@ -139,12 +141,15 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     });
   });
 
-  it.each(['ERROR', 'DEFAULT', 'DISABLED', ''])('replaces reserved reason %j with TARGETING_MATCH', (reason) => {
-    expect(evaluate({ resolve: ['on', reason] })).toMatchObject({
-      variant: 'on',
-      reason: StandardResolutionReasons.TARGETING_MATCH,
-    });
-  });
+  it.each(['ERROR', 'DISABLED', 'DEFAULT', 'FALLBACK', 'STATIC', 'CACHED', 'STALE', 'UNKNOWN', ''])(
+    'replaces reserved reason %j with TARGETING_MATCH',
+    (reason) => {
+      expect(evaluate({ resolve: ['on', reason] })).toMatchObject({
+        variant: 'on',
+        reason: StandardResolutionReasons.TARGETING_MATCH,
+      });
+    },
+  );
 
   it('warns when a misplaced resolve is stringified', () => {
     jest.mocked(logger.warn).mockClear();

@@ -8,7 +8,7 @@ export const resolveRule = 'resolve';
 const reservedMetadataKeys = new Set(['flagSetId', 'version']);
 
 // reasons a rule can't claim; they fall back to TARGETING_MATCH
-const reservedReasons = new Set(['ERROR', 'DEFAULT', 'DISABLED']);
+const reservedReasons = new Set(['ERROR', 'DISABLED', 'DEFAULT', 'FALLBACK', 'STATIC', 'CACHED', 'STALE', 'UNKNOWN']);
 
 // only the operator creates instances, so evaluation context data (plain JSON) can't forge one
 export class ResolveResult {
