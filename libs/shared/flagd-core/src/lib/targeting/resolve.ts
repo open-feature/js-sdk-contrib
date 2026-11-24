@@ -38,9 +38,9 @@ function parseResolve(data: unknown, context: EvaluationContextWithLogger): Reso
   }
   const [variant, reason, metadata] = data;
 
-  // coerced like plain targeting results: booleans become "true"/"false"; numbers are rejected
-  if (typeof variant !== 'string' && typeof variant !== 'boolean') {
-    throw new Error('variant must be a string or boolean');
+  // coerced like plain targeting results (true -> "true", 1 -> "1"); literal numbers are rejected by the schema
+  if (typeof variant !== 'string' && typeof variant !== 'boolean' && !Number.isFinite(variant)) {
+    throw new Error('variant must be a string, boolean, or finite number');
   }
   if (reason !== undefined && reason !== null && typeof reason !== 'string') {
     throw new Error('reason must be a string or null');

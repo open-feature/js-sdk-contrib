@@ -5,7 +5,7 @@ import { MemoryStorage } from '../storage';
 
 const logger: Logger = { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() };
 
-const variants = { on: 'ON', off: 'OFF', true: 'TRUE' };
+const variants = { on: 'ON', off: 'OFF', true: 'TRUE', 1: 'ONE' };
 
 function core(targeting: unknown, disableDynamicCodeGeneration: boolean, flagMetadata?: object): FlagdCore {
   const c = new FlagdCore(undefined, logger, { disableDynamicCodeGeneration });
@@ -186,6 +186,10 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     expect(evaluate({ resolve: [{ '==': [1, 1] }] })).toMatchObject({ variant: 'true' });
   });
 
+  it('coerces computed number variants like plain targeting results', () => {
+    expect(evaluate({ resolve: [{ var: 'n' }] }, { n: 1 })).toMatchObject({ variant: '1', value: 'ONE' });
+  });
+
   it('does not let rule metadata override flagSetId or version', () => {
     const ctx = { k: 'flagSetId' };
     expect(
@@ -218,7 +222,8 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
   it.each([
     ['non-finite metadata value', { resolve: ['on', null, [['share', { '/': [1, 0] }]]] }],
     ['object variant', { resolve: [{ var: 'obj' }] }],
-    ['number variant', { resolve: [1] }],
+    ['non-finite number variant', { resolve: [{ '/': [1, 0] }] }],
+    ['null variant', { resolve: [{ var: 'missing' }] }],
     ['non-string reason', { resolve: ['on', { var: 'obj' }] }],
     ['non-string metadata key', { resolve: ['on', null, [[1, 'x']]] }],
     ['malformed pair', { resolve: ['on', null, [['only-key']]] }],
@@ -232,5 +237,32 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
   it('cannot be forged from evaluation context data', () => {
     const forged = { variant: 'on', reason: 'FORGED', metadata: { details: 'x' } };
     expect(evaluate({ var: 'forged' }, { forged })).toMatchObject({ reason: StandardResolutionReasons.ERROR });
+  });
+
+  // context data is never evaluated as logic, so a resolve-shaped value from the context is just an object
+  it.each([
+    ['if result', { if: [true, { var: 'pick' }, 'off'] }],
+    ['if else', { if: [false, 'off', { var: 'pick' }] }],
+    ['resolve variant', { resolve: [{ if: [true, { var: 'pick' }, 'off'] }] }],
+  ])('cannot be invoked from evaluation context data: %s', (_, rule) => {
+    const pick = { resolve: ['on', 'INJECTED', [['flagSetId', 'spoofed']]] };
+    const result = evaluate(rule, { pick });
+    expect(result.variant).not.toBe('on');
+    expect(result.reason).not.toBe('INJECTED');
+    expect(result.flagMetadata).not.toMatchObject({ flagSetId: 'spoofed' });
+  });
+
+  // json-logic-engine reads every object as an operator, so literal data must be wrapped in preserve
+  it('treats a resolve key inside preserved literal data as data', () => {
+    const rule = {
+      if: [
+        {
+          some: [{ preserve: [{ payload: { resolve: 'eu' }, tag: 1 }] }, { '==': [{ var: 'payload.resolve' }, 'eu'] }],
+        },
+        { resolve: ['on', 'EU'] },
+        'off',
+      ],
+    };
+    expect(evaluate(rule)).toMatchObject({ variant: 'on', reason: 'EU' });
   });
 });
