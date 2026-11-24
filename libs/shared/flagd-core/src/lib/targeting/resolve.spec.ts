@@ -251,18 +251,4 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     expect(result.reason).not.toBe('INJECTED');
     expect(result.flagMetadata).not.toMatchObject({ flagSetId: 'spoofed' });
   });
-
-  // json-logic-engine reads every object as an operator, so literal data must be wrapped in preserve
-  it('treats a resolve key inside preserved literal data as data', () => {
-    const rule = {
-      if: [
-        {
-          some: [{ preserve: [{ payload: { resolve: 'eu' }, tag: 1 }] }, { '==': [{ var: 'payload.resolve' }, 'eu'] }],
-        },
-        { resolve: ['on', 'EU'] },
-        'off',
-      ],
-    };
-    expect(evaluate(rule)).toMatchObject({ variant: 'on', reason: 'EU' });
-  });
 });

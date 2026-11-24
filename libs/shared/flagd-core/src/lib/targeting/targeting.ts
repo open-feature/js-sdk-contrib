@@ -78,10 +78,6 @@ export class Targeting {
     if (!(method in engine.methods) && !engine.isData(logic as Record<string, unknown>, method)) {
       throw new Error(`Method '${method}' was not found in the Logic Engine.`);
     }
-    // preserve holds literal data, which the engine never evaluates
-    if (method === 'preserve') {
-      return;
-    }
 
     const args = (logic as Record<string, unknown>)[method];
     if (Array.isArray(args)) {
