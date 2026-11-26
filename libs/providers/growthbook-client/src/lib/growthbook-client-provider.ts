@@ -1,10 +1,17 @@
-import type { EvaluationContext, Provider, JsonValue, ResolutionDetails } from '@openfeature/web-sdk';
+import type {
+  EvaluationContext,
+  Provider,
+  JsonValue,
+  ResolutionDetails,
+  TrackingEventDetails,
+} from '@openfeature/web-sdk';
 import { GeneralError, OpenFeatureEventEmitter, ProviderEvents } from '@openfeature/web-sdk';
 
 import type { InitOptions, Context } from '@growthbook/growthbook';
 import { GrowthBook } from '@growthbook/growthbook';
 import isEmpty from 'lodash.isempty';
 import translateResult from './translate-result';
+import { toAttributes } from './context-mapper';
 
 export class GrowthbookClientProvider implements Provider {
   metadata = {
@@ -36,7 +43,7 @@ export class GrowthbookClientProvider implements Provider {
 
     if (!isEmpty(evalContext)) {
       // Set attributes from the global provider context
-      await this.client.setAttributes(evalContext);
+      await this.client.setAttributes(toAttributes(evalContext));
     }
 
     await this.client.init(this._initOptions);
@@ -55,7 +62,7 @@ export class GrowthbookClientProvider implements Provider {
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
-    await this.client.setAttributes(newContext);
+    await this.client.setAttributes(toAttributes(newContext));
   }
 
   resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
@@ -80,5 +87,16 @@ export class GrowthbookClientProvider implements Provider {
     const res = this.client.evalFeature(flagKey);
 
     return translateResult(res, defaultValue);
+  }
+  /**
+   * Forward an OpenFeature tracking event to GrowthBook.
+   *
+   * The web client already carries the current context as its attributes, so the
+   * event is attributed to whoever OpenFeature.setContext last set. GrowthBook's
+   * logEvent returns a promise; it is intentionally not awaited, since track()
+   * is synchronous by contract and tracking must not block the caller.
+   */
+  track(trackingEventName: string, context: EvaluationContext, trackingEventDetails: TrackingEventDetails): void {
+    void this.client.logEvent(trackingEventName, trackingEventDetails);
   }
 }
