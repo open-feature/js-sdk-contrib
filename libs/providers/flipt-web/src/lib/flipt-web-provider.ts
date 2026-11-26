@@ -146,6 +146,21 @@ export class FliptWebProvider implements Provider {
         };
       }
 
+      // Flipt serves a flag's configured default variant with match=false and
+      // DEFAULT_EVALUATION_REASON; honor the served variant instead of
+      // falling back to the application-provided default value.
+      if (result?.reason === EvaluationReason.DEFAULT && result.variantKey) {
+        const flagValue: PrimitiveType | U = validateFlagType(
+          flagType,
+          flagType === 'json' ? result.variantAttachment : result.variantKey,
+        );
+
+        return {
+          value: flagValue,
+          reason: StandardResolutionReasons.DEFAULT,
+        };
+      }
+
       if (!result?.match) {
         return {
           value: defaultValue,
