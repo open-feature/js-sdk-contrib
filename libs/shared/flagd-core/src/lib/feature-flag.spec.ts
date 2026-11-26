@@ -95,4 +95,39 @@ describe('Flagd flag structure', () => {
     expect(ff.variants.get('pi2')).toStrictEqual({ value: 3.14, accuracy: 2 });
     expect(ff.variants.get('pi5')).toStrictEqual({ value: 3.14159, accuracy: 5 });
   });
+
+  describe('hash', () => {
+    const input: Flag = {
+      state: 'ENABLED',
+      defaultVariant: 'pi2',
+      variants: {
+        pi2: { value: 3.14, accuracy: 2 },
+        pi5: { value: 3.14159, accuracy: 5 },
+      },
+      targeting: '',
+    };
+
+    it('should not depend on key order', () => {
+      const reordered: Flag = {
+        targeting: '',
+        variants: {
+          pi5: { accuracy: 5, value: 3.14159 },
+          pi2: { accuracy: 2, value: 3.14 },
+        },
+        defaultVariant: 'pi2',
+        state: 'ENABLED',
+      };
+
+      expect(new FeatureFlag('test', reordered, logger).hash).toBe(new FeatureFlag('test', input, logger).hash);
+    });
+
+    it('should change when a nested value changes', () => {
+      const changed: Flag = {
+        ...input,
+        variants: { ...input.variants, pi5: { value: 3.14159, accuracy: 4 } },
+      };
+
+      expect(new FeatureFlag('test', changed, logger).hash).not.toBe(new FeatureFlag('test', input, logger).hash);
+    });
+  });
 });

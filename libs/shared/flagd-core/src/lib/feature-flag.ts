@@ -47,6 +47,17 @@ type RequiredResolutionDetails<T> = Omit<ResolutionDetails<T>, 'value'> & {
   );
 
 /**
+ * A JSON.stringify replacer that sorts object keys, so a flag hashes the same whatever its key order.
+ */
+function sortKeys(_key: string, value: unknown): unknown {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return value;
+  }
+  // Keys of one object are unique, so the comparator never sees two equal keys.
+  return Object.fromEntries(Object.entries(value).sort(([a], [b]) => (a < b ? -1 : 1)));
+}
+
+/**
  * Flagd flag configuration structure for internal reference.
  */
 export class FeatureFlag {
@@ -80,7 +91,8 @@ export class FeatureFlag {
         this._targetingParseErrorMessage = message;
       }
     }
-    this._hash = sha1(flag);
+    // Hashing the JSON text is many times faster than letting object-hash walk the object.
+    this._hash = sha1(JSON.stringify(flag, sortKeys));
 
     this.validateStructure();
   }
