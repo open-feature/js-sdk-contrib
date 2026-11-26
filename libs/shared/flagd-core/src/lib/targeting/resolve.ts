@@ -46,7 +46,7 @@ function parseResolve(data: unknown, context: EvaluationContextWithLogger): Reso
     throw new Error('reason must be a string or null');
   }
 
-  const effectiveReason = reason && !reservedReasons.has(reason) ? reason : undefined;
+  const effectiveReason = reason != null && !reservedReasons.has(reason) ? reason : undefined;
   return new ResolveResult(String(variant), effectiveReason, parseMetadata(metadata, context));
 }
 

@@ -141,7 +141,7 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     });
   });
 
-  it.each(['ERROR', 'DISABLED', 'DEFAULT', 'FALLBACK', 'STATIC', 'CACHED', 'STALE', 'UNKNOWN', ''])(
+  it.each(['ERROR', 'DISABLED', 'DEFAULT', 'FALLBACK', 'STATIC', 'CACHED', 'STALE', 'UNKNOWN'])(
     'replaces reserved reason %j with TARGETING_MATCH',
     (reason) => {
       expect(evaluate({ resolve: ['on', reason] })).toMatchObject({
@@ -151,10 +151,8 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     },
   );
 
-  it('warns when a misplaced resolve is stringified', () => {
-    jest.mocked(logger.warn).mockClear();
-    evaluate({ cat: [{ resolve: ['on'] }] });
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('misplaced resolve'));
+  it('keeps an empty reason, like flagd', () => {
+    expect(evaluate({ resolve: ['on', ''] })).toMatchObject({ variant: 'on', reason: '' });
   });
 
   it('accepts resolve as a fractional bucket variant', () => {
