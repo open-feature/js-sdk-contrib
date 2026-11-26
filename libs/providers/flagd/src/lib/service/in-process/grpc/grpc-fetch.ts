@@ -147,7 +147,11 @@ export class GrpcFetch implements DataFetch {
             }
             this._isConnected = true;
           });
+          // Guard prevents double-reconnect when grpc-js emits 'end' then 'error' on a non-OK close.
+          let streamTerminated = false;
           stream.on('error', (err: ServiceError | undefined) => {
+            if (streamTerminated) return;
+            streamTerminated = true;
             // In cases where we get an explicit error status, we add a delay.
             // This prevents tight loops when errors are returned immediately, typically by intervening proxies like Envoy.
             this._errorThrottled = true;
@@ -158,6 +162,18 @@ export class GrpcFetch implements DataFetch {
               changedCallback,
               disconnectCallback,
               rejectConnect,
+            );
+          });
+          stream.on('end', () => {
+            if (streamTerminated) return;
+            streamTerminated = true;
+            rejectConnect?.(new Error('syncFlags stream closed by server before ready'));
+            this.handleError(
+              new Error('syncFlags stream closed by server'),
+              dataCallback,
+              reconnectCallback,
+              changedCallback,
+              disconnectCallback,
             );
           });
           this._syncStream = stream;
