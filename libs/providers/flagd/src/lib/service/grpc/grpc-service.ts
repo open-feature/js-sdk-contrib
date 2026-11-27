@@ -301,7 +301,7 @@ export class GRPCService implements Service {
       .call(this._client, { flagKey, context }, this._metadata)
       .then((resolved) => resolved, this.onRejected);
 
-    // no variant means no value (code default), whatever the reason
+    // no variant means no value (code default); reasons only affect telemetry and side effects such as caching
     const value = response.variant ? (response.value as T) : defaultValue;
 
     const resolved: ResolutionDetails<T> = {
