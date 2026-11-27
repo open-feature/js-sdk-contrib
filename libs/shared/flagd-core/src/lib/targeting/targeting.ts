@@ -2,6 +2,8 @@ import { LogicEngine } from 'json-logic-engine';
 import { endsWith, startsWith, endsWithRule, startsWithRule } from './string-comp';
 import { semVer, semVerRule } from './sem-ver';
 import { fractional, fractionalRule } from './fractional';
+import { resolve, resolveRule } from './resolve';
+import type { ResolveResult } from './resolve';
 import { flagdPropertyKey, flagKeyPropertyKey, loggerSymbol, timestampPropertyKey } from './common';
 import type { EvaluationContextWithLogger } from './common';
 import type { EvaluationContext, Logger, JsonValue } from '@openfeature/core';
@@ -9,7 +11,7 @@ import type { FlagdCoreOptions } from '../options';
 
 export class Targeting {
   // Compiled logic function (used when useInterpreter is false)
-  private readonly _compiledLogic?: { <T extends JsonValue>(ctx: EvaluationContextWithLogger): T };
+  private readonly _compiledLogic?: (ctx: EvaluationContextWithLogger) => JsonValue | ResolveResult;
 
   // Logic engine and raw logic (used when useInterpreter is true)
   private readonly _engine?: LogicEngine;
@@ -29,6 +31,7 @@ export class Targeting {
     engine.addMethod(endsWithRule, endsWith);
     engine.addMethod(semVerRule, semVer);
     engine.addMethod(fractionalRule, fractional);
+    engine.addMethod(resolveRule, resolve);
 
     if (this._useInterpreter) {
       // Interpreter mode: store engine and logic for .run() calls.
@@ -86,7 +89,7 @@ export class Targeting {
     }
   }
 
-  evaluate<T extends JsonValue>(flagKey: string, ctx: EvaluationContext, logger: Logger = this.logger): T {
+  evaluate(flagKey: string, ctx: EvaluationContext, logger: Logger = this.logger): JsonValue | ResolveResult {
     if (Object.hasOwn(ctx, flagdPropertyKey)) {
       logger.debug(`overwriting ${flagdPropertyKey} property in the context`);
     }
@@ -108,7 +111,7 @@ export class Targeting {
     if (this._useInterpreter) {
       // Use interpreter mode (.run())
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this._engine!.run(this._logic, evaluationContext) as T;
+      return this._engine!.run(this._logic, evaluationContext) as JsonValue | ResolveResult;
     } else {
       // Use compiled mode
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

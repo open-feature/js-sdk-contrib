@@ -2,10 +2,11 @@ import type { EvaluationContextValue } from '@openfeature/core';
 import { flagKeyPropertyKey, flagdPropertyKey, targetingPropertyKey, getLoggerFromContext } from './common';
 import type { EvaluationContextWithLogger } from './common';
 import { hashBucketingValue } from './cbor';
+import { ResolveResult } from './resolve';
 
 export const fractionalRule = 'fractional';
 
-type VariantValue = string | number | boolean | null;
+type VariantValue = string | number | boolean | null | ResolveResult;
 
 export function fractional(data: unknown, context: EvaluationContextWithLogger): VariantValue {
   const logger = getLoggerFromContext(context);
@@ -99,13 +100,18 @@ function toBucketingList(from: unknown[]): {
     }
 
     let variant: VariantValue;
-    if (typeof entry[0] === 'string' || typeof entry[0] === 'number' || typeof entry[0] === 'boolean') {
+    if (
+      typeof entry[0] === 'string' ||
+      typeof entry[0] === 'number' ||
+      typeof entry[0] === 'boolean' ||
+      entry[0] instanceof ResolveResult
+    ) {
       variant = entry[0];
     } else if (entry[0] === null || entry[0] === undefined) {
       variant = null;
     } else {
       throw new Error(
-        'Bucketing requires variant to be a string, number, or boolean (or a JSONLogic expression that evaluates to one)',
+        'Bucketing requires variant to be a string, number, boolean, or resolve (or a JSONLogic expression that evaluates to one)',
       );
     }
 

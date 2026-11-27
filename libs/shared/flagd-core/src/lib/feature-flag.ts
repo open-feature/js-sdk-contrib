@@ -10,6 +10,7 @@ import type {
 import { StandardResolutionReasons, ErrorCode, GeneralError } from '@openfeature/core';
 import { sha1 } from 'object-hash';
 import { Targeting } from './targeting/targeting';
+import { ResolveResult } from './targeting/resolve';
 import type { FlagdCoreOptions } from './options';
 
 /**
@@ -35,12 +36,7 @@ type RequiredResolutionDetails<T> = Omit<ResolutionDetails<T>, 'value'> & {
     | {
         value?: T;
         variant?: string;
-        reason: 'DEFAULT';
-      }
-    | {
-        value: T;
-        reason: Exclude<ResolutionReason, 'ERROR' | 'DEFAULT'>;
-        variant: string;
+        reason: ResolutionReason;
         errorCode?: never;
         errorMessage?: never;
       }
@@ -112,6 +108,8 @@ export class FeatureFlag {
   evaluate(evalCtx: EvaluationContext, logger: Logger = this.logger): RequiredResolutionDetails<JsonValue> {
     let variant: string | undefined;
     let reason: ResolutionReason;
+    let flagMetadata = this.metadata;
+    let fromResolve = false;
 
     if (this._targetingParseErrorMessage) {
       return {
@@ -126,7 +124,7 @@ export class FeatureFlag {
       variant = this._defaultVariant;
       reason = StandardResolutionReasons.STATIC;
     } else {
-      let targetingResolution: JsonValue;
+      let targetingResolution: JsonValue | ResolveResult;
       try {
         targetingResolution = this._targeting.evaluate(this._key, evalCtx, logger);
       } catch (e) {
@@ -143,6 +141,14 @@ export class FeatureFlag {
       if (targetingResolution === null || targetingResolution === undefined) {
         variant = this._defaultVariant;
         reason = StandardResolutionReasons.DEFAULT;
+      } else if (targetingResolution instanceof ResolveResult) {
+        fromResolve = true;
+        const { variant: resolved, reason: ruleReason } = targetingResolution;
+        variant = resolved ?? this._defaultVariant;
+        reason =
+          ruleReason ??
+          (resolved === null ? StandardResolutionReasons.DEFAULT : StandardResolutionReasons.TARGETING_MATCH);
+        flagMetadata = { ...this.metadata, ...targetingResolution.metadata };
       } else {
         // Obtain resolution in string. This is useful for short-circuiting json logic
         variant = targetingResolution.toString();
@@ -150,13 +156,14 @@ export class FeatureFlag {
       }
     }
 
+    // no variant means no value (code default); reasons only affect telemetry and side effects such as caching
     if (
       (variant === undefined || variant === null) &&
       (this.defaultVariant === null || this.defaultVariant === undefined)
     ) {
       return {
-        reason: StandardResolutionReasons.DEFAULT,
-        flagMetadata: this.metadata,
+        reason: fromResolve ? reason : StandardResolutionReasons.DEFAULT,
+        flagMetadata,
       };
     }
 
@@ -176,7 +183,7 @@ export class FeatureFlag {
       value: resolvedValue,
       reason,
       variant: resolvedVariant,
-      flagMetadata: this.metadata,
+      flagMetadata,
     };
   }
 

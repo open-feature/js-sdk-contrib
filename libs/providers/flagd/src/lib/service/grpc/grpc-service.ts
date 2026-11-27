@@ -301,16 +301,8 @@ export class GRPCService implements Service {
       .call(this._client, { flagKey, context }, this._metadata)
       .then((resolved) => resolved, this.onRejected);
 
-    let value = response.value as T;
-    // When no variant is configured, the server returns an empty/zero proto value.
-    // This happens for reason=DEFAULT (no defaultVariant) and reason=DISABLED.
-    // In either case, return the caller's code default value.
-    if (
-      !response.variant &&
-      (response.reason === StandardResolutionReasons.DEFAULT || response.reason === StandardResolutionReasons.DISABLED)
-    ) {
-      value = defaultValue;
-    }
+    // no variant means no value (code default); reasons only affect telemetry and side effects such as caching
+    const value = response.variant ? (response.value as T) : defaultValue;
 
     const resolved: ResolutionDetails<T> = {
       value,
