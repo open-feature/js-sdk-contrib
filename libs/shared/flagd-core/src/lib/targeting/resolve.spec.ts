@@ -51,6 +51,9 @@ describe('resolve schema validation', () => {
         ],
       },
     ],
+    ['null variant', { resolve: [null] }],
+    ['null variant with a reason', { resolve: [null, 'DISABLED', [['details', 'x']]] }],
+    ['standard reason', { resolve: ['on', 'STALE'] }],
   ])('accepts resolve as %s', (_, targeting) => {
     expect(() => load(targeting)).not.toThrow();
   });
@@ -60,7 +63,6 @@ describe('resolve schema validation', () => {
     ['if consumed by ==', { '==': [{ if: [true, { resolve: ['on'] }, 'off'] }, 'on'] }],
     ['fractional consumed by ==', { '==': [{ fractional: [[{ resolve: ['on'] }, 1]] }, 'on'] }],
     ['reserved metadata key', { resolve: ['on', null, [['flagSetId', 'x']]] }],
-    ['reserved reason', { resolve: ['on', 'STALE'] }],
     ['as first if condition', { if: [{ resolve: ['on'] }, 'on', 'off'] }],
   ])('rejects resolve %s', (_, targeting) => {
     expect(() => load(targeting)).toThrow();
