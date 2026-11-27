@@ -141,18 +141,8 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     });
   });
 
-  it.each(['ERROR', 'DISABLED', 'DEFAULT', 'FALLBACK', 'STATIC', 'CACHED', 'STALE', 'UNKNOWN'])(
-    'replaces reserved reason %j with TARGETING_MATCH',
-    (reason) => {
-      expect(evaluate({ resolve: ['on', reason] })).toMatchObject({
-        variant: 'on',
-        reason: StandardResolutionReasons.TARGETING_MATCH,
-      });
-    },
-  );
-
-  it('keeps an empty reason, like flagd', () => {
-    expect(evaluate({ resolve: ['on', ''] })).toMatchObject({ variant: 'on', reason: '' });
+  it.each(['ALLOWLIST', 'ERROR', 'STALE', ''])('passes reason %j through unchanged', (reason) => {
+    expect(evaluate({ resolve: ['on', reason] })).toMatchObject({ variant: 'on', reason });
   });
 
   it('accepts resolve as a fractional bucket variant', () => {
@@ -210,6 +200,15 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     });
   });
 
+  it('selects the default variant for a null variant, like a plain null', () => {
+    expect(evaluate({ resolve: [null] })).toMatchObject({ value: 'OFF', variant: 'off', reason: 'DEFAULT' });
+    expect(evaluate({ resolve: [{ var: 'missing' }, 'NO_MATCH', [['details', 'x']]] })).toMatchObject({
+      variant: 'off',
+      reason: 'NO_MATCH',
+      flagMetadata: { details: 'x' },
+    });
+  });
+
   it('errors like a plain string when the variant is missing', () => {
     expect(evaluate({ resolve: ['nope', 'R', [['details', 'x']]] })).toMatchObject({
       reason: StandardResolutionReasons.ERROR,
@@ -221,7 +220,6 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     ['non-finite metadata value', { resolve: ['on', null, [['share', { '/': [1, 0] }]]] }],
     ['object variant', { resolve: [{ var: 'obj' }] }],
     ['non-finite number variant', { resolve: [{ '/': [1, 0] }] }],
-    ['null variant', { resolve: [{ var: 'missing' }] }],
     ['non-string reason', { resolve: ['on', { var: 'obj' }] }],
     ['non-string metadata key', { resolve: ['on', null, [[1, 'x']]] }],
     ['malformed pair', { resolve: ['on', null, [['only-key']]] }],

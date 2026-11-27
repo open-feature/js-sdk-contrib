@@ -146,8 +146,11 @@ export class FeatureFlag {
         variant = this._defaultVariant;
         reason = StandardResolutionReasons.DEFAULT;
       } else if (targetingResolution instanceof ResolveResult) {
-        variant = targetingResolution.variant;
-        reason = targetingResolution.reason ?? StandardResolutionReasons.TARGETING_MATCH;
+        const { variant: resolved, reason: ruleReason } = targetingResolution;
+        variant = resolved ?? this._defaultVariant;
+        reason =
+          ruleReason ??
+          (resolved === null ? StandardResolutionReasons.DEFAULT : StandardResolutionReasons.TARGETING_MATCH);
         flagMetadata = { ...this.metadata, ...targetingResolution.metadata };
       } else {
         // Obtain resolution in string. This is useful for short-circuiting json logic
