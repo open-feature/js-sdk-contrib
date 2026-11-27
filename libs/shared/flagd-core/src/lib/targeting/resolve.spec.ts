@@ -209,6 +209,26 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     });
   });
 
+  it('keeps the rule reason and metadata for a null variant when the flag has no default variant', () => {
+    const c = new FlagdCore(undefined, logger, { disableDynamicCodeGeneration: interpreted });
+    c.setConfigurations(
+      JSON.stringify({
+        flags: {
+          f: {
+            state: 'ENABLED',
+            defaultVariant: '',
+            variants,
+            targeting: { resolve: [null, 'NO_MATCH', [['details', 'x']]] },
+            metadata: { team: 'flag-team' },
+          },
+        },
+      }),
+    );
+    const result = c.resolveStringEvaluation('f', 'fallback', {});
+    expect(result).toMatchObject({ reason: 'NO_MATCH', flagMetadata: { team: 'flag-team', details: 'x' } });
+    expect(result.variant).toBeUndefined();
+  });
+
   it('errors like a plain string when the variant is missing', () => {
     expect(evaluate({ resolve: ['nope', 'R', [['details', 'x']]] })).toMatchObject({
       reason: StandardResolutionReasons.ERROR,

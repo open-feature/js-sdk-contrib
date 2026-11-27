@@ -36,7 +36,7 @@ type RequiredResolutionDetails<T> = Omit<ResolutionDetails<T>, 'value'> & {
     | {
         value?: T;
         variant?: string;
-        reason: 'DEFAULT';
+        reason: Exclude<ResolutionReason, 'ERROR'>;
       }
     | {
         value: T;
@@ -114,6 +114,7 @@ export class FeatureFlag {
     let variant: string | undefined;
     let reason: ResolutionReason;
     let flagMetadata = this.metadata;
+    let fromResolve = false;
 
     if (this._targetingParseErrorMessage) {
       return {
@@ -146,6 +147,7 @@ export class FeatureFlag {
         variant = this._defaultVariant;
         reason = StandardResolutionReasons.DEFAULT;
       } else if (targetingResolution instanceof ResolveResult) {
+        fromResolve = true;
         const { variant: resolved, reason: ruleReason } = targetingResolution;
         variant = resolved ?? this._defaultVariant;
         reason =
@@ -164,8 +166,8 @@ export class FeatureFlag {
       (this.defaultVariant === null || this.defaultVariant === undefined)
     ) {
       return {
-        reason: StandardResolutionReasons.DEFAULT,
-        flagMetadata: this.metadata,
+        reason: fromResolve ? reason : StandardResolutionReasons.DEFAULT,
+        flagMetadata,
       };
     }
 
