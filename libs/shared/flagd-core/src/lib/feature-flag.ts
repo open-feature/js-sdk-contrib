@@ -36,12 +36,7 @@ type RequiredResolutionDetails<T> = Omit<ResolutionDetails<T>, 'value'> & {
     | {
         value?: T;
         variant?: string;
-        reason: Exclude<ResolutionReason, 'ERROR'>;
-      }
-    | {
-        value: T;
-        reason: Exclude<ResolutionReason, 'ERROR' | 'DEFAULT'>;
-        variant: string;
+        reason: ResolutionReason;
         errorCode?: never;
         errorMessage?: never;
       }
