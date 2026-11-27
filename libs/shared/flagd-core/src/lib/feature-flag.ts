@@ -161,6 +161,7 @@ export class FeatureFlag {
       }
     }
 
+    // no variant means no value (code default), whatever the reason
     if (
       (variant === undefined || variant === null) &&
       (this.defaultVariant === null || this.defaultVariant === undefined)

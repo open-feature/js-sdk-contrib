@@ -229,6 +229,33 @@ describe.each([false, true])('resolve (disableDynamicCodeGeneration: %s)', (inte
     expect(result.variant).toBeUndefined();
   });
 
+  it('serves overrides and the code default with a DISABLED reason for everyone else', () => {
+    const c = new FlagdCore(undefined, logger, { disableDynamicCodeGeneration: interpreted });
+    c.setConfigurations(
+      JSON.stringify({
+        flags: {
+          f: {
+            state: 'ENABLED',
+            defaultVariant: '',
+            variants,
+            targeting: {
+              if: [{ in: [{ var: 'targetingKey' }, ['alice']] }, 'on', { resolve: [null, 'DISABLED'] }],
+            },
+          },
+        },
+      }),
+    );
+    expect(c.resolveStringEvaluation('f', 'fallback', { targetingKey: 'alice' })).toMatchObject({
+      value: 'ON',
+      variant: 'on',
+      reason: 'TARGETING_MATCH',
+    });
+    const bob = c.resolveStringEvaluation('f', 'fallback', { targetingKey: 'bob' });
+    expect(bob).toMatchObject({ value: 'fallback', reason: 'DISABLED' });
+    expect(bob.variant).toBeUndefined();
+    expect(bob.errorCode).toBeUndefined();
+  });
+
   it('errors like a plain string when the variant is missing', () => {
     expect(evaluate({ resolve: ['nope', 'R', [['details', 'x']]] })).toMatchObject({
       reason: StandardResolutionReasons.ERROR,
