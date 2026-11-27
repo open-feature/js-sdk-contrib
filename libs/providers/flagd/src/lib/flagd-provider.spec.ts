@@ -297,6 +297,51 @@ describe(FlagdProvider.name, () => {
         expect(val.errorCode).toBeUndefined();
       },
     );
+
+    // a reason does not change the outcome, so a variant's value is used
+    it('uses the value when there is a variant, even with reason DISABLED', async () => {
+      const serviceClient = {
+        waitForReady: jest.fn((_deadline: number, callback: (err?: Error) => void) => callback()),
+        eventStream: jest.fn(() => ({
+          on: jest.fn((event: string, callback: (message: unknown) => void) => {
+            if (event === 'data') {
+              callback({ type: EVENT_PROVIDER_READY });
+            }
+          }),
+          cancel: jest.fn(),
+          removeAllListeners: jest.fn(),
+          destroy: jest.fn(),
+        })),
+        close: jest.fn(),
+        resolveString: jest.fn(
+          (
+            _request: unknown,
+            _metadata: Metadata,
+            callback: (error: ServiceError | null, response: unknown) => void,
+          ) => {
+            callback(null, { value: 'on-value', variant: 'on', reason: 'DISABLED', metadata: {} });
+          },
+        ),
+      } as unknown as ServiceClient;
+      await OpenFeature.setProviderAndWait(
+        'variant with disabled reason test',
+        new FlagdProvider(
+          undefined,
+          undefined,
+          new GRPCService(
+            { deadlineMs: 100, streamDeadlineMs: 600000, host: '', port: 123, tls: false },
+            serviceClient,
+          ),
+        ),
+      );
+      const val = await OpenFeature.getClient('variant with disabled reason test').getStringDetails(
+        STRING_KEY,
+        'code-default',
+      );
+      expect(val.value).toEqual('on-value');
+      expect(val.variant).toEqual('on');
+      expect(val.reason).toEqual('DISABLED');
+    });
   });
 
   describe('streaming', () => {

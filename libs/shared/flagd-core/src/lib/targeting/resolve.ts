@@ -36,7 +36,9 @@ function parseResolve(data: unknown, context: EvaluationContextWithLogger): Reso
   const [variant, reason, metadata] = data;
 
   // coerced like plain targeting results (true -> "true", 1 -> "1"); literal numbers are rejected by the schema
-  if (variant !== null && typeof variant !== 'string' && typeof variant !== 'boolean' && !Number.isFinite(variant)) {
+  const validVariant =
+    variant === null || typeof variant === 'string' || typeof variant === 'boolean' || Number.isFinite(variant);
+  if (!validVariant) {
     throw new Error('variant must be a string, boolean, finite number, or null');
   }
   if (reason !== undefined && reason !== null && typeof reason !== 'string') {
@@ -68,7 +70,8 @@ function parseMetadata(pairs: unknown, context: EvaluationContextWithLogger): Fl
       throw new Error('metadata key must be a string');
     }
     // non-finite numbers (e.g. a computed 1/0) can't be serialized to JSON
-    if (typeof value !== 'string' && typeof value !== 'boolean' && !Number.isFinite(value)) {
+    const validValue = typeof value === 'string' || typeof value === 'boolean' || Number.isFinite(value);
+    if (!validValue) {
       throw new Error('metadata value must be a string, finite number, or boolean');
     }
     // literal reserved keys are rejected by the schema; computed ones are dropped here
